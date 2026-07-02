@@ -1,0 +1,83 @@
+3956--- extracting... [clean up]
+3957--- extracting... done
+3958-[67/161] Performing build step for 'dep_OpenSSL'
+3959:FAILED: [code=2] dep_OpenSSL-prefix/src/dep_OpenSSL-stamp/dep_OpenSSL-build /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenSSL-prefix/src/dep_OpenSSL-stamp/dep_OpenSSL-build 
+3960-cd /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenSSL-prefix/src/dep_OpenSSL && make -j3 && /opt/homebrew/bin/cmake -E touch /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenSSL-prefix/src/dep_OpenSSL-stamp/dep_OpenSSL-build
+3961-/opt/homebrew/Cellar/perl/5.42.2/bin/perl "-I." -Mconfigdata "util/dofile.pl" \
+3962-	    "-oMakefile" include/crypto/bn_conf.h.in > include/crypto/bn_conf.h
+3963-/opt/homebrew/Cellar/perl/5.42.2/bin/perl "-I." -Mconfigdata "util/dofile.pl" \
+3964-	    "-oMakefile" include/crypto/dso_conf.h.in > include/crypto/dso_conf.h
+3965-/opt/homebrew/Cellar/perl/5.42.2/bin/perl "-I." -Mconfigdata "util/dofile.pl" \
+3966-	    "-oMakefile" include/openssl/opensslconf.h.in > include/openssl/opensslconf.h
+3967-/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make depend && /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make _all
+3968-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o apps/app_rand.o apps/app_rand.c
+3969-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o apps/apps.o apps/apps.c
+3970-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o apps/bf_prefix.o apps/bf_prefix.c
+3971-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o apps/opt.o apps/opt.c
+3972-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o apps/s_cb.o apps/s_cb.c
+3973-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o apps/s_socket.o apps/s_socket.c
+3974-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_cbc.o crypto/aes/aes_cbc.c
+3975-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_cfb.o crypto/aes/aes_cfb.c
+3976-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_core.o crypto/aes/aes_core.c
+3977-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_ecb.o crypto/aes/aes_ecb.c
+3978-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_ige.o crypto/aes/aes_ige.c
+3979-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_misc.o crypto/aes/aes_misc.c
+3980-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_ofb.o crypto/aes/aes_ofb.c
+3981-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aes/aes_wrap.o crypto/aes/aes_wrap.c
+3982-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/aria/aria.o crypto/aria/aria.c
+3983-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_bitstr.o crypto/asn1/a_bitstr.c
+3984-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_d2i_fp.o crypto/asn1/a_d2i_fp.c
+3985-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_digest.o crypto/asn1/a_digest.c
+3986-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_dup.o crypto/asn1/a_dup.c
+3987-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_gentm.o crypto/asn1/a_gentm.c
+3988-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_i2d_fp.o crypto/asn1/a_i2d_fp.c
+3989-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_int.o crypto/asn1/a_int.c
+3990-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_mbstr.o crypto/asn1/a_mbstr.c
+3991-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_object.o crypto/asn1/a_object.c
+3992-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_octet.o crypto/asn1/a_octet.c
+3993-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_print.o crypto/asn1/a_print.c
+3994-gcc  -I. -Iinclude -fPIC -pthread -Wall -O3 -mmacosx-version-min=17.0 -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -DOPENSSLDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/\"" -DENGINESDIR="\"/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local//lib/engines-1.1\"" -DNDEBUG   -c -o crypto/asn1/a_sign.o crypto/asn1/a_sign.c
+--
+5008-		-o test/rsa_complex test/rsa_complex.o \
+5009-		 -ldl -pthread 
+5010-/bin/sh: -gcc: command not found
+5011:make[1]: *** [test/rsa_complex] Error 127
+5012-make[1]: *** Waiting for unfinished jobs....
+5013-ar: creating archive libcrypto.a
+5014-ranlib libcrypto.a || echo Never mind.
+5015:make: *** [all] Error 2
+5016-[68/161] Performing download step (download, verify and extract) for 'dep_OpenCV'
+5017--- Downloading...
+5018-   dst='/Users/runner/dep-dl/OpenCV/4.6.0.tar.gz'
+5019-   timeout='none'
+5020-   inactivity timeout='none'
+5021--- Using src='https://github.com/opencv/opencv/archive/refs/tags/4.6.0.tar.gz'
+5022--- [download 0% complete]
+5023--- [download 1% complete]
+5024--- [download 2% complete]
+5025--- [download 3% complete]
+5026--- [download 4% complete]
+5027--- [download 5% complete]
+5028--- [download 6% complete]
+5029--- [download 7% complete]
+5030--- [download 8% complete]
+5031--- [download 9% complete]
+5032--- [download 10% complete]
+5033--- [download 11% complete]
+5034--- [download 12% complete]
+5035--- [download 13% complete]
+5036--- [download 14% complete]
+5037--- [download 15% complete]
+5038--- [download 16% complete]
+5039--- [download 17% complete]
+5040--- [download 18% complete]
+5041--- [download 19% complete]
+5042--- [download 20% complete]
+5043--- [download 21% complete]
+5044--- [download 22% complete]
+5045--- [download 23% complete]
+5046--- [download 24% complete]
+5047--- [download 25% complete]
+5048--- [download 26% complete]
+5049--- [download 27% complete]
+5050--- [download 28% complete]

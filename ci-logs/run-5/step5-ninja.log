@@ -1,0 +1,366 @@
+-prefix/src/dep_OCCT-build/include/opencascade/Adaptor2d_Curve2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/Adaptor2d/Adaptor2d_Curve2d.hxx:22:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Lin2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Lin2d.hxx:18:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Ax2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Ax2d.hxx:18:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Pnt2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Pnt2d.hxx:183:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Vec2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Vec2d.hxx:334:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Dir2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Dir2d.hxx:249:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Trsf2d.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Trsf2d.hxx:218:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/gp_Trsf.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/gp/gp_Trsf.hxx:21:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_Mat4.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_Mat4.hxx:19:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_Vec4.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_Vec4.hxx:18:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_Vec3.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_Vec3.hxx:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_Vec2.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_Vec2.hxx:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/Standard_Dump.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/Standard/Standard_Dump.hxx:17:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_IndexedDataMap.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_IndexedDataMap.hxx:23:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_StlIterator.hxx:1:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_StlIterator.hxx:30:15: warning: 'iterator<std::random_access_iterator_tag, SolInfo>' is deprecated [-Wdeprecated-declarations]
+   30 |   public std::iterator<Category, ItemType, ptrdiff_t,
+      |               ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/IntStart/IntStart_SearchOnBoundaries.gxx:592:21: note: in instantiation of template class 'NCollection_StlIterator<std::random_access_iterator_tag, NCollection_Array1<SolInfo>::Iterator, SolInfo, false>' requested here
+  592 |       std::sort(aSI.begin(), aSI.end());
+      |                     ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/__iterator/iterator.h:23:29: note: 'iterator<std::random_access_iterator_tag, SolInfo>' has been explicitly marked deprecated here
+   23 | struct _LIBCPP_TEMPLATE_VIS _LIBCPP_DEPRECATED_IN_CXX17 iterator {
+      |                             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/__config:731:41: note: expanded from macro '_LIBCPP_DEPRECATED_IN_CXX17'
+  731 | #    define _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_DEPRECATED
+      |                                         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/__config:696:49: note: expanded from macro '_LIBCPP_DEPRECATED'
+  696 | #      define _LIBCPP_DEPRECATED __attribute__((__deprecated__))
+      |                                                 ^
+1 warning generated.
+[4824/5111] Building CXX object src/TKXDEIGES/CMakeFiles/TKXDEIGES.dir/__/IGESCAFControl/IGESCAFControl.cxx.o
+[4825/5111] Building CXX object src/TKXDEIGES/CMakeFiles/TKXDEIGES.dir/__/IGESCAFControl/IGESCAFControl_Reader.cxx.o
+[4826/5111] Building CXX object src/TKXDESTEP/CMakeFiles/TKXDESTEP.dir/__/STEPCAFControl/STEPCAFControl_ActorWrite.cxx.o
+[4827/5111] Building CXX object src/TKXDEIGES/CMakeFiles/TKXDEIGES.dir/__/IGESCAFControl/IGESCAFControl_Writer.cxx.o
+[4828/5111] Building CXX object src/TKXDESTEP/CMakeFiles/TKXDESTEP.dir/__/STEPCAFControl/STEPCAFControl_Controller.cxx.o
+[4829/5111] Building CXX object src/TKXDESTEP/CMakeFiles/TKXDESTEP.dir/__/STEPCAFControl/STEPCAFControl_ExternFile.cxx.o
+[4830/5111] Building CXX object src/TKXDESTEP/CMakeFiles/TKXDESTEP.dir/__/STEPCAFControl/STEPCAFControl_GDTProperty.cxx.o
+[4831/5111] Building CXX object src/TKSTL/CMakeFiles/TKSTL.dir/__/StlAPI/StlAPI.cxx.o
+[4832/5111] Building CXX object src/TKSTL/CMakeFiles/TKSTL.dir/__/StlAPI/StlAPI_Reader.cxx.o
+[4833/5111] Building CXX object src/TKXDESTEP/CMakeFiles/TKXDESTEP.dir/__/STEPCAFControl/STEPCAFControl_Reader.cxx.o
+[4834/5111] Building CXX object src/TKSTL/CMakeFiles/TKSTL.dir/__/StlAPI/StlAPI_Writer.cxx.o
+[4835/5111] Building CXX object src/TKXDESTEP/CMakeFiles/TKXDESTEP.dir/__/STEPCAFControl/STEPCAFControl_Writer.cxx.o
+[4836/5111] Building CXX object src/TKSTL/CMakeFiles/TKSTL.dir/__/RWStl/RWStl.cxx.o
+[4837/5111] Building CXX object src/TKSTL/CMakeFiles/TKSTL.dir/__/RWStl/RWStl_Reader.cxx.o
+[4838/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_Curve.cxx.o
+[4839/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_DeflectionCurve.cxx.o
+[4840/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_Drawer.cxx.o
+[4841/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_IsoAspect.cxx.o
+[4842/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_HLRShape.cxx.o
+[4843/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_LineAspect.cxx.o
+[4844/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_PointAspect.cxx.o
+[4845/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_Projector.cxx.o
+[4846/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_ShadedShape.cxx.o
+[4847/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_ShadingAspect.cxx.o
+[4848/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_WFDeflectionRestrictedFace.cxx.o
+[4849/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_WFDeflectionShape.cxx.o
+[4850/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_WFRestrictedFace.cxx.o
+[4851/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlConverter/VrmlConverter_WFShape.cxx.o
+[4852/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlAPI/VrmlAPI.cxx.o
+[4853/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlAPI/VrmlAPI_Writer.cxx.o
+[4854/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml.cxx.o
+[4855/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_AsciiText.cxx.o
+[4856/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Cone.cxx.o
+[4857/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Cube.cxx.o
+[4858/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Coordinate3.cxx.o
+[4859/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Cylinder.cxx.o
+[4860/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_FontStyle.cxx.o
+[4861/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_DirectionalLight.cxx.o
+[4862/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Group.cxx.o
+[4863/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_IndexedFaceSet.cxx.o
+[4864/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_IndexedLineSet.cxx.o
+[4865/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Info.cxx.o
+[4866/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Instancing.cxx.o
+[4867/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_LOD.cxx.o
+[4868/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Material.cxx.o
+[4869/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_MaterialBinding.cxx.o
+[4870/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_MatrixTransform.cxx.o
+[4871/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Normal.cxx.o
+[4872/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_NormalBinding.cxx.o
+[4873/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_OrthographicCamera.cxx.o
+[4874/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_PerspectiveCamera.cxx.o
+[4875/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_PointLight.cxx.o
+[4876/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_PointSet.cxx.o
+[4877/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Rotation.cxx.o
+[4878/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Scale.cxx.o
+[4879/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Separator.cxx.o
+[4880/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_SFImage.cxx.o
+[4881/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_SFRotation.cxx.o
+[4882/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_ShapeHints.cxx.o
+[4883/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Sphere.cxx.o
+[4884/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_SpotLight.cxx.o
+[4885/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Switch.cxx.o
+[4886/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Texture2.cxx.o
+[4887/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Texture2Transform.cxx.o
+[4888/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_TextureCoordinate2.cxx.o
+[4889/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Transform.cxx.o
+[4890/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_TransformSeparator.cxx.o
+[4891/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_Translation.cxx.o
+[4892/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_WWWAnchor.cxx.o
+[4893/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/Vrml/Vrml_WWWInline.cxx.o
+[4894/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_Geometry.cxx.o
+[4895/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_Group.cxx.o
+[4896/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_IndexedFaceSet.cxx.o
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/VrmlData/VrmlData_IndexedFaceSet.cxx:21:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/BRepMesh_Triangulator.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/BRepMesh/BRepMesh_Triangulator.hxx:24:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/IMeshData_Types.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/IMeshData/IMeshData_Types.hxx:36:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_UBTreeFiller.hxx:1:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_UBTreeFiller.hxx:182:3: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  182 |   sprintf (buf,  "Checking UBTree:%8d leaves, balance =%7.2f",
+      |   ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+1 warning generated.
+[4897/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_IndexedLineSet.cxx.o
+[4898/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_Material.cxx.o
+[4899/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_Node.cxx.o
+[4900/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_Scene.cxx.o
+[4901/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_WorldInfo.cxx.o
+[4902/5111] Building CXX object src/TKVRML/CMakeFiles/TKVRML.dir/__/VrmlData/VrmlData_ShapeConvert.cxx.o
+[4903/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlXCAFDrivers/XmlXCAFDrivers.cxx.o
+[4904/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlXCAFDrivers/XmlXCAFDrivers_DocumentRetrievalDriver.cxx.o
+[4905/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlXCAFDrivers/XmlXCAFDrivers_DocumentStorageDriver.cxx.o
+[4906/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc.cxx.o
+[4907/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_AssemblyItemRefDriver.cxx.o
+[4908/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_CentroidDriver.cxx.o
+[4909/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_ColorDriver.cxx.o
+[4910/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_DatumDriver.cxx.o
+[4911/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_DimTolDriver.cxx.o
+[4912/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_GraphNodeDriver.cxx.o
+[4913/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_LengthUnitDriver.cxx.o
+[4914/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_LocationDriver.cxx.o
+[4915/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_MaterialDriver.cxx.o
+[4916/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_NoteDriver.cxx.o
+[4917/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_NoteCommentDriver.cxx.o
+[4918/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_NoteBinDataDriver.cxx.o
+[4919/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_VisMaterialDriver.cxx.o
+[4920/5111] Building CXX object src/TKXmlXCAF/CMakeFiles/TKXmlXCAF.dir/__/XmlMXCAFDoc/XmlMXCAFDoc_VisMaterialToolDriver.cxx.o
+[4921/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlLDrivers/XmlLDrivers.cxx.o
+[4922/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx.o
+[4923/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlLDrivers/XmlLDrivers_DocumentStorageDriver.cxx.o
+[4924/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlLDrivers/XmlLDrivers_NamespaceDef.cxx.o
+[4925/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDF/XmlMDF_ADriver.cxx.o
+[4926/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDF/XmlMDF.cxx.o
+[4927/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDF/XmlMDF_ADriverTable.cxx.o
+[4928/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDF/XmlMDF_ReferenceDriver.cxx.o
+[4929/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDF/XmlMDF_TagSourceDriver.cxx.o
+[4930/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDF/XmlMDF_DerivedDriver.cxx.o
+[4931/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd.cxx.o
+[4932/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_AsciiStringDriver.cxx.o
+[4933/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_BooleanArrayDriver.cxx.o
+[4934/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_BooleanListDriver.cxx.o
+[4935/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_ByteArrayDriver.cxx.o
+[4936/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_ExpressionDriver.cxx.o
+[4937/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_ExtStringArrayDriver.cxx.o
+[4938/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_ExtStringListDriver.cxx.o
+[4939/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_IntegerArrayDriver.cxx.o
+[4940/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_IntegerDriver.cxx.o
+[4941/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_IntegerListDriver.cxx.o
+[4942/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_IntPackedMapDriver.cxx.o
+[4943/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_GenericExtStringDriver.cxx.o
+[4944/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_NamedDataDriver.cxx.o
+[4945/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_RealArrayDriver.cxx.o
+[4946/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_RealDriver.cxx.o
+[4947/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_RealListDriver.cxx.o
+[4948/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_ReferenceArrayDriver.cxx.o
+[4949/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_ReferenceListDriver.cxx.o
+[4950/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_GenericEmptyDriver.cxx.o
+[4951/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_TreeNodeDriver.cxx.o
+[4952/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_UAttributeDriver.cxx.o
+[4953/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDataStd/XmlMDataStd_VariableDriver.cxx.o
+[4954/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDocStd/XmlMDocStd.cxx.o
+[4955/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMDocStd/XmlMDocStd_XLinkDriver.cxx.o
+[4956/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMFunction/XmlMFunction.cxx.o
+[4957/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMFunction/XmlMFunction_FunctionDriver.cxx.o
+[4958/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMFunction/XmlMFunction_GraphNodeDriver.cxx.o
+[4959/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlMFunction/XmlMFunction_ScopeDriver.cxx.o
+[4960/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlObjMgt/XmlObjMgt.cxx.o
+[4961/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlObjMgt/XmlObjMgt_Array1.cxx.o
+[4962/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlObjMgt/XmlObjMgt_GP.cxx.o
+[4963/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlObjMgt/XmlObjMgt_Persistent.cxx.o
+[4964/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlObjMgt/XmlObjMgt_RRelocationTable.cxx.o
+[4965/5111] Building CXX object src/TKXmlL/CMakeFiles/TKXmlL.dir/__/XmlObjMgt/XmlObjMgt_SRelocationTable.cxx.o
+[4966/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlDrivers/XmlDrivers.cxx.o
+[4967/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlDrivers/XmlDrivers_DocumentRetrievalDriver.cxx.o
+[4968/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlDrivers/XmlDrivers_DocumentStorageDriver.cxx.o
+[4969/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd.cxx.o
+[4970/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd_ConstraintDriver.cxx.o
+[4971/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd_GeometryDriver.cxx.o
+[4972/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd_PatternStdDriver.cxx.o
+[4973/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd_PositionDriver.cxx.o
+[4974/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd_PresentationDriver.cxx.o
+[4975/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMDataXtd/XmlMDataXtd_TriangulationDriver.cxx.o
+[4976/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMNaming/XmlMNaming.cxx.o
+[4977/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMNaming/XmlMNaming_NamedShapeDriver.cxx.o
+[4978/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMNaming/XmlMNaming_NamingDriver.cxx.o
+[4979/5111] Building CXX object src/TKXml/CMakeFiles/TKXml.dir/__/XmlMNaming/XmlMNaming_Shape1.cxx.o
+[4980/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinXCAFDrivers/BinXCAFDrivers.cxx.o
+[4981/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinXCAFDrivers/BinXCAFDrivers_DocumentRetrievalDriver.cxx.o
+[4982/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinXCAFDrivers/BinXCAFDrivers_DocumentStorageDriver.cxx.o
+[4983/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc.cxx.o
+[4984/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_AssemblyItemRefDriver.cxx.o
+[4985/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_CentroidDriver.cxx.o
+[4986/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_ColorDriver.cxx.o
+[4987/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_DatumDriver.cxx.o
+[4988/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_DimTolDriver.cxx.o
+[4989/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_LengthUnitDriver.cxx.o
+[4990/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_GraphNodeDriver.cxx.o
+[4991/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_LocationDriver.cxx.o
+[4992/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_MaterialDriver.cxx.o
+[4993/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_NoteDriver.cxx.o
+[4994/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_NoteCommentDriver.cxx.o
+[4995/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_NoteBinDataDriver.cxx.o
+[4996/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_VisMaterialDriver.cxx.o
+[4997/5111] Building CXX object src/TKBinXCAF/CMakeFiles/TKBinXCAF.dir/__/BinMXCAFDoc/BinMXCAFDoc_VisMaterialToolDriver.cxx.o
+[4998/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDF/BinMDF.cxx.o
+[4999/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDF/BinMDF_ADriver.cxx.o
+[5000/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDF/BinMDF_ADriverTable.cxx.o
+[5001/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDF/BinMDF_ReferenceDriver.cxx.o
+[5002/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDF/BinMDF_TagSourceDriver.cxx.o
+[5003/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDF/BinMDF_DerivedDriver.cxx.o
+[5004/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_AsciiStringDriver.cxx.o
+[5005/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd.cxx.o
+[5006/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_BooleanArrayDriver.cxx.o
+[5007/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_BooleanListDriver.cxx.o
+[5008/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_ByteArrayDriver.cxx.o
+[5009/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_ExpressionDriver.cxx.o
+[5010/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_ExtStringListDriver.cxx.o
+[5011/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_ExtStringArrayDriver.cxx.o
+[5012/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_IntegerArrayDriver.cxx.o
+[5013/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_IntegerDriver.cxx.o
+[5014/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_IntegerListDriver.cxx.o
+[5015/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_IntPackedMapDriver.cxx.o
+[5016/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_GenericExtStringDriver.cxx.o
+[5017/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_NamedDataDriver.cxx.o
+[5018/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_RealArrayDriver.cxx.o
+[5019/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_RealDriver.cxx.o
+[5020/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_RealListDriver.cxx.o
+[5021/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_ReferenceArrayDriver.cxx.o
+[5022/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_ReferenceListDriver.cxx.o
+[5023/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_GenericEmptyDriver.cxx.o
+[5024/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_TreeNodeDriver.cxx.o
+[5025/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_UAttributeDriver.cxx.o
+[5026/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDataStd/BinMDataStd_VariableDriver.cxx.o
+[5027/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMFunction/BinMFunction.cxx.o
+[5028/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMFunction/BinMFunction_FunctionDriver.cxx.o
+[5029/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMFunction/BinMFunction_GraphNodeDriver.cxx.o
+[5030/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMFunction/BinMFunction_ScopeDriver.cxx.o
+[5031/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDocStd/BinMDocStd.cxx.o
+[5032/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinMDocStd/BinMDocStd_XLinkDriver.cxx.o
+[5033/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinObjMgt/BinObjMgt_Position.cxx.o
+[5034/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinObjMgt/BinObjMgt_Persistent.cxx.o
+[5035/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinObjMgt/BinObjMgt_RRelocationTable.cxx.o
+[5036/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinLDrivers/BinLDrivers.cxx.o
+[5037/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinLDrivers/BinLDrivers_DocumentSection.cxx.o
+[5038/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx.o
+[5039/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinDrivers/BinDrivers.cxx.o
+[5040/5111] Building CXX object src/TKBinL/CMakeFiles/TKBinL.dir/__/BinLDrivers/BinLDrivers_DocumentStorageDriver.cxx.o
+[5041/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinDrivers/BinDrivers_DocumentRetrievalDriver.cxx.o
+[5042/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd.cxx.o
+[5043/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinDrivers/BinDrivers_DocumentStorageDriver.cxx.o
+[5044/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd_ConstraintDriver.cxx.o
+[5045/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd_GeometryDriver.cxx.o
+[5046/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd_PatternStdDriver.cxx.o
+[5047/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd_PresentationDriver.cxx.o
+[5048/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd_PositionDriver.cxx.o
+[5049/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMDataXtd/BinMDataXtd_TriangulationDriver.cxx.o
+[5050/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMNaming/BinMNaming.cxx.o
+[5051/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMNaming/BinMNaming_NamedShapeDriver.cxx.o
+[5052/5111] Building CXX object src/TKBin/CMakeFiles/TKBin.dir/__/BinMNaming/BinMNaming_NamingDriver.cxx.o
+[5053/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWGltf/RWGltf_GltfLatePrimitiveArray.cxx.o
+[5054/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWGltf/RWGltf_CafReader.cxx.o
+[5055/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWGltf/RWGltf_GltfMaterialMap.cxx.o
+[5056/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWGltf/RWGltf_CafWriter.cxx.o
+[5057/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWGltf/RWGltf_GltfJsonParser.cxx.o
+[5058/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWGltf/RWGltf_TriangulationReader.cxx.o
+[5059/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh.cxx.o
+[5060/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh_CoordinateSystemConverter.cxx.o
+[5061/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh_CafReader.cxx.o
+[5062/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh_FaceIterator.cxx.o
+[5063/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh_MaterialMap.cxx.o
+[5064/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh_TriangulationReader.cxx.o
+[5065/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWMesh/RWMesh_TriangulationSource.cxx.o
+[5066/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj.cxx.o
+[5067/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_CafReader.cxx.o
+[5068/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_CafWriter.cxx.o
+[5069/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_MtlReader.cxx.o
+[5070/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_ObjMaterialMap.cxx.o
+[5071/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_ObjWriterContext.cxx.o
+[5072/5111] Linking CXX static library lib/occt/libTKXSBase.a
+[5073/5111] Linking CXX static library lib/occt/libTKBRep.a
+[5074/5111] Linking CXX static library lib/occt/libTKernel.a
+[5075/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_Reader.cxx.o
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/RWObj/RWObj_Reader.cxx:19:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/BRepMesh_DataStructureOfDelaun.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/BRepMesh/BRepMesh_DataStructureOfDelaun.hxx:21:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/IMeshData_Types.hxx:1:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/IMeshData/IMeshData_Types.hxx:36:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT-build/include/opencascade/NCollection_UBTreeFiller.hxx:1:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OCCT-prefix/src/dep_OCCT/src/NCollection/NCollection_UBTreeFiller.hxx:182:3: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  182 |   sprintf (buf,  "Checking UBTree:%8d leaves, balance =%7.2f",
+      |   ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+1 warning generated.
+[5076/5111] Building CXX object src/TKRWMesh/CMakeFiles/TKRWMesh.dir/__/RWObj/RWObj_TriangulationReader.cxx.o
+[5077/5111] Linking CXX static library lib/occt/libTKG2d.a
+[5078/5111] Linking CXX static library lib/occt/libTKMath.a
+[5079/5111] Linking CXX static library lib/occt/libTKG3d.a
+[5080/5111] Linking CXX static library lib/occt/libTKTopAlgo.a
+[5081/5111] Linking CXX static library lib/occt/libTKShHealing.a
+[5082/5111] Linking CXX static library lib/occt/libTKGeomBase.a
+[5083/5111] Linking CXX static library lib/occt/libTKGeomAlgo.a
+[5084/5111] Linking CXX static library lib/occt/libTKSTEPAttr.a
+[5085/5111] Linking CXX static library lib/occt/libTKSTEP209.a
+[5086/5111] Linking CXX static library lib/occt/libTKSTEPBase.a
+[5087/5111] Linking CXX static library lib/occt/libTKPrim.a
+[5088/5111] Linking CXX static library lib/occt/libTKSTEP.a
+[5089/5111] Linking CXX static library lib/occt/libTKIGES.a
+[5090/5111] Linking CXX static library lib/occt/libTKBO.a
+[5091/5111] Linking CXX static library lib/occt/libTKBool.a
+[5092/5111] Linking CXX static library lib/occt/libTKXCAF.a
+[5093/5111] Linking CXX static library lib/occt/libTKService.a
+[5094/5111] Linking CXX static library lib/occt/libTKCDF.a
+[5095/5111] Linking CXX static library lib/occt/libTKV3d.a
+[5096/5111] Linking CXX static library lib/occt/libTKLCAF.a
+[5097/5111] Linking CXX static library lib/occt/libTKVCAF.a
+[5098/5111] Linking CXX static library lib/occt/libTKCAF.a
+[5099/5111] Linking CXX static library lib/occt/libTKXDEIGES.a
+[5100/5111] Linking CXX static library lib/occt/libTKMesh.a
+[5101/5111] Linking CXX static library lib/occt/libTKHLR.a
+[5102/5111] Linking CXX static library lib/occt/libTKXDESTEP.a
+[5103/5111] Linking CXX static library lib/occt/libTKSTL.a
+[5104/5111] Linking CXX static library lib/occt/libTKVRML.a
+[5105/5111] Linking CXX static library lib/occt/libTKXmlXCAF.a
+[5106/5111] Linking CXX static library lib/occt/libTKXmlL.a
+[5107/5111] Linking CXX static library lib/occt/libTKXml.a
+[5108/5111] Linking CXX static library lib/occt/libTKBinXCAF.a
+[5109/5111] Linking CXX static library lib/occt/libTKBinL.a
+[5110/5111] Linking CXX static library lib/occt/libTKBin.a
+[5111/5111] Linking CXX static library lib/occt/libTKRWMesh.a
+ninja: build stopped: subcommand failed.

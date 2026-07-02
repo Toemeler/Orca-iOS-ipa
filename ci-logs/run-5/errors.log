@@ -1,0 +1,73 @@
+6368-config.status: executing depfiles commands
+6369-config.status: executing libtool commands
+6370-[109/161] Performing build step for 'dep_MPFR'
+6371:FAILED: [code=2] dep_MPFR-prefix/src/dep_MPFR-stamp/dep_MPFR-build /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_MPFR-prefix/src/dep_MPFR-stamp/dep_MPFR-build 
+6372-cd /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_MPFR-prefix/src/dep_MPFR && make -j && /opt/homebrew/bin/cmake -E touch /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_MPFR-prefix/src/dep_MPFR-stamp/dep_MPFR-build
+6373-Making all in doc
+6374-restore=: && backupdir=".am$$" && \
+6375-	am__cwd=`pwd` && CDPATH="${ZSH_VERSION+.}:" && cd . && \
+6376-	rm -rf $backupdir && mkdir $backupdir && \
+6377-	if (/bin/sh '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_MPFR-prefix/src/dep_MPFR/missing' makeinfo --version) >/dev/null 2>&1; then \
+6378-	  for f in mpfr.info mpfr.info-[0-9] mpfr.info-[0-9][0-9] mpfr.i[0-9] mpfr.i[0-9][0-9]; do \
+6379-	    if test -f $f; then mv $f $backupdir; restore=mv; else :; fi; \
+6380-	  done; \
+6381-	else :; fi && \
+6382-	cd "$am__cwd"; \
+6383-	if /bin/sh '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_MPFR-prefix/src/dep_MPFR/missing' makeinfo  --enable-encoding -I . \
+6384-	 -o mpfr.info mpfr.texi; \
+6385-	then \
+6386-	  rc=0; \
+6387-	  CDPATH="${ZSH_VERSION+.}:" && cd .; \
+6388-	else \
+6389-	  rc=$?; \
+6390-	  CDPATH="${ZSH_VERSION+.}:" && cd . && \
+6391-	  $restore $backupdir/* `echo "./mpfr.info" | sed 's|[^/]*$||'`; \
+6392-	fi; \
+6393-	rm -rf $backupdir; exit $rc
+6394-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_MPFR-prefix/src/dep_MPFR/missing: line 85: makeinfo: command not found
+6395-WARNING: 'makeinfo' is missing on your system.
+6396-         You should only need it if you modified a '.texi' file, or
+6397-         any other file indirectly affecting the aspect of the manual.
+6398-         You might want to install the Texinfo package:
+6399-         <https://www.gnu.org/software/texinfo/>
+6400-         The spurious makeinfo call might also be the consequence of
+6401-         using a buggy 'make' (AIX, DU, IRIX), in which case you might
+6402-         want to install GNU make:
+6403-         <https://www.gnu.org/software/make/>
+6404:make[1]: *** [mpfr.info] Error 127
+6405:make: *** [all-recursive] Error 1
+6406-[110/161] Performing configure step for 'dep_CURL'
+6407--- The C compiler identification is AppleClang 17.0.0.17000013
+6408--- Detecting C compiler ABI info
+6409--- Detecting C compiler ABI info - done
+6410--- Check for working C compiler: /usr/bin/cc - skipped
+6411--- Detecting C compile features
+6412--- Detecting C compile features - done
+6413--- curl version=[7.75.0-DEV]
+6414--- Performing Test HAVE_SOCKADDR_IN6_SIN6_ADDR
+6415--- Performing Test HAVE_SOCKADDR_IN6_SIN6_ADDR - Success
+6416--- Performing Test HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID
+6417--- Performing Test HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID - Success
+6418--- Found Perl: /opt/homebrew/bin/perl (found version "5.42.2")
+6419--- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+6420--- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+6421--- Found Threads: TRUE
+6422--- Looking for dlopen in ;
+6423--- Looking for dlopen in ; - found
+6424--- Looking for connect in socket;
+6425--- Looking for connect in socket; - not found
+6426--- Looking for gethostbyname in c
+6427--- Looking for gethostbyname in c - found
+6428--- Looking for gethostname
+6429--- Looking for gethostname - found
+6430--- Found OpenSSL: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libcrypto.a (found version "1.1.1w")
+6431--- Looking for openssl/crypto.h
+6432--- Looking for openssl/crypto.h - found
+6433--- Looking for openssl/err.h
+6434--- Looking for openssl/err.h - found
+6435--- Looking for openssl/pem.h
+6436--- Looking for openssl/pem.h - found
+6437--- Looking for openssl/rsa.h
+6438--- Looking for openssl/rsa.h - found
+6439--- Looking for openssl/ssl.h
+6440--- Looking for openssl/ssl.h - found

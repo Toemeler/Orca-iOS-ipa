@@ -1,0 +1,95 @@
+name: iOS Step 2 - wxWidgets (iPhone port) + GLES canvas proof
+
+# Builds Orca's pinned wxWidgets fork for iOS using wx's built-in iPhone port,
+# then compiles a minimal wx app (frame + wxGLCanvas drawing a GLES3 triangle),
+# installs it into a booted iPad simulator, launches it, and captures a
+# screenshot as the artifact. Proves the GUI foundation before linking Orca.
+
+on:
+  workflow_dispatch:
+    inputs:
+      wx_ref:
+        description: "SoftFever/Orca-deps-wxWidgets ref"
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-wx:
+    name: wxWidgets iPhone port + smoke app
+    runs-on: macos-15
+    timeout-minutes: 180
+
+    env:
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: iphonesimulator
+
+    steps:
+      - name: "[1/7] Environment"
+        run: |
+          set -x
+          xcodebuild -version && xcrun --sdk $SDK --show-sdk-path
+
+      - name: "[2/7] Checkout this repo"
+        uses: actions/checkout@v4
+
+      - name: "[3/7] Fetch wx fork @ pinned ref"
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+
+      - name: "[4/7] Build wxWidgets for iOS (static, iPhone port)"
+        run: |
+          set -euxo pipefail
+          cd wx && mkdir -p build-ios && cd build-ios
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DwxBUILD_SHARED=OFF \
+            -DwxBUILD_PRECOMP=OFF \
+            -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON \
+            -DwxUSE_WEBVIEW=OFF \
+            -DwxUSE_MEDIACTRL=OFF \
+            -DwxUSE_SECRETSTORE=OFF \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX"
+          ninja && ninja install
+        # Failing units get patches in patches/step2/ (this is where bucket-4
+        # items from analysis/GAP.md land, one patch per subsystem).
+
+      - name: "[5/7] Build smoke app (frame + wxGLCanvas GLES3 triangle)"
+        run: |
+          set -euxo pipefail
+          cd smoke-app && ./build.sh "$PREFIX" "$SDK" "$IOS_MIN"
+
+      - name: "[6/7] Run in iPad simulator + screenshot"
+        run: |
+          set -euxo pipefail
+          UDID=$(xcrun simctl create "wx-test" \
+            "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" \
+            $(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1))
+          xcrun simctl boot "$UDID"
+          xcrun simctl install "$UDID" smoke-app/build/WxSmoke.app
+          xcrun simctl launch "$UDID" org.orca-ios.wxsmoke
+          sleep 8
+          mkdir -p artifact
+          xcrun simctl io "$UDID" screenshot artifact/wx-on-ipad.png
+
+      - name: "[7/7] Upload artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-step2-wx
+          path: artifact/
+          if-no-files-found: error

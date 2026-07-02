@@ -1,0 +1,129 @@
+name: iOS Step 1 - Core deps + libslic3r CLI (slice on iOS simulator)
+
+# First foundational step of the OrcaSlicer iOS build.
+# Cross-compiles the non-GUI dependency chain and libslic3r for the iOS
+# *simulator* (arm64), builds a minimal CLI, then runs it inside a booted
+# iPad simulator to slice a test STL to G-code. The G-code is the artifact:
+# proof that the full slicing engine runs on iOS before any GUI work.
+
+on:
+  workflow_dispatch:
+    inputs:
+      orca_ref:
+        description: "OrcaSlicer ref to build"
+        required: false
+        default: "395e070a0e675fd4723f93967cefede730c482d9"
+      ios_min:
+        description: "Minimum iOS deployment version"
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-core:
+    name: Build core + slice on iPad simulator
+    runs-on: macos-15
+    timeout-minutes: 300
+
+    env:
+      ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/ios-prefix
+      SDK: iphonesimulator
+
+    steps:
+      - name: "[1/9] Toolchain + environment info"
+        run: |
+          set -x
+          sw_vers; uname -a
+          xcodebuild -version
+          xcrun --sdk $SDK --show-sdk-version
+          xcrun --sdk $SDK --show-sdk-path
+          xcrun simctl list devicetypes | grep -i ipad | head -5
+
+      - name: "[2/9] Checkout this repo"
+        uses: actions/checkout@v4
+
+      - name: "[3/9] Install build tools"
+        run: |
+          set -euxo pipefail
+          brew install cmake ninja automake autoconf libtool nasm
+
+      - name: "[4/9] Fetch OrcaSlicer @ pinned ref"
+        run: |
+          set -euxo pipefail
+          git clone https://github.com/SoftFever/OrcaSlicer.git orca
+          cd orca && git checkout "$ORCA_REF"
+          # apply any local patches (ordered)
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch; do
+            git apply --verbose "$p"
+          done
+
+      - name: "[5/9] Build dependency superbuild for iOS (non-GUI subset)"
+        run: |
+          set -euxo pipefail
+          cd orca/deps
+          mkdir -p build && cd build
+          # Reuse Orca's own deps superbuild, retargeted at the iOS SDK.
+          # GUI-only deps (wxWidgets, GLEW, GLFW, OpenCSG) are excluded in step 1.
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DDESTDIR="$PREFIX" \
+            -DDEP_WX_GTK3=OFF \
+            -DORCA_INCLUDE_DEBUG_INFO=OFF \
+            -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" \
+            -DDEPS_IGNORE_GUI=ON
+          ninja
+        # NOTE: expected to need iteration. Every failing sub-dep gets either a
+        # cmake cache tweak here or a patch in patches/step1/. Track progress in
+        # docs/STEP1-STATUS.md.
+
+      - name: "[6/9] Configure + build libslic3r CLI (SLIC3R_GUI=0)"
+        run: |
+          set -euxo pipefail
+          cd orca
+          mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DSLIC3R_GUI=0 \
+            -DSLIC3R_STATIC=1 \
+            -DCMAKE_PREFIX_PATH="$PREFIX/usr/local" \
+            -DCMAKE_BUILD_TYPE=Release
+          ninja OrcaSlicer
+
+      - name: "[7/9] Boot iPad simulator"
+        run: |
+          set -euxo pipefail
+          UDID=$(xcrun simctl create "orca-test" \
+            "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" \
+            $(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1))
+          xcrun simctl boot "$UDID"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: "[8/9] Slice a real STL *on iOS* and verify G-code"
+        run: |
+          set -euxo pipefail
+          BIN=$(find orca/build -name "orcaslicer*" -type f -perm +111 | head -1)
+          cp test-assets/calibration-cube.stl /tmp/cube.stl
+          xcrun simctl spawn "$UDID" "$BIN" \
+            --load-defaults --export-gcode /tmp/cube.stl --output /tmp/cube.gcode || \
+          xcrun simctl spawn "$UDID" "$BIN" --help
+          test -s /tmp/cube.gcode && head -20 /tmp/cube.gcode
+          mkdir -p artifact && cp /tmp/cube.gcode artifact/ 2>/dev/null || true
+          cp "$BIN" artifact/
+
+      - name: "[9/9] Upload artifact (iOS binary + G-code sliced on iOS)"
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-step1-core-cli
+          path: artifact/
+          if-no-files-found: error

@@ -103,6 +103,8 @@ jobs:
           for f in "$B"/CMakeFiles/CMakeError.log "$B"/CMakeFiles/CMakeOutput.log /tmp/step5-*.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
+          # extract real error context from the full build log
+          grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/step5-ninja.log | head -c 60000 > "$D/errors.log" || true
           find "$B" \( -name "*-configure*.log" -o -name "*-build*.log" -o -name "*err.log" \) 2>/dev/null | while read -r f; do
             tail -c 20000 "$f" > "$D/$(echo "$f" | tr '/' '_' | tail -c 80)"
           done

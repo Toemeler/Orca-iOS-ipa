@@ -75,11 +75,20 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DDESTDIR="$PREFIX" \
-            -DDEP_WX_GTK3=OFF \
-            -DORCA_INCLUDE_DEBUG_INFO=OFF \
-            -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" \
-            -DDEPS_IGNORE_GUI=ON
-          ninja
+            -DDEP_DOWNLOAD_DIR="$HOME/dep-dl"
+          # Non-GUI subset only (superbuild has no gate for this, so we build
+          # explicit targets and skip dep_wxWidgets/dep_GLFW/dep_GLEW/dep_OpenCSG).
+          WANT="dep_ZLIB dep_PNG dep_EXPAT dep_FREETYPE dep_Boost dep_TBB \
+                dep_OpenSSL dep_CURL dep_Cereal dep_Eigen dep_NLopt dep_Qhull \
+                dep_GMP dep_MPFR dep_CGAL dep_Blosc dep_OpenEXR dep_OpenVDB \
+                dep_Draco dep_libnoise dep_OCCT dep_OpenCV"
+          ninja -t targets all > /tmp/targets.txt
+          BUILD=""
+          for t in $WANT; do
+            grep -q "^${t}:" /tmp/targets.txt && BUILD="$BUILD $t" || echo "skip (not generated): $t"
+          done
+          echo "Building:$BUILD"
+          ninja $BUILD
         # NOTE: expected to need iteration. Every failing sub-dep gets either a
         # cmake cache tweak here or a patch in patches/step1/. Track progress in
         # docs/STEP1-STATUS.md.

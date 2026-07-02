@@ -75,7 +75,7 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DDESTDIR="$PREFIX" \
-            -DDEP_DOWNLOAD_DIR="$HOME/dep-dl"
+            -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" 2>&1 | tee /tmp/step5-configure.log
           # Non-GUI subset only (superbuild has no gate for this, so we build
           # explicit targets and skip dep_wxWidgets/dep_GLFW/dep_GLEW/dep_OpenCSG).
           WANT="dep_ZLIB dep_PNG dep_EXPAT dep_FREETYPE dep_Boost dep_TBB \
@@ -88,7 +88,24 @@ jobs:
             grep -q "^${t}:" /tmp/targets.txt && BUILD="$BUILD $t" || echo "skip (not generated): $t"
           done
           echo "Building:$BUILD"
-          ninja $BUILD
+          ninja $BUILD 2>&1 | tee /tmp/step5-ninja.log
+        # On failure, the step below pushes log tails to ci-logs/ for diagnosis.
+
+      - name: "[5b] Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          B=orca/deps/build
+          for f in "$B"/CMakeFiles/CMakeError.log "$B"/CMakeFiles/CMakeOutput.log /tmp/step5-*.log; do
+            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
+          done
+          find "$B" \( -name "*-configure*.log" -o -name "*-build*.log" -o -name "*err.log" \) 2>/dev/null | while read -r f; do
+            tail -c 20000 "$f" > "$D/$(echo "$f" | tr '/' '_' | tail -c 80)"
+          done
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add ci-logs && git commit -m "ci logs run ${GITHUB_RUN_NUMBER}" && git push
         # NOTE: expected to need iteration. Every failing sub-dep gets either a
         # cmake cache tweak here or a patch in patches/step1/. Track progress in
         # docs/STEP1-STATUS.md.

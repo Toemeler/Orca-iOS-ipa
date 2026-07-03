@@ -1,0 +1,67 @@
+-- CMAKE_OSX_DEPLOYMENT_TARGET: 17.0
+-- The C compiler identification is AppleClang 17.0.0.17000013
+-- The CXX compiler identification is AppleClang 17.0.0.17000013
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Git: /opt/homebrew/bin/git (found version "2.55.0")
+-- Orca: IS_CROSS_COMPILE: FALSE
+-- SLIC3R_ASAN: OFF
+-- SLIC3R_BUILD_SANDBOXES: OFF
+-- SLIC3R_DESKTOP_INTEGRATION: ON
+-- SLIC3R_FHS: OFF
+-- SLIC3R_GTK: 3
+-- SLIC3R_GUI: 0
+-- SLIC3R_MSVC_COMPILE_PARALLEL: ON
+-- SLIC3R_MSVC_PDB: ON
+-- SLIC3R_PCH: ON
+-- SLIC3R_PROFILE: OFF
+-- SLIC3R_STATIC: 1
+-- Automatically setting CMAKE_INSTALL_PREFIX
+-- CMAKE_INSTALL_PREFIX: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/OrcaSlicer
+-- DEP_BUILD_DIR: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build (generated automatically and saved to cache)
+-- CMAKE_PREFIX_PATH: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local (from cache or command line)
+-- PROJECT_SOURCE_DIR: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca
+-- CMAKE_MODULE_PATH: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/cmake/modules/
+OS X SDK Path: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk
+OS X Deployment Target: 17.0
+-- Performing Test HAS_WNO_ERROR_ENUM_CONSTEXPR_CONV
+-- Performing Test HAS_WNO_ERROR_ENUM_CONSTEXPR_CONV - Success
+-- LIBDIR: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src
+-- LIBDIR_BIN: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Performing Test Iconv_IS_BUILT_IN
+-- Performing Test Iconv_IS_BUILT_IN - Failed
+-- Found Iconv: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libiconv.tbd
+-- Found ZLIB: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libz.tbd (found version "1.2.12")
+-- Looking for lzma_auto_decoder in /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd
+-- Looking for lzma_auto_decoder in /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd - found
+-- Looking for lzma_easy_encoder in /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd
+-- Looking for lzma_easy_encoder in /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd - found
+-- Looking for lzma_lzma_preset in /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd
+-- Looking for lzma_lzma_preset in /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd - found
+-- Found LibLZMA: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/liblzma.tbd (found version "5.8.3")
+-- TBB found in /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/cmake/TBB
+-- Found OpenSSL: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libcrypto.a (found version "1.1.1w")
+-- Found CURL: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libcurl.a (found version "7.75.0-DEV") 
+-- Found Freetype: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libfreetype.a (found version "2.12.1")
+-- Found EXPAT: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libexpat.tbd (found version "2.7.1")
+-- Found PNG: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libpng.a (found version "1.6.35")
+CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
+  Could NOT find OpenGL (missing: OPENGL_INCLUDE_DIR)
+Call Stack (most recent call first):
+  /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:654 (_FPHSA_FAILURE_MESSAGE)
+  /opt/homebrew/share/cmake/Modules/FindOpenGL.cmake:704 (find_package_handle_standard_args)
+  CMakeLists.txt:692 (find_package)
+
+
+-- Configuring incomplete, errors occurred!

@@ -64,6 +64,7 @@ jobs:
             -DwxBUILD_SAMPLES=OFF \
             -DwxUSE_OPENGL=ON \
             -DwxUSE_WEBVIEW=OFF \
+            -DwxUSE_XRC=OFF \
             -DwxUSE_MEDIACTRL=OFF \
             -DwxUSE_SECRETSTORE=OFF \
             -DCMAKE_INSTALL_PREFIX="$PREFIX" 2>&1 | tee /tmp/wx-configure.log

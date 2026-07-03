@@ -36,9 +36,9 @@ int main(int argc, char **argv)
 
     Print print;
     print.apply(model, config);
-    std::string warn = print.validate();
-    if (!warn.empty())
-        std::printf("validate: %s\n", warn.c_str());
+    StringObjectException warn = print.validate();
+    if (!warn.string.empty())
+        std::printf("validate: %s\n", warn.string.c_str());
 
     try {
         print.process();

@@ -128,7 +128,6 @@ jobs:
       - name: "[6/9] Configure + build libslic3r CLI (SLIC3R_GUI=0)"
         run: |
           set -euxo pipefail
-          cp "$GITHUB_WORKSPACE/smoke-cli/smoke_cli.cpp" orca/src/smoke_cli.cpp
           echo "== packages installed in prefix ==" && ls "$PREFIX/usr/local/lib/cmake" 2>/dev/null || true
           find "$PREFIX" -name "BoostConfig.cmake" -o -name "Boost-*.cmake" | head -3 || true
           cd orca

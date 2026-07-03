@@ -126,6 +126,7 @@ jobs:
       - name: "[6/9] Configure + build libslic3r CLI (SLIC3R_GUI=0)"
         run: |
           set -euxo pipefail
+          cp "$GITHUB_WORKSPACE/smoke-cli/smoke_cli.cpp" orca/src/smoke_cli.cpp
           echo "== packages installed in prefix ==" && ls "$PREFIX/usr/local/lib/cmake" 2>/dev/null || true
           find "$PREFIX" -name "BoostConfig.cmake" -o -name "Boost-*.cmake" | head -3 || true
           cd orca
@@ -144,7 +145,7 @@ jobs:
             -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
             -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step6-configure.log
-          ninja OrcaSlicer 2>&1 | tee /tmp/step6-ninja.log
+          ninja orca_smoke_cli 2>&1 | tee /tmp/step6-ninja.log
 
       - name: "[7/9] Boot iPad simulator"
         run: |
@@ -158,11 +159,9 @@ jobs:
       - name: "[8/9] Slice a real STL *on iOS* and verify G-code"
         run: |
           set -euxo pipefail
-          BIN=$(find orca/build -name "orcaslicer*" -type f -perm +111 | head -1)
+          BIN=$(find orca/build -name "orca_smoke_cli" -type f -perm +111 | head -1)
           cp test-assets/calibration-cube.stl /tmp/cube.stl
-          xcrun simctl spawn "$UDID" "$BIN" \
-            --load-defaults --export-gcode /tmp/cube.stl --output /tmp/cube.gcode || \
-          xcrun simctl spawn "$UDID" "$BIN" --help
+          xcrun simctl spawn "$UDID" "$BIN" /tmp/cube.stl /tmp/cube.gcode 2>&1 | tee /tmp/step8-slice.log
           test -s /tmp/cube.gcode && head -20 /tmp/cube.gcode
           mkdir -p artifact && cp /tmp/cube.gcode artifact/ 2>/dev/null || true
           cp "$BIN" artifact/
@@ -184,7 +183,7 @@ jobs:
                    orca/build/CMakeFiles/CMakeError.log orca/deps/build/CMakeFiles/CMakeError.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f" | sed 's/^CMake/step6-CMake/')"
           done
-          for f in /tmp/step5-ninja.log /tmp/step6-ninja.log; do
+          for f in /tmp/step5-ninja.log /tmp/step6-ninja.log /tmp/step8-slice.log; do
             [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 60000 > "$D/$(basename "$f" .log)-errors.log"
           done
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"

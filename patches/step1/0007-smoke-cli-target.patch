@@ -1,0 +1,14 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 73c767d..a2bc55b 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -288,3 +288,9 @@ if (WIN32)
+ else ()
+     install(TARGETS OrcaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
+ endif ()
++
++# Orca-iOS-ipa step 1: minimal slicing CLI for GUI-less cross builds.
++if (NOT SLIC3R_GUI AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/smoke_cli.cpp)
++    add_executable(orca_smoke_cli ${CMAKE_CURRENT_SOURCE_DIR}/smoke_cli.cpp)
++    target_link_libraries(orca_smoke_cli libslic3r libslic3r_cgal)
++endif ()

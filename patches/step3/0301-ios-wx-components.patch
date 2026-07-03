@@ -1,0 +1,14 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 73c767d..70a5487 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -32,6 +32,9 @@ if (SLIC3R_GUI)
+     if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+         set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
+         find_package(wxWidgets 3.3 REQUIRED COMPONENTS base core adv html gl aui net media webview)
++    elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        # iOS: no wxWebView/wxMediaCtrl backends yet; shimmed at source level.
++        find_package(wxWidgets 3.3 CONFIG REQUIRED COMPONENTS html adv gl core base aui net)
+     else ()
+         find_package(wxWidgets 3.3 CONFIG REQUIRED COMPONENTS html adv gl core base webview aui net media)
+     endif ()

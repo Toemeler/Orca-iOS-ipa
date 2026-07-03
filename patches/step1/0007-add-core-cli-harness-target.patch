@@ -1,5 +1,5 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 73c767d..4802b37 100644
+index 73c767d..c5c722c 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -288,3 +288,10 @@ if (WIN32)
@@ -8,8 +8,8 @@ index 73c767d..4802b37 100644
  endif ()
 +
 +# Orca-iOS-ipa step-1 harness: minimal CLI linking libslic3r to prove the
-+# slicing engine on iOS. Only built when the source file has been copied in.
++# slicing engine on iOS. Only built when the sources have been copied in.
 +if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/orca-core-cli.cpp)
-+    add_executable(orca-core-cli orca-core-cli.cpp)
-+    target_link_libraries(orca-core-cli libslic3r boost_headeronly libcurl OpenSSL::SSL OpenSSL::Crypto)
++    add_executable(orca-core-cli orca-core-cli.cpp nanosvg_impl.cpp)
++    target_link_libraries(orca-core-cli libslic3r boost_headeronly libcurl OpenSSL::SSL OpenSSL::Crypto nanosvg)
 +endif ()

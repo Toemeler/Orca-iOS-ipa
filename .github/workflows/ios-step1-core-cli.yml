@@ -63,7 +63,7 @@ jobs:
             git apply --verbose "$p"
           done
           # step-1 slicing harness (built via patch 0007's guarded target)
-          cp "$GITHUB_WORKSPACE"/ios/orca-core-cli.cpp src/
+          cp "$GITHUB_WORKSPACE"/ios/orca-core-cli.cpp "$GITHUB_WORKSPACE"/ios/nanosvg_impl.cpp src/
 
       - name: "[4b] Restore deps cache (incremental across runs)"
         uses: actions/cache/restore@v4

@@ -1,0 +1,12 @@
+108-      |      ^
+109-32 warnings generated.
+110-[13/261] Checking source files encodings for target libslic3r
+111:FAILED: [code=134] src/libslic3r/encoding-check-libslic3r.stamp /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r/encoding-check-libslic3r.stamp 
+112-cd /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r && /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/encoding-check.app/encoding-check libslic3r @/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r/encoding-check-libslic3r.rsp && /opt/homebrew/bin/cmake -E touch /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r/encoding-check-libslic3r.stamp
+113-dyld[20733]: DYLD_ROOT_PATH not set for simulator program
+114-/bin/sh: line 1: 20733 Abort trap: 6           /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/encoding-check.app/encoding-check libslic3r @/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r/encoding-check-libslic3r.rsp
+115-[14/261] Building CXX object deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o
+116-[15/261] Building CXX object deps_src/mcut/CMakeFiles/mcut.dir/source/preproc.cpp.o
+117-[16/261] Building CXX object deps_src/mcut/CMakeFiles/mcut.dir/source/frontend.cpp.o
+118-[17/261] Building CXX object deps_src/mcut/CMakeFiles/mcut.dir/source/kernel.cpp.o
+119-ninja: build stopped: subcommand failed.

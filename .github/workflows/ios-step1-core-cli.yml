@@ -49,7 +49,8 @@ jobs:
       - name: "[3/9] Install build tools"
         run: |
           set -euxo pipefail
-          brew install cmake ninja automake autoconf libtool nasm
+          brew install cmake ninja automake autoconf libtool nasm texinfo
+          echo "$(brew --prefix texinfo)/bin" >> "$GITHUB_PATH"
 
       - name: "[4/9] Fetch OrcaSlicer @ pinned ref"
         run: |
@@ -62,10 +63,27 @@ jobs:
             git apply --verbose "$p"
           done
 
+      - name: "[4b] Restore deps cache (incremental across runs)"
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          key: ios-deps-v1-${{ github.run_number }}
+          restore-keys: ios-deps-v1-
+
       - name: "[5/9] Build dependency superbuild for iOS (non-GUI subset)"
         run: |
           set -euxo pipefail
           cd orca/deps
+          # wipe any dep that didn't reach its install stamp (stale partial state)
+          if [ -d build ]; then
+            for d in build/dep_*-prefix; do
+              [ -d "$d" ] || continue
+              ls "$d"/src/*-stamp/*-install >/dev/null 2>&1 || { echo "reset partial: $d"; rm -rf "$d"; }
+            done
+          fi
           mkdir -p build && cd build
           # Reuse Orca's own deps superbuild, retargeted at the iOS SDK.
           # GUI-only deps (wxWidgets, GLEW, GLFW, OpenCSG) are excluded in step 1.
@@ -110,6 +128,16 @@ jobs:
           done
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
           git add ci-logs && git commit -m "ci logs run ${GITHUB_RUN_NUMBER}" && git push
+
+      - name: "[5c] Save deps cache (even on failure)"
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          key: ios-deps-v1-${{ github.run_number }}
         # NOTE: expected to need iteration. Every failing sub-dep gets either a
         # cmake cache tweak here or a patch in patches/step1/. Track progress in
         # docs/STEP1-STATUS.md.

@@ -1,0 +1,60 @@
+606-      |             ^
+607-1 warning generated.
+608-[293/1138] Building CXX object libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filefn.cpp.o
+609:FAILED: [code=1] libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filefn.cpp.o 
+610-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxUSE_BASE=1 -DwxUSE_GUI=0 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/pcre/src/wx -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_cocoa-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-deprecated-declarations -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filefn.cpp.o -MF libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filefn.cpp.o.d -o libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filefn.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filefn.cpp
+611-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filefn.cpp:19:
+612-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+613-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+614-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+615-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+616-      |             ^
+617-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filefn.cpp:52:
+618-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:4:
+619:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:46:10: fatal error: 'Carbon/Carbon.h' file not found
+620-   46 | #include <Carbon/Carbon.h>
+621-      |          ^~~~~~~~~~~~~~~~~
+622-1 warning and 1 error generated.
+623-[294/1138] Building CXX object libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/fileconf.cpp.o
+624-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fileconf.cpp:16:
+625-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+626-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+627-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+628-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+629-      |             ^
+630-1 warning generated.
+631-[295/1138] Building CXX object libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filename.cpp.o
+632:FAILED: [code=1] libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filename.cpp.o 
+633-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxUSE_BASE=1 -DwxUSE_GUI=0 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/pcre/src/wx -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_cocoa-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-deprecated-declarations -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filename.cpp.o -MF libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filename.cpp.o.d -o libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filename.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filename.cpp
+634-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filename.cpp:71:
+635-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+636-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+637-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+638-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+639-      |             ^
+640-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filename.cpp:110:
+641-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:4:
+642:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:46:10: fatal error: 'Carbon/Carbon.h' file not found
+643-   46 | #include <Carbon/Carbon.h>
+644-      |          ^~~~~~~~~~~~~~~~~
+645-1 warning and 1 error generated.
+646-[296/1138] Building CXX object libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filtall.cpp.o
+647-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filtall.cpp:10:
+648-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+649-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+650-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+651-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+652-      |             ^
+653-1 warning generated.
+654-[297/1138] Building CXX object libs/base/CMakeFiles/wxbase.dir/__/__/__/__/src/common/filesys.cpp.o
+655-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filesys.cpp:9:
+656-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+657-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+658-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+659-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+660-      |             ^
+661-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filesys.cpp:55:19: warning: unused variable 'mime' [-Wunused-variable]
+662-   55 |     wxString ext, mime;
+663-      |                   ^~~~
+664-2 warnings generated.
+665-ninja: build stopped: subcommand failed.

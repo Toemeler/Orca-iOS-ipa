@@ -1,0 +1,36 @@
+diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
+index 42dcc14..3b130cb 100644
+--- a/src/libslic3r/utils.cpp
++++ b/src/libslic3r/utils.cpp
+@@ -32,7 +32,12 @@
+ 	#endif
+ 	#ifdef __APPLE__
+ 		#include <mach/mach.h>
+-		#include <libproc.h>
++		#include <TargetConditionals.h>
++		#if TARGET_OS_OSX
++			#include <libproc.h>
++		#else
++			#include <mach-o/dyld.h>
++		#endif
+ 	#endif
+ 	#ifdef __linux__
+ 		#include <sys/stat.h>
+@@ -1266,10 +1271,17 @@ std::string get_process_name(int pid)
+ 		p = q;
+ 	return decode_path(p);
+ #elif defined __APPLE__
++#if TARGET_OS_OSX
+ 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE] = { 0 };
+ 	if (pid == 0) pid = ::getpid();
+ 	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
+ 	if (ret <= 0) return {};
++#else
++	// iOS: processes other than self cannot be inspected; resolve own path via dyld.
++	char pathbuf[1024] = { 0 };
++	uint32_t bufsize = sizeof(pathbuf);
++	if (_NSGetExecutablePath(pathbuf, &bufsize) != 0) return {};
++#endif
+ 	char* p = pathbuf;
+ 	while (auto q = strchr(p + 1, '/')) p = q;
+ 	return p;

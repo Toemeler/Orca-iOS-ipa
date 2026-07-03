@@ -1,0 +1,26 @@
+diff --git a/src/libslic3r/GCodeSender.cpp b/src/libslic3r/GCodeSender.cpp
+index 275dd61..7144f31 100644
+--- a/src/libslic3r/GCodeSender.cpp
++++ b/src/libslic3r/GCodeSender.cpp
+@@ -13,8 +13,11 @@
+ #endif
+ #ifdef __APPLE__
+ #include <sys/ioctl.h>
++#include <TargetConditionals.h>
++#if TARGET_OS_OSX
+ #include <IOKit/serial/ioss.h>
+ #endif
++#endif
+ #ifdef __linux__
+ #include <sys/ioctl.h>
+ #include <fcntl.h>
+@@ -132,7 +135,9 @@ GCodeSender::set_baud_rate(unsigned int baud_rate)
+         ::tcgetattr(handle, &ios);
+         ::cfsetspeed(&ios, baud_rate);
+         speed_t newSpeed = baud_rate;
++#if TARGET_OS_OSX
+         ioctl(handle, IOSSIOSPEED, &newSpeed);
++#endif
+         ::tcsetattr(handle, TCSANOW, &ios);
+ #elif __linux__
+         termios2 ios;

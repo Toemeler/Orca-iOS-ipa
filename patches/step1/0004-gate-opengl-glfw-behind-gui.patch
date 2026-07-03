@@ -1,8 +1,20 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8dcd4cf..656adce 100644
+index 8dcd4cf..5a05c56 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -688,14 +688,20 @@ endif ()
+@@ -154,6 +154,11 @@ if (APPLE)
+     if (CMAKE_OSX_ARCHITECTURES AND _arch_idx LESS 0)
+         set(IS_CROSS_COMPILE TRUE)
+     endif ()
++    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        # Host is macOS, target is iOS: always a cross build even on same arch,
++        # so host-run build helpers (encoding-check) must be disabled.
++        set(IS_CROSS_COMPILE TRUE)
++    endif ()
+     if (CMAKE_MACOSX_BUNDLE)
+         set(CMAKE_INSTALL_RPATH @executable_path/../Frameworks)
+     endif()
+@@ -688,14 +693,20 @@ endif ()
  
  find_package(PNG REQUIRED)
  

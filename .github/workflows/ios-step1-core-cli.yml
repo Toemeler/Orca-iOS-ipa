@@ -109,25 +109,6 @@ jobs:
           done
           echo "Building:$BUILD"
           ninja $BUILD 2>&1 | tee /tmp/step5-ninja.log
-        # On failure, the step below pushes log tails to ci-logs/ for diagnosis.
-
-      - name: "[5b] Publish failure logs to repo (ci-logs/)"
-        if: failure()
-        run: |
-          set -ux
-          D="ci-logs/run-${GITHUB_RUN_NUMBER}"
-          mkdir -p "$D"
-          B=orca/deps/build
-          for f in "$B"/CMakeFiles/CMakeError.log "$B"/CMakeFiles/CMakeOutput.log /tmp/step5-*.log; do
-            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
-          done
-          # extract real error context from the full build log
-          grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/step5-ninja.log | head -c 60000 > "$D/errors.log" || true
-          find "$B" \( -name "*-configure*.log" -o -name "*-build*.log" -o -name "*err.log" \) 2>/dev/null | while read -r f; do
-            tail -c 20000 "$f" > "$D/$(echo "$f" | tr '/' '_' | tail -c 80)"
-          done
-          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
-          git add ci-logs && git commit -m "ci logs run ${GITHUB_RUN_NUMBER}" && git push
 
       - name: "[5c] Save deps cache (even on failure)"
         if: always()
@@ -155,8 +136,8 @@ jobs:
             -DSLIC3R_GUI=0 \
             -DSLIC3R_STATIC=1 \
             -DCMAKE_PREFIX_PATH="$PREFIX/usr/local" \
-            -DCMAKE_BUILD_TYPE=Release
-          ninja OrcaSlicer
+            -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step6-configure.log
+          ninja OrcaSlicer 2>&1 | tee /tmp/step6-ninja.log
 
       - name: "[7/9] Boot iPad simulator"
         run: |
@@ -185,3 +166,20 @@ jobs:
           name: orca-ios-step1-core-cli
           path: artifact/
           if-no-files-found: error
+
+      - name: "Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/step5-configure.log /tmp/step6-configure.log \
+                   orca/build/CMakeFiles/CMakeError.log orca/deps/build/CMakeFiles/CMakeError.log; do
+            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f" | sed 's/^CMake/step6-CMake/')"
+          done
+          for f in /tmp/step5-ninja.log /tmp/step6-ninja.log; do
+            [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 60000 > "$D/$(basename "$f" .log)-errors.log"
+          done
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git pull --rebase || true
+          git add ci-logs && git commit -m "ci logs run ${GITHUB_RUN_NUMBER}" && git push

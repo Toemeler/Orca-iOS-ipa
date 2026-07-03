@@ -1,0 +1,169 @@
+# HANDOFF: OrcaSlicer → iPadOS native port (Orca-iOS-ipa)
+
+Give this document to a new chat to continue the work. Everything needed is here.
+
+## Goal (user's requirement)
+
+Build a **real, natively compiled OrcaSlicer for iPadOS** — a 1:1 copy of the desktop
+(macOS) app. Nothing missing, NOT touch-optimized: keyboard + mouse/trackpad driven,
+same as desktop. No virtualization, no streaming. Deliverable: unsigned `.ipa` built by
+GitHub Actions for sideloading (AltStore/SideStore/TrollStore). Follow the staged-CI
+pattern of the user's other repos: `Toemeler/blender-iOS-ipa` and `Toemeler/Rayforge-iOS-ipa`
+(each stage = one workflow producing a verifiable artifact; failures become ordered patches).
+
+## Access
+
+- Repo: **github.com/Toemeler/Orca-iOS-ipa** (user: Toemeler, id 87390876)
+- Fine-grained PAT (user-provided for this task; push + API + workflow dispatch):
+  `<PROVIDED-BY-USER-IN-CHAT (fine-grained PAT for this repo)>`
+- Auth pattern used: `https://Toemeler:$TOKEN@github.com/Toemeler/Orca-iOS-ipa.git`,
+  API `Authorization: Bearer $TOKEN`.
+- IMPORTANT constraint of the assistant environment: GitHub **Actions log downloads are
+  blocked** (redirect host not allowlisted). Workaround already built: every workflow has a
+  final `if: failure()` step that commits error-log excerpts to `ci-logs/<stage>-run-N/`
+  in the repo; read them via the contents API with `Accept: application/vnd.github.raw`.
+- Dispatch runs: `POST /repos/Toemeler/Orca-iOS-ipa/actions/workflows/<file>.yml/dispatches`
+  body `{"ref":"main"}` (expect 204; a just-pushed workflow may 404 for ~20s).
+- The user occasionally edits the repo between sessions — `git pull --rebase` before pushing
+  and watch for duplicate/conflicting files (this already happened once: a parallel
+  `smoke-cli` harness + duplicate 0007 patch broke patch application; was consolidated).
+
+## Upstream pins
+
+- OrcaSlicer: `SoftFever/OrcaSlicer` @ `395e070a0e675fd4723f93967cefede730c482d9`
+- wxWidgets: `SoftFever/Orca-deps-wxWidgets` @ `v3.3.2`
+- Runner: `macos-15`, Xcode 16.4, iPhoneSimulator 18.5 SDK, arm64, `IOS_MIN=17.0`
+
+## Status: 2 of 5 stages COMPLETE
+
+| Stage | Workflow | Status |
+|---|---|---|
+| 1. Slicing core on iOS | `ios-step1-core-cli.yml` | ✅ DONE (run 19): libslic3r sliced a cube **inside an iPad simulator**, artifact `orca-ios-step1-core-cli` (20.2 MB: iOS binary + G-code) |
+| 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | ✅ DONE: wx static libs for iOS + `WxSmoke.app` screenshot (frame, button, green GL canvas) on simulated iPad |
+| 3. Full GUI link-up | `ios-step3-gui.yml` | ▶️ IN PROGRESS — run 1 dispatched (milestone 1: `ninja libslic3r_gui`); proactive macOS-API sweep of `src/slic3r` started (findings below) |
+| 4. Device IPA | not written yet | pending |
+| 5. Feature parity (webview/camera/export) | not written yet | pending |
+
+## Key architectural findings (why this port works)
+
+1. **Orca has an OpenGL ES render path**: `SLIC3R_OPENGL_ES=1` compiles GLCanvas3D,
+   GLShadersManager, GLModel, ImGuiWrapper against GLES — matches iOS EAGL. No ANGLE/Metal.
+2. **wx iPhone port is real**: 26 native units (window, evtloop, glcanvas via **GLKit
+   GLKView**, textctrl, menus, dialogs…). Generic (self-drawn) widgets + Orca's own
+   `GUI/Widgets/` custom controls run on top of that base.
+3. **Orca's `main()` (OrcaSlicer.cpp) is GUI-entangled** — includes Plater/GLCanvas/GLFW
+   unconditionally (CLI thumbnails). `SLIC3R_GUI=0` cannot build upstream main; step 1 used
+   a custom harness instead (`ios/orca-core-cli.cpp` + `ios/nanosvg_impl.cpp`, target
+   `orca-core-cli` added by patch 0007). Real main returns in step 3.
+4. `NANOSVG_IMPLEMENTATION` normally lives in GUI's BitmapCache.cpp (hence the harness impl TU).
+5. Analysis data in `analysis/`: 505 wx symbols used by Orca; GAP.md buckets them; the
+   must-implement list ≈ wxWebView (WKWebView backend), clipboard, file/colour dialogs,
+   wxMediaCtrl→AVPlayer, standard paths, single-instance no-op.
+
+## Repo layout
+
+```
+PLAN.md                     full staged plan (read it)
+analysis/GAP.md             wx gap analysis + buckets
+patches/step1/0001..0008    all verified applying sequentially to pinned ref
+patches/step2/              (empty so far — wx needed only build flags)
+patches/step3/              (opened, empty — GUI source patches go here)
+ios/orca-core-cli.cpp       step-1 slicing harness (+ nanosvg_impl.cpp)
+smoke-app/                  step-2 wx GLKit smoke app + build.sh
+test-assets/calibration-cube.stl
+ci-logs/                    failure logs committed by workflows
+docs/SIDELOADING.md
+```
+
+## The 8 step-1 patches (what they fix — needed knowledge for step 3 too)
+
+- 0001: deps superbuild `ORCA_DEPS_GUI` option gates GLEW/GLFW/OpenCSG/wx; (also pass
+  `-DCMAKE_SYSTEM_PROCESSOR=arm64` — empty var crashes two `list(FIND)` calls)
+- 0002: OpenSSL uses `ios64-xcrun`/`iossimulator-xcrun`, `no-tests`; Linux cross branch
+  guarded `AND NOT APPLE` (empty TOOLCHAIN_PREFIX produced `-gcc`)
+- 0003: OpenCV needs `-DIOS=1` (+AVFoundation/CAP_IOS off) or it compiles AppKit sources
+- 0004: top-level `find_package(OpenGL/glfw3)` gated behind `SLIC3R_GUI`; iOS branch sets
+  `-framework OpenGLES`; **forces `IS_CROSS_COMPILE=TRUE` when CMAKE_SYSTEM_NAME=iOS**
+  (arm64→arm64 fooled Orca's detection; host-run encoding-check tool then aborted)
+- 0005: utils.cpp — libproc/proc_pidpath is macOS-only; iOS uses `_NSGetExecutablePath`
+- 0006: GCodeSender — IOKit/serial + IOSSIOSPEED gated `TARGET_OS_OSX`
+- 0007: adds `orca-core-cli` target (guarded by file existence; workflow copies sources in)
+- 0008: GMP/MPFR (the only autotools deps) get `-isysroot` + `-mios-simulator-version-min`
+  + `--host=aarch64-apple-darwin --disable-assembly`; cross branch guarded `NOT APPLE`.
+  MPFR also needed **texinfo** installed (doc build wants makeinfo).
+
+Other build-system knowledge: Homebrew's libjpeg leaked into the link → deps build their
+own JPEG (`-DCMAKE_DISABLE_FIND_PACKAGE_JPEG=ON` + `dep_JPEG` target) and Orca configure
+pins `JPEG_LIBRARY`/`JPEG_INCLUDE_DIR` to the prefix. iOS cross mode re-roots find_package
+into the SDK → always pass `CMAKE_FIND_ROOT_PATH=<prefixes>` + `_MODE_*=BOTH`.
+Deps caching: `actions/cache` restore-keys `ios-deps-v1-`, save `if: always()`; on restore,
+wipe any `dep_*-prefix` lacking an `*-install` stamp.
+
+## wx build flags that work (step 2, green)
+
+```
+-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator
+-DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0
+-DIPHONE=ON                # fork's gate only matches 'iphoneos' sysroot, not simulator
+-DwxBUILD_TOOLKIT=osx_iphone
+-DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF
+-DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF   # wxrc host tool can't be an iOS exe
+-DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF
+```
+Linking wx apps additionally needs `-framework GLKit` (glcanvas is GLKView-based) plus
+UIKit/OpenGLES/QuartzCore/CoreGraphics/CoreText/CoreFoundation/Foundation/Security
+/AudioToolbox/CFNetwork/MobileCoreServices and `-lz -liconv -lexpat -llzma`.
+Simulator proof pattern: `simctl create` "iPad-Pro-13-inch-M4-16GB" + latest runtime,
+`simctl install/launch`, `simctl io <udid> screenshot`; step 1 used `simctl spawn` to run
+the CLI binary directly.
+
+## Step 3 — where it stands and what to do next
+
+Workflow `ios-step3-gui.yml` (already in repo): rebuilds deps from cache + wx fresh, then
+configures Orca `SLIC3R_GUI=1 SLIC3R_OPENGL_ES=1 SLIC3R_STATIC=1` with both prefixes on
+`CMAKE_PREFIX_PATH`/`CMAKE_FIND_ROOT_PATH`, milestone target `ninja libslic3r_gui`.
+Run 1 was in progress at handoff; check `ci-logs/step3-run-1/` for its error batch
+(expect configure issues first: Orca's `find_package(wxWidgets)` may need
+`-DwxWidgets_CONFIG_EXECUTABLE=$WXPREFIX/bin/wx-config`; also GLEW/glad questions under
+SLIC3R_OPENGL_ES — check how `src/slic3r/CMakeLists.txt` and `src/CMakeLists.txt` (glad
+subdir) behave with ES enabled).
+
+Proactive macOS-API sweep of `src/slic3r` (completed, patches NOT yet written) — the
+files needing `TARGET_OS_OSX` guards or iOS stubs, destined for `patches/step3/`:
+- `.mm`: DeepLinkHandlerMac, GUI_UtilsMac, InstanceCheckMac (→ no-op on iOS),
+  Mouse3DHandlerMac (3Dconnexion → stub), RemovableDriveManagerMM (DiskArbitration →
+  stub now, UIDocumentPicker later), wxMediaCtrl2.mm (AVFoundation; partial iOS reuse),
+  Utils/MacDarkMode.mm (NSAppearance → UIUserInterfaceStyle or stub),
+  Utils/RetinaHelperImpl.mm (NSScreen/backingScale → UIScreen.scale)
+- `.cpp` with AppKit/mac APIs: GUI/GUI.cpp, GUI/GUI_App.cpp, GUI/SendSystemInfoDialog.cpp,
+  Utils/Serial.cpp (IOKit serial enumeration → stub list on iOS)
+- Also check `src/slic3r/CMakeLists.txt` APPLE framework list (AppKit/IOKit/DiskArbitration
+  must become UIKit-era equivalents on iOS) and which .mm files it compiles under APPLE.
+- wxWebView: wx was built `wxUSE_WEBVIEW=OFF`, but ~35 Orca GUI files include wx/webview.h.
+  Interim plan: Orca-side compile-out or minimal stub; proper plan (step 5): enable
+  wx webview with a WKWebView iPhone backend (macOS backend is already WKWebView — port it).
+
+## The iterate loop (how all progress was made)
+
+1. Dispatch workflow via API → wait → user says "failed"/"continue".
+2. Read `ci-logs/<stage>-run-N/*-errors.log` (grep'd FAILED/error context).
+3. Reproduce/patch against local sparse clones (`/home/claude/orca`, wx fork), regenerate
+   `git diff` into `patches/<stage>/NNNN-*.patch`; ALWAYS verify the whole patch dir applies
+   sequentially to a pristine clone before pushing.
+4. Commit with a message documenting run number + root cause; `git pull --rebase`; push;
+   dispatch; repeat. Steps 1+2 took ~25 runs total; expect step 3 to take more.
+
+## Remaining stages after step 3
+
+- Milestones within 3: libslic3r_gui compiles → OrcaSlicer app links (restore real main;
+  needs GLFW decision for CLI-thumbnail path — likely gate that code off on iOS) →
+  launches in simulator (screenshot artifact).
+- Step 4: same build against `iphoneos` SDK; `Payload/OrcaSlicer.app` with Info.plist
+  (UIDeviceFamily 2, file sharing on, UILaunchScreen); zip → unsigned .ipa → GitHub Release.
+- Step 5: WKWebView-backed wxWebView (device page/login), AVPlayer camera shim,
+  UIDocumentPicker export, clipboard, keyboard shortcut verification.
+
+## Conduct notes
+
+- All patches are original work, AGPL-3.0, kept in-repo (upstream sources never forked).
+- Advise the user to rotate/revoke the PAT after sessions (it appears in chat history).

@@ -1,0 +1,159 @@
+name: iOS Step 3 - Full Orca GUI link-up
+
+# Builds OrcaSlicer with SLIC3R_GUI=1 and SLIC3R_OPENGL_ES=1 against the
+# step-1 dependency prefix and the step-2 wxWidgets iPhone-port install.
+# First milestone: libslic3r_gui compiles. Second: the app links. Third:
+# launch screenshot in the iPad simulator. Failures publish to ci-logs/.
+
+on:
+  workflow_dispatch:
+    inputs:
+      orca_ref:
+        required: false
+        default: "395e070a0e675fd4723f93967cefede730c482d9"
+      wx_ref:
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  gui:
+    name: Orca GUI on iOS (simulator)
+    runs-on: macos-15
+    timeout-minutes: 300
+
+    env:
+      ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/ios-prefix
+      WXPREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: iphonesimulator
+
+    steps:
+      - name: "[1/8] Checkout + tools"
+        uses: actions/checkout@v4
+      - run: |
+          set -euxo pipefail
+          brew install cmake ninja automake autoconf libtool nasm texinfo
+          echo "$(brew --prefix texinfo)/bin" >> "$GITHUB_PATH"
+
+      - name: "[2/8] Fetch Orca + apply step1+step3 patches"
+        run: |
+          set -euxo pipefail
+          git clone https://github.com/SoftFever/OrcaSlicer.git orca
+          cd orca && git checkout "$ORCA_REF"
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch "$GITHUB_WORKSPACE"/patches/step3/*.patch; do
+            git apply --verbose "$p"
+          done
+
+      - name: "[3/8] Restore deps cache (shared with step 1)"
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          key: ios-deps-v1-step3-${{ github.run_number }}
+          restore-keys: |
+            ios-deps-v1-
+
+      - name: "[4/8] Top up deps (cache resume)"
+        run: |
+          set -euxo pipefail
+          cd orca/deps
+          if [ -d build ]; then
+            for d in build/dep_*-prefix; do
+              [ -d "$d" ] || continue
+              ls "$d"/src/*-stamp/*-install >/dev/null 2>&1 || rm -rf "$d"
+            done
+          fi
+          mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 -DORCA_DEPS_GUI=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_JPEG=ON \
+            -DDESTDIR="$PREFIX" -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" > /dev/null
+          WANT="dep_ZLIB dep_PNG dep_EXPAT dep_FREETYPE dep_Boost dep_TBB \
+                dep_OpenSSL dep_CURL dep_Cereal dep_Eigen dep_NLopt dep_Qhull \
+                dep_JPEG dep_GMP dep_MPFR dep_CGAL dep_Blosc dep_OpenEXR dep_OpenVDB \
+                dep_Draco dep_libnoise dep_OCCT dep_OpenCV"
+          ninja -t targets all > /tmp/t.txt
+          B=""; for t in $WANT; do grep -q "^${t}:" /tmp/t.txt && B="$B $t" || true; done
+          ninja $B
+
+      - name: "[5/8] Build wxWidgets iPhone port"
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+          mkdir -p build-ios && cd build-ios
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DIPHONE=ON -DwxBUILD_TOOLKIT=osx_iphone \
+            -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF \
+            -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
+            -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
+          ninja > /tmp/wx-ninja.log 2>&1 || (tail -50 /tmp/wx-ninja.log && exit 1)
+          ninja install > /dev/null
+
+      - name: "[6/8] Configure Orca GUI build"
+        run: |
+          set -euxo pipefail
+          cd orca && mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DSLIC3R_GUI=1 -DSLIC3R_OPENGL_ES=1 -DSLIC3R_STATIC=1 \
+            -DCMAKE_PREFIX_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
+            -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step3-configure.log
+
+      - name: "[7/8] Build libslic3r_gui (milestone 1)"
+        run: |
+          set -euxo pipefail
+          cd orca/build
+          ninja libslic3r_gui 2>&1 | tee /tmp/step3-ninja.log
+
+      - name: "[8/8] Save caches + upload logs artifact"
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          key: ios-deps-v1-step3-${{ github.run_number }}
+
+      - name: "Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/step3-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/step3-configure.log; do
+            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
+          done
+          for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
+            [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 70000 > "$D/$(basename "$f" .log)-errors.log"
+          done
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git pull --rebase || true
+          git add ci-logs && git commit -m "step3 ci logs run ${GITHUB_RUN_NUMBER}" && git push

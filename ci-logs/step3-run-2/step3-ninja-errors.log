@@ -1,0 +1,15 @@
+1664-[255/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/GCode/ToolOrderUtils.cpp.o
+1665-[256/653] Linking CXX static library src/libslic3r/liblibslic3r_cgal.a
+1666-[257/653] Building C object deps_src/hidapi/CMakeFiles/hidapi.dir/mac/hid.c.o
+1667:FAILED: [code=1] deps_src/hidapi/CMakeFiles/hidapi.dir/mac/hid.c.o 
+1668-/usr/bin/cc -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/hidapi/CMakeFiles/hidapi.dir/mac/hid.c.o -MF deps_src/hidapi/CMakeFiles/hidapi.dir/mac/hid.c.o.d -o deps_src/hidapi/CMakeFiles/hidapi.dir/mac/hid.c.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/mac/hid.c
+1669:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/mac/hid.c:25:10: fatal error: 'IOKit/hid/IOHIDManager.h' file not found
+1670-   25 | #include <IOKit/hid/IOHIDManager.h>
+1671-      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~
+1672-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/mac/hid.c:25:10: note: did not find header 'hid/IOHIDManager.h' in framework 'IOKit' (loaded from '/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks')
+1673-1 error generated.
+1674-[258/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FlushVolPredictor.cpp.o
+1675-[259/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FilamentGroupUtils.cpp.o
+1676-[260/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FilamentGroup.cpp.o
+1677-[261/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/OpenVDBUtils.cpp.o
+1678-ninja: build stopped: subcommand failed.

@@ -1,0 +1,55 @@
+1624-[251/258] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FilamentGroupUtils.cpp.o
+1625-[252/258] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FilamentGroup.cpp.o
+1626-[253/258] Building CXX object src/CMakeFiles/orca_smoke_cli.dir/smoke_cli.cpp.o
+1627:FAILED: [code=1] src/CMakeFiles/orca_smoke_cli.dir/smoke_cli.cpp.o 
+1628-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIE -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/CMakeFiles/orca_smoke_cli.dir/smoke_cli.cpp.o -MF src/CMakeFiles/orca_smoke_cli.dir/smoke_cli.cpp.o.d -o src/CMakeFiles/orca_smoke_cli.dir/smoke_cli.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/smoke_cli.cpp
+1629-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/smoke_cli.cpp:9:
+1630-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Print.hpp:916:25: warning: 'export_cached_data' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+1631-  916 |     int                 export_cached_data(const std::string& dir_path, bool with_space=false);
+1632-      |                         ^
+1633-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/PrintBase.hpp:428:29: note: overridden virtual function is here
+1634-  428 |     virtual int             export_cached_data(const std::string& dir_path, bool with_space=false) { return 0;}
+1635-      |                             ^
+1636-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/smoke_cli.cpp:9:
+1637-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Print.hpp:917:25: warning: 'load_cached_data' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+1638-  917 |     int                 load_cached_data(const std::string& directory);
+1639-      |                         ^
+1640-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/PrintBase.hpp:429:28: note: overridden virtual function is here
+1641-  429 |     virtual int            load_cached_data(const std::string& directory) { return 0;}
+1642-      |                            ^
+1643:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/smoke_cli.cpp:40:17: error: no viable conversion from 'StringObjectException' to 'std::string' (aka 'basic_string<char>')
+1644-   40 |     std::string err = print.validate();
+1645-      |                 ^     ~~~~~~~~~~~~~~~~
+1646-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:1000:71: note: candidate constructor not viable: no known conversion from 'StringObjectException' to 'const string &' for 1st argument
+1647- 1000 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_STRING_INTERNAL_MEMORY_ACCESS basic_string(const basic_string& __str)
+1648-      |                                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~
+1649-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:1020:55: note: candidate constructor not viable: no known conversion from 'StringObjectException' to 'string &&' for 1st argument
+1650- 1020 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(basic_string&& __str)
+1651-      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~
+1652-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:1059:55: note: candidate constructor template not viable: no known conversion from 'StringObjectException' to 'const char *' for 1st argument
+1653- 1059 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(const _CharT* __s)
+1654-      |                                                       ^            ~~~~~~~~~~~~~~~~~
+1655-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:1199:55: note: candidate constructor not viable: no known conversion from 'StringObjectException' to 'initializer_list<char>' for 1st argument
+1656- 1199 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(initializer_list<_CharT> __il)
+1657-      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1658-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:990:64: note: explicit constructor is not a candidate
+1659-  990 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 explicit basic_string(const allocator_type& __a)
+1660-      |                                                                ^
+1661-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:1155:93: note: explicit constructor is not a candidate
+1662- 1155 |   _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS _LIBCPP_CONSTEXPR_SINCE_CXX20 explicit basic_string(const _Tp& __t)
+1663-      |                                                                                             ^
+1664-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/smoke_cli.cpp:5:
+1665-In file included from /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/string:608:
+1666-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/__memory/allocator.h:168:81: warning: destructor called on non-final 'Slic3r::Polyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+1667-  168 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+1668-      |                                                                                 ^
+1669-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/__memory/allocator_traits.h:334:9: note: in instantiation of member function 'std::allocator<Slic3r::Polyline>::destroy' requested here
+1670-  334 |     __a.destroy(__p);
+1671-      |         ^
+1672-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:985:23: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::Polyline>>::destroy<Slic3r::Polyline, 0>' requested here
+1673-  985 |       __alloc_traits::destroy(__alloc(), std::__to_address(--__soon_to_be_end));
+1674-      |                       ^
+1675-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:979:5: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::__base_destruct_at_end' requested here
+1676-  979 |     __base_destruct_at_end(this->__begin_);
+1677-      |     ^
+1678-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:530:16: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::__clear' requested here

@@ -52,6 +52,8 @@ jobs:
           for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch "$GITHUB_WORKSPACE"/patches/step3/*.patch; do
             git apply --verbose "$p"
           done
+          mkdir -p deps_src/hidapi/ios
+          cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
 
       - name: "[3/8] Restore deps cache (shared with step 1)"
         uses: actions/cache/restore@v4

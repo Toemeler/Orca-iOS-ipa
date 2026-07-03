@@ -81,6 +81,9 @@ jobs:
           cd orca/deps
           # wipe any dep that didn't reach its install stamp (stale partial state)
           if [ -d build ]; then
+            # 0008: cached GMP/MPFR were built with macOS flags; force rebuild
+            rm -rf build/dep_GMP-prefix build/dep_MPFR-prefix
+            rm -f "$PREFIX"/usr/local/lib/libgmp* "$PREFIX"/usr/local/lib/libmpfr* 2>/dev/null || true
             for d in build/dep_*-prefix; do
               [ -d "$d" ] || continue
               ls "$d"/src/*-stamp/*-install >/dev/null 2>&1 || { echo "reset partial: $d"; rm -rf "$d"; }

@@ -1,0 +1,46 @@
+diff --git a/deps/GMP/GMP.cmake b/deps/GMP/GMP.cmake
+index b3ba181..16b8f72 100644
+--- a/deps/GMP/GMP.cmake
++++ b/deps/GMP/GMP.cmake
+@@ -53,8 +53,17 @@ else ()
+         set(_gmp_build_tgt "") # let it guess
+     endif()
+ 
++    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
++            set(_ios_min "-mios-simulator-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
++        else ()
++            set(_ios_min "-miphoneos-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
++        endif ()
++        set(_gmp_ccflags "-O2 -DNDEBUG -fPIC -DPIC -fno-common -arch arm64 -isysroot ${CMAKE_OSX_SYSROOT} ${_ios_min}")
++        set(_gmp_build_tgt --host=aarch64-apple-darwin --disable-assembly)
++    endif ()
+     set(_cross_compile_arg "")
+-    if (CMAKE_CROSSCOMPILING)
++    if (CMAKE_CROSSCOMPILING AND NOT APPLE)
+         # TOOLCHAIN_PREFIX should be defined in the toolchain file
+         set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
+     endif ()
+diff --git a/deps/MPFR/MPFR.cmake b/deps/MPFR/MPFR.cmake
+index 755a769..4a0d1fa 100644
+--- a/deps/MPFR/MPFR.cmake
++++ b/deps/MPFR/MPFR.cmake
+@@ -18,8 +18,17 @@ if (MSVC)
+ 
+ else ()
+ 
++    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
++            set(_ios_min "-mios-simulator-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
++        else ()
++            set(_ios_min "-miphoneos-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
++        endif ()
++        set(_gmp_ccflags "-O2 -DNDEBUG -fPIC -DPIC -fno-common -arch arm64 -isysroot ${CMAKE_OSX_SYSROOT} ${_ios_min}")
++        set(_gmp_build_tgt --host=aarch64-apple-darwin --disable-assembly)
++    endif ()
+     set(_cross_compile_arg "")
+-    if (CMAKE_CROSSCOMPILING)
++    if (CMAKE_CROSSCOMPILING AND NOT APPLE)
+         # TOOLCHAIN_PREFIX should be defined in the toolchain file
+         set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
+     endif ()

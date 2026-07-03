@@ -77,7 +77,7 @@ jobs:
         run: |
           set -euxo pipefail
           if [ -x smoke-app/build.sh ]; then
-            cd smoke-app && ./build.sh "$PREFIX" "$SDK" "$IOS_MIN"
+            cd smoke-app && ./build.sh "$PREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee /tmp/smoke-build.log
           else
             echo "smoke-app not present yet; wx build alone is this run's proof"
             mkdir -p artifact && cp /tmp/wx-ninja.log artifact/ || true
@@ -110,7 +110,7 @@ jobs:
           set -ux
           D="ci-logs/step2-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
-          for f in /tmp/wx-configure.log wx/build-ios/CMakeFiles/CMakeError.log; do
+          for f in /tmp/wx-configure.log /tmp/smoke-build.log wx/build-ios/CMakeFiles/CMakeError.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
           [ -f /tmp/wx-ninja.log ] && grep -n -B3 -A30 -E "FAILED:|error:" /tmp/wx-ninja.log | head -c 60000 > "$D/wx-errors.log"

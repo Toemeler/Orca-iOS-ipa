@@ -126,6 +126,8 @@ jobs:
       - name: "[6/9] Configure + build libslic3r CLI (SLIC3R_GUI=0)"
         run: |
           set -euxo pipefail
+          echo "== packages installed in prefix ==" && ls "$PREFIX/usr/local/lib/cmake" 2>/dev/null || true
+          find "$PREFIX" -name "BoostConfig.cmake" -o -name "Boost-*.cmake" | head -3 || true
           cd orca
           mkdir -p build && cd build
           cmake .. -G Ninja \
@@ -133,9 +135,14 @@ jobs:
             -DCMAKE_OSX_SYSROOT=$SDK \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DSLIC3R_GUI=0 \
             -DSLIC3R_STATIC=1 \
             -DCMAKE_PREFIX_PATH="$PREFIX/usr/local" \
+            -DCMAKE_FIND_ROOT_PATH="$PREFIX/usr/local" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step6-configure.log
           ninja OrcaSlicer 2>&1 | tee /tmp/step6-ninja.log
 

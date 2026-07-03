@@ -16,7 +16,7 @@ xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
   -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
   "$HERE/main.cpp" -o "$APP/WxSmoke" \
   $WXLIBS $WXLIBS \
-  -framework UIKit -framework OpenGLES -framework QuartzCore \
+  -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
   -framework CoreGraphics -framework CoreText -framework CoreFoundation \
   -framework Foundation -framework Security -framework AudioToolbox \
   -framework CFNetwork -framework MobileCoreServices \

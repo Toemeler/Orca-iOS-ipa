@@ -1,0 +1,20 @@
+CMake Deprecation Warning at CMakeLists.txt:27 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- CMAKE_OSX_DEPLOYMENT_TARGET: 17.0
+-- prusaslicer_add_cmake_project for Apple
+-- OrcaSlicer deps DESTDIR: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/ (from cache or command line)
+-- OrcaSlicer download dir for source packages: /Users/runner/dep-dl
+-- OrcaSlicer deps debug build: 
+-- Forcing CMAKE_BUILD_TYPE to Release as it was not specified.
+OS X SDK Path: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk
+OS X Deployment Target: 17.0
+-- Configuring done (0.7s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build

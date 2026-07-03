@@ -1,0 +1,81 @@
+27583-
+27584--- Build files have been written to: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_Eigen-prefix/src/dep_Eigen-build
+27585-[142/161] Performing build step for 'dep_OpenCV'
+27586:FAILED: [code=1] dep_OpenCV-prefix/src/dep_OpenCV-stamp/dep_OpenCV-build /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV-stamp/dep_OpenCV-build 
+27587-cd /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV-build && /opt/homebrew/bin/cmake --build . --config Release -- -j3 && /opt/homebrew/bin/cmake -E touch /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV-stamp/dep_OpenCV-build
+27588-[1/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngget.c.o
+27589-[2/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngmem.c.o
+27590-[3/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngerror.c.o
+27591-[4/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngpread.c.o
+27592-[5/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngrio.c.o
+27593-[6/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/png.c.o
+27594-[7/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngread.c.o
+27595-[8/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngset.c.o
+27596-[9/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngtrans.c.o
+27597-[10/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngwio.c.o
+27598-[11/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngrutil.c.o
+27599-[12/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngrtran.c.o
+27600-[13/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngwtran.c.o
+27601-[14/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngwrite.c.o
+27602-[15/246] Building CXX object 3rdparty/carotene/hal/CMakeFiles/tegra_hal.dir/dummy.cpp.o
+27603-[16/246] Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/pngwutil.c.o
+27604-[17/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/absdiff.cpp.o
+27605-[18/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/accumulate.cpp.o
+27606-[19/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/bitwise.cpp.o
+27607-[20/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/add_weighted.cpp.o
+27608-[21/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/add.cpp.o
+27609-[22/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/channel_extract.cpp.o
+27610-[23/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/blur.cpp.o
+27611-[24/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/canny.cpp.o
+27612-[25/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/channels_combine.cpp.o
+27613-[26/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/common.cpp.o
+27614-[27/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/colorconvert.cpp.o
+27615-[28/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/cmp.cpp.o
+27616-[29/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/convert.cpp.o
+27617-[30/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/convert_depth.cpp.o
+27618-[31/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/convolution.cpp.o
+27619-[32/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/convert_scale.cpp.o
+27620-[33/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/count_nonzero.cpp.o
+27621-[34/246] Building CXX object 3rdparty/carotene/hal/carotene/CMakeFiles/carotene_objs.dir/src/dot_product.cpp.o
+--
+27811-[224/246] Building CXX object modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/apple_conversions.mm.o
+27812-[225/246] Building CXX object modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/grfmt_base.cpp.o
+27813-[226/246] Building CXX object modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/macosx_conversions.mm.o
+27814:FAILED: [code=1] modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/macosx_conversions.mm.o 
+27815-/usr/bin/c++ -DHAVE_IMGCODEC_HDR -DHAVE_IMGCODEC_PFM -DHAVE_IMGCODEC_PXM -DHAVE_IMGCODEC_SUNRASTER -DOPENCV_ALLOCATOR_STATS_COUNTER_TYPE=int -DOPENCV_MODULE_IS_PART_OF_WORLD=1 -D_USE_MATH_DEFINES -D__OPENCV_BUILD=1 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/3rdparty/libpng -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/modules/core/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV-build/modules/world -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/modules/imgproc/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/modules/imgcodecs/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/modules/world/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV-build -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new   -fsigned-char -W -Wall -Wreturn-type -Wnon-virtual-dtor -Waddress -Wsequence-point -Wformat -Wformat-security -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wundef -Winit-self -Wpointer-arith -Wshadow -Wsign-promo -Wuninitialized -Wno-delete-non-virtual-dtor -Wno-unnamed-type-template-args -Wno-comment -fdiagnostics-show-option -Qunused-arguments -Wno-semicolon-before-method-body -ffunction-sections -fdata-sections    -fvisibility=hidden -fvisibility-inlines-hidden -Wno-deprecated-declarations -O3 -DNDEBUG  -DNDEBUG -std=c++11 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fobjc-exceptions -MD -MT modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/macosx_conversions.mm.o -MF modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/macosx_conversions.mm.o.d -o modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/macosx_conversions.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/modules/imgcodecs/src/macosx_conversions.mm
+27816:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps/build/dep_OpenCV-prefix/src/dep_OpenCV/modules/imgcodecs/src/macosx_conversions.mm:6:9: fatal error: 'AppKit/AppKit.h' file not found
+27817-    6 | #import <AppKit/AppKit.h>
+27818-      |         ^~~~~~~~~~~~~~~~~
+27819-1 error generated.
+27820-[227/246] Building CXX object modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/grfmt_bmp.cpp.o
+27821-[228/246] Building CXX object modules/world/CMakeFiles/opencv_world.dir/__/imgcodecs/src/grfmt_exr.cpp.o
+27822-ninja: build stopped: subcommand failed.
+27823-[143/161] Performing build step for 'dep_OpenVDB'
+27824-[1/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/Compression.cc.o
+27825-[2/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/Grid.cc.o
+27826-[3/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/DelayedLoadMetadata.cc.o
+27827-[4/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/GridDescriptor.cc.o
+27828-[5/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/File.cc.o
+27829-[6/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/Queue.cc.o
+27830-[7/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/Stream.cc.o
+27831-[8/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/TempFile.cc.o
+27832-[9/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/math/Half.cc.o
+27833-[10/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/math/Proximity.cc.o
+27834-[11/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/math/QuantizedUnitVec.cc.o
+27835-[12/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/math/Maps.cc.o
+27836-[13/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/Metadata.cc.o
+27837-[14/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/io/Archive.cc.o
+27838-[15/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/math/Transform.cc.o
+27839-[16/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/MetaMap.cc.o
+27840-[17/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/Platform.cc.o
+27841-[18/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/points/AttributeArray.cc.o
+27842-[19/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/points/AttributeGroup.cc.o
+27843-[20/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/points/AttributeArrayString.cc.o
+27844-[21/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/points/StreamCompression.cc.o
+27845-[22/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/points/AttributeSet.cc.o
+27846-[23/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/util/Formats.cc.o
+27847-[24/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/util/Util.cc.o
+27848-[25/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/points/points.cc.o
+27849-[26/29] Building CXX object openvdb/openvdb/CMakeFiles/openvdb_static.dir/openvdb.cc.o
+27850-[27/29] Linking CXX static library openvdb/openvdb/libopenvdb.a
+27851-[28/29] Building CXX object openvdb/openvdb/cmd/CMakeFiles/vdb_print.dir/openvdb_print.cc.o

@@ -1,0 +1,256 @@
+-- Setting build type to 'Debug' as none was specified.
+-- The C compiler identification is AppleClang 17.0.0.17000013
+-- The CXX compiler identification is AppleClang 17.0.0.17000013
+-- The OBJCXX compiler identification is AppleClang 17.0.0.17000013
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting OBJCXX compiler ABI info
+-- Detecting OBJCXX compiler ABI info - done
+-- Check for working OBJCXX compiler: /usr/bin/clang++ - skipped
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of wchar_t
+-- Check size of wchar_t - done
+-- Performing Test wxHAVE_CXX11
+-- Performing Test wxHAVE_CXX11 - Success
+-- Performing Test wxHAVE_CXX17
+-- Performing Test wxHAVE_CXX17 - Failed
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Iconv: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libiconv.tbd
+-- Could NOT find MSPACK (missing: MSPACK_LIBRARY MSPACK_INCLUDE_DIR) 
+-- libmspack not found
+-- Found ZLIB: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libz.tbd (found version "1.2.12")
+-- Found EXPAT: /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libexpat.tbd (found version "2.7.1")
+-- Performing Test HAVE_BUILTIN_BSWAP16
+-- Performing Test HAVE_BUILTIN_BSWAP16 - Success
+-- Performing Test HAVE_BUILTIN_BSWAP32
+-- Performing Test HAVE_BUILTIN_BSWAP32 - Success
+-- Performing Test HAVE_BUILTIN_BSWAP64
+-- Performing Test HAVE_BUILTIN_BSWAP64 - Success
+-- Could NOT find OpenGL (missing: OPENGL_gl_LIBRARY OPENGL_INCLUDE_DIR) 
+-- Performing Test HAVE_MATH_LIBRARY
+-- Performing Test HAVE_MATH_LIBRARY - Success
+-- Looking for include file GLUT/glut.h
+-- Looking for include file GLUT/glut.h - not found
+-- Looking for include file GL/glut.h
+-- Looking for include file GL/glut.h - not found
+-- Looking for include file OpenGL/glut.h
+-- Looking for include file OpenGL/glut.h - not found
+-- Looking for include file shlwapi.h
+-- Looking for include file shlwapi.h - not found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - found
+-- Looking for include file wincodec.h
+-- Looking for include file wincodec.h - not found
+-- Looking for include file windows.h
+-- Looking for include file windows.h - not found
+-- Looking for 4 include files stdlib.h, ..., float.h
+-- Looking for 4 include files stdlib.h, ..., float.h - found
+-- Performing Test HAVE_VISIBILITY
+-- Performing Test HAVE_VISIBILITY - Success
+-- Looking for va_copy
+-- Looking for va_copy - found
+-- Performing Test HAVE_GCC_ATOMIC_BUILTINS
+-- Performing Test HAVE_GCC_ATOMIC_BUILTINS - Success
+-- Looking for sigaction
+-- Looking for sigaction - found
+-- Performing Test wxHAVE_BACKTRACE
+-- Performing Test wxHAVE_BACKTRACE - Success
+-- Performing Test HAVE_CXA_DEMANGLE
+-- Performing Test HAVE_CXA_DEMANGLE - Success
+-- Looking for mkstemp
+-- Looking for mkstemp - found
+-- Looking for mktemp
+-- Looking for mktemp - found
+-- Performing Test HAVE_STATFS
+-- Performing Test HAVE_STATFS - Success
+-- Performing Test HAVE_STATVFS
+-- Performing Test HAVE_STATVFS - Success
+-- Looking for fcntl
+-- Looking for fcntl - found
+-- Looking for flock
+-- Looking for flock - found
+-- Looking for setenv
+-- Looking for setenv - found
+-- Looking for putenv
+-- Looking for putenv - found
+-- Looking for unsetenv
+-- Looking for unsetenv - found
+-- Looking for uname
+-- Looking for uname - found
+-- Looking for gethostname
+-- Looking for gethostname - found
+-- Looking for strtok_r
+-- Looking for strtok_r - found
+-- Looking for fdopen
+-- Looking for fdopen - found
+-- Looking for fseeko
+-- Looking for fseeko - found
+-- Looking for sysconf
+-- Looking for sysconf - found
+-- Looking for getpwuid_r
+-- Looking for getpwuid_r - found
+-- Looking for getgrgid_r
+-- Looking for getgrgid_r - found
+-- Looking for sys/soundcard.h
+-- Looking for sys/soundcard.h - not found
+-- Performing Test WX_SOCKLEN_T_IS_SOCKLEN_T
+-- Performing Test WX_SOCKLEN_T_IS_SOCKLEN_T - Success
+-- Performing Test SOCKOPTLEN_T_IS_SOCKLEN_T
+-- Performing Test SOCKOPTLEN_T_IS_SOCKLEN_T - Success
+-- Looking for gethostbyname
+-- Looking for gethostbyname - found
+-- Looking for gethostbyname_r
+-- Looking for gethostbyname_r - not found
+-- Looking for getservbyname
+-- Looking for getservbyname - found
+-- Looking for inet_aton
+-- Looking for inet_aton - found
+-- Looking for inet_addr
+-- Looking for inet_addr - found
+-- Performing Test wxHAVE_PTHREAD_CLEANUP
+-- Performing Test wxHAVE_PTHREAD_CLEANUP - Success
+-- Performing Test HAVE_PTHREAD_MUTEXATTR_T
+-- Performing Test HAVE_PTHREAD_MUTEXATTR_T - Success
+-- Performing Test HAVE_PTHREAD_MUTEXATTR_SETTYPE_DECL
+-- Performing Test HAVE_PTHREAD_MUTEXATTR_SETTYPE_DECL - Success
+-- Performing Test HAVE_ABI_FORCEDUNWIND
+-- Performing Test HAVE_ABI_FORCEDUNWIND - Failed
+-- Looking for localtime_r
+-- Looking for localtime_r - found
+-- Looking for gmtime_r
+-- Looking for gmtime_r - found
+-- Performing Test wxSIZE_T_IS_NOT_UINT
+-- Performing Test wxSIZE_T_IS_NOT_UINT - Success
+-- Performing Test wxSIZE_T_IS_NOT_ULONG
+-- Performing Test wxSIZE_T_IS_NOT_ULONG - Failed
+-- Performing Test wxWCHAR_T_IS_REAL_TYPE
+-- Performing Test wxWCHAR_T_IS_REAL_TYPE - Success
+-- Performing Test HAVE_PW_GECOS
+-- Performing Test HAVE_PW_GECOS - Success
+-- Looking for ftime
+-- Looking for ftime - not found
+-- Looking for wcsftime
+-- Looking for wcsftime - found
+-- Looking for wprintf
+-- Looking for wprintf - found
+-- Looking for putws
+-- Looking for putws - not found
+-- Looking for fputws
+-- Looking for fputws - found
+-- Looking for vswprintf
+-- Looking for vswprintf - found
+-- Looking for vswscanf
+-- Looking for vswscanf - found
+-- Looking for wcsdup
+-- Looking for wcsdup - found
+-- Looking for wcsnlen
+-- Looking for wcsnlen - found
+-- Looking for wcscasecmp
+-- Looking for wcscasecmp - found
+-- Looking for wcsncasecmp
+-- Looking for wcsncasecmp - found
+-- Looking for wcsrctombs
+-- Looking for wcsrctombs - not found
+-- Looking for wcstoull
+-- Looking for wcstoull - found
+-- Looking for wcslen
+-- Looking for wcslen - found
+-- Looking for fsync
+-- Looking for fsync - found
+-- Looking for snprintf
+-- Looking for snprintf - found
+-- Looking for vsnprintf
+-- Looking for vsnprintf - found
+-- Looking for strnlen
+-- Looking for strnlen - found
+-- Looking for strtoull
+-- Looking for strtoull - found
+-- Looking for setpriority
+-- Looking for setpriority - found
+-- Looking for gettimeofday
+-- Looking for gettimeofday - found
+-- Looking for fcntl.h
+-- Looking for fcntl.h - found
+-- Looking for langinfo.h
+-- Looking for langinfo.h - found
+-- Looking for sched.h
+-- Looking for sched.h - found
+-- Looking for wchar.h
+-- Looking for wchar.h - found
+-- Looking for wcstr.h
+-- Looking for wcstr.h - not found
+-- Performing Test wxTEST_TZ__timezone
+-- Performing Test wxTEST_TZ__timezone - Failed
+-- Performing Test wxTEST_TZ___timezone
+-- Performing Test wxTEST_TZ___timezone - Failed
+-- Performing Test wxTEST_TZ_timezone
+-- Performing Test wxTEST_TZ_timezone - Success
+-- Performing Test WX_GMTOFF_IN_TM
+-- Performing Test WX_GMTOFF_IN_TM - Success
+-- Looking for dlopen
+-- Looking for dlopen - found
+-- Looking for dladdr
+-- Looking for dladdr - found
+-- Looking for dl_iterate_phdr
+-- Looking for dl_iterate_phdr - not found
+-- Looking for sys/select.h
+-- Looking for sys/select.h - found
+-- Looking for sys/inotify.h
+-- Looking for sys/inotify.h - not found
+-- Looking for sys/event.h
+-- Looking for sys/event.h - found
+-- Looking for xlocale.h
+-- Looking for xlocale.h - found
+-- Performing Test HAVE_LOCALE_T
+-- Performing Test HAVE_LOCALE_T - Success
+-- Check size of size_t
+-- Check size of size_t - done
+-- Check size of int
+-- Check size of int - done
+-- Check size of long
+-- Check size of long - done
+-- Check size of short
+-- Check size of short - done
+-- Check size of long long
+-- Check size of long long - done
+-- Check size of ssize_t
+-- Check size of ssize_t - done
+-- Which libraries should wxWidgets use?
+    wxUSE_REGEX:      builtin  (enable support for wxRegEx class)
+    wxUSE_ZLIB:       sys      (use zlib for LZW compression)
+    wxUSE_EXPAT:      sys      (use expat for XML parsing)
+    wxUSE_LIBJPEG:    builtin  (use libjpeg (JPEG file format))
+    wxUSE_LIBPNG:     builtin  (use libpng (PNG image format))
+    wxUSE_LIBTIFF:    builtin  (use libtiff (TIFF file format))
+    wxUSE_LIBWEBP:    builtin  (use libwebp (WebP file format))
+    wxUSE_NANOSVG:    builtin  (use NanoSVG for rasterizing SVG)
+    wxUSE_LUNASVG:    OFF      (use LunaSVG for rasterizing SVG (C++17 minimum))
+    wxUSE_LIBLZMA:    OFF      (use liblzma for LZMA compression)
+    wxUSE_LIBSDL:     OFF      (use SDL for audio on Unix)
+    wxUSE_LIBMSPACK:  OFF      (use libmspack (CHM help files loading))
+    wxUSE_WEBVIEW:    OFF      (enable wxWebview)
+
+-- Configured wxWidgets 3.3.2 for iOS
+    Min OS Version required at runtime:                iOS 
+    Which GUI toolkit should wxWidgets use?            osx_iphone  
+    Should wxWidgets be compiled into single library?  OFF
+    Should wxWidgets be linked as a shared library?    OFF
+    Which wxWidgets API compatibility should be used?  3.2
+-- Configuring done (15.0s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios

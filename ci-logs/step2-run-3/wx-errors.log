@@ -1,0 +1,28 @@
+6323-      |                                           ^
+6324-13 warnings generated.
+6325-[1108/1109] Linking CXX executable lib/wxrc-3.3.app/wxrc-3.3
+6326:FAILED: [code=1] lib/wxrc-3.3.app/wxrc-3.3 
+6327-: && /usr/bin/c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -Wl,-search_paths_first -Wl,-headerpad_max_install_names utils/CMakeFiles/wxrc.dir/__/__/__/utils/wxrc/wxrc.cpp.o -o lib/wxrc-3.3.app/wxrc-3.3  lib/libwx_baseu_xml-3.3-iOS.a  lib/libwx_baseu-3.3-iOS.a  /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libz.tbd  lib/libwxregexu-3.3.a  /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libiconv.tbd  -framework Security  -framework CoreFoundation  -framework UIKit  /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/lib/libexpat.tbd && :
+6328-Undefined symbols for architecture arm64:
+6329-  "_OBJC_CLASS_$_NSAutoreleasePool", referenced from:
+6330-       in libwx_baseu-3.3-iOS.a[97](utils_base.mm.o)
+6331-  "_OBJC_CLASS_$_NSBundle", referenced from:
+6332-       in libwx_baseu-3.3-iOS.a[98](stdpaths.mm.o)
+6333-  "_OBJC_CLASS_$_NSCharacterSet", referenced from:
+6334-       in libwx_baseu-3.3-iOS.a[115](uilocale.mm.o)
+6335-  "_OBJC_CLASS_$_NSDateFormatter", referenced from:
+6336-       in libwx_baseu-3.3-iOS.a[115](uilocale.mm.o)
+6337-  "_OBJC_CLASS_$_NSFileManager", referenced from:
+6338-       in libwx_baseu-3.3-iOS.a[98](stdpaths.mm.o)
+6339-  "_OBJC_CLASS_$_NSNumber", referenced from:
+6340-       in libwx_baseu-3.3-iOS.a[115](uilocale.mm.o)
+6341-  "_OBJC_CLASS_$_NSNumberFormatter", referenced from:
+6342-       in libwx_baseu-3.3-iOS.a[115](uilocale.mm.o)
+6343-  "_OBJC_CLASS_$_NSProcessInfo", referenced from:
+6344-       in libwx_baseu-3.3-iOS.a[97](utils_base.mm.o)
+6345-  "_OBJC_CLASS_$_NSString", referenced from:
+6346-       in libwx_baseu-3.3-iOS.a[97](utils_base.mm.o)
+6347-ld: symbol(s) not found for architecture arm64
+6348:clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+6349-[1109/1109] Linking CXX static library lib/libwx_osx_iphoneu_gl-3.3-iOS.a
+6350-ninja: build stopped: subcommand failed.

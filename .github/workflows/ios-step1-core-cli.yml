@@ -62,6 +62,8 @@ jobs:
           for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch; do
             git apply --verbose "$p"
           done
+          # step-1 slicing harness (built via patch 0007's guarded target)
+          cp "$GITHUB_WORKSPACE"/ios/orca-core-cli.cpp src/
 
       - name: "[4b] Restore deps cache (incremental across runs)"
         uses: actions/cache/restore@v4
@@ -145,7 +147,7 @@ jobs:
             -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
             -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step6-configure.log
-          ninja orca_smoke_cli 2>&1 | tee /tmp/step6-ninja.log
+          ninja orca-core-cli 2>&1 | tee /tmp/step6-ninja.log
 
       - name: "[7/9] Boot iPad simulator"
         run: |
@@ -159,7 +161,7 @@ jobs:
       - name: "[8/9] Slice a real STL *on iOS* and verify G-code"
         run: |
           set -euxo pipefail
-          BIN=$(find orca/build -name "orca_smoke_cli" -type f -perm +111 | head -1)
+          BIN=$(find orca/build -name "orca-core-cli" -type f -perm +111 | head -1)
           cp test-assets/calibration-cube.stl /tmp/cube.stl
           xcrun simctl spawn "$UDID" "$BIN" /tmp/cube.stl /tmp/cube.gcode 2>&1 | tee /tmp/step8-slice.log
           test -s /tmp/cube.gcode && head -20 /tmp/cube.gcode

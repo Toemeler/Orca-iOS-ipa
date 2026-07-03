@@ -96,13 +96,14 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DORCA_DEPS_GUI=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_JPEG=ON \
             -DDESTDIR="$PREFIX" \
             -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" 2>&1 | tee /tmp/step5-configure.log
           # Non-GUI subset only (superbuild has no gate for this, so we build
           # explicit targets and skip dep_wxWidgets/dep_GLFW/dep_GLEW/dep_OpenCSG).
           WANT="dep_ZLIB dep_PNG dep_EXPAT dep_FREETYPE dep_Boost dep_TBB \
                 dep_OpenSSL dep_CURL dep_Cereal dep_Eigen dep_NLopt dep_Qhull \
-                dep_GMP dep_MPFR dep_CGAL dep_Blosc dep_OpenEXR dep_OpenVDB \
+                dep_JPEG dep_GMP dep_MPFR dep_CGAL dep_Blosc dep_OpenEXR dep_OpenVDB \
                 dep_Draco dep_libnoise dep_OCCT dep_OpenCV"
           ninja -t targets all > /tmp/targets.txt
           BUILD=""
@@ -145,6 +146,8 @@ jobs:
             -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
             -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
             -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step6-configure.log
           ninja orca-core-cli 2>&1 | tee /tmp/step6-ninja.log
 

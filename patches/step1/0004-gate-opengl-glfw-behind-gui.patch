@@ -1,0 +1,33 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8dcd4cf..656adce 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -688,14 +688,20 @@ endif ()
+ 
+ find_package(PNG REQUIRED)
+ 
+-set(OpenGL_GL_PREFERENCE "LEGACY")
+-find_package(OpenGL REQUIRED)
+-
+-if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+-    set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
+-endif()
+-
+-find_package(glfw3 REQUIRED)
++if (SLIC3R_GUI)
++    set(OpenGL_GL_PREFERENCE "LEGACY")
++    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        # iOS ships OpenGL ES (EAGL); desktop FindOpenGL and GLFW do not apply.
++        set(OPENGL_FOUND TRUE)
++        set(OPENGL_LIBRARIES "-framework OpenGLES" CACHE STRING "OpenGL ES framework" FORCE)
++    else ()
++        find_package(OpenGL REQUIRED)
++        if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
++            set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
++        endif()
++        find_package(glfw3 REQUIRED)
++    endif ()
++endif ()
+ 
+ # Find the Cereal serialization library
+ find_package(cereal REQUIRED)

@@ -1,0 +1,26 @@
+diff --git a/deps/OpenCV/OpenCV.cmake b/deps/OpenCV/OpenCV.cmake
+index d8c7cba..43f303d 100644
+--- a/deps/OpenCV/OpenCV.cmake
++++ b/deps/OpenCV/OpenCV.cmake
+@@ -10,6 +10,13 @@ else ()
+     set(_options "")
+ endif ()
+ 
++# OpenCV selects macOS-only sources (AppKit) unless its IOS variable is set;
++# plain CMAKE_SYSTEM_NAME=iOS builds must set it explicitly.
++set(_ios_flags "")
++if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++    set(_ios_flags -DIOS=1 -DWITH_AVFOUNDATION=OFF -DWITH_CAP_IOS=OFF)
++endif ()
++
+ if (IN_GIT_REPO)
+     set(OpenCV_DIRECTORY_FLAG --directory ${BINARY_DIR_REL}/dep_OpenCV-prefix/src/dep_OpenCV)
+ endif ()
+@@ -20,6 +27,7 @@ orcaslicer_add_cmake_project(OpenCV
+     URL_HASH SHA256=1ec1cba65f9f20fe5a41fda1586e01c70ea0c9a6d7b67c9e13edf0cfe2239277
+     PATCH_COMMAND git apply ${OpenCV_DIRECTORY_FLAG} --verbose --ignore-space-change --whitespace=fix ${CMAKE_CURRENT_LIST_DIR}/0001-vs.patch  ${CMAKE_CURRENT_LIST_DIR}/0002-clang19-macos.patch
+     CMAKE_ARGS
++    ${_ios_flags}
+     -DBUILD_SHARED_LIBS=0
+        -DBUILD_PERE_TESTS=OFF
+        -DBUILD_TESTS=OFF

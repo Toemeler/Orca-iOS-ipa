@@ -1,5 +1,5 @@
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..dc7bcf0 100644
+index aea925c..7a127ce 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -106,12 +106,12 @@
@@ -25,11 +25,13 @@ index aea925c..dc7bcf0 100644
  #define wxUSE_ANIMATIONCTRL 0
  #define wxUSE_CALENDARCTRL 0
 -#define wxUSE_COMBOCTRL 0
-+#define wxUSE_COMBOCTRL 1
- #define wxUSE_ODCOMBOBOX 0
- #define wxUSE_BITMAPCOMBOBOX 0
+-#define wxUSE_ODCOMBOBOX 0
+-#define wxUSE_BITMAPCOMBOBOX 0
 -#define wxUSE_BMPBUTTON 0
 -#define wxUSE_CHECKLISTBOX 0
++#define wxUSE_COMBOCTRL 1
++#define wxUSE_ODCOMBOBOX 1
++#define wxUSE_BITMAPCOMBOBOX 1
 +#define wxUSE_BMPBUTTON 1
 +#define wxUSE_CHECKLISTBOX 1
  #define wxUSE_GRID 0
@@ -41,6 +43,18 @@ index aea925c..dc7bcf0 100644
  #define wxUSE_DATEPICKCTRL 0
  #define wxUSE_EDITABLELISTBOX 0
  #define wxUSE_FILEPICKERCTRL 0
+@@ -166,9 +166,9 @@
+ #define wxUSE_DEBUGREPORT 0
+ #define wxUSE_HYPERLINKCTRL 0
+ #define wxUSE_STC 0
+-#define wxUSE_AUI 0
++#define wxUSE_AUI 1
+ #define wxUSE_BUSYINFO 0
+-#define wxUSE_SEARCHCTRL 0
++#define wxUSE_SEARCHCTRL 1
+ 
+ #undef wxUSE_LOGWINDOW
+ #undef wxUSE_LOG_DIALOG
 @@ -201,9 +201,9 @@
  #define wxUSE_TOOLBOOK 0
  #define wxUSE_CHOICEDLG 0

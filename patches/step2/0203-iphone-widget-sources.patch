@@ -1,8 +1,19 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..dbab811 100644
+index c163c87..05ac428 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
-@@ -2235,6 +2235,15 @@ set(OSX_IPHONE_SRC
+@@ -2024,8 +2024,8 @@ set(OSX_COMMON_SRC
+     src/generic/colrdlgg.cpp
+     src/generic/dirdlgg.cpp
+     src/generic/fdrepdlg.cpp
+-    src/generic/filedlgg.cpp
+-    src/generic/filepickerg.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filedlgg.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filepickerg.cpp>
+     src/generic/fontdlgg.cpp
+     src/generic/fontpickerg.cpp
+     src/generic/listctrl.cpp
+@@ -2235,6 +2235,14 @@ set(OSX_IPHONE_SRC
      src/osx/iphone/statbmp.mm
      src/osx/iphone/menuitem.mm
      src/osx/iphone/menu.mm
@@ -14,10 +25,20 @@ index c163c87..dbab811 100644
 +    src/osx/spinbutt_osx.cpp
 +    src/generic/spinctlg.cpp
 +    src/osx/iphone/filedlg.mm
-+    src/common/fldlgcmn.cpp
  )
  
  set(OSX_IPHONE_HDR
+@@ -2257,8 +2265,8 @@ set(UNIV_SRC
+     src/generic/colrdlgg.cpp
+     src/generic/dirdlgg.cpp
+     src/generic/fdrepdlg.cpp
+-    src/generic/filedlgg.cpp
+-    src/generic/filepickerg.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filedlgg.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filepickerg.cpp>
+     src/generic/fontdlgg.cpp
+     src/generic/fontpickerg.cpp
+     src/generic/listctrl.cpp
 diff --git a/include/wx/filedlg.h b/include/wx/filedlg.h
 index d3f0681..21e1617 100644
 --- a/include/wx/filedlg.h

@@ -1,0 +1,47 @@
+3569-      |             ^
+3570-1 warning generated.
+3571-[650/1034] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/tglbtn_osx.cpp.o
+3572:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/tglbtn_osx.cpp.o 
+3573-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/tglbtn_osx.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/tglbtn_osx.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/tglbtn_osx.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/tglbtn_osx.cpp
+3574-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/tglbtn_osx.cpp:19:
+3575-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3576-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3577-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3578-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3579-      |             ^
+3580:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/tglbtn_osx.cpp:121:17: error: use of undeclared identifier 'wxDEFAULT_BUTTON_MARGIN'
+3581-  121 |     m_marginY = wxDEFAULT_BUTTON_MARGIN;
+3582-      |                 ^
+3583-1 warning and 1 error generated.
+3584-[651/1034] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/textctrl_osx.cpp.o
+3585-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/textctrl_osx.cpp:11:
+3586-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3587-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3588-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3589-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3590-      |             ^
+3591-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/textctrl_osx.cpp:235:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3592-  235 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_26_0
+3593-      |     ^
+3594-2 warnings generated.
+3595-[652/1034] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/toolbar_osx.cpp.o
+3596-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/toolbar_osx.cpp:10:
+3597-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3598-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3599-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3600-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3601-      |             ^
+3602-1 warning generated.
+3603-[653/1034] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/accel.cpp.o
+3604-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/accel.cpp:10:
+3605-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3606-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3607-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3608-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3609-      |             ^
+3610-1 warning generated.
+3611-[654/1034] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/carbon/cursor.cpp.o
+3612-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/cursor.cpp:10:
+3613-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3614-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3615-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]

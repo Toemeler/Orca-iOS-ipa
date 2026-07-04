@@ -1,5 +1,5 @@
 diff --git a/src/libvgcode/glad/src/gles2.c b/src/libvgcode/glad/src/gles2.c
-index e9642e9..bc59131 100644
+index e9642e9..6841f99 100644
 --- a/src/libvgcode/glad/src/gles2.c
 +++ b/src/libvgcode/glad/src/gles2.c
 @@ -761,6 +761,10 @@ static GLADapiproc glad_dlsym_handle(void* handle, const char *name) {
@@ -24,12 +24,11 @@ index e9642e9..bc59131 100644
  int gladLoaderLoadGLES2(void) {
      int version = 0;
      void *handle = NULL;
-@@ -863,6 +871,8 @@ int gladLoaderLoadGLES2(void) {
- 
- 
- 
+@@ -869,6 +877,7 @@ void gladLoaderUnloadGLES2(void) {
+         _glad_GLES2_loader_handle = NULL;
+     }
+ }
 +#endif /* __APPLE__ */
-+
- void gladLoaderUnloadGLES2(void) {
-     if (_glad_GLES2_loader_handle != NULL) {
-         glad_close_dlopen_handle(_glad_GLES2_loader_handle);
+ 
+ #endif /* GLAD_GLES2 */
+ 

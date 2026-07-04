@@ -1,0 +1,14 @@
+1701-[285/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/Utils.cpp.o
+1702-[286/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/Viewer.cpp.o
+1703-[287/653] Building C object src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o
+1704:FAILED: [code=1] src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o 
+1705-/usr/bin/cc -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DENABLE_OPENGL_ES -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o -MF src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o.d -o src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/src/gles2.c
+1706:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/src/gles2.c:829:36: error: use of undeclared identifier 'eglGetProcAddress'
+1707-  829 |     userptr.get_proc_address_ptr = eglGetProcAddress;
+1708-      |                                    ^
+1709-1 error generated.
+1710-[288/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewRange.cpp.o
+1711-[289/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewerImpl.cpp.o
+1712-[290/653] Building CXX object deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o
+1713-[291/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/OpenVDBUtils.cpp.o
+1714-ninja: build stopped: subcommand failed.

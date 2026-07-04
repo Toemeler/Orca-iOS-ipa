@@ -1,0 +1,306 @@
+1720-      |             ^
+1721-1 warning generated.
+1722-[429/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filectrlcmn.cpp.o
+1723:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filectrlcmn.cpp.o 
+1724-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filectrlcmn.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filectrlcmn.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filectrlcmn.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filectrlcmn.cpp
+1725-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filectrlcmn.cpp:11:
+1726-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1727-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1728-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1729-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1730-      |             ^
+1731-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filectrlcmn.cpp:15:
+1732-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filectrl.h:74:
+1733:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:104:20: error: unknown type name 'wxListItem'
+1734-  104 |     void MakeItem( wxListItem &item );
+1735-      |                    ^
+1736:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:126:48: error: unknown class name 'wxListCtrl'; did you mean 'wxTextCtrl'?
+1737-  126 | class WXDLLIMPEXP_CORE wxFileListCtrl : public wxListCtrl
+1738-      |                                                ^~~~~~~~~~
+1739-      |                                                wxTextCtrl
+1740-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:23:28: note: 'wxTextCtrl' declared here
+1741-   23 | class WXDLLIMPEXP_FWD_CORE wxTextCtrl;
+1742-      |                            ^
+1743:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:126:48: error: base class has incomplete type
+1744-  126 | class WXDLLIMPEXP_CORE wxFileListCtrl : public wxListCtrl
+1745-      |                                         ~~~~~~~^~~~~~~~~~
+1746-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:23:28: note: forward declaration of 'wxTextCtrl'
+1747-   23 | class WXDLLIMPEXP_FWD_CORE wxTextCtrl;
+1748-      |                            ^
+1749:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:137:23: error: unknown type name 'wxValidator'
+1750-  137 |                 const wxValidator &validator = wxDefaultValidator,
+1751-      |                       ^
+1752:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:147:39: error: unknown type name 'wxListItem'
+1753-  147 |     virtual long Add( wxFileData *fd, wxListItem &item );
+1754-      |                                       ^
+1755:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:148:35: error: unknown type name 'wxListItem'
+1756-  148 |     virtual void UpdateItem(const wxListItem &item);
+1757-      |                                   ^
+1758:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:158:28: error: unknown type name 'wxListEvent'
+1759-  158 |     void OnListDeleteItem( wxListEvent &event );
+1760-      |                            ^
+1761:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:159:32: error: unknown type name 'wxListEvent'
+1762-  159 |     void OnListDeleteAllItems( wxListEvent &event );
+1763-      |                                ^
+1764:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:160:30: error: unknown type name 'wxListEvent'
+1765-  160 |     void OnListEndLabelEdit( wxListEvent &event );
+1766-      |                              ^
+1767:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:161:26: error: unknown type name 'wxListEvent'
+1768-  161 |     void OnListColClick( wxListEvent &event );
+1769-      |                          ^
+1770:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:169:23: error: unknown type name 'wxListItem'
+1771-  169 |     void FreeItemData(wxListItem& item);
+1772-      |                       ^
+1773:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:136:30: error: use of undeclared identifier 'wxLC_LIST'; did you mean 'wxID_LAST'?
+1774-  136 |                 long style = wxLC_LIST,
+1775-      |                              ^~~~~~~~~
+1776-      |                              wxID_LAST
+1777-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:1897:5: note: 'wxID_LAST' declared here
+1778- 1897 |     wxID_LAST,
+1779-      |     ^
+1780-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filectrlcmn.cpp:15:
+1781-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filectrl.h:74:
+1782:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:137:48: error: use of undeclared identifier 'wxDefaultValidator'
+1783-  137 |                 const wxValidator &validator = wxDefaultValidator,
+1784-      |                                                ^
+1785:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:184:71: error: use of undeclared identifier 'wxControl'
+1786-  184 | class WXDLLIMPEXP_CORE wxGenericFileCtrl : public wxNavigationEnabled<wxControl>,
+1787-      |                                                                       ^
+1788:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:265:23: error: unknown type name 'wxListEvent'
+1789-  265 |     void OnActivated( wxListEvent &event );
+1790-      |                       ^
+1791:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:268:22: error: unknown type name 'wxListEvent'
+1792-  268 |     void OnSelected( wxListEvent &event );
+1793-      |                      ^
+1794:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:244:18: error: use of undeclared identifier 'HasFlag'
+1795-  244 |         { return HasFlag(wxFC_MULTIPLE); }
+1796-      |                  ^
+1797:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filectrlcmn.cpp:34:66: error: member access into incomplete type 'wxWindow'
+1798-   34 |     wxFileCtrlEvent event( wxEVT_FILECTRL_FILTERCHANGED, wnd, wnd->GetId() );
+1799-      |                                                                  ^
+1800-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/utils.h:59:28: note: forward declaration of 'wxWindow'
+1801-   59 | class WXDLLIMPEXP_FWD_CORE wxWindow;
+1802-      |                            ^
+1803:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filectrlcmn.cpp:38:8: error: member access into incomplete type 'wxWindow'
+1804-   38 |     wnd->GetEventHandler()->ProcessEvent( event );
+1805-      |        ^
+1806-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/utils.h:59:28: note: forward declaration of 'wxWindow'
+1807-   59 | class WXDLLIMPEXP_FWD_CORE wxWindow;
+1808-      |                            ^
+1809:fatal error: too many errors emitted, stopping now [-ferror-limit=]
+1810-1 warning and 20 errors generated.
+1811-[430/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/dlgcmn.cpp.o
+1812-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/dlgcmn.cpp:19:
+1813-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1814-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1815-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1816-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1817-      |             ^
+1818-1 warning generated.
+1819-[431/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/dpycmn.cpp.o
+1820-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/dpycmn.cpp:19:
+1821-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1822-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1823-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1824-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1825-      |             ^
+1826-1 warning generated.
+1827-[432/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o
+1828:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o 
+1829-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp
+1830-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:11:
+1831-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1832-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1833-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1834-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1835-      |             ^
+1836-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:16:
+1837-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:286:
+1838-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:18:
+1839:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:104:20: error: unknown type name 'wxListItem'
+1840-  104 |     void MakeItem( wxListItem &item );
+1841-      |                    ^
+1842:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:126:48: error: unknown class name 'wxListCtrl'; did you mean 'wxTextCtrl'?
+1843-  126 | class WXDLLIMPEXP_CORE wxFileListCtrl : public wxListCtrl
+1844-      |                                                ^~~~~~~~~~
+1845-      |                                                wxTextCtrl
+1846-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:23:28: note: 'wxTextCtrl' declared here
+1847-   23 | class WXDLLIMPEXP_FWD_CORE wxTextCtrl;
+1848-      |                            ^
+1849:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:126:48: error: base class has incomplete type
+1850-  126 | class WXDLLIMPEXP_CORE wxFileListCtrl : public wxListCtrl
+1851-      |                                         ~~~~~~~^~~~~~~~~~
+1852-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:23:28: note: forward declaration of 'wxTextCtrl'
+1853-   23 | class WXDLLIMPEXP_FWD_CORE wxTextCtrl;
+1854-      |                            ^
+1855:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:147:39: error: unknown type name 'wxListItem'
+1856-  147 |     virtual long Add( wxFileData *fd, wxListItem &item );
+1857-      |                                       ^
+1858:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:148:35: error: unknown type name 'wxListItem'
+1859-  148 |     virtual void UpdateItem(const wxListItem &item);
+1860-      |                                   ^
+1861:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:158:28: error: unknown type name 'wxListEvent'
+1862-  158 |     void OnListDeleteItem( wxListEvent &event );
+1863-      |                            ^
+1864:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:159:32: error: unknown type name 'wxListEvent'
+1865-  159 |     void OnListDeleteAllItems( wxListEvent &event );
+1866-      |                                ^
+1867:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:160:30: error: unknown type name 'wxListEvent'
+1868-  160 |     void OnListEndLabelEdit( wxListEvent &event );
+1869-      |                              ^
+1870:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:161:26: error: unknown type name 'wxListEvent'
+1871-  161 |     void OnListColClick( wxListEvent &event );
+1872-      |                          ^
+1873:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:169:23: error: unknown type name 'wxListItem'
+1874-  169 |     void FreeItemData(wxListItem& item);
+1875-      |                       ^
+1876:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:136:30: error: use of undeclared identifier 'wxLC_LIST'; did you mean 'wxID_LAST'?
+1877-  136 |                 long style = wxLC_LIST,
+1878-      |                              ^~~~~~~~~
+1879-      |                              wxID_LAST
+1880-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:1897:5: note: 'wxID_LAST' declared here
+1881- 1897 |     wxID_LAST,
+1882-      |     ^
+1883-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:16:
+1884-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:17:
+1885-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/dialog.h:14:
+1886:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:188:36: error: base class has incomplete type
+1887-  188 | class wxNavigationEnabled : public W
+1888-      |                             ~~~~~~~^
+1889-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:184:51: note: in instantiation of template class 'wxNavigationEnabled<wxControl>' requested here
+1890-  184 | class WXDLLIMPEXP_CORE wxGenericFileCtrl : public wxNavigationEnabled<wxControl>,
+1891-      |                                                   ^
+1892-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/window.h:57:28: note: forward declaration of 'wxControl'
+1893-   57 | class WXDLLIMPEXP_FWD_CORE wxControl;
+1894-      |                            ^
+1895-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:16:
+1896-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:17:
+1897-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/dialog.h:14:
+1898:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:208:42: error: 'AcceptsFocus' marked 'override' but does not override any member functions
+1899-  208 |     WXDLLIMPEXP_INLINE_CORE virtual bool AcceptsFocus() const override
+1900-      |                                          ^
+1901:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:213:42: error: 'AcceptsFocusRecursively' marked 'override' but does not override any member functions
+1902-  213 |     WXDLLIMPEXP_INLINE_CORE virtual bool AcceptsFocusRecursively() const override
+1903-      |                                          ^
+1904:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:218:42: error: 'AcceptsFocusFromKeyboard' marked 'override' but does not override any member functions
+1905-  218 |     WXDLLIMPEXP_INLINE_CORE virtual bool AcceptsFocusFromKeyboard() const override
+1906-      |                                          ^
+1907:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:223:42: error: 'AddChild' marked 'override' but does not override any member functions
+1908-  223 |     WXDLLIMPEXP_INLINE_CORE virtual void AddChild(wxWindowBase *child) override
+1909-      |                                          ^
+1910:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:236:42: error: 'RemoveChild' marked 'override' but does not override any member functions
+1911-  236 |     WXDLLIMPEXP_INLINE_CORE virtual void RemoveChild(wxWindowBase *child) override
+1912-      |                                          ^
+1913:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/containr.h:249:42: error: 'SetFocus' marked 'override' but does not override any member functions
+1914-  249 |     WXDLLIMPEXP_INLINE_CORE virtual void SetFocus() override
+1915-      |                                          ^
+1916-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:16:
+1917-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:286:
+1918-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:18:
+1919:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:265:23: error: unknown type name 'wxListEvent'
+1920-  265 |     void OnActivated( wxListEvent &event );
+1921-      |                       ^
+1922:fatal error: too many errors emitted, stopping now [-ferror-limit=]
+1923-1 warning and 20 errors generated.
+1924-[433/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filepickercmn.cpp.o
+1925:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filepickercmn.cpp.o 
+1926-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filepickercmn.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filepickercmn.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/filepickercmn.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp
+1927-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:19:
+1928-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1929-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1930-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1931-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1932-      |             ^
+1933-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:24:
+1934-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filepicker.h:140:
+1935-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:14:
+1936-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:286:
+1937-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:18:
+1938:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:104:20: error: unknown type name 'wxListItem'
+1939-  104 |     void MakeItem( wxListItem &item );
+1940-      |                    ^
+1941:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:126:48: error: unknown class name 'wxListCtrl'; did you mean 'wxTextCtrl'?
+1942-  126 | class WXDLLIMPEXP_CORE wxFileListCtrl : public wxListCtrl
+1943-      |                                                ^~~~~~~~~~
+1944-      |                                                wxTextCtrl
+1945-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:23:28: note: 'wxTextCtrl' declared here
+1946-   23 | class WXDLLIMPEXP_FWD_CORE wxTextCtrl;
+1947-      |                            ^
+1948:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:126:48: error: base class has incomplete type
+1949-  126 | class WXDLLIMPEXP_CORE wxFileListCtrl : public wxListCtrl
+1950-      |                                         ~~~~~~~^~~~~~~~~~
+1951-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/pickerbase.h:17:28: note: forward declaration of 'wxTextCtrl'
+1952-   17 | class WXDLLIMPEXP_FWD_CORE wxTextCtrl;
+1953-      |                            ^
+1954-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:24:
+1955-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filepicker.h:140:
+1956-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:14:
+1957-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:286:
+1958-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:18:
+1959:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:147:39: error: unknown type name 'wxListItem'
+1960-  147 |     virtual long Add( wxFileData *fd, wxListItem &item );
+1961-      |                                       ^
+1962:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:148:35: error: unknown type name 'wxListItem'
+1963-  148 |     virtual void UpdateItem(const wxListItem &item);
+1964-      |                                   ^
+1965:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:158:28: error: unknown type name 'wxListEvent'
+1966-  158 |     void OnListDeleteItem( wxListEvent &event );
+1967-      |                            ^
+1968:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:159:32: error: unknown type name 'wxListEvent'
+1969-  159 |     void OnListDeleteAllItems( wxListEvent &event );
+1970-      |                                ^
+1971:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:160:30: error: unknown type name 'wxListEvent'
+1972-  160 |     void OnListEndLabelEdit( wxListEvent &event );
+1973-      |                              ^
+1974:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:161:26: error: unknown type name 'wxListEvent'
+1975-  161 |     void OnListColClick( wxListEvent &event );
+1976-      |                          ^
+1977:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:169:23: error: unknown type name 'wxListItem'
+1978-  169 |     void FreeItemData(wxListItem& item);
+1979-      |                       ^
+1980:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:136:30: error: use of undeclared identifier 'wxLC_LIST'; did you mean 'wxID_LAST'?
+1981-  136 |                 long style = wxLC_LIST,
+1982-      |                              ^~~~~~~~~
+1983-      |                              wxID_LAST
+1984-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:1897:5: note: 'wxID_LAST' declared here
+1985- 1897 |     wxID_LAST,
+1986-      |     ^
+1987-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:24:
+1988-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filepicker.h:140:
+1989-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:14:
+1990-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:286:
+1991-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:18:
+1992:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:265:23: error: unknown type name 'wxListEvent'
+1993-  265 |     void OnActivated( wxListEvent &event );
+1994-      |                       ^
+1995:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filectrlg.h:268:22: error: unknown type name 'wxListEvent'
+1996-  268 |     void OnSelected( wxListEvent &event );
+1997-      |                      ^
+1998-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:24:
+1999-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filepicker.h:140:
+2000:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:184:28: error: use of undeclared identifier 'wxDD_DEFAULT_STYLE'
+2001-  184 |         long dirdlgstyle = wxDD_DEFAULT_STYLE;
+2002-      |                            ^
+2003:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:187:28: error: use of undeclared identifier 'wxDD_DIR_MUST_EXIST'; did you mean 'wxFD_FILE_MUST_EXIST'?
+2004-  187 |             dirdlgstyle |= wxDD_DIR_MUST_EXIST;
+2005-      |                            ^~~~~~~~~~~~~~~~~~~
+2006-      |                            wxFD_FILE_MUST_EXIST
+2007-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:49:5: note: 'wxFD_FILE_MUST_EXIST' declared here
+2008-   49 |     wxFD_FILE_MUST_EXIST   = 0x0010,
+2009-      |     ^
+2010-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:24:
+2011-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filepicker.h:140:
+2012:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:189:28: error: use of undeclared identifier 'wxDD_CHANGE_DIR'; did you mean 'wxFD_CHANGE_DIR'?
+2013-  189 |             dirdlgstyle |= wxDD_CHANGE_DIR;
+2014-      |                            ^~~~~~~~~~~~~~~
+2015-      |                            wxFD_CHANGE_DIR
+2016-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:50:5: note: 'wxFD_CHANGE_DIR' declared here
+2017-   50 |     wxFD_CHANGE_DIR        = 0x0080,
+2018-      |     ^
+2019-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/filepickercmn.cpp:24:
+2020-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filepicker.h:140:
+2021:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filepickerg.h:206:34: error: use of undeclared identifier 'wxDirDialog'
+2022-  206 |         { return wxStaticCast(p, wxDirDialog)->GetPath(); }
+2023-      |                                  ^
+2024-1 warning and 17 errors generated.
+2025-ninja: build stopped: subcommand failed.

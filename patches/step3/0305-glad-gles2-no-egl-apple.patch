@@ -1,30 +1,29 @@
 diff --git a/src/libvgcode/glad/src/gles2.c b/src/libvgcode/glad/src/gles2.c
-index e9642e9..6841f99 100644
+index e9642e9..7b985c4 100644
 --- a/src/libvgcode/glad/src/gles2.c
 +++ b/src/libvgcode/glad/src/gles2.c
-@@ -761,6 +761,10 @@ static GLADapiproc glad_dlsym_handle(void* handle, const char *name) {
+@@ -761,6 +761,9 @@ static GLADapiproc glad_dlsym_handle(void* handle, const char *name) {
    typedef __eglMustCastToProperFunctionPointerType (GLAD_API_PTR *PFNEGLGETPROCADDRESSPROC)(const char *name);
  #endif
    extern __eglMustCastToProperFunctionPointerType emscripten_GetProcAddress(const char *name);
 +#elif defined(__APPLE__)
-+  /* iOS/macOS: GLES linked directly from OpenGLES framework; no EGL. (Orca-iOS-ipa) */
 +  typedef void (*__eglMustCastToProperFunctionPointerType)(void);
 +  typedef __eglMustCastToProperFunctionPointerType (*PFNEGLGETPROCADDRESSPROC)(const char *name);
  #elif GLAD_GLES2_USE_SYSTEM_EGL
    #include <EGL/egl.h>
    typedef __eglMustCastToProperFunctionPointerType (GLAD_API_PTR *PFNEGLGETPROCADDRESSPROC)(const char *name);
-@@ -827,6 +831,10 @@ static struct _glad_gles2_userptr glad_gles2_build_userptr(void *handle) {
-     return userptr;
+@@ -815,6 +818,10 @@ static void* glad_gles2_dlopen_handle(void) {
+ #endif
  }
  
 +#if defined(__APPLE__)
 +int gladLoaderLoadGLES2(void) { return 1; }
 +void gladLoaderUnloadGLES2(void) { }
 +#else
- int gladLoaderLoadGLES2(void) {
-     int version = 0;
-     void *handle = NULL;
-@@ -869,6 +877,7 @@ void gladLoaderUnloadGLES2(void) {
+ static struct _glad_gles2_userptr glad_gles2_build_userptr(void *handle) {
+     struct _glad_gles2_userptr userptr;
+ #if GLAD_PLATFORM_EMSCRIPTEN
+@@ -869,6 +876,7 @@ void gladLoaderUnloadGLES2(void) {
          _glad_GLES2_loader_handle = NULL;
      }
  }

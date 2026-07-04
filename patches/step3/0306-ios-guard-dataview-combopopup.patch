@@ -1,0 +1,40 @@
+diff --git a/src/slic3r/GUI/wxExtensions.cpp b/src/slic3r/GUI/wxExtensions.cpp
+index 66ad109..bf21c6b 100644
+--- a/src/slic3r/GUI/wxExtensions.cpp
++++ b/src/slic3r/GUI/wxExtensions.cpp
+@@ -314,6 +314,7 @@ void wxCheckListBoxComboPopup::OnListBoxSelection(wxCommandEvent& evt)
+ }
+ 
+ 
++#if wxUSE_DATAVIEWCTRL
+ // ***  wxDataViewTreeCtrlComboPopup  ***
+ 
+ const unsigned int wxDataViewTreeCtrlComboPopup::DefaultWidth = 270;
+@@ -368,6 +369,7 @@ void wxDataViewTreeCtrlComboPopup::OnDataViewTreeCtrlSelection(wxCommandEvent& e
+ 	auto selected = GetItemText(GetSelection());
+ 	cmb->SetText(selected);
+ }
++#endif // wxUSE_DATAVIEWCTRL
+ 
+ // edit tooltip : change Slic3r to SLIC3R_APP_KEY
+ // Temporary workaround for localization
+diff --git a/src/slic3r/GUI/wxExtensions.hpp b/src/slic3r/GUI/wxExtensions.hpp
+index 502614e..c6197d8 100644
+--- a/src/slic3r/GUI/wxExtensions.hpp
++++ b/src/slic3r/GUI/wxExtensions.hpp
+@@ -127,6 +127,7 @@ public:
+ };
+ 
+ 
++#if wxUSE_DATAVIEWCTRL
+ // ***  wxDataViewTreeCtrlComboBox  ***
+ 
+ class wxDataViewTreeCtrlComboPopup: public wxDataViewTreeCtrl, public wxComboPopup
+@@ -149,6 +150,7 @@ public:
+     void				OnDataViewTreeCtrlSelection(wxCommandEvent& evt);
+     void				SetItemsCnt(int cnt) { m_cnt_open_items = cnt; }
+ };
++#endif // wxUSE_DATAVIEWCTRL
+ 
+ 
+ // ----------------------------------------------------------------------------

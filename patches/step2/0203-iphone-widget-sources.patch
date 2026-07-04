@@ -18,3 +18,16 @@ index c163c87..dbab811 100644
  )
  
  set(OSX_IPHONE_HDR
+diff --git a/include/wx/filedlg.h b/include/wx/filedlg.h
+index d3f0681..21e1617 100644
+--- a/include/wx/filedlg.h
++++ b/include/wx/filedlg.h
+@@ -281,6 +281,8 @@ wxSaveFileSelector(const wxString& what,
+     #include "wx/msw/filedlg.h"
+ #elif defined(__WXGTK__)
+     #include "wx/gtk/filedlg.h"     // GTK+ > 2.4 has native version
++#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
++    #include "wx/osx/iphone/filedlg.h"   // Orca-iOS-ipa UIDocumentPicker shim
+ #elif defined(__WXMAC__)
+     #include "wx/osx/filedlg.h"
+ #elif defined(__WXQT__)

@@ -207,3 +207,58 @@ Main GUI bulk (GUI_Utils.hpp etc.) needs wx classes the fork's iPhone port lacks
 ### Step 3 workflow milestone target is still `ninja libslic3r_gui` (milestone 1).
 After it compiles: restore Orca's real main() (gate its GLFW/thumbnail CLI path off on
 iOS), link the app, launch in simulator. Then step 4 (device IPA), step 5 (feature parity).
+
+---
+## UPDATE (session 2, cont.): Step 3 deep in wxWidgets iPhone-port control enablement
+
+Milestone-1 (`ninja libslic3r_gui`) is blocked in the **wxWidgets build phase** now
+(step 5/8), not Orca. Root discovery: the fork's iPhone port ships a **deliberately
+minimal widget set** — `OSX_IPHONE_SRC` in `build/cmake/files.cmake` is a FIXED list of
+24 .mm files (NOT flag-driven like desktop ports), and `include/wx/osx/iphone/chkconf.h`
+hard-disables ~79 `wxUSE_*` controls. Orca needs many of them.
+
+Patches added this session (all step2, applied by step2 AND step3 workflows):
+- 0201 + wx-overlay/: evtloop.h iPhone branch + new iphone/evtloop.h (declares the
+  5 methods evtloop.mm defines; MUST be declarations only — inline WakeUp collided).
+  Overlay is copied into wx source include AND into WXPREFIX after `ninja install`.
+- 0202: chkconf.h re-enables 24 flags (STATBOX, STATLINE, CHECKLISTBOX, FILEDLG,
+  FILECTRL, FILEPICKERCTRL, DIRDLG, LISTCTRL, IMAGLIST, HEADERCTRL, VALIDATORS, SPINBTN,
+  SPINCTRL, COLLPANE, RADIOBTN/BOX, TOGGLEBTN, PROGRESSDLG, TEXTDLG, NUMBERDLG, CHOICEDLG,
+  FINDREPLDLG, ABOUTDLG, STATUSBAR) + routes filedlg & colordlg umbrellas to wx GENERIC
+  backends on __WXOSX_IPHONE__ (osx native needs NSOpenPanel/NSColorPanel).
+- 0203: adds the implementation sources to OSX_IPHONE_SRC — native-osx controls with no
+  AppKit deps (statbox_osx, statline_osx, radiobut_osx, radiobox_osx, spinbutt_osx) + wx
+  generic controls (listctrl, imaglist, headerctrlg, spinctlg, collpaneg,
+  collheaderctrlg, filectrlg, filedlgg, dirdlgg, colrdlgg, progdlgg, textdlgg, numdlgg,
+  choicdgg, fdrepdlg) + validators (valgen/validate/valtext) + fldlgcmn + filectrlcmn.
+
+### CURRENT BLOCKER (step3 run-14, 57 wx errors) — UNSOLVED, precise diagnosis:
+`wx/generic/filectrlg.h:158` uses `wxListEvent` (also wxListItem, wxLC_LIST) → "unknown
+type name". BUT `wxUSE_LISTCTRL` is provably 1 after chkconf (verified: chkconf.h:156
+`#define wxUSE_LISTCTRL 1` unconditional; global chkconf.h:1627 even force-enables it).
+`wxListEvent` is declared in `wx/listbase.h:512` (ungated), included by `wx/listctrl.h`
+(line-15 `#if wxUSE_LISTCTRL`), included by filectrlg.h line 16.
+**Hypothesis:** include-guard poisoning — something includes `wx/listctrl.h` EARLIER in the
+TU while `wxUSE_LISTCTRL` is momentarily 0 (before chkconf fixups apply), setting guard
+`_WX_LISTCTRL_H_BASE_` so the later include is a no-op and the class decls are skipped.
+Needs empirical bisection on the runner (expensive at ~30min/run). Approaches to try next:
+  1. Add `-DwxUSE_LISTCTRL=1` etc. via CMake `-D` (wx honors some via cache) OR edit the
+     base `include/wx/osx/setup.h` values too (they're already 1 there — so this may not
+     be it), to make the flag 1 from the very first include.
+  2. Find what includes listctrl.h early: check wx/osx/iphone/private.h, window.h,
+     toolbar.mm precompiled path. `grep -rl listctrl include/wx/osx` came back empty, so
+     the early include is likely transitive via a common header — instrument with
+     `-H` (clang header trace) in a throwaway run to see include order.
+  3. ALTERNATIVE STRATEGY (recommended if bisection stalls): stop enabling generic
+     filedlg/filectrl/listctrl entirely. Instead keep them DISABLED and provide a small
+     iOS-native `wxFileDialog` shim (subclass wxFileDialogBase) backed by
+     UIDocumentPickerViewController, shipped as a wx overlay .mm+.h. This sidesteps the
+     entire listctrl/validator/imaglist dependency tree (filectrlg pulls all of it).
+     Orca only needs wxFileDialog's open/save result, not the generic file browser UI.
+     This is likely LESS total work than making the full generic stack compile on iphone.
+
+### Honest status
+Step 3 is the hard stage (flagged from the start). Steps 1–2 remain green. libvgcode +
+hidapi + the Orca GUI .cpp files that compiled before the wx-phase regression are fine.
+The wx control-enablement is a real sub-project; the UIDocumentPicker shim (approach 3)
+is the most promising path and is where a fresh session should probably start.

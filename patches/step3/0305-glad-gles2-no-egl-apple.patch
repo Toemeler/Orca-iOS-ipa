@@ -1,0 +1,15 @@
+diff --git a/src/libvgcode/glad/src/gles2.c b/src/libvgcode/glad/src/gles2.c
+index e9642e9..961bac4 100644
+--- a/src/libvgcode/glad/src/gles2.c
++++ b/src/libvgcode/glad/src/gles2.c
+@@ -761,6 +761,10 @@ static GLADapiproc glad_dlsym_handle(void* handle, const char *name) {
+   typedef __eglMustCastToProperFunctionPointerType (GLAD_API_PTR *PFNEGLGETPROCADDRESSPROC)(const char *name);
+ #endif
+   extern __eglMustCastToProperFunctionPointerType emscripten_GetProcAddress(const char *name);
++#elif defined(__APPLE__)
++  /* iOS/macOS: GLES symbols are linked directly from the OpenGLES framework;
++     no EGL and no runtime loader are needed. (Orca-iOS-ipa) */
++  typedef void (*__eglMustCastToProperFunctionPointerType)(void);
+ #elif GLAD_GLES2_USE_SYSTEM_EGL
+   #include <EGL/egl.h>
+   typedef __eglMustCastToProperFunctionPointerType (GLAD_API_PTR *PFNEGLGETPROCADDRESSPROC)(const char *name);

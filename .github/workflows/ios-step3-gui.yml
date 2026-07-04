@@ -110,6 +110,9 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
           ninja > /tmp/wx-ninja.log 2>&1 || (tail -50 /tmp/wx-ninja.log && exit 1)
           ninja install > /dev/null
+          # overlay-after-install: ship non-installed iphone headers into the prefix
+          WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
 
       - name: "[6/8] Configure Orca GUI build"
         run: |

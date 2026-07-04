@@ -1,0 +1,74 @@
+diff --git a/include/wx/colordlg.h b/include/wx/colordlg.h
+index 264f4f7..db9b1fd 100644
+--- a/include/wx/colordlg.h
++++ b/include/wx/colordlg.h
+@@ -18,6 +18,9 @@
+ 
+ #if defined(__WXMSW__) && !defined(__WXUNIVERSAL__)
+     #include "wx/msw/colordlg.h"
++#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
++    #include "wx/generic/colrdlgg.h"
++    #define wxColourDialog wxGenericColourDialog
+ #elif defined(__WXMAC__) && !defined(__WXUNIVERSAL__)
+     #include "wx/osx/colordlg.h"
+ #elif defined(__WXGTK__) && !defined(__WXUNIVERSAL__)
+diff --git a/include/wx/filedlg.h b/include/wx/filedlg.h
+index d3f0681..e7ded13 100644
+--- a/include/wx/filedlg.h
++++ b/include/wx/filedlg.h
+@@ -281,6 +281,9 @@ wxSaveFileSelector(const wxString& what,
+     #include "wx/msw/filedlg.h"
+ #elif defined(__WXGTK__)
+     #include "wx/gtk/filedlg.h"     // GTK+ > 2.4 has native version
++#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
++    #define wxHAS_GENERIC_FILEDIALOG
++    #include "wx/generic/filedlgg.h"
+ #elif defined(__WXMAC__)
+     #include "wx/osx/filedlg.h"
+ #elif defined(__WXQT__)
+diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
+index aea925c..989b0a2 100644
+--- a/include/wx/osx/iphone/chkconf.h
++++ b/include/wx/osx/iphone/chkconf.h
+@@ -106,9 +106,9 @@
+ #define wxUSE_STATUSBAR 0
+ #define wxUSE_NATIVE_STATUSBAR 0
+ #define wxUSE_ABOUTDLG 0
+-#define wxUSE_STATLINE 0
++#define wxUSE_STATLINE 1
+ #define wxUSE_COLLPANE 0
+-#define wxUSE_STATBOX 0
++#define wxUSE_STATBOX 1
+ #define wxUSE_RADIOBTN 0
+ #define wxUSE_RADIOBOX 0
+ #define wxUSE_TOGGLEBTN 0
+@@ -151,7 +151,7 @@
+ #define wxUSE_ODCOMBOBOX 0
+ #define wxUSE_BITMAPCOMBOBOX 0
+ #define wxUSE_BMPBUTTON 0
+-#define wxUSE_CHECKLISTBOX 0
++#define wxUSE_CHECKLISTBOX 1
+ #define wxUSE_GRID 0
+ #define wxUSE_LISTCTRL 0
+ #define wxUSE_SPINBTN 0
+@@ -203,7 +203,7 @@
+ #define wxUSE_HELP 0
+ #define wxUSE_PROGRESSDLG 0
+ #define  wxUSE_FONTDLG 0
+-#define wxUSE_FILEDLG 0
++#define wxUSE_FILEDLG 1
+ #define wxUSE_CHOICEDLG 0
+ #define wxUSE_NUMBERDLG 0
+ #define wxUSE_TEXTDLG 0
+@@ -278,10 +278,7 @@
+ #endif // wxUSE_GLCANVAS
+ */
+ 
+-#if wxUSE_COLOURDLG
+-#undef wxUSE_COLOURDLG
+-#define wxUSE_COLOURDLG 0
+-#endif // wxUSE_COLOURDLG
++/* wxUSE_COLOURDLG kept enabled for iOS (generic backend) */
+ 
+ // iphone has a toolbar that is a regular UIView
+ 

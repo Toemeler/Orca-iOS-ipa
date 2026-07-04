@@ -1,5 +1,17 @@
+diff --git a/src/libvgcode/include/Types.hpp b/src/libvgcode/include/Types.hpp
+index 2187238..84517a6 100644
+--- a/src/libvgcode/include/Types.hpp
++++ b/src/libvgcode/include/Types.hpp
+@@ -37,6 +37,7 @@ static constexpr float MAX_WIPES_RADIUS_MM = 1.0f;
+ // Used for positions, displacements and so on.
+ //
+ using Vec3 = std::array<float, 3>;
++using Vec4 = std::array<float, 4>;
+ 
+ //
+ // 4x4 square matrix with elements in column-major order:
 diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
-index 1c52ffe..51f93ce 100644
+index 1c52ffe..2d95d70 100644
 --- a/src/libvgcode/src/ViewerImpl.cpp
 +++ b/src/libvgcode/src/ViewerImpl.cpp
 @@ -349,7 +349,7 @@ void ViewerImpl::TextureData::init(size_t vertices_count)
@@ -66,6 +78,14 @@ index 1c52ffe..51f93ce 100644
  
          remaining = (remaining > tex_capacity) ? remaining - tex_capacity : 0;
      }
+@@ -906,7 +906,6 @@ void ViewerImpl::reset()
+ // https://github.com/prusa3d/PrusaSlicer/issues/12908
+ // To let all drivers be happy, we use GL_RGBA32F format, so we need to add an extra (currently unused) float
+ // to position and heights_widths_angles vectors
+-using Vec4 = std::array<float, 4>;
+ 
+ static void extract_pos_and_or_hwa(const std::vector<PathVertex>& vertices, float travels_radius, float wipes_radius, BitSet<>& valid_lines_bitset,
+     std::vector<Vec4>* positions = nullptr, std::vector<Vec4>* heights_widths_angles = nullptr, bool update_bitset = false) {
 diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
 index a574003..cc3f1eb 100644
 --- a/src/libvgcode/src/ViewerImpl.hpp

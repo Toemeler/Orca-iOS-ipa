@@ -46,6 +46,8 @@ private:
     wxString m_scheme;
 };
 
+typedef int wxWebViewReloadFlags;
+
 class WXDLLIMPEXP_CORE wxWebView : public wxControl
 {
 public:
@@ -79,7 +81,6 @@ public:
     virtual bool AddUserScript(const wxString&, int = 0) { return false; }
 };
 
-typedef int wxWebViewReloadFlags;
 
 class WXDLLIMPEXP_CORE wxWebViewEvent : public wxNotifyEvent
 {

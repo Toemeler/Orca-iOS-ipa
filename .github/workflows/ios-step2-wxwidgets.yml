@@ -48,6 +48,7 @@ jobs:
           shopt -s nullglob
           for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/src/. src/
 
       - name: "[4/7] Build wxWidgets for iOS (static, iPhone port)"
         run: |

@@ -1,0 +1,20 @@
+diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
+index c163c87..dbab811 100644
+--- a/build/cmake/files.cmake
++++ b/build/cmake/files.cmake
+@@ -2235,6 +2235,15 @@ set(OSX_IPHONE_SRC
+     src/osx/iphone/statbmp.mm
+     src/osx/iphone/menuitem.mm
+     src/osx/iphone/menu.mm
++    # --- Orca-iOS-ipa: native-osx widgets w/o AppKit deps + iOS filedlg shim ---
++    src/osx/statbox_osx.cpp
++    src/osx/statline_osx.cpp
++    src/osx/radiobut_osx.cpp
++    src/osx/radiobox_osx.cpp
++    src/osx/spinbutt_osx.cpp
++    src/generic/spinctlg.cpp
++    src/osx/iphone/filedlg.mm
++    src/common/fldlgcmn.cpp
+ )
+ 
+ set(OSX_IPHONE_HDR

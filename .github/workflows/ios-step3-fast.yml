@@ -1,0 +1,112 @@
+name: iOS Step 3 FAST - GUI-only iteration
+
+# Speed-optimized step 3. Assumes ios-step3-gui.yml has run at least once and
+# populated the deps cache (ios-deps-v1-*) AND the wx cache (ios-wx-v1-*).
+# This workflow restores BOTH from cache and jumps straight to configuring +
+# compiling Orca's GUI. No deps top-up, no wx rebuild => ~2-3 min/iteration
+# instead of ~30 min. Use this for the libslic3r_gui burn-down; fall back to
+# the full ios-step3-gui.yml only when deps/wx themselves need rebuilding.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "ninja target to build"
+        required: false
+        default: "libslic3r_gui"
+
+permissions:
+  contents: write
+
+jobs:
+  gui-fast:
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      ORCA_REF: "395e070a0e675fd4723f93967cefede730c482d9"
+      IOS_MIN: "17.0"
+      PREFIX: ${{ github.workspace }}/ios-prefix
+      WXPREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: iphonesimulator
+      TARGET: ${{ github.event.inputs.target || 'libslic3r_gui' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - run: brew install cmake ninja >/dev/null
+
+      - name: Fetch Orca + apply step1+step3 patches + copy shims
+        run: |
+          set -euxo pipefail
+          git clone --depth 1 https://github.com/SoftFever/OrcaSlicer.git orca
+          cd orca && git fetch --depth 1 origin "$ORCA_REF" && git checkout "$ORCA_REF"
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch "$GITHUB_WORKSPACE"/patches/step3/*.patch; do
+            git apply --verbose "$p"
+          done
+          mkdir -p deps_src/hidapi/ios
+          cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
+
+      - name: Restore deps cache (required)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ios-prefix
+          key: ios-prefixonly-v1
+          restore-keys: |
+            ios-prefixonly-v1
+            ios-deps-v1-
+
+      - name: Restore wx cache (required)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            wx-prefix
+          key: ios-wxprefix-v1
+          restore-keys: |
+            ios-wxprefix-v1
+
+      - name: Sanity - prefixes present
+        run: |
+          set -euxo pipefail
+          test -d "$PREFIX/usr/local/lib" || { echo "::error::deps prefix missing - run full ios-step3-gui.yml first"; exit 1; }
+          test -d "$WXPREFIX" || { echo "::error::wx prefix missing - run full ios-step3-gui.yml first"; exit 1; }
+          # ship overlay headers into wx prefix (idempotent)
+          WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+
+      - name: Configure Orca GUI
+        run: |
+          set -euxo pipefail
+          cd orca && mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DSLIC3R_GUI=1 -DSLIC3R_OPENGL_ES=1 -DSLIC3R_STATIC=1 \
+            -DCMAKE_PREFIX_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
+            -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/fast-configure.log
+
+      - name: Build target
+        run: |
+          set -euxo pipefail
+          cd orca/build
+          ninja "$TARGET" 2>&1 | tee /tmp/fast-ninja.log
+
+      - name: Publish failure logs
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
+          [ -f /tmp/fast-ninja.log ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/fast-ninja.log | head -c 80000 > "$D/errors.log"
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git pull --rebase || true
+          git add ci-logs && git commit -m "fast-run ${GITHUB_RUN_NUMBER} logs" && git push

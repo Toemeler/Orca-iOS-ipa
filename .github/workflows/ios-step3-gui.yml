@@ -99,6 +99,7 @@ jobs:
           shopt -s nullglob
           for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/src/. src/
           mkdir -p build-ios && cd build-ios
           cmake .. -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
@@ -113,6 +114,20 @@ jobs:
           # overlay-after-install: ship non-installed iphone headers into the prefix
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+
+      - name: Save wx prefix cache (for fast workflow)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: wx-prefix
+          key: ios-wxprefix-v1
+
+      - name: Save deps prefix cache (for fast workflow)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ios-prefix
+          key: ios-prefixonly-v1
 
       - name: "[6/8] Configure Orca GUI build"
         run: |

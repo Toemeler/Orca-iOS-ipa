@@ -97,7 +97,7 @@ jobs:
         run: |
           set -euxo pipefail
           cd orca/build
-          ninja "$TARGET" 2>&1 | tee /tmp/fast-ninja.log
+          ninja -k 0 "$TARGET" 2>&1 | tee /tmp/fast-ninja.log
 
       - name: Publish failure logs
         if: failure()
@@ -106,7 +106,17 @@ jobs:
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
-          [ -f /tmp/fast-ninja.log ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/fast-ninja.log | head -c 80000 > "$D/errors.log"
+          [ -f /tmp/fast-ninja.log ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/fast-ninja.log | head -c 400000 > "$D/errors.log"
+          # -k0 summary: full map of remaining errors
+          if [ -f /tmp/fast-ninja.log ]; then
+            {
+              echo "=== FAILED files ==="
+              grep "FAILED:" /tmp/fast-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o.*##" | sort -u
+              echo; echo "=== error signatures (deduped) ==="
+              grep -oE "(unknown type name '"'"'[^'"'"']+'"'"'|use of undeclared identifier '"'"'[^'"'"']+'"'"'|unknown class name '"'"'[^'"'"']+'"'"'|no member named '"'"'[^'"'"']+'"'"'|no type named '"'"'[^'"'"']+'"'"'|'"'"'wx/[^'"'"']+'"'"' file not found|'"'"'[A-Za-z0-9_/]+\\.h'"'"' file not found)" /tmp/fast-ninja.log | sort | uniq -c | sort -rn
+              echo; echo "total FAILED: $(grep -c FAILED: /tmp/fast-ninja.log)"
+            } > "$D/SUMMARY.txt"
+          fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
           git pull --rebase || true
           git add ci-logs && git commit -m "fast-run ${GITHUB_RUN_NUMBER} logs" && git push

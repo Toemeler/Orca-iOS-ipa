@@ -151,7 +151,7 @@ jobs:
         run: |
           set -euxo pipefail
           cd orca/build
-          ninja libslic3r_gui 2>&1 | tee /tmp/step3-ninja.log
+          ninja -k 0 libslic3r_gui 2>&1 | tee /tmp/step3-ninja.log
 
       - name: "[8/8] Save caches + upload logs artifact"
         if: always()
@@ -175,6 +175,16 @@ jobs:
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
             [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 70000 > "$D/$(basename "$f" .log)-errors.log"
           done
+          # -k0 summary: full map of remaining errors
+          if [ -f /tmp/step3-ninja.log ]; then
+            {
+              echo "=== FAILED files ==="
+              grep "FAILED:" /tmp/step3-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o.*##" | sort -u
+              echo; echo "=== error signatures (deduped) ==="
+              grep -oE "(unknown type name '"'"'[^'"'"']+'"'"'|use of undeclared identifier '"'"'[^'"'"']+'"'"'|unknown class name '"'"'[^'"'"']+'"'"'|no member named '"'"'[^'"'"']+'"'"'|no type named '"'"'[^'"'"']+'"'"'|'"'"'wx/[^'"'"']+'"'"' file not found|'"'"'[A-Za-z0-9_/]+\\.h'"'"' file not found)" /tmp/step3-ninja.log | sort | uniq -c | sort -rn
+              echo; echo "total FAILED: $(grep -c FAILED: /tmp/step3-ninja.log)"
+            } > "$D/SUMMARY.txt"
+          fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
           git pull --rebase || true
           git add ci-logs && git commit -m "step3 ci logs run ${GITHUB_RUN_NUMBER}" && git push

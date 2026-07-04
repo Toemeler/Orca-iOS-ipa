@@ -1,5 +1,5 @@
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..46ab88a 100644
+index aea925c..3f7e173 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -106,12 +106,12 @@
@@ -20,11 +20,13 @@ index aea925c..46ab88a 100644
  
  #undef wxUSE_RICHTEXT
  #define wxUSE_RICHTEXT 0
-@@ -151,11 +151,11 @@
+@@ -150,12 +150,12 @@
+ #define wxUSE_COMBOCTRL 0
  #define wxUSE_ODCOMBOBOX 0
  #define wxUSE_BITMAPCOMBOBOX 0
- #define wxUSE_BMPBUTTON 0
+-#define wxUSE_BMPBUTTON 0
 -#define wxUSE_CHECKLISTBOX 0
++#define wxUSE_BMPBUTTON 1
 +#define wxUSE_CHECKLISTBOX 1
  #define wxUSE_GRID 0
  #define wxUSE_LISTCTRL 0
@@ -55,7 +57,7 @@ index aea925c..46ab88a 100644
 -#undef wxUSE_COLOURDLG
 -#define wxUSE_COLOURDLG 0
 -#endif // wxUSE_COLOURDLG
-+/* Orca-iOS-ipa: wxUSE_COLOURDLG kept enabled (generic backend) */
++/* Orca-iOS-ipa: wxUSE_COLOURDLG kept enabled */
  
  // iphone has a toolbar that is a regular UIView
  

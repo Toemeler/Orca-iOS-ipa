@@ -43,6 +43,13 @@ jobs:
           brew install cmake ninja automake autoconf libtool nasm texinfo
           echo "$(brew --prefix texinfo)/bin" >> "$GITHUB_PATH"
 
+      - name: Compute cache keys from patch/overlay hashes
+        run: |
+          set -euxo pipefail
+          WXH=$(cat patches/step2/*.patch wx-overlay/include/wx/osx/iphone/*.h wx-overlay/include/wx/*.h wx-overlay/src/osx/iphone/*.* 2>/dev/null | shasum | cut -c1-12)
+          echo "WX_KEY=ios-wxprefix-$WXH" >> "$GITHUB_ENV"
+          echo "wx cache key: ios-wxprefix-$WXH"
+
       - name: "[2/8] Fetch Orca + apply step1+step3 patches"
         run: |
           set -euxo pipefail
@@ -120,7 +127,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: wx-prefix
-          key: ios-wxprefix-v1
+          key: ${{ env.WX_KEY }}
 
       - name: Save deps prefix cache (for fast workflow)
         if: always()

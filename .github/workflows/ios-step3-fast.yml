@@ -47,6 +47,13 @@ jobs:
           mkdir -p deps_src/hidapi/ios
           cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
 
+      - name: Compute cache keys from patch/overlay hashes
+        run: |
+          set -euxo pipefail
+          WXH=$(cat patches/step2/*.patch wx-overlay/include/wx/osx/iphone/*.h wx-overlay/include/wx/*.h wx-overlay/src/osx/iphone/*.* 2>/dev/null | shasum | cut -c1-12)
+          echo "WX_KEY=ios-wxprefix-$WXH" >> "$GITHUB_ENV"
+          echo "wx cache key: ios-wxprefix-$WXH"
+
       - name: Restore deps cache (required)
         uses: actions/cache/restore@v4
         with:
@@ -62,9 +69,7 @@ jobs:
         with:
           path: |
             wx-prefix
-          key: ios-wxprefix-v1
-          restore-keys: |
-            ios-wxprefix-v1
+          key: ${{ env.WX_KEY }}
 
       - name: Sanity - prefixes present
         run: |

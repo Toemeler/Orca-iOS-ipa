@@ -1,5 +1,5 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..05ac428 100644
+index c163c87..2387dee 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
 @@ -2024,8 +2024,8 @@ set(OSX_COMMON_SRC
@@ -17,7 +17,6 @@ index c163c87..05ac428 100644
      src/osx/iphone/statbmp.mm
      src/osx/iphone/menuitem.mm
      src/osx/iphone/menu.mm
-+    # --- Orca-iOS-ipa: native-osx widgets w/o AppKit deps + iOS filedlg shim ---
 +    src/osx/statbox_osx.cpp
 +    src/osx/statline_osx.cpp
 +    src/osx/radiobut_osx.cpp
@@ -25,6 +24,7 @@ index c163c87..05ac428 100644
 +    src/osx/spinbutt_osx.cpp
 +    src/generic/spinctlg.cpp
 +    src/osx/iphone/filedlg.mm
++    src/osx/iphone/webview_stub.cpp
  )
  
  set(OSX_IPHONE_HDR
@@ -39,8 +39,22 @@ index c163c87..05ac428 100644
      src/generic/fontdlgg.cpp
      src/generic/fontpickerg.cpp
      src/generic/listctrl.cpp
+diff --git a/include/wx/colordlg.h b/include/wx/colordlg.h
+index 264f4f7..db9b1fd 100644
+--- a/include/wx/colordlg.h
++++ b/include/wx/colordlg.h
+@@ -18,6 +18,9 @@
+ 
+ #if defined(__WXMSW__) && !defined(__WXUNIVERSAL__)
+     #include "wx/msw/colordlg.h"
++#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
++    #include "wx/generic/colrdlgg.h"
++    #define wxColourDialog wxGenericColourDialog
+ #elif defined(__WXMAC__) && !defined(__WXUNIVERSAL__)
+     #include "wx/osx/colordlg.h"
+ #elif defined(__WXGTK__) && !defined(__WXUNIVERSAL__)
 diff --git a/include/wx/filedlg.h b/include/wx/filedlg.h
-index d3f0681..21e1617 100644
+index d3f0681..32bfdc8 100644
 --- a/include/wx/filedlg.h
 +++ b/include/wx/filedlg.h
 @@ -281,6 +281,8 @@ wxSaveFileSelector(const wxString& what,
@@ -48,7 +62,7 @@ index d3f0681..21e1617 100644
  #elif defined(__WXGTK__)
      #include "wx/gtk/filedlg.h"     // GTK+ > 2.4 has native version
 +#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
-+    #include "wx/osx/iphone/filedlg.h"   // Orca-iOS-ipa UIDocumentPicker shim
++    #include "wx/osx/iphone/filedlg.h"
  #elif defined(__WXMAC__)
      #include "wx/osx/filedlg.h"
  #elif defined(__WXQT__)

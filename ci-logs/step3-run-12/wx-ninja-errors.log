@@ -1,0 +1,115 @@
+1760-      |             ^
+1761-1 warning generated.
+1762-[434/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o
+1763:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o 
+1764-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fldlgcmn.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp
+1765-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:11:
+1766-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1767-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1768-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1769-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1770-      |             ^
+1771-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fldlgcmn.cpp:16:
+1772-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/filedlg.h:286:
+1773:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:63:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1774-   63 |         { m_filectrl->SetDirectory(dir); }
+1775-      |                     ^
+1776-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1777-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1778-      |                            ^
+1779:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:65:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1780-   65 |         { m_filectrl->SetFilename(name); }
+1781-      |                     ^
+1782-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1783-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1784-      |                            ^
+1785:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:68:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1786-   68 |         { m_filectrl->SetPath(path); }
+1787-      |                     ^
+1788-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1789-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1790-      |                            ^
+1791:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:70:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1792-   70 |         { m_filectrl->SetFilterIndex(filterIndex); }
+1793-      |                     ^
+1794-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1795-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1796-      |                            ^
+1797:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:72:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1798-   72 |         { m_filectrl->SetWildcard(wildCard); }
+1799-      |                     ^
+1800-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1801-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1802-      |                            ^
+1803:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:77:30: error: member access into incomplete type 'wxGenericFileCtrl'
+1804-   77 |             return m_filectrl->GetPath();
+1805-      |                              ^
+1806-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1807-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1808-      |                            ^
+1809:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:80:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1810-   80 |         { m_filectrl->GetPaths(paths); }
+1811-      |                     ^
+1812-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1813-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1814-      |                            ^
+1815:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:82:28: error: member access into incomplete type 'wxGenericFileCtrl'
+1816-   82 |         { return m_filectrl->GetDirectory(); }
+1817-      |                            ^
+1818-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1819-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1820-      |                            ^
+1821:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:86:30: error: member access into incomplete type 'wxGenericFileCtrl'
+1822-   86 |             return m_filectrl->GetFilename();
+1823-      |                              ^
+1824-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1825-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1826-      |                            ^
+1827:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:89:21: error: member access into incomplete type 'wxGenericFileCtrl'
+1828-   89 |         { m_filectrl->GetFilenames(files); }
+1829-      |                     ^
+1830-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1831-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1832-      |                            ^
+1833:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:91:28: error: member access into incomplete type 'wxGenericFileCtrl'
+1834-   91 |         { return m_filectrl->GetWildcard(); }
+1835-      |                            ^
+1836-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1837-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1838-      |                            ^
+1839:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:93:28: error: member access into incomplete type 'wxGenericFileCtrl'
+1840-   93 |         { return m_filectrl->GetFilterIndex(); }
+1841-      |                            ^
+1842-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/filedlgg.h:25:28: note: forward declaration of 'wxGenericFileCtrl'
+1843-   25 | class WXDLLIMPEXP_FWD_CORE wxGenericFileCtrl;
+1844-      |                            ^
+1845-1 warning and 12 errors generated.
+1846-[435/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/graphicc.cpp.o
+1847-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/graphicc.cpp:10:
+1848-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1849-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1850-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1851-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1852-      |             ^
+1853-1 warning generated.
+1854-[436/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fontcmn.cpp.o
+1855-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fontcmn.cpp:19:
+1856-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1857-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1858-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1859-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1860-      |             ^
+1861-1 warning generated.
+1862-[437/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fontenumcmn.cpp.o
+1863-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fontenumcmn.cpp:19:
+1864-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1865-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1866-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1867-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1868-      |             ^
+1869-1 warning generated.
+1870-[438/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/fontmap.cpp.o
+1871-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/fontmap.cpp:19:
+1872-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1873-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1874-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]

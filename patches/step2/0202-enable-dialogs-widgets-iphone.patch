@@ -27,7 +27,7 @@ index d3f0681..e7ded13 100644
      #include "wx/osx/filedlg.h"
  #elif defined(__WXQT__)
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..989b0a2 100644
+index aea925c..bf5a4f6 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -106,9 +106,9 @@
@@ -42,7 +42,7 @@ index aea925c..989b0a2 100644
  #define wxUSE_RADIOBTN 0
  #define wxUSE_RADIOBOX 0
  #define wxUSE_TOGGLEBTN 0
-@@ -151,7 +151,7 @@
+@@ -151,16 +151,16 @@
  #define wxUSE_ODCOMBOBOX 0
  #define wxUSE_BITMAPCOMBOBOX 0
  #define wxUSE_BMPBUTTON 0
@@ -51,6 +51,17 @@ index aea925c..989b0a2 100644
  #define wxUSE_GRID 0
  #define wxUSE_LISTCTRL 0
  #define wxUSE_SPINBTN 0
+ #define wxUSE_SPINCTRL 0
+ #define wxUSE_DATEPICKCTRL 0
+ #define wxUSE_EDITABLELISTBOX 0
+-#define wxUSE_FILEPICKERCTRL 0
++#define wxUSE_FILEPICKERCTRL 1
+ #define wxUSE_DIRPICKERCTRL 0
+-#define wxUSE_FILECTRL 0
++#define wxUSE_FILECTRL 1
+ #define wxUSE_COLOURPICKERCTRL 0
+ #define wxUSE_FONTPICKERCTRL 0
+ #define wxUSE_DEBUGREPORT 0
 @@ -203,7 +203,7 @@
  #define wxUSE_HELP 0
  #define wxUSE_PROGRESSDLG 0

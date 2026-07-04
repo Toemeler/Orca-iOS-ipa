@@ -1,0 +1,86 @@
+1701-[285/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/Utils.cpp.o
+1702-[286/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/Viewer.cpp.o
+1703-[287/653] Building C object src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o
+1704:FAILED: [code=1] src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o 
+1705-/usr/bin/cc -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DENABLE_OPENGL_ES -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o -MF src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o.d -o src/libvgcode/CMakeFiles/libvgcode.dir/glad/src/gles2.c.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/src/gles2.c
+1706:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/src/gles2.c:829:36: error: use of undeclared identifier 'eglGetProcAddress'
+1707-  829 |     userptr.get_proc_address_ptr = eglGetProcAddress;
+1708-      |                                    ^
+1709:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/src/gles2.c:876:6: error: redefinition of 'gladLoaderUnloadGLES2'
+1710-  876 | void gladLoaderUnloadGLES2(void) {
+1711-      |      ^
+1712-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/src/gles2.c:836:6: note: previous definition is here
+1713-  836 | void gladLoaderUnloadGLES2(void) { }
+1714-      |      ^
+1715-2 errors generated.
+1716-[288/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewRange.cpp.o
+1717-[289/653] Building CXX object src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewerImpl.cpp.o
+1718:FAILED: [code=1] src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewerImpl.cpp.o 
+1719-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DENABLE_OPENGL_ES -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewerImpl.cpp.o -MF src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewerImpl.cpp.o.d -o src/libvgcode/CMakeFiles/libvgcode.dir/src/ViewerImpl.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp
+1720:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp:1077:38: error: no viable conversion from 'vector<array<[...], 4>>' to 'const vector<array<[...], 3>>'
+1721- 1077 |         m_texture_data.set_positions(positions);
+1722-      |                                      ^~~~~~~~~
+1723-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:543:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'const vector<array<float, 3>> &' for 1st argument
+1724-  543 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(const vector& __x);
+1725-      |                                                       ^      ~~~~~~~~~~~~~~~~~
+1726-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:549:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'initializer_list<value_type>' (aka 'initializer_list<std::array<float, 3>>') for 1st argument
+1727-  549 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(initializer_list<value_type> __il);
+1728-      |                                                       ^      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1729-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:560:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'vector<array<float, 3>> &&' for 1st argument
+1730-  560 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(vector&& __x)
+1731-      |                                                       ^      ~~~~~~~~~~~~
+1732-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:432:64: note: explicit constructor is not a candidate
+1733-  432 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI explicit vector(const allocator_type& __a)
+1734-      |                                                                ^
+1735-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:441:64: note: explicit constructor is not a candidate
+1736-  441 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI explicit vector(size_type __n) {
+1737-      |                                                                ^
+1738-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp:352:70: note: passing argument to parameter 'positions' here
+1739-  352 | void ViewerImpl::TextureData::set_positions(const std::vector<Vec3>& positions)
+1740-      |                                                                      ^
+1741:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp:1079:50: error: no viable conversion from 'vector<array<[...], 4>>' to 'const vector<array<[...], 3>>'
+1742- 1079 |         m_texture_data.set_heights_widths_angles(heights_widths_angles);
+1743-      |                                                  ^~~~~~~~~~~~~~~~~~~~~
+1744-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:543:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'const vector<array<float, 3>> &' for 1st argument
+1745-  543 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(const vector& __x);
+1746-      |                                                       ^      ~~~~~~~~~~~~~~~~~
+1747-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:549:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'initializer_list<value_type>' (aka 'initializer_list<std::array<float, 3>>') for 1st argument
+1748-  549 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(initializer_list<value_type> __il);
+1749-      |                                                       ^      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1750-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:560:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'vector<array<float, 3>> &&' for 1st argument
+1751-  560 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(vector&& __x)
+1752-      |                                                       ^      ~~~~~~~~~~~~
+1753-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:432:64: note: explicit constructor is not a candidate
+1754-  432 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI explicit vector(const allocator_type& __a)
+1755-      |                                                                ^
+1756-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:441:64: note: explicit constructor is not a candidate
+1757-  441 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI explicit vector(size_type __n) {
+1758-      |                                                                ^
+1759-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp:405:82: note: passing argument to parameter 'heights_widths_angles' here
+1760-  405 | void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec3>& heights_widths_angles)
+1761-      |                                                                                  ^
+1762:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp:1886:46: error: no viable conversion from 'vector<array<[...], 4>>' to 'const vector<array<[...], 3>>'
+1763- 1886 |     m_texture_data.set_heights_widths_angles(heights_widths_angles);
+1764-      |                                              ^~~~~~~~~~~~~~~~~~~~~
+1765-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:543:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'const vector<array<float, 3>> &' for 1st argument
+1766-  543 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(const vector& __x);
+1767-      |                                                       ^      ~~~~~~~~~~~~~~~~~
+1768-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:549:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'initializer_list<value_type>' (aka 'initializer_list<std::array<float, 3>>') for 1st argument
+1769-  549 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(initializer_list<value_type> __il);
+1770-      |                                                       ^      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1771-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:560:55: note: candidate constructor not viable: no known conversion from 'std::vector<Vec4>' (aka 'vector<array<float, 4>>') to 'vector<array<float, 3>> &&' for 1st argument
+1772-  560 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI vector(vector&& __x)
+1773-      |                                                       ^      ~~~~~~~~~~~~
+1774-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:432:64: note: explicit constructor is not a candidate
+1775-  432 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI explicit vector(const allocator_type& __a)
+1776-      |                                                                ^
+1777-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/c++/v1/vector:441:64: note: explicit constructor is not a candidate
+1778-  441 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI explicit vector(size_type __n) {
+1779-      |                                                                ^
+1780-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/src/ViewerImpl.cpp:405:82: note: passing argument to parameter 'heights_widths_angles' here
+1781-  405 | void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec3>& heights_widths_angles)
+1782-      |                                                                                  ^
+1783-3 errors generated.
+1784-[290/653] Building CXX object deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o
+1785-[291/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/OpenVDBUtils.cpp.o
+1786-ninja: build stopped: subcommand failed.

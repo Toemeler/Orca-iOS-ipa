@@ -1,0 +1,131 @@
+2559-      |             ^
+2560-1 warning generated.
+2561-[529/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/infobar.cpp.o
+2562:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/infobar.cpp.o 
+2563-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/infobar.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/infobar.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/infobar.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp
+2564-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:19:
+2565-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2566-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2567-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2568-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2569-      |             ^
+2570:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:121:16: error: incomplete type 'wxBitmapButton' named in nested name specifier
+2571-  121 |     m_button = wxBitmapButton::NewCloseButton(this, wxID_CLOSE);
+2572-      |                ^~~~~~~~~~~~~~~~
+2573-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/infobar.h:13:28: note: forward declaration of 'wxBitmapButton'
+2574-   13 | class WXDLLIMPEXP_FWD_CORE wxBitmapButton;
+2575-      |                            ^
+2576:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:122:13: error: member access into incomplete type 'wxBitmapButton'
+2577-  122 |     m_button->SetToolTip(_("Hide this notification message."));
+2578-      |             ^
+2579-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/infobar.h:13:28: note: forward declaration of 'wxBitmapButton'
+2580-   13 | class WXDLLIMPEXP_FWD_CORE wxBitmapButton;
+2581-      |                            ^
+2582:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:150:12: error: no matching member function for call to 'Add'
+2583-  150 |     sizer->Add(m_button, wxSizerFlags{}.Centre().Border());
+2584-      |     ~~~~~~~^~~
+2585-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1198:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxWindow *' for 1st argument
+2586- 1198 | wxSizer::Add( wxWindow *window, const wxSizerFlags& flags )
+2587-      |          ^    ~~~~~~~~~~~~~~~~
+2588-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1204:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxSizer *' for 1st argument
+2589- 1204 | wxSizer::Add( wxSizer *sizer, const wxSizerFlags& flags )
+2590-      |          ^    ~~~~~~~~~~~~~~
+2591-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1180:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxWindow *' for 1st argument
+2592- 1180 | wxSizer::Add( wxWindow *window, int proportion, int flag, int border, wxObject* userData )
+2593-      |          ^    ~~~~~~~~~~~~~~~~
+2594-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1186:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxSizer *' for 1st argument
+2595- 1186 | wxSizer::Add( wxSizer *sizer, int proportion, int flag, int border, wxObject* userData )
+2596-      |          ^    ~~~~~~~~~~~~~~
+2597-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1192:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'int' for 1st argument
+2598- 1192 | wxSizer::Add( int width, int height, int proportion, int flag, int border, wxObject* userData )
+2599-      |          ^    ~~~~~~~~~
+2600-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1174:10: note: candidate function not viable: requires single argument 'item', but 2 arguments were provided
+2601- 1174 | wxSizer::Add( wxSizerItem *item )
+2602-      |          ^    ~~~~~~~~~~~~~~~~~
+2603-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1210:10: note: candidate function not viable: requires 3 arguments, but 2 were provided
+2604- 1210 | wxSizer::Add( int width, int height, const wxSizerFlags& flags )
+2605-      |          ^    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2606:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:326:17: error: no matching member function for call to 'Detach'
+2607-  326 |     if ( sizer->Detach(m_button) )
+2608-      |          ~~~~~~~^~~~~~
+2609-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:616:18: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxWindowBase *' for 1st argument
+2610-  616 |     virtual bool Detach( wxWindowBase *window );
+2611-      |                  ^       ~~~~~~~~~~~~~~~~~~~~
+2612-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:617:18: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxSizer *' for 1st argument
+2613-  617 |     virtual bool Detach( wxSizer *sizer );
+2614-      |                  ^       ~~~~~~~~~~~~~~
+2615-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:618:18: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'int' for 1st argument
+2616-  618 |     virtual bool Detach( int index );
+2617-      |                  ^       ~~~~~~~~~
+2618:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:328:17: error: member access into incomplete type 'wxBitmapButton'
+2619-  328 |         m_button->Hide();
+2620-      |                 ^
+2621-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/infobar.h:13:28: note: forward declaration of 'wxBitmapButton'
+2622-   13 | class WXDLLIMPEXP_FWD_CORE wxBitmapButton;
+2623-      |                            ^
+2624:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:365:32: error: comparison of distinct pointer types ('wxWindow *' and 'wxBitmapButton *')
+2625-  365 |         if ( item->GetWindow() == m_button )
+2626-      |              ~~~~~~~~~~~~~~~~~ ^  ~~~~~~~~
+2627:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:402:42: error: comparison of distinct pointer types ('wxWindow *' and 'wxBitmapButton *')
+2628-  402 |                   if ( item->GetWindow() != m_button )
+2629-      |                        ~~~~~~~~~~~~~~~~~ ^  ~~~~~~~~
+2630:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:485:16: error: no matching member function for call to 'Add'
+2631-  485 |         sizer->Add(m_button, wxSizerFlags().Centre().DoubleBorder());
+2632-      |         ~~~~~~~^~~
+2633-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1198:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxWindow *' for 1st argument
+2634- 1198 | wxSizer::Add( wxWindow *window, const wxSizerFlags& flags )
+2635-      |          ^    ~~~~~~~~~~~~~~~~
+2636-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1204:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxSizer *' for 1st argument
+2637- 1204 | wxSizer::Add( wxSizer *sizer, const wxSizerFlags& flags )
+2638-      |          ^    ~~~~~~~~~~~~~~
+2639-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1180:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxWindow *' for 1st argument
+2640- 1180 | wxSizer::Add( wxWindow *window, int proportion, int flag, int border, wxObject* userData )
+2641-      |          ^    ~~~~~~~~~~~~~~~~
+2642-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1186:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'wxSizer *' for 1st argument
+2643- 1186 | wxSizer::Add( wxSizer *sizer, int proportion, int flag, int border, wxObject* userData )
+2644-      |          ^    ~~~~~~~~~~~~~~
+2645-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1192:10: note: candidate function not viable: cannot convert argument of incomplete type 'wxBitmapButton *' to 'int' for 1st argument
+2646- 1192 | wxSizer::Add( int width, int height, int proportion, int flag, int border, wxObject* userData )
+2647-      |          ^    ~~~~~~~~~
+2648-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1174:10: note: candidate function not viable: requires single argument 'item', but 2 arguments were provided
+2649- 1174 | wxSizer::Add( wxSizerItem *item )
+2650-      |          ^    ~~~~~~~~~~~~~~~~~
+2651-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/sizer.h:1210:10: note: candidate function not viable: requires 3 arguments, but 2 were provided
+2652- 1210 | wxSizer::Add( int width, int height, const wxSizerFlags& flags )
+2653-      |          ^    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2654:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/infobar.cpp:486:17: error: member access into incomplete type 'wxBitmapButton'
+2655-  486 |         m_button->Show();
+2656-      |                 ^
+2657-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/generic/infobar.h:13:28: note: forward declaration of 'wxBitmapButton'
+2658-   13 | class WXDLLIMPEXP_FWD_CORE wxBitmapButton;
+2659-      |                            ^
+2660-1 warning and 9 errors generated.
+2661-[530/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/headerctrlg.cpp.o
+2662-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/headerctrlg.cpp:19:
+2663-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2664-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2665-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2666-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2667-      |             ^
+2668-1 warning generated.
+2669-[531/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/logg.cpp.o
+2670-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:20:
+2671-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2672-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2673-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2674-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2675-      |             ^
+2676-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:289:55: warning: unused parameter 'severities' [-Wunused-parameter]
+2677-  289 |                                     const wxArrayInt& severities,
+2678-      |                                                       ^
+2679-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:290:56: warning: unused parameter 'times' [-Wunused-parameter]
+2680-  290 |                                     const wxArrayLong& times,
+2681-      |                                                        ^
+2682-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:1006:12: warning: unused function 'OpenLogFile' [-Wunused-function]
+2683- 1006 | static int OpenLogFile(wxFile& file, wxString *pFilename, wxWindow *parent)
+2684-      |            ^~~~~~~~~~~
+2685-4 warnings generated.
+2686-[532/1033] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/markuptext.cpp.o
+2687-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/markuptext.cpp:19:
+2688-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2689-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:

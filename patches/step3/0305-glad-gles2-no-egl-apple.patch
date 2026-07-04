@@ -1,5 +1,5 @@
 diff --git a/src/libvgcode/glad/src/gles2.c b/src/libvgcode/glad/src/gles2.c
-index e9642e9..7b985c4 100644
+index e9642e9..f636040 100644
 --- a/src/libvgcode/glad/src/gles2.c
 +++ b/src/libvgcode/glad/src/gles2.c
 @@ -761,6 +761,9 @@ static GLADapiproc glad_dlsym_handle(void* handle, const char *name) {
@@ -12,22 +12,27 @@ index e9642e9..7b985c4 100644
  #elif GLAD_GLES2_USE_SYSTEM_EGL
    #include <EGL/egl.h>
    typedef __eglMustCastToProperFunctionPointerType (GLAD_API_PTR *PFNEGLGETPROCADDRESSPROC)(const char *name);
-@@ -815,6 +818,10 @@ static void* glad_gles2_dlopen_handle(void) {
- #endif
- }
- 
+@@ -822,7 +825,11 @@ static struct _glad_gles2_userptr glad_gles2_build_userptr(void *handle) {
+     userptr.get_proc_address_ptr = emscripten_GetProcAddress;
+ #else
+     userptr.handle = handle;
 +#if defined(__APPLE__)
-+int gladLoaderLoadGLES2(void) { return 1; }
-+void gladLoaderUnloadGLES2(void) { }
++    userptr.get_proc_address_ptr = (PFNEGLGETPROCADDRESSPROC)0; /* iOS: symbols linked statically */
 +#else
- static struct _glad_gles2_userptr glad_gles2_build_userptr(void *handle) {
-     struct _glad_gles2_userptr userptr;
- #if GLAD_PLATFORM_EMSCRIPTEN
-@@ -869,6 +876,7 @@ void gladLoaderUnloadGLES2(void) {
-         _glad_GLES2_loader_handle = NULL;
-     }
+     userptr.get_proc_address_ptr = eglGetProcAddress;
++#endif
+ #endif
+     return userptr;
  }
-+#endif /* __APPLE__ */
+@@ -841,9 +848,11 @@ int gladLoaderLoadGLES2(void) {
+     userptr.get_proc_address_ptr = emscripten_GetProcAddress;
+     version = gladLoadGLES2UserPtr(glad_gles2_get_proc, &userptr);
+ #else
++#if !defined(__APPLE__)
+     if (eglGetProcAddress == NULL) {
+         return 0;
+     }
++#endif
  
- #endif /* GLAD_GLES2 */
- 
+     did_load = _glad_GLES2_loader_handle == NULL;
+     handle = glad_gles2_dlopen_handle();

@@ -1,0 +1,146 @@
+1713-[297/653] Building CXX object deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o
+1714-[298/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch
+1715-[299/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/2DBed.cpp.o
+1716:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/2DBed.cpp.o 
+1717-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/2DBed.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/2DBed.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/2DBed.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/2DBed.cpp
+1718-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/2DBed.cpp:2:
+1719-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_App.hpp:7:
+1720-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ConfigWizard.hpp:8:
+1721:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:371:35: error: unknown class name 'wxFileDialog'; did you mean 'wxDialog'?
+1722-  371 | class CheckboxFileDialog : public wxFileDialog
+1723-      |                                   ^~~~~~~~~~~~
+1724-      |                                   wxDialog
+1725-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/dialog.h:19:24: note: 'wxDialog' declared here
+1726-   19 | class WXDLLIMPEXP_CORE wxDialog : public wxDialogBase
+1727-      |                        ^
+1728-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/2DBed.cpp:2:
+1729-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_App.hpp:7:
+1730-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ConfigWizard.hpp:8:
+1731:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:377:35: error: use of undeclared identifier 'wxFileSelectorPromptStr'
+1732-  377 |         const wxString &message = wxFileSelectorPromptStr,
+1733-      |                                   ^
+1734:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:380:36: error: use of undeclared identifier 'wxFileSelectorDefaultWildcardStr'
+1735-  380 |         const wxString &wildcard = wxFileSelectorDefaultWildcardStr,
+1736-      |                                    ^
+1737:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:381:22: error: use of undeclared identifier 'wxFD_DEFAULT_STYLE'; did you mean 'wxTB_DEFAULT_STYLE'?
+1738-  381 |         long style = wxFD_DEFAULT_STYLE,
+1739-      |                      ^~~~~~~~~~~~~~~~~~
+1740-      |                      wxTB_DEFAULT_STYLE
+1741-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/toolbar.h:60:5: note: 'wxTB_DEFAULT_STYLE' declared here
+1742-   60 |     wxTB_DEFAULT_STYLE = wxTB_HORIZONTAL
+1743-      |     ^
+1744-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/2DBed.cpp:2:
+1745-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_App.hpp:7:
+1746-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ConfigWizard.hpp:8:
+1747:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:384:32: error: use of undeclared identifier 'wxFileDialogNameStr'; did you mean 'wxDialogNameStr'?
+1748-  384 |         const wxString &name = wxFileDialogNameStr
+1749-      |                                ^~~~~~~~~~~~~~~~~~~
+1750-      |                                wxDialogNameStr
+1751-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/dialog.h:64:42: note: 'wxDialogNameStr' declared here
+1752-   64 | extern WXDLLIMPEXP_DATA_CORE(const char) wxDialogNameStr[];
+1753-      |                                          ^
+1754-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/2DBed.cpp:2:
+1755-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_App.hpp:7:
+1756-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ConfigWizard.hpp:8:
+1757:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:465:30: error: unknown type name 'wxStaticBox'
+1758-  465 | void staticbox_remove_margin(wxStaticBox* sb);
+1759-      |                              ^
+1760-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/2DBed.cpp:2:
+1761-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_App.hpp:9:
+1762-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.hpp:17:
+1763-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/fswatcher.h:19:
+1764-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/evtloop.h:300:
+1765:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/evtloop.h:15:10: fatal error: 'wx/osx/cocoa/evtloop.h' file not found
+1766-   15 | #include "wx/osx/cocoa/evtloop.h"
+1767-      |          ^~~~~~~~~~~~~~~~~~~~~~~~
+1768-7 errors generated.
+1769-[300/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Snapshot.cpp.o
+1770:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Snapshot.cpp.o 
+1771-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Snapshot.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Snapshot.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Snapshot.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/Snapshot.cpp
+1772-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/Snapshot.cpp:24:
+1773-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_App.hpp:7:
+1774-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/ConfigWizard.hpp:8:
+1775:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_Utils.hpp:371:35: error: base class has incomplete type
+1776-  371 | class CheckboxFileDialog : public wxFileDialog
+1777-      |                            ~~~~~~~^~~~~~~~~~~~
+1778-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI.hpp:15:7: note: forward declaration of 'wxFileDialog'
+1779-   15 | class wxFileDialog;
+1780-      |       ^
+1781-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/Snapshot.cpp:24:
+1782-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_App.hpp:7:
+1783-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/ConfigWizard.hpp:8:
+1784:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_Utils.hpp:377:35: error: use of undeclared identifier 'wxFileSelectorPromptStr'
+1785-  377 |         const wxString &message = wxFileSelectorPromptStr,
+1786-      |                                   ^
+1787:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_Utils.hpp:380:36: error: use of undeclared identifier 'wxFileSelectorDefaultWildcardStr'
+1788-  380 |         const wxString &wildcard = wxFileSelectorDefaultWildcardStr,
+1789-      |                                    ^
+1790:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_Utils.hpp:381:22: error: use of undeclared identifier 'wxFD_DEFAULT_STYLE'; did you mean 'wxTB_DEFAULT_STYLE'?
+1791-  381 |         long style = wxFD_DEFAULT_STYLE,
+1792-      |                      ^~~~~~~~~~~~~~~~~~
+1793-      |                      wxTB_DEFAULT_STYLE
+1794-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/toolbar.h:60:5: note: 'wxTB_DEFAULT_STYLE' declared here
+1795-   60 |     wxTB_DEFAULT_STYLE = wxTB_HORIZONTAL
+1796-      |     ^
+1797-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/Snapshot.cpp:24:
+1798-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_App.hpp:7:
+1799-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/ConfigWizard.hpp:8:
+1800:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_Utils.hpp:384:32: error: use of undeclared identifier 'wxFileDialogNameStr'; did you mean 'wxDialogNameStr'?
+1801-  384 |         const wxString &name = wxFileDialogNameStr
+1802-      |                                ^~~~~~~~~~~~~~~~~~~
+1803-      |                                wxDialogNameStr
+1804-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/dialog.h:64:42: note: 'wxDialogNameStr' declared here
+1805-   64 | extern WXDLLIMPEXP_DATA_CORE(const char) wxDialogNameStr[];
+1806-      |                                          ^
+1807-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/Snapshot.cpp:24:
+1808-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_App.hpp:7:
+1809-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/ConfigWizard.hpp:8:
+1810:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_Utils.hpp:465:30: error: unknown type name 'wxStaticBox'
+1811-  465 | void staticbox_remove_margin(wxStaticBox* sb);
+1812-      |                              ^
+1813-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/Snapshot.cpp:24:
+1814-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/GUI_App.hpp:9:
+1815-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Config/../GUI/PresetBundleDialog.hpp:17:
+1816-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/fswatcher.h:19:
+1817-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/evtloop.h:300:
+1818:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/evtloop.h:15:10: fatal error: 'wx/osx/cocoa/evtloop.h' file not found
+1819-   15 | #include "wx/osx/cocoa/evtloop.h"
+1820-      |          ^~~~~~~~~~~~~~~~~~~~~~~~
+1821-7 errors generated.
+1822-[301/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o
+1823:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o 
+1824-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.cpp
+1825-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.cpp:1:
+1826-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.hpp:4:
+1827:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/../wxExtensions.hpp:80:1: error: unknown type name 'wxColourData'
+1828-   80 | wxColourData show_sys_picker_dialog(wxWindow *parent, const wxColourData &clr_data);
+1829-      | ^
+1830:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/../wxExtensions.hpp:80:61: error: unknown type name 'wxColourData'
+1831-   80 | wxColourData show_sys_picker_dialog(wxWindow *parent, const wxColourData &clr_data);
+1832-      |                                                             ^
+1833:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/../wxExtensions.hpp:94:41: error: unknown class name 'wxCheckListBox'; did you mean 'wxCheckBox'?
+1834-   94 | class wxCheckListBoxComboPopup : public wxCheckListBox, public wxComboPopup
+1835-      |                                         ^~~~~~~~~~~~~~
+1836-      |                                         wxCheckBox
+1837-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/checkbox.h:14:24: note: 'wxCheckBox' declared here
+1838-   14 | class WXDLLIMPEXP_CORE wxCheckBox : public wxCheckBoxBase
+1839-      |                        ^
+1840-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.cpp:1:
+1841-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.hpp:4:
+1842:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/../wxExtensions.hpp:94:64: error: expected class name
+1843-   94 | class wxCheckListBoxComboPopup : public wxCheckListBox, public wxComboPopup
+1844-      |                                                                ^
+1845:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/../wxExtensions.hpp:132:71: error: expected class name
+1846-  132 | class wxDataViewTreeCtrlComboPopup: public wxDataViewTreeCtrl, public wxComboPopup
+1847-      |                                                                       ^
+1848-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.cpp:1:
+1849-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/AnimaController.hpp:16:10: warning: 'AnimaIcon::Enable' hides overloaded virtual function [-Woverloaded-virtual]
+1850-   16 |     void Enable();
+1851-      |          ^
+1852-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/window.h:646:18: note: hidden overloaded virtual function 'wxWindowBase::Enable' declared here: different number of parameters (1 vs 0)
+1853-  646 |     virtual bool Enable( bool enable = true );
+1854-      |                  ^
+1855-1 warning and 5 errors generated.
+1856-[302/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Version.cpp.o
+1857-[303/653] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/OpenVDBUtils.cpp.o
+1858-ninja: build stopped: subcommand failed.

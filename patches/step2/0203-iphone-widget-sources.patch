@@ -1,5 +1,5 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..50b35e7 100644
+index c163c87..505c385 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
 @@ -2024,8 +2024,8 @@ set(OSX_COMMON_SRC
@@ -13,7 +13,7 @@ index c163c87..50b35e7 100644
      src/generic/fontdlgg.cpp
      src/generic/fontpickerg.cpp
      src/generic/listctrl.cpp
-@@ -2235,6 +2235,15 @@ set(OSX_IPHONE_SRC
+@@ -2235,6 +2235,16 @@ set(OSX_IPHONE_SRC
      src/osx/iphone/statbmp.mm
      src/osx/iphone/menuitem.mm
      src/osx/iphone/menu.mm
@@ -26,10 +26,11 @@ index c163c87..50b35e7 100644
 +    src/generic/spinctlg.cpp
 +    src/osx/iphone/filedlg.mm
 +    src/osx/iphone/webview_stub.cpp
++    src/osx/iphone/mediactrl_stub.cpp
  )
  
  set(OSX_IPHONE_HDR
-@@ -2257,8 +2266,8 @@ set(UNIV_SRC
+@@ -2257,8 +2267,8 @@ set(UNIV_SRC
      src/generic/colrdlgg.cpp
      src/generic/dirdlgg.cpp
      src/generic/fdrepdlg.cpp

@@ -1,0 +1,47 @@
+3990-      |                                             ^
+3991-3 warnings generated.
+3992-[694/1033] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/evtloop.mm.o
+3993:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/evtloop.mm.o 
+3994-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/evtloop.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/evtloop.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/evtloop.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/evtloop.mm
+3995-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/evtloop.mm:19:
+3996-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3997-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3998-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3999-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4000-      |             ^
+4001:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/evtloop.mm:110:22: error: redefinition of 'WakeUp'
+4002-  110 | void wxGUIEventLoop::WakeUp()
+4003-      |                      ^
+4004-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/evtloop.h:15:18: note: previous definition is here
+4005-   15 |     virtual void WakeUp() override {}
+4006-      |                  ^
+4007-1 warning and 1 error generated.
+4008-[695/1033] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/dialog.mm.o
+4009-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/dialog.mm:10:
+4010-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4011-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4012-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4013-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4014-      |             ^
+4015-1 warning generated.
+4016-[696/1033] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/gauge.mm.o
+4017-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/gauge.mm:10:
+4018-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4019-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4020-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4021-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4022-      |             ^
+4023-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/gauge.mm:76:45: warning: unused parameter 'minimum' [-Wunused-parameter]
+4024-   76 |                                     wxInt32 minimum,
+4025-      |                                             ^
+4026-2 warnings generated.
+4027-[697/1033] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/listbox.mm.o
+4028-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/listbox.mm:10:
+4029-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4030-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4031-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4032-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4033-      |             ^
+4034-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/listbox.mm:216:74: warning: unused parameter 'pos' [-Wunused-parameter]
+4035-  216 | wxListWidgetColumn*   wxListWidgetIPhoneImpl::InsertTextColumn( unsigned pos, const wxString& title, bool editable,
+4036-      |                                                                          ^

@@ -98,6 +98,7 @@ jobs:
           cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
           shopt -s nullglob
           for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
           mkdir -p build-ios && cd build-ios
           cmake .. -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \

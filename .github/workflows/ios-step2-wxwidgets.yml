@@ -47,6 +47,7 @@ jobs:
           cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
           shopt -s nullglob
           for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
 
       - name: "[4/7] Build wxWidgets for iOS (static, iPhone port)"
         run: |

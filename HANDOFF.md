@@ -167,3 +167,43 @@ files needing `TARGET_OS_OSX` guards or iOS stubs, destined for `patches/step3/`
 
 - All patches are original work, AGPL-3.0, kept in-repo (upstream sources never forked).
 - Advise the user to rotate/revoke the PAT after sessions (it appears in chat history).
+
+---
+## UPDATE (session 2): Step 3 progress — libvgcode DONE, into main GUI bulk
+
+Step 3 milestone-1 burn-down continued. libvgcode (Orca's toolpath renderer)
+fully compiles now. Patches added:
+- step3/0303: hidapi iOS no-op backend (ios/hid_ios_stub.c copied to deps_src/hidapi/ios/hid.c)
+- step3/0304: libvgcode ENABLE_OPENGL_ES path — Vec4 added to libvgcode Types.hpp,
+  set_positions/set_heights_widths_angles take Vec4, texture uploads RGB->RGBA,
+  both ES call sites (init_impl + update_heights_widths) pass Vec4. (Upstream ES-path bug.)
+- step3/0305: glad gles2.c — the two `eglGetProcAddress` statements guarded in place
+  (`#if defined(__APPLE__)` null proc-ptr / skip null-check). iOS links GLES from the
+  OpenGLES framework; no EGL/dlopen runtime loader. NOTE: function-wrapping diffs kept
+  mis-placing #endif over 4 runs — the working approach guards the *statements*, verified
+  with a preprocessor-branch trace (awk) that neither egl line is active under __APPLE__.
+
+**LESSON (important for next agent):** regenerate every patch with `git diff` from a
+PRISTINE upstream clone in a scratch dir, never from a working copy that already has your
+edits — partial diffs bit us repeatedly. And after writing a #if/#else/#endif guard,
+verify with a branch trace, not by eyeballing.
+
+### wxWidgets iPhone-port gaps now surfacing (step 2 patches, applied by step2 AND step3)
+Main GUI bulk (GUI_Utils.hpp etc.) needs wx classes the fork's iPhone port lacks:
+- step2/0201 + wx-overlay/: fixed `wx/osx/evtloop.h` (hardcoded cocoa include; added
+  `__WXOSX_IPHONE__` branch) and added a new `wx/osx/iphone/evtloop.h` (the iphone
+  evtloop.mm implements `wxGUIEventLoop : wxCFEventLoop` but no header existed). The new
+  header ships via `wx-overlay/` copied into wx `include/` after patches apply.
+- **STILL TODO (the next real work):** the iPhone port has NO `wxFileDialog` and NO
+  `wxStaticBox` (GUI_Utils.hpp uses both heavily; also `wxFileSelectorPromptStr`,
+  `wxFileSelectorDefaultWildcardStr`, `wxFD_*`, `wxFileDialogNameStr`). Two options:
+  (a) implement minimal iPhone versions in the wx fork (filedlg.mm →
+  UIDocumentPicker; statbox → a plain wxStaticBox generic), shipped as step2 patches +
+  overlay .mm/.h; or (b) Orca-side: gate the wxFileDialog-using code paths on iOS and
+  provide a document-picker shim. (a) is cleaner and unblocks more. wxStaticBox generic
+  may already exist in wx (`src/generic`)—check `wxUSE_STATBOX`/generic before writing one.
+- Recurring theme: each such class unblocks many Orca files at once, so fix at the wx layer.
+
+### Step 3 workflow milestone target is still `ninja libslic3r_gui` (milestone 1).
+After it compiles: restore Orca's real main() (gate its GLFW/thumbnail CLI path off on
+iOS), link the app, launch in simulator. Then step 4 (device IPA), step 5 (feature parity).

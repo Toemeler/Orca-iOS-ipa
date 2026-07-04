@@ -1,0 +1,17 @@
+diff --git a/include/wx/osx/evtloop.h b/include/wx/osx/evtloop.h
+index 3837beb..52f25ed 100644
+--- a/include/wx/osx/evtloop.h
++++ b/include/wx/osx/evtloop.h
+@@ -12,7 +12,11 @@
+ #ifndef _WX_OSX_EVTLOOP_H_
+ #define _WX_OSX_EVTLOOP_H_
+ 
+-#include "wx/osx/cocoa/evtloop.h"
++#ifdef __WXOSX_IPHONE__
++    #include "wx/osx/iphone/evtloop.h"
++#else
++    #include "wx/osx/cocoa/evtloop.h"
++#endif
+ 
+ class WXDLLIMPEXP_FWD_CORE wxWindow;
+ class WXDLLIMPEXP_FWD_CORE wxNonOwnedWindow;

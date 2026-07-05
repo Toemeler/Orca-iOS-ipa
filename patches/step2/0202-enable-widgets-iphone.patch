@@ -1,5 +1,5 @@
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..3240095 100644
+index aea925c..6519ff6 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -57,7 +57,7 @@
@@ -82,17 +82,16 @@ index aea925c..3240095 100644
  
  #undef wxUSE_LOGWINDOW
  #undef wxUSE_LOG_DIALOG
-@@ -193,17 +193,17 @@
+@@ -193,7 +193,7 @@
  #undef wxUSE_REARRANGECTRL
  #undef wxUSE_NATIVE_DATAVIEWCTRL
  
 -#define wxUSE_LOGWINDOW 0
--#define wxUSE_LOG_DIALOG 0
 +#define wxUSE_LOGWINDOW 1
-+#define wxUSE_LOG_DIALOG 1
+ #define wxUSE_LOG_DIALOG 0
  #define wxUSE_LISTBOOK 0
  #define wxUSE_CHOICEBOOK 0
- #define wxUSE_TREEBOOK 0
+@@ -201,9 +201,9 @@
  #define wxUSE_TOOLBOOK 0
  #define wxUSE_CHOICEDLG 0
  #define wxUSE_HELP 0

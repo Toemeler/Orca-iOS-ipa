@@ -1,0 +1,65 @@
+2599-      |             ^
+2600-1 warning generated.
+2601-[534/1024] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/logg.cpp.o
+2602:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/logg.cpp.o 
+2603-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/logg.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/logg.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/logg.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp
+2604-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:20:
+2605-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2606-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2607-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2608-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2609-      |             ^
+2610-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:289:55: warning: unused parameter 'severities' [-Wunused-parameter]
+2611-  289 |                                     const wxArrayInt& severities,
+2612-      |                                                       ^
+2613-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:290:56: warning: unused parameter 'times' [-Wunused-parameter]
+2614-  290 |                                     const wxArrayLong& times,
+2615-      |                                                        ^
+2616:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:546:31: error: allocation of incomplete type 'wxMenuBar'
+2617-  546 |     wxMenuBar *pMenuBar = new wxMenuBar;
+2618-      |                               ^~~~~~~~~
+2619-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/menu.h:31:28: note: forward declaration of 'wxMenuBar'
+2620-   31 | class WXDLLIMPEXP_FWD_CORE wxMenuBar;
+2621-      |                            ^
+2622:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:554:13: error: member access into incomplete type 'wxMenuBar'
+2623-  554 |     pMenuBar->Append(pMenu, _("&Log"));
+2624-      |             ^
+2625-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/menu.h:31:28: note: forward declaration of 'wxMenuBar'
+2626-   31 | class WXDLLIMPEXP_FWD_CORE wxMenuBar;
+2627-      |                            ^
+2628:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/logg.cpp:555:5: error: use of undeclared identifier 'SetMenuBar'; did you mean 'wxMenuBar'?
+2629-  555 |     SetMenuBar(pMenuBar);
+2630-      |     ^
+2631-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/menu.h:31:28: note: 'wxMenuBar' declared here
+2632-   31 | class WXDLLIMPEXP_FWD_CORE wxMenuBar;
+2633-      |                            ^
+2634-3 warnings and 3 errors generated.
+2635-[535/1024] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/markuptext.cpp.o
+2636-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/markuptext.cpp:19:
+2637-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2638-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2639-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2640-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2641-      |             ^
+2642-1 warning generated.
+2643-[536/1024] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/msgdlgg.cpp.o
+2644-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/msgdlgg.cpp:11:
+2645-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2646-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2647-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2648-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2649-      |             ^
+2650-1 warning generated.
+2651-[537/1024] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/progdlgg.cpp.o
+2652-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/progdlgg.cpp:19:
+2653-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2654-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2655-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+2656-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+2657-      |             ^
+2658-1 warning generated.
+2659-[538/1024] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/renderg.cpp.o
+2660-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/renderg.cpp:19:
+2661-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+2662-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+2663-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]

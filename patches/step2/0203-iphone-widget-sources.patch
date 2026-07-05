@@ -1,7 +1,16 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..e0dc04a 100644
+index c163c87..25a9fb7 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
+@@ -853,7 +853,7 @@ set(GUI_CMN_SRC
+     src/generic/headerctrlg.cpp
+     src/generic/infobar.cpp
+     src/generic/listbkg.cpp
+-    src/generic/logg.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/logg.cpp>
+     src/generic/markuptext.cpp
+     src/generic/msgdlgg.cpp
+     src/generic/numdlgg.cpp
 @@ -1970,7 +1970,7 @@ set(OSX_COMMON_SRC
      src/osx/checkbox_osx.cpp
      src/osx/checklst_osx.cpp

@@ -1,7 +1,34 @@
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..7a127ce 100644
+index aea925c..3240095 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
+@@ -57,7 +57,7 @@
+ 
+ #if wxUSE_TASKBARICON
+ #undef wxUSE_TASKBARICON
+-#define wxUSE_TASKBARICON 0
++#define wxUSE_TASKBARICON 1
+ #endif
+ 
+ #if wxUSE_TOOLTIPS
+@@ -72,7 +72,7 @@
+ 
+ #if wxUSE_TASKBARICON
+ #undef wxUSE_TASKBARICON
+-#define wxUSE_TASKBARICON 0
++#define wxUSE_TASKBARICON 1
+ #endif
+ 
+ #define wxUSE_BUTTON 1
+@@ -84,7 +84,7 @@
+ 
+ #if wxUSE_COMBOBOX
+ #undef wxUSE_COMBOBOX
+-#define wxUSE_COMBOBOX 0
++#define wxUSE_COMBOBOX 1
+ #endif
+ 
+ #ifndef __WXUNIVERSAL__
 @@ -106,12 +106,12 @@
  #define wxUSE_STATUSBAR 0
  #define wxUSE_NATIVE_STATUSBAR 0
@@ -55,7 +82,17 @@ index aea925c..7a127ce 100644
  
  #undef wxUSE_LOGWINDOW
  #undef wxUSE_LOG_DIALOG
-@@ -201,9 +201,9 @@
+@@ -193,17 +193,17 @@
+ #undef wxUSE_REARRANGECTRL
+ #undef wxUSE_NATIVE_DATAVIEWCTRL
+ 
+-#define wxUSE_LOGWINDOW 0
+-#define wxUSE_LOG_DIALOG 0
++#define wxUSE_LOGWINDOW 1
++#define wxUSE_LOG_DIALOG 1
+ #define wxUSE_LISTBOOK 0
+ #define wxUSE_CHOICEBOOK 0
+ #define wxUSE_TREEBOOK 0
  #define wxUSE_TOOLBOOK 0
  #define wxUSE_CHOICEDLG 0
  #define wxUSE_HELP 0
@@ -67,6 +104,33 @@ index aea925c..7a127ce 100644
  #define wxUSE_CHOICEDLG 0
  #define wxUSE_NUMBERDLG 0
  #define wxUSE_TEXTDLG 0
+@@ -212,7 +212,7 @@
+ #define wxUSE_WIZARDDLG 0
+ #define wxUSE_TOOLBAR_NATIVE 0
+ #define wxUSE_FINDREPLDLG 0
+-#define wxUSE_TASKBARICON 0
++#define wxUSE_TASKBARICON 1
+ #define wxUSE_REARRANGECTRL 0
+ #define wxUSE_NATIVE_DATAVIEWCTRL 0
+ 
+@@ -254,7 +254,7 @@
+ 
+ #if wxUSE_COMBOBOX
+ #undef wxUSE_COMBOBOX
+-#define wxUSE_COMBOBOX 0
++#define wxUSE_COMBOBOX 1
+ #endif
+ 
+ 
+@@ -268,7 +268,7 @@
+ 
+ #if wxUSE_CLIPBOARD
+ #undef wxUSE_CLIPBOARD
+-#define wxUSE_CLIPBOARD 0
++#define wxUSE_CLIPBOARD 1
+ #endif // wxUSE_CLIPBOARD
+ 
+ /*
 @@ -278,10 +278,7 @@
  #endif // wxUSE_GLCANVAS
  */
@@ -79,7 +143,7 @@ index aea925c..7a127ce 100644
  
  // iphone has a toolbar that is a regular UIView
  
-@@ -301,7 +298,7 @@
+@@ -301,12 +298,12 @@
  
  #if wxUSE_INFOBAR
  #undef wxUSE_INFOBAR
@@ -88,6 +152,21 @@ index aea925c..7a127ce 100644
  #endif
  
  #if wxUSE_FILE_HISTORY
+ #undef wxUSE_FILE_HISTORY
+-#define wxUSE_FILE_HISTORY 0
++#define wxUSE_FILE_HISTORY 1
+ #endif
+ 
+ #if wxUSE_NOTIFICATION_MESSAGE
+@@ -329,7 +326,7 @@
+ 
+ #if wxUSE_DATAOBJ
+ #undef wxUSE_DATAOBJ
+-#define wxUSE_DATAOBJ 0
++#define wxUSE_DATAOBJ 1
+ #endif
+ 
+ #if wxUSE_UIACTIONSIMULATOR
 @@ -369,6 +366,13 @@
  
  #endif // wxUSE_GUI

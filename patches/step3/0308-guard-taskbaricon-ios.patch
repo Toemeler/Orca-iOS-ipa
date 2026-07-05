@@ -1,0 +1,35 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 66d7d87..dad8398 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -212,7 +212,7 @@ private:
+ };
+ #endif // __WXGTK__
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) && wxUSE_TASKBARICON
+ class OrcaSlicerTaskBarIcon : public wxTaskBarIcon
+ {
+ public:
+@@ -388,7 +388,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+ 	});
+ #endif
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) && wxUSE_TASKBARICON
+     // Initialize the docker task bar icon.
+     switch (wxGetApp().get_app_mode()) {
+     default:
+diff --git a/src/slic3r/GUI/MainFrame.hpp b/src/slic3r/GUI/MainFrame.hpp
+index 20229a6..6495dea 100644
+--- a/src/slic3r/GUI/MainFrame.hpp
++++ b/src/slic3r/GUI/MainFrame.hpp
+@@ -418,7 +418,7 @@ public:
+     void update_side_button_style();
+     void update_slice_print_status(SlicePrintEventType event, bool can_slice = true, bool can_print = true);
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) && wxUSE_TASKBARICON
+     std::unique_ptr<wxTaskBarIcon> m_taskbar_icon;
+ #endif // __APPLE__
+ 

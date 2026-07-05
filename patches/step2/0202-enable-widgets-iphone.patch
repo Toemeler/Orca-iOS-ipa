@@ -1,25 +1,7 @@
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..6519ff6 100644
+index aea925c..e363265 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
-@@ -57,7 +57,7 @@
- 
- #if wxUSE_TASKBARICON
- #undef wxUSE_TASKBARICON
--#define wxUSE_TASKBARICON 0
-+#define wxUSE_TASKBARICON 1
- #endif
- 
- #if wxUSE_TOOLTIPS
-@@ -72,7 +72,7 @@
- 
- #if wxUSE_TASKBARICON
- #undef wxUSE_TASKBARICON
--#define wxUSE_TASKBARICON 0
-+#define wxUSE_TASKBARICON 1
- #endif
- 
- #define wxUSE_BUTTON 1
 @@ -84,7 +84,7 @@
  
  #if wxUSE_COMBOBOX
@@ -47,7 +29,7 @@ index aea925c..6519ff6 100644
  
  #undef wxUSE_RICHTEXT
  #define wxUSE_RICHTEXT 0
-@@ -147,15 +147,15 @@
+@@ -147,28 +147,28 @@
  #define wxUSE_ADDREMOVECTRL 0
  #define wxUSE_ANIMATIONCTRL 0
  #define wxUSE_CALENDARCTRL 0
@@ -70,7 +52,11 @@ index aea925c..6519ff6 100644
  #define wxUSE_DATEPICKCTRL 0
  #define wxUSE_EDITABLELISTBOX 0
  #define wxUSE_FILEPICKERCTRL 0
-@@ -166,9 +166,9 @@
+ #define wxUSE_DIRPICKERCTRL 0
+ #define wxUSE_FILECTRL 0
+-#define wxUSE_COLOURPICKERCTRL 0
++#define wxUSE_COLOURPICKERCTRL 1
+ #define wxUSE_FONTPICKERCTRL 0
  #define wxUSE_DEBUGREPORT 0
  #define wxUSE_HYPERLINKCTRL 0
  #define wxUSE_STC 0
@@ -103,15 +89,6 @@ index aea925c..6519ff6 100644
  #define wxUSE_CHOICEDLG 0
  #define wxUSE_NUMBERDLG 0
  #define wxUSE_TEXTDLG 0
-@@ -212,7 +212,7 @@
- #define wxUSE_WIZARDDLG 0
- #define wxUSE_TOOLBAR_NATIVE 0
- #define wxUSE_FINDREPLDLG 0
--#define wxUSE_TASKBARICON 0
-+#define wxUSE_TASKBARICON 1
- #define wxUSE_REARRANGECTRL 0
- #define wxUSE_NATIVE_DATAVIEWCTRL 0
- 
 @@ -254,7 +254,7 @@
  
  #if wxUSE_COMBOBOX

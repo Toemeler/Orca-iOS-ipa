@@ -1,0 +1,40 @@
+=== FAILED files ===
+GUI/CreatePresetsDialog.cpp
+GUI/DragDropPanel.cpp
+GUI/ExtraRenderers.cpp
+GUI/Gizmos/GLGizmosManager.cpp
+GUI/GLCanvas3D.cpp
+GUI/GUI_App.cpp
+GUI/GUI_AuxiliaryList.cpp
+GUI/GUI_Factories.cpp
+GUI/GUI_ObjectList.cpp
+GUI/GUI_ObjectTable.cpp
+GUI/GUI_ObjectTableSettings.cpp
+GUI/GUI_Preview.cpp
+GUI/GUI.cpp
+GUI/MainFrame.cpp
+GUI/NetworkPluginDialog.cpp
+GUI/OpenGLManager.cpp
+GUI/PhysicalPrinterDialog.cpp
+GUI/Plater.cpp
+GUI/Preferences.cpp
+GUI/PrinterWebView.cpp
+GUI/ProgressStatusBar.cpp
+GUI/SendSystemInfoDialog.cpp
+GUI/SkipPartCanvas.cpp
+GUI/SyncAmsInfoDialog.cpp
+GUI/TroubleshootDialog.cpp
+GUI/UpdateDialogs.cpp
+GUI/WebDownPluginDlg.cpp
+GUI/WebGuideDialog.cpp
+GUI/WebUserLoginDialog.cpp
+GUI/WebViewDialog.cpp
+GUI/Widgets/WebView.cpp
+GUI/wxMediaCtrl2.cpp
+Utils/OrcaCloudServiceAgent.cpp
+Utils/PresetUpdater.cpp
+Utils/Serial.cpp
+
+=== error signatures (deduped) ===
+
+total FAILED: 35

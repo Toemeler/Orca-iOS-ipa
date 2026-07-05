@@ -1,0 +1,546 @@
+5761-      |                         ^
+5762-22 warnings generated.
+5763-[347/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/CreatePresetsDialog.cpp.o
+5764:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/CreatePresetsDialog.cpp.o 
+5765-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/CreatePresetsDialog.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/CreatePresetsDialog.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/CreatePresetsDialog.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp
+5766-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1:
+5767-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:8:
+5768-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+5769-   46 |     void SetLabel(const wxString& label);
+5770-      |          ^
+5771-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+5772-   56 |     virtual void SetLabel( const wxString& label ) override;
+5773-      |                  ^
+5774-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1:
+5775-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:8:
+5776-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:72:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+5777-   72 |     virtual void DoSetSize(
+5778-      |                  ^
+5779-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+5780-  379 |     virtual void DoSetSize(int x, int y,
+5781-      |                  ^
+5782-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1:
+5783-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:8:
+5784-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:75:10: warning: 'DoSetToolTipText' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+5785-   75 |     void DoSetToolTipText(wxString const &tip);
+5786-      |          ^
+5787-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/window.h:2005:18: note: overridden virtual function is here
+5788- 2005 |     virtual void DoSetToolTipText( const wxString &tip );
+5789-      |                  ^
+5790-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1:
+5791-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:10:
+5792-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/RadioBox.hpp:18:7: warning: 'Slic3r::GUI::RadioBox::GetValue' hides overloaded virtual function [-Woverloaded-virtual]
+5793-   18 |         bool GetValue();
+5794-      |              ^
+5795-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/tglbtn.h:40:18: note: hidden overloaded virtual function 'wxToggleButton::GetValue' declared here: different qualifiers ('const' vs unqualified)
+5796-   40 |     virtual bool GetValue() const override;
+5797-      |                  ^
+5798-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1:
+5799-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:10:
+--
+5949-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1888:54: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+5950- 1888 |     m_custom_nozzle_diameter_ctrl->Bind(wxEVT_CHAR, [this](wxKeyEvent &event) {
+5951-      |                                                      ^~~~
+5952:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:4265:9: error: unknown type name 'wxDirDialog'
+5953- 4265 |         wxDirDialog dlg(this, _L("Choose a directory"), "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+5954-      |         ^
+5955:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:4265:61: error: use of undeclared identifier 'wxDD_DEFAULT_STYLE'; did you mean 'wxTB_DEFAULT_STYLE'?
+5956- 4265 |         wxDirDialog dlg(this, _L("Choose a directory"), "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+5957-      |                                                             ^~~~~~~~~~~~~~~~~~
+5958-      |                                                             wxTB_DEFAULT_STYLE
+5959-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/toolbar.h:60:5: note: 'wxTB_DEFAULT_STYLE' declared here
+5960-   60 |     wxTB_DEFAULT_STYLE = wxTB_HORIZONTAL
+5961-      |     ^
+5962:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:4265:82: error: use of undeclared identifier 'wxDD_DIR_MUST_EXIST'; did you mean 'wxFD_FILE_MUST_EXIST'?
+5963- 4265 |         wxDirDialog dlg(this, _L("Choose a directory"), "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+5964-      |                                                                                  ^~~~~~~~~~~~~~~~~~~
+5965-      |                                                                                  wxFD_FILE_MUST_EXIST
+5966-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/filedlg.h:49:5: note: 'wxFD_FILE_MUST_EXIST' declared here
+5967-   49 |     wxFD_FILE_MUST_EXIST   = 0x0010,
+5968-      |     ^
+5969-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:1:
+5970-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:77:70: warning: private field 'm_button_create' is not used [-Wunused-private-field]
+5971-   77 |     Button *                                                         m_button_create                = nullptr;
+5972-      |                                                                      ^
+5973-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:78:70: warning: private field 'm_button_cancel' is not used [-Wunused-private-field]
+5974-   78 |     Button *                                                         m_button_cancel                = nullptr;
+5975-      |                                                                      ^
+5976-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.hpp:82:70: warning: private field 'm_exist_vendor_combobox' is not used [-Wunused-private-field]
+5977-   82 |     ComboBox *                                                       m_exist_vendor_combobox        = nullptr;
+5978-      |                                                                      ^
+5979-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CreatePresetsDialog.cpp:19:
+5980-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+5981-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+5982-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+5983-  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+5984-      |                         ^
+5985-27 warnings and 3 errors generated.
+5986-[348/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DailyTips.cpp.o
+5987-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/DailyTips.cpp:1:
+5988-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/DailyTips.hpp:4:
+5989-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/HintNotification.hpp:4:
+5990-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/NotificationManager.hpp:5:
+5991-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+5992-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+5993-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+5994-   18 |     void Refresh();
+5995-      |          ^
+5996-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+5997-   79 |     virtual void Refresh( bool eraseBackground = true,
+--
+6260-      |         ^
+6261-1 warning generated.
+6262-[354/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ExtraRenderers.cpp.o
+6263:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ExtraRenderers.cpp.o 
+6264-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ExtraRenderers.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ExtraRenderers.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ExtraRenderers.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ExtraRenderers.cpp
+6265-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ExtraRenderers.cpp:5:
+6266-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+6267-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+6268-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+6269-   18 |     void Refresh();
+6270-      |          ^
+6271-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+6272-   79 |     virtual void Refresh( bool eraseBackground = true,
+6273-      |                  ^
+6274-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ExtraRenderers.cpp:5:
+6275-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+6276-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+6277-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:19:10: warning: 'ScrolledWindow::SetBackgroundColour' hides overloaded virtual function [-Woverloaded-virtual]
+6278-   19 |     void SetBackgroundColour(wxColour color);
+6279-      |          ^
+6280-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:86:18: note: hidden overloaded virtual function 'wxWindow::SetBackgroundColour' declared here: type mismatch at 1st parameter ('const wxColour &' vs 'wxColour')
+6281-   86 |     virtual bool SetBackgroundColour( const wxColour &colour ) override;
+6282-      |                  ^
+6283-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ExtraRenderers.cpp:5:
+6284-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+6285-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+6286-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+6287-   46 |     void SetLabel(const wxString& label);
+6288-      |          ^
+6289-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+6290-   56 |     virtual void SetLabel( const wxString& label ) override;
+6291-      |                  ^
+6292-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ExtraRenderers.cpp:5:
+6293-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+6294-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+6295-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:72:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+6296-   72 |     virtual void DoSetSize(
+6297-      |                  ^
+6298-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+--
+6329-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.hpp:1153:50: warning: all paths through this function will call itself [-Winfinite-recursion]
+6330- 1153 |     ArrangeSettings get_arrange_settings() const {
+6331-      |                                                  ^
+6332:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ExtraRenderers.cpp:10:10: fatal error: 'wx/generic/private/markuptext.h' file not found
+6333-   10 | #include "wx/generic/private/markuptext.h"
+6334-      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+6335-8 warnings and 1 error generated.
+6336-[355/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/EncodedFilament.cpp.o
+6337-[356/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/EditGCodeDialog.cpp.o
+6338-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/EditGCodeDialog.cpp:14:
+6339-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+6340-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+6341-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:143:10: warning: 'Tabbook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+6342-  143 |     bool AddPage(wxWindow* page,
+6343-      |          ^
+6344-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: type mismatch at 3rd parameter ('bool' vs 'const std::string &' (aka 'const basic_string<char> &'))
+6345-  177 |     virtual bool AddPage(wxWindow *page,
+6346-      |                  ^
+6347-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/EditGCodeDialog.cpp:14:
+6348-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+6349-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+6350-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:187:10: warning: 'RemovePage' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+6351-  187 |     bool RemovePage(size_t n)
+6352-      |          ^
+6353-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:161:18: note: overridden virtual function is here
+6354-  161 |     virtual bool RemovePage(size_t n)
+6355-      |                  ^
+6356-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/EditGCodeDialog.cpp:14:
+6357-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:24:
+6358-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationPanel.hpp:4:
+6359-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizard.hpp:8:
+6360-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizardStartPage.hpp:51:10: warning: 'on_reset_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+6361-   51 |     void on_reset_page();
+6362-      |          ^
+6363-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizardPage.hpp:310:18: note: overridden virtual function is here
+6364-  310 |     virtual void on_reset_page() {}
+6365-      |                  ^
+6366-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/EditGCodeDialog.cpp:14:
+6367-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:24:
+--
+7061-      |                  ^
+7062-1 warning generated.
+7063-[377/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmosManager.cpp.o
+7064:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmosManager.cpp.o 
+7065-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmosManager.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmosManager.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmosManager.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp
+7066-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7067-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7068-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7069:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:638:25: error: redefinition of 'glad_glAlphaFunc' as different kind of symbol
+7070-  638 | GL_API void GL_APIENTRY glAlphaFunc (GLenum func, GLclampf ref) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7071-      |                         ^
+7072-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3234:21: note: expanded from macro 'glAlphaFunc'
+7073- 3234 | #define glAlphaFunc glad_glAlphaFunc
+7074-      |                     ^
+7075-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3233:34: note: previous definition is here
+7076- 3233 | GLAD_API_CALL PFNGLALPHAFUNCPROC glad_glAlphaFunc;
+7077-      |                                  ^
+7078-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7079-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7080-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7081:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:639:25: error: redefinition of 'glad_glClearColor' as different kind of symbol
+7082-  639 | GL_API void GL_APIENTRY glClearColor (GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7083-      |                         ^
+7084-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3358:22: note: expanded from macro 'glClearColor'
+7085- 3358 | #define glClearColor glad_glClearColor
+7086-      |                      ^
+7087-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3357:35: note: previous definition is here
+7088- 3357 | GLAD_API_CALL PFNGLCLEARCOLORPROC glad_glClearColor;
+7089-      |                                   ^
+7090-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7091-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7092-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7093:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:640:25: error: redefinition of 'glad_glClearDepthf' as different kind of symbol
+7094-  640 | GL_API void GL_APIENTRY glClearDepthf (GLclampf depth) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7095-      |                         ^
+7096-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3362:23: note: expanded from macro 'glClearDepthf'
+7097- 3362 | #define glClearDepthf glad_glClearDepthf
+7098-      |                       ^
+7099-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3361:36: note: previous definition is here
+7100- 3361 | GLAD_API_CALL PFNGLCLEARDEPTHFPROC glad_glClearDepthf;
+7101-      |                                    ^
+7102-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7103-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7104-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7105:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:642:25: error: redefinition of 'glad_glColor4f' as different kind of symbol
+7106-  642 | GL_API void GL_APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7107-      |                         ^
+7108-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3432:19: note: expanded from macro 'glColor4f'
+7109- 3432 | #define glColor4f glad_glColor4f
+7110-      |                   ^
+7111-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3431:32: note: previous definition is here
+7112- 3431 | GLAD_API_CALL PFNGLCOLOR4FPROC glad_glColor4f;
+7113-      |                                ^
+7114-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7115-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7116-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7117:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:643:25: error: redefinition of 'glad_glDepthRangef' as different kind of symbol
+7118-  643 | GL_API void GL_APIENTRY glDepthRangef (GLclampf zNear, GLclampf zFar) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7119-      |                         ^
+7120-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3588:23: note: expanded from macro 'glDepthRangef'
+7121- 3588 | #define glDepthRangef glad_glDepthRangef
+7122-      |                       ^
+7123-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3587:36: note: previous definition is here
+7124- 3587 | GLAD_API_CALL PFNGLDEPTHRANGEFPROC glad_glDepthRangef;
+7125-      |                                    ^
+7126-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7127-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7128-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7129:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:644:25: error: redefinition of 'glad_glFogf' as different kind of symbol
+7130-  644 | GL_API void GL_APIENTRY glFogf (GLenum pname, GLfloat param) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7131-      |                         ^
+7132-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3720:16: note: expanded from macro 'glFogf'
+7133- 3720 | #define glFogf glad_glFogf
+7134-      |                ^
+7135-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3719:29: note: previous definition is here
+7136- 3719 | GLAD_API_CALL PFNGLFOGFPROC glad_glFogf;
+7137-      |                             ^
+7138-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7139-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7140-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7141:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:645:25: error: redefinition of 'glad_glFogfv' as different kind of symbol
+7142-  645 | GL_API void GL_APIENTRY glFogfv (GLenum pname, const GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7143-      |                         ^
+7144-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3722:17: note: expanded from macro 'glFogfv'
+7145- 3722 | #define glFogfv glad_glFogfv
+7146-      |                 ^
+7147-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3721:30: note: previous definition is here
+7148- 3721 | GLAD_API_CALL PFNGLFOGFVPROC glad_glFogfv;
+7149-      |                              ^
+7150-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7151-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7152-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7153:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:648:25: error: redefinition of 'glad_glGetFloatv' as different kind of symbol
+7154-  648 | GL_API void GL_APIENTRY glGetFloatv (GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7155-      |                         ^
+7156-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3838:21: note: expanded from macro 'glGetFloatv'
+7157- 3838 | #define glGetFloatv glad_glGetFloatv
+7158-      |                     ^
+7159-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3837:34: note: previous definition is here
+7160- 3837 | GLAD_API_CALL PFNGLGETFLOATVPROC glad_glGetFloatv;
+7161-      |                                  ^
+7162-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7163-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7164-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7165:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:649:25: error: redefinition of 'glad_glGetLightfv' as different kind of symbol
+7166-  649 | GL_API void GL_APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7167-      |                         ^
+7168-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3864:22: note: expanded from macro 'glGetLightfv'
+7169- 3864 | #define glGetLightfv glad_glGetLightfv
+7170-      |                      ^
+7171-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3863:35: note: previous definition is here
+7172- 3863 | GLAD_API_CALL PFNGLGETLIGHTFVPROC glad_glGetLightfv;
+7173-      |                                   ^
+7174-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7175-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7176-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7177:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:650:25: error: redefinition of 'glad_glGetMaterialfv' as different kind of symbol
+7178-  650 | GL_API void GL_APIENTRY glGetMaterialfv (GLenum face, GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7179-      |                         ^
+7180-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3874:25: note: expanded from macro 'glGetMaterialfv'
+7181- 3874 | #define glGetMaterialfv glad_glGetMaterialfv
+7182-      |                         ^
+7183-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3873:38: note: previous definition is here
+7184- 3873 | GLAD_API_CALL PFNGLGETMATERIALFVPROC glad_glGetMaterialfv;
+7185-      |                                      ^
+7186-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7187-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7188-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7189:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:651:25: error: redefinition of 'glad_glGetTexEnvfv' as different kind of symbol
+7190-  651 | GL_API void GL_APIENTRY glGetTexEnvfv (GLenum env, GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7191-      |                         ^
+7192-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3982:23: note: expanded from macro 'glGetTexEnvfv'
+7193- 3982 | #define glGetTexEnvfv glad_glGetTexEnvfv
+7194-      |                       ^
+7195-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3981:36: note: previous definition is here
+7196- 3981 | GLAD_API_CALL PFNGLGETTEXENVFVPROC glad_glGetTexEnvfv;
+7197-      |                                    ^
+7198-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7199-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7200-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7201:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:652:25: error: redefinition of 'glad_glGetTexParameterfv' as different kind of symbol
+7202-  652 | GL_API void GL_APIENTRY glGetTexParameterfv (GLenum target, GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7203-      |                         ^
+7204-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4002:29: note: expanded from macro 'glGetTexParameterfv'
+7205- 4002 | #define glGetTexParameterfv glad_glGetTexParameterfv
+7206-      |                             ^
+7207-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4001:42: note: previous definition is here
+7208- 4001 | GLAD_API_CALL PFNGLGETTEXPARAMETERFVPROC glad_glGetTexParameterfv;
+7209-      |                                          ^
+7210-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7211-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7212-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7213:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:653:25: error: redefinition of 'glad_glLightModelf' as different kind of symbol
+7214-  653 | GL_API void GL_APIENTRY glLightModelf (GLenum pname, GLfloat param) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7215-      |                         ^
+7216-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4182:23: note: expanded from macro 'glLightModelf'
+7217- 4182 | #define glLightModelf glad_glLightModelf
+7218-      |                       ^
+7219-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4181:36: note: previous definition is here
+7220- 4181 | GLAD_API_CALL PFNGLLIGHTMODELFPROC glad_glLightModelf;
+7221-      |                                    ^
+7222-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7223-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7224-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7225:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:654:25: error: redefinition of 'glad_glLightModelfv' as different kind of symbol
+7226-  654 | GL_API void GL_APIENTRY glLightModelfv (GLenum pname, const GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7227-      |                         ^
+7228-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4184:24: note: expanded from macro 'glLightModelfv'
+7229- 4184 | #define glLightModelfv glad_glLightModelfv
+7230-      |                        ^
+7231-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4183:37: note: previous definition is here
+7232- 4183 | GLAD_API_CALL PFNGLLIGHTMODELFVPROC glad_glLightModelfv;
+7233-      |                                     ^
+7234-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7235-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7236-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7237:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:655:25: error: redefinition of 'glad_glLightf' as different kind of symbol
+7238-  655 | GL_API void GL_APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7239-      |                         ^
+7240-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4190:18: note: expanded from macro 'glLightf'
+7241- 4190 | #define glLightf glad_glLightf
+7242-      |                  ^
+7243-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4189:31: note: previous definition is here
+7244- 4189 | GLAD_API_CALL PFNGLLIGHTFPROC glad_glLightf;
+7245-      |                               ^
+7246-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7247-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7248-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7249:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:656:25: error: redefinition of 'glad_glLightfv' as different kind of symbol
+7250-  656 | GL_API void GL_APIENTRY glLightfv (GLenum light, GLenum pname, const GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7251-      |                         ^
+7252-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4192:19: note: expanded from macro 'glLightfv'
+7253- 4192 | #define glLightfv glad_glLightfv
+7254-      |                   ^
+7255-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4191:32: note: previous definition is here
+7256- 4191 | GLAD_API_CALL PFNGLLIGHTFVPROC glad_glLightfv;
+7257-      |                                ^
+7258-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7259-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7260-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7261:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:657:25: error: redefinition of 'glad_glLineWidth' as different kind of symbol
+7262-  657 | GL_API void GL_APIENTRY glLineWidth (GLfloat width) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7263-      |                         ^
+7264-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4200:21: note: expanded from macro 'glLineWidth'
+7265- 4200 | #define glLineWidth glad_glLineWidth
+7266-      |                     ^
+7267-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4199:34: note: previous definition is here
+7268- 4199 | GLAD_API_CALL PFNGLLINEWIDTHPROC glad_glLineWidth;
+7269-      |                                  ^
+7270-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7271-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7272-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7273:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:658:25: error: redefinition of 'glad_glLoadMatrixf' as different kind of symbol
+7274-  658 | GL_API void GL_APIENTRY glLoadMatrixf (const GLfloat *m) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7275-      |                         ^
+7276-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4210:23: note: expanded from macro 'glLoadMatrixf'
+7277- 4210 | #define glLoadMatrixf glad_glLoadMatrixf
+7278-      |                       ^
+7279-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4209:36: note: previous definition is here
+7280- 4209 | GLAD_API_CALL PFNGLLOADMATRIXFPROC glad_glLoadMatrixf;
+7281-      |                                    ^
+7282-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:35:
+7283-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7284-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7285:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:659:25: error: redefinition of 'glad_glMaterialf' as different kind of symbol
+7286-  659 | GL_API void GL_APIENTRY glMaterialf (GLenum face, GLenum pname, GLfloat param) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7287-      |                         ^
+7288-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4244:21: note: expanded from macro 'glMaterialf'
+7289- 4244 | #define glMaterialf glad_glMaterialf
+7290-      |                     ^
+7291-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:4243:34: note: previous definition is here
+7292- 4243 | GLAD_API_CALL PFNGLMATERIALFPROC glad_glMaterialf;
+7293-      |                                  ^
+7294:fatal error: too many errors emitted, stopping now [-ferror-limit=]
+7295-20 errors generated.
+7296-[378/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmosCommon.cpp.o
+7297-[379/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Gizmos/GLGizmoSeam.cpp.o
+7298-[380/653] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/GLCanvas3D.cpp.o
+7299:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/GLCanvas3D.cpp.o 
+7300-/usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/GLCanvas3D.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/GLCanvas3D.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/GLCanvas3D.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp
+7301-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:2:
+7302-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.hpp:1153:50: warning: all paths through this function will call itself [-Winfinite-recursion]
+7303- 1153 |     ArrangeSettings get_arrange_settings() const {
+7304-      |                                                  ^
+7305-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:19:
+7306-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/BackgroundSlicingProcess.hpp:17:
+7307-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+7308-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+7309-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+7310-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+7311-   18 |     void Refresh();
+7312-      |          ^
+7313-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+7314-   79 |     virtual void Refresh( bool eraseBackground = true,
+7315-      |                  ^
+7316-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:19:
+7317-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/BackgroundSlicingProcess.hpp:17:
+7318-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+7319-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+7320-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+7321-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:19:10: warning: 'ScrolledWindow::SetBackgroundColour' hides overloaded virtual function [-Woverloaded-virtual]
+7322-   19 |     void SetBackgroundColour(wxColour color);
+7323-      |          ^
+7324-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:86:18: note: hidden overloaded virtual function 'wxWindow::SetBackgroundColour' declared here: type mismatch at 1st parameter ('const wxColour &' vs 'wxColour')
+7325-   86 |     virtual bool SetBackgroundColour( const wxColour &colour ) override;
+7326-      |                  ^
+7327-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:19:
+7328-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/BackgroundSlicingProcess.hpp:17:
+7329-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+7330-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+7331-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+7332-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+7333-   46 |     void SetLabel(const wxString& label);
+7334-      |          ^
+--
+7555-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7556-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7557-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7558:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:638:25: error: redefinition of 'glad_glAlphaFunc' as different kind of symbol
+7559-  638 | GL_API void GL_APIENTRY glAlphaFunc (GLenum func, GLclampf ref) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7560-      |                         ^
+7561-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3234:21: note: expanded from macro 'glAlphaFunc'
+7562- 3234 | #define glAlphaFunc glad_glAlphaFunc
+7563-      |                     ^
+7564-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3233:34: note: previous definition is here
+7565- 3233 | GLAD_API_CALL PFNGLALPHAFUNCPROC glad_glAlphaFunc;
+7566-      |                                  ^
+7567-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7568-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7569-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7570:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:639:25: error: redefinition of 'glad_glClearColor' as different kind of symbol
+7571-  639 | GL_API void GL_APIENTRY glClearColor (GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7572-      |                         ^
+7573-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3358:22: note: expanded from macro 'glClearColor'
+7574- 3358 | #define glClearColor glad_glClearColor
+7575-      |                      ^
+7576-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3357:35: note: previous definition is here
+7577- 3357 | GLAD_API_CALL PFNGLCLEARCOLORPROC glad_glClearColor;
+7578-      |                                   ^
+7579-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7580-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7581-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7582:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:640:25: error: redefinition of 'glad_glClearDepthf' as different kind of symbol
+7583-  640 | GL_API void GL_APIENTRY glClearDepthf (GLclampf depth) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7584-      |                         ^
+7585-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3362:23: note: expanded from macro 'glClearDepthf'
+7586- 3362 | #define glClearDepthf glad_glClearDepthf
+7587-      |                       ^
+7588-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3361:36: note: previous definition is here
+7589- 3361 | GLAD_API_CALL PFNGLCLEARDEPTHFPROC glad_glClearDepthf;
+7590-      |                                    ^
+7591-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7592-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7593-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7594:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:642:25: error: redefinition of 'glad_glColor4f' as different kind of symbol
+7595-  642 | GL_API void GL_APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7596-      |                         ^
+7597-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3432:19: note: expanded from macro 'glColor4f'
+7598- 3432 | #define glColor4f glad_glColor4f
+7599-      |                   ^
+7600-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3431:32: note: previous definition is here
+7601- 3431 | GLAD_API_CALL PFNGLCOLOR4FPROC glad_glColor4f;
+7602-      |                                ^
+7603-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7604-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7605-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7606:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:643:25: error: redefinition of 'glad_glDepthRangef' as different kind of symbol
+7607-  643 | GL_API void GL_APIENTRY glDepthRangef (GLclampf zNear, GLclampf zFar) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7608-      |                         ^
+7609-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3588:23: note: expanded from macro 'glDepthRangef'
+7610- 3588 | #define glDepthRangef glad_glDepthRangef
+7611-      |                       ^
+7612-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3587:36: note: previous definition is here
+7613- 3587 | GLAD_API_CALL PFNGLDEPTHRANGEFPROC glad_glDepthRangef;
+7614-      |                                    ^
+7615-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7616-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7617-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7618:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:644:25: error: redefinition of 'glad_glFogf' as different kind of symbol
+7619-  644 | GL_API void GL_APIENTRY glFogf (GLenum pname, GLfloat param) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7620-      |                         ^
+7621-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3720:16: note: expanded from macro 'glFogf'
+7622- 3720 | #define glFogf glad_glFogf
+7623-      |                ^
+7624-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3719:29: note: previous definition is here
+7625- 3719 | GLAD_API_CALL PFNGLFOGFPROC glad_glFogf;
+7626-      |                             ^
+7627-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7628-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7629-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7630:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:645:25: error: redefinition of 'glad_glFogfv' as different kind of symbol
+7631-  645 | GL_API void GL_APIENTRY glFogfv (GLenum pname, const GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7632-      |                         ^
+7633-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3722:17: note: expanded from macro 'glFogfv'
+7634- 3722 | #define glFogfv glad_glFogfv
+7635-      |                 ^
+7636-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3721:30: note: previous definition is here
+7637- 3721 | GLAD_API_CALL PFNGLFOGFVPROC glad_glFogfv;
+7638-      |                              ^
+7639-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7640-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7641-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7642:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:648:25: error: redefinition of 'glad_glGetFloatv' as different kind of symbol
+7643-  648 | GL_API void GL_APIENTRY glGetFloatv (GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+7644-      |                         ^
+7645-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3838:21: note: expanded from macro 'glGetFloatv'
+7646- 3838 | #define glGetFloatv glad_glGetFloatv
+7647-      |                     ^
+7648-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include/glad/gl.h:3837:34: note: previous definition is here
+7649- 3837 | GLAD_API_CALL PFNGLGETFLOATVPROC glad_glGetFloatv;
+7650-      |                                  ^
+7651-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.cpp:51:
+7652-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/glcanvas.h:375:
+7653-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/glcanvas.h:14:
+7654:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:649:25: error: redefinition of 'glad_glGetLightfv' as different kind of symbol
+7655-  649 | GL_API void GL_APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params) OPENGLES_DEPRECATED(ios(2.0, 

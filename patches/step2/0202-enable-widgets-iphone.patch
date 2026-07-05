@@ -1,8 +1,17 @@
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..5fdd772 100644
+index aea925c..8e634b8 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
-@@ -62,7 +62,7 @@
+@@ -52,7 +52,7 @@
+ 
+ #if wxUSE_DRAG_AND_DROP
+ #undef wxUSE_DRAG_AND_DROP
+-#define wxUSE_DRAG_AND_DROP 0
++#define wxUSE_DRAG_AND_DROP 1
+ #endif
+ 
+ #if wxUSE_TASKBARICON
+@@ -62,12 +62,12 @@
  
  #if wxUSE_TOOLTIPS
  #undef wxUSE_TOOLTIPS
@@ -11,6 +20,12 @@ index aea925c..5fdd772 100644
  #endif
  
  #if wxUSE_DRAG_AND_DROP
+ #undef wxUSE_DRAG_AND_DROP
+-#define wxUSE_DRAG_AND_DROP 0
++#define wxUSE_DRAG_AND_DROP 1
+ #endif
+ 
+ #if wxUSE_TASKBARICON
 @@ -84,7 +84,7 @@
  
  #if wxUSE_COMBOBOX
@@ -25,12 +40,13 @@ index aea925c..5fdd772 100644
  #define wxUSE_NATIVE_STATUSBAR 0
  #define wxUSE_ABOUTDLG 0
 -#define wxUSE_STATLINE 0
-+#define wxUSE_STATLINE 1
- #define wxUSE_COLLPANE 0
+-#define wxUSE_COLLPANE 0
 -#define wxUSE_STATBOX 0
 -#define wxUSE_RADIOBTN 0
 -#define wxUSE_RADIOBOX 0
 -#define wxUSE_TOGGLEBTN 0
++#define wxUSE_STATLINE 1
++#define wxUSE_COLLPANE 1
 +#define wxUSE_STATBOX 1
 +#define wxUSE_RADIOBTN 1
 +#define wxUSE_RADIOBOX 1
@@ -47,15 +63,16 @@ index aea925c..5fdd772 100644
 -#define wxUSE_BITMAPCOMBOBOX 0
 -#define wxUSE_BMPBUTTON 0
 -#define wxUSE_CHECKLISTBOX 0
+-#define wxUSE_GRID 0
+-#define wxUSE_LISTCTRL 0
+-#define wxUSE_SPINBTN 0
+-#define wxUSE_SPINCTRL 0
 +#define wxUSE_COMBOCTRL 1
 +#define wxUSE_ODCOMBOBOX 1
 +#define wxUSE_BITMAPCOMBOBOX 1
 +#define wxUSE_BMPBUTTON 1
 +#define wxUSE_CHECKLISTBOX 1
- #define wxUSE_GRID 0
--#define wxUSE_LISTCTRL 0
--#define wxUSE_SPINBTN 0
--#define wxUSE_SPINCTRL 0
++#define wxUSE_GRID 1
 +#define wxUSE_LISTCTRL 1
 +#undef wxUSE_IMAGLIST
 +#define wxUSE_IMAGLIST 1
@@ -70,12 +87,14 @@ index aea925c..5fdd772 100644
 +#define wxUSE_COLOURPICKERCTRL 1
  #define wxUSE_FONTPICKERCTRL 0
  #define wxUSE_DEBUGREPORT 0
- #define wxUSE_HYPERLINKCTRL 0
+-#define wxUSE_HYPERLINKCTRL 0
++#define wxUSE_HYPERLINKCTRL 1
  #define wxUSE_STC 0
 -#define wxUSE_AUI 0
-+#define wxUSE_AUI 1
- #define wxUSE_BUSYINFO 0
+-#define wxUSE_BUSYINFO 0
 -#define wxUSE_SEARCHCTRL 0
++#define wxUSE_AUI 1
++#define wxUSE_BUSYINFO 1
 +#define wxUSE_SEARCHCTRL 1
  
  #undef wxUSE_LOGWINDOW

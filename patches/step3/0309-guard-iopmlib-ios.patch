@@ -1,0 +1,38 @@
+diff --git a/src/slic3r/GUI/GUI.cpp b/src/slic3r/GUI/GUI.cpp
+index bb4d060..0ee5db7 100644
+--- a/src/slic3r/GUI/GUI.cpp
++++ b/src/slic3r/GUI/GUI.cpp
+@@ -14,7 +14,7 @@
+ #include <boost/algorithm/string/predicate.hpp>
+ #include <boost/any.hpp>
+ 
+-#if __APPLE__
++#if defined(__APPLE__) && !defined(__WXOSX_IPHONE__)
+ #import <IOKit/pwr_mgt/IOPMLib.h>
+ #elif _WIN32
+ #define WIN32_LEAN_AND_MEAN
+@@ -37,13 +37,13 @@ class AppConfig;
+ 
+ namespace GUI {
+ 
+-#if __APPLE__
++#if defined(__APPLE__) && !defined(__WXOSX_IPHONE__)
+ IOPMAssertionID assertionID;
+ #endif
+ 
+ void disable_screensaver()
+ {
+-    #if __APPLE__
++    #if defined(__APPLE__) && !defined(__WXOSX_IPHONE__)
+     CFStringRef reasonForActivity = CFSTR("Slic3r");
+     [[maybe_unused]]IOReturn success = IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep,
+         kIOPMAssertionLevelOn, reasonForActivity, &assertionID);
+@@ -55,7 +55,7 @@ void disable_screensaver()
+ 
+ void enable_screensaver()
+ {
+-    #if __APPLE__
++    #if defined(__APPLE__) && !defined(__WXOSX_IPHONE__)
+     IOPMAssertionRelease(assertionID);
+     #elif _WIN32
+     SetThreadExecutionState(ES_CONTINUOUS);

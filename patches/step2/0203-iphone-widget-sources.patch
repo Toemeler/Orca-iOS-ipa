@@ -1,5 +1,5 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..ebfa5ea 100644
+index c163c87..cd11495 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
 @@ -327,7 +327,7 @@ set(QT_SRC
@@ -20,6 +20,19 @@ index c163c87..ebfa5ea 100644
      src/generic/markuptext.cpp
      src/generic/msgdlgg.cpp
      src/generic/numdlgg.cpp
+@@ -878,9 +878,9 @@ set(GUI_CMN_SRC
+     src/generic/vscroll.cpp
+     src/xrc/xmlreshandler.cpp
+     src/common/bmpcboxcmn.cpp
+-    src/generic/grideditors.cpp
+-    src/generic/gridctrl.cpp
+-    src/generic/grid.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/grideditors.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/gridctrl.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/grid.cpp>
+     src/generic/hyperlinkg.cpp
+     src/common/calctrlcmn.cpp
+     src/generic/notifmsgg.cpp
 @@ -1360,7 +1360,7 @@ set(GTK_SRC
      src/generic/fdrepdlg.cpp
      # Needed as long as we support GTK+ < 2.6
@@ -38,15 +51,17 @@ index c163c87..ebfa5ea 100644
  )
  
  set(GTK2_SRC
-@@ -1970,7 +1970,7 @@ set(OSX_COMMON_SRC
+@@ -1970,8 +1970,8 @@ set(OSX_COMMON_SRC
      src/osx/checkbox_osx.cpp
      src/osx/checklst_osx.cpp
      src/osx/choice_osx.cpp
 -    src/osx/combobox_osx.cpp
+-    src/osx/dnd_osx.cpp
 +    $<$<NOT:$<BOOL:${IPHONE}>>:src/osx/combobox_osx.cpp>
-     src/osx/dnd_osx.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/osx/dnd_osx.cpp>
      src/osx/gauge_osx.cpp
      src/osx/listbox_osx.cpp
+     src/osx/menu_osx.cpp
 @@ -1997,13 +1997,13 @@ set(OSX_COMMON_SRC
      src/osx/carbon/fontdlgosx.mm
      # other shared files

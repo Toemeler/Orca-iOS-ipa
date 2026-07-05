@@ -1,0 +1,18 @@
+diff --git a/include/wx/osx/glcanvas.h b/include/wx/osx/glcanvas.h
+index fcf8dcb..ed50927 100644
+--- a/include/wx/osx/glcanvas.h
++++ b/include/wx/osx/glcanvas.h
+@@ -11,8 +11,13 @@
+ #define _WX_GLCANVAS_H_
+ 
+ #ifdef __WXOSX_IPHONE__
++// Orca-iOS-ipa: Orca loads GL through glad (compatibility profile, which aliases
++// glAlphaFunc->glad_glAlphaFunc etc.). When glad's header is already included, its
++// aliasing macros collide with the system ES1 declarations, so skip the ES1 import.
++#ifndef GLAD_GL_H_
+ #import <OpenGLES/ES1/gl.h>
+ #import <OpenGLES/ES1/glext.h>
++#endif
+ #define wxUSE_OPENGL_EMULATION 1
+ #else
+ #ifndef GL_SILENCE_DEPRECATION

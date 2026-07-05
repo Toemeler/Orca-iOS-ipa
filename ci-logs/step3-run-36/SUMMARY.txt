@@ -1,0 +1,27 @@
+=== FAILED files ===
+GUI/CreatePresetsDialog.cpp
+GUI/ExtraRenderers.cpp
+GUI/GUI_App.cpp
+GUI/GUI_Factories.cpp
+GUI/GUI_ObjectList.cpp
+GUI/MainFrame.cpp
+GUI/PhysicalPrinterDialog.cpp
+GUI/Plater.cpp
+GUI/Preferences.cpp
+GUI/PrinterWebView.cpp
+GUI/ProgressStatusBar.cpp
+GUI/SendSystemInfoDialog.cpp
+GUI/SyncAmsInfoDialog.cpp
+GUI/TroubleshootDialog.cpp
+GUI/WebDownPluginDlg.cpp
+GUI/WebGuideDialog.cpp
+GUI/WebUserLoginDialog.cpp
+GUI/WebViewDialog.cpp
+GUI/Widgets/WebView.cpp
+GUI/wxMediaCtrl2.cpp
+Utils/OrcaCloudServiceAgent.cpp
+Utils/Serial.cpp
+
+=== error signatures (deduped) ===
+
+total FAILED: 22

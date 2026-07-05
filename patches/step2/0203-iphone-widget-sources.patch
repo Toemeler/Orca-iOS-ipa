@@ -1,5 +1,5 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..505c385 100644
+index c163c87..719afc3 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
 @@ -2024,8 +2024,8 @@ set(OSX_COMMON_SRC
@@ -41,6 +41,27 @@ index c163c87..505c385 100644
      src/generic/fontdlgg.cpp
      src/generic/fontpickerg.cpp
      src/generic/listctrl.cpp
+@@ -2751,13 +2761,13 @@ set(UNIX_SOUND_SDL_SRC
+ )
+ 
+ set(AUI_CMN_SRC
+-    src/aui/framemanager.cpp
+-    src/aui/dockart.cpp
+-    src/aui/floatpane.cpp
+-    src/aui/auibook.cpp
+-    src/aui/auibar.cpp
+-    src/aui/tabmdi.cpp
+-    src/aui/tabart.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/framemanager.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/dockart.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/floatpane.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/auibook.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/auibar.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/tabmdi.cpp>
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/aui/tabart.cpp>
+     src/xrc/xh_aui.cpp
+     src/xrc/xh_auitoolb.cpp
+ )
 diff --git a/include/wx/colordlg.h b/include/wx/colordlg.h
 index 264f4f7..db9b1fd 100644
 --- a/include/wx/colordlg.h

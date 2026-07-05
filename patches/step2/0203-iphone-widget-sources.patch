@@ -1,7 +1,16 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..25a9fb7 100644
+index c163c87..ebfa5ea 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
+@@ -327,7 +327,7 @@ set(QT_SRC
+     src/generic/fontpickerg.cpp
+     src/qt/frame.cpp
+     src/qt/gauge.cpp
+-    src/generic/imaglist.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/imaglist.cpp>
+     src/qt/listbox.cpp
+     src/qt/listctrl.cpp
+     src/qt/mdi.cpp
 @@ -853,7 +853,7 @@ set(GUI_CMN_SRC
      src/generic/headerctrlg.cpp
      src/generic/infobar.cpp
@@ -11,6 +20,24 @@ index c163c87..25a9fb7 100644
      src/generic/markuptext.cpp
      src/generic/msgdlgg.cpp
      src/generic/numdlgg.cpp
+@@ -1360,7 +1360,7 @@ set(GTK_SRC
+     src/generic/fdrepdlg.cpp
+     # Needed as long as we support GTK+ < 2.6
+     src/generic/filepickerg.cpp
+-    src/generic/listctrl.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/listctrl.cpp>
+     src/generic/prntdlgg.cpp
+     src/generic/statusbr.cpp
+     # GTK+ specific files:
+@@ -1420,7 +1420,7 @@ set(GTK_SRC
+     src/gtk/bmpcbox.cpp
+     src/gtk/hyperlink.cpp
+     src/gtk/srchctrl.cpp
+-    src/generic/imaglist.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/imaglist.cpp>
+ )
+ 
+ set(GTK2_SRC
 @@ -1970,7 +1970,7 @@ set(OSX_COMMON_SRC
      src/osx/checkbox_osx.cpp
      src/osx/checklst_osx.cpp
@@ -36,7 +63,7 @@ index c163c87..25a9fb7 100644
      src/osx/carbon/dcclient.cpp
      src/osx/carbon/dcprint.cpp
      src/osx/carbon/dcscreen.cpp
-@@ -2024,8 +2024,8 @@ set(OSX_COMMON_SRC
+@@ -2024,17 +2024,17 @@ set(OSX_COMMON_SRC
      src/generic/colrdlgg.cpp
      src/generic/dirdlgg.cpp
      src/generic/fdrepdlg.cpp
@@ -46,7 +73,18 @@ index c163c87..25a9fb7 100644
 +    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filepickerg.cpp>
      src/generic/fontdlgg.cpp
      src/generic/fontpickerg.cpp
-     src/generic/listctrl.cpp
+-    src/generic/listctrl.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/listctrl.cpp>
+     src/generic/prntdlgg.cpp
+     src/generic/statusbr.cpp
+     src/generic/textmeasure.cpp
+     #TODO: </if>
+     src/osx/statbmp_osx.cpp
+-    src/generic/imaglist.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/imaglist.cpp>
+ )
+ 
+ set(OSX_SHARED_HDR
 @@ -2235,6 +2235,16 @@ set(OSX_IPHONE_SRC
      src/osx/iphone/statbmp.mm
      src/osx/iphone/menuitem.mm
@@ -64,7 +102,7 @@ index c163c87..25a9fb7 100644
  )
  
  set(OSX_IPHONE_HDR
-@@ -2257,8 +2267,8 @@ set(UNIV_SRC
+@@ -2257,11 +2267,11 @@ set(UNIV_SRC
      src/generic/colrdlgg.cpp
      src/generic/dirdlgg.cpp
      src/generic/fdrepdlg.cpp
@@ -74,7 +112,20 @@ index c163c87..25a9fb7 100644
 +    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filepickerg.cpp>
      src/generic/fontdlgg.cpp
      src/generic/fontpickerg.cpp
-     src/generic/listctrl.cpp
+-    src/generic/listctrl.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/listctrl.cpp>
+     src/generic/mdig.cpp
+     src/generic/prntdlgg.cpp
+     src/univ/anybutton.cpp
+@@ -2302,7 +2312,7 @@ set(UNIV_SRC
+     src/univ/topluniv.cpp
+     src/univ/winuniv.cpp
+     src/generic/activityindicator.cpp
+-    src/generic/imaglist.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/imaglist.cpp>
+ )
+ 
+ set(UNIV_HDR
 @@ -2751,13 +2761,13 @@ set(UNIX_SOUND_SDL_SRC
  )
  

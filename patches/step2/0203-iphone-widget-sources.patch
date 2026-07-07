@@ -217,6 +217,22 @@ index d3f0681..32bfdc8 100644
  #elif defined(__WXMAC__)
      #include "wx/osx/filedlg.h"
  #elif defined(__WXQT__)
+diff --git a/include/wx/osx/webviewhistoryitem_webkit.h b/include/wx/osx/webviewhistoryitem_webkit.h
+index 6a15e46..e59199f 100644
+--- a/include/wx/osx/webviewhistoryitem_webkit.h
++++ b/include/wx/osx/webviewhistoryitem_webkit.h
+@@ -11,7 +11,10 @@
+ 
+ #include "wx/defs.h"
+ 
+-#if wxUSE_WEBVIEW && wxUSE_WEBVIEW_WEBKIT && defined(__WXOSX__)
++/* Orca-iOS: the iphone port builds wxWebView backendless; this class is a
++   plain value type (no WebKit dependency), so it must exist whenever
++   wxUSE_WEBVIEW is on for OSX-family ports. */
++#if wxUSE_WEBVIEW && (wxUSE_WEBVIEW_WEBKIT || defined(__WXOSX_IPHONE__)) && defined(__WXOSX__)
+ 
+ #include "wx/osx/core/objcid.h"
+ 
 diff --git a/include/wx/statusbr.h b/include/wx/statusbr.h
 index 46d1e19..544af40 100644
 --- a/include/wx/statusbr.h

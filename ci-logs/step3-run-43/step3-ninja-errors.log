@@ -1,0 +1,442 @@
+13910-      |                         ^
+13911-24 warnings generated.
+13912-[481/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Plater.cpp.o
+13913:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Plater.cpp.o 
+13914-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Plater.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Plater.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Plater.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp
+13915-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:1:
+13916-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+13917-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+13918-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+13919-   18 |     void Refresh();
+13920-      |          ^
+13921-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+13922-   79 |     virtual void Refresh( bool eraseBackground = true,
+13923-      |                  ^
+13924-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:1:
+13925-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+13926-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+13927-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:19:10: warning: 'ScrolledWindow::SetBackgroundColour' hides overloaded virtual function [-Woverloaded-virtual]
+13928-   19 |     void SetBackgroundColour(wxColour color);
+13929-      |          ^
+13930-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:86:18: note: hidden overloaded virtual function 'wxWindow::SetBackgroundColour' declared here: type mismatch at 1st parameter ('const wxColour &' vs 'wxColour')
+13931-   86 |     virtual bool SetBackgroundColour( const wxColour &colour ) override;
+13932-      |                  ^
+13933-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:1:
+13934-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+13935-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+13936-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+13937-   46 |     void SetLabel(const wxString& label);
+13938-      |          ^
+13939-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+13940-   56 |     virtual void SetLabel( const wxString& label ) override;
+13941-      |                  ^
+13942-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:1:
+13943-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+13944-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+13945-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:72:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+13946-   72 |     virtual void DoSetSize(
+13947-      |                  ^
+13948-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+--
+14123-  484 |         void            reload_config() override;
+14124-      |                         ^
+14125-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:103:
+14126:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Jobs/SLAImportDialog.hpp:26:5: error: unknown type name 'wxFilePickerCtrl'; did you mean 'wxColourPickerCtrl'?
+14127-   26 |     wxFilePickerCtrl *m_filepicker;
+14128-      |     ^~~~~~~~~~~~~~~~
+14129-      |     wxColourPickerCtrl
+14130-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/clrpicker.h:99:24: note: 'wxColourPickerCtrl' declared here
+14131-   99 | class WXDLLIMPEXP_CORE wxColourPickerCtrl : public wxPickerBase
+14132-      |                        ^
+14133-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:103:
+14134:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Jobs/SLAImportDialog.hpp:35:28: error: unknown type name 'wxFilePickerCtrl'; did you mean 'wxColourPickerCtrl'?
+14135-   35 |         m_filepicker = new wxFilePickerCtrl(this, wxID_ANY, from_u8(wxGetApp().app_config->get_last_dir()), _(L("Choose SLA archive:")),
+14136-      |                            ^~~~~~~~~~~~~~~~
+14137-      |                            wxColourPickerCtrl
+14138-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/clrpicker.h:99:24: note: 'wxColourPickerCtrl' declared here
+14139-   99 | class WXDLLIMPEXP_CORE wxColourPickerCtrl : public wxPickerBase
+14140-      |                        ^
+14141-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:103:
+14142:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Jobs/SLAImportDialog.hpp:37:79: error: use of undeclared identifier 'wxFLP_DEFAULT_STYLE'
+14143-   37 |                                             wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE | wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+14144-      |                                                                               ^
+14145:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Jobs/SLAImportDialog.hpp:95:66: error: no member named 'GetPath' in 'wxColourPickerCtrl'
+14146-   95 |     std::string get_path() const override { return m_filepicker->GetPath().ToUTF8().data(); }
+14147-      |                                                    ~~~~~~~~~~~~  ^
+14148-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:110:
+14149-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendMultiMachinePage.hpp:26:10: warning: 'DESIGN_GRAY900_COLOR' macro redefined [-Wmacro-redefined]
+14150-   26 | #define  DESIGN_GRAY900_COLOR wxColour(38, 46, 48)
+14151-      |          ^
+14152-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.hpp:21:9: note: previous definition is here
+14153-   21 | #define DESIGN_GRAY900_COLOR wxColour("#363636") // Label color
+14154-      |         ^
+14155-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:110:
+14156-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendMultiMachinePage.hpp:28:10: warning: 'DESIGN_GRAY600_COLOR' macro redefined [-Wmacro-redefined]
+14157-   28 | #define  DESIGN_GRAY600_COLOR wxColour(144, 144, 144)
+14158-      |          ^
+14159-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.hpp:22:9: note: previous definition is here
+14160-   22 | #define DESIGN_GRAY600_COLOR wxColour("#ACACAC") // Dimmed text color
+14161-      |         ^
+14162-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:110:
+14163-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendMultiMachinePage.hpp:31:10: warning: 'DESIGN_COMBOBOX_SIZE' macro redefined [-Wmacro-redefined]
+14164-   31 | #define  DESIGN_COMBOBOX_SIZE wxSize(FromDIP(140), -1)
+14165-      |          ^
+14166-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.hpp:26:9: note: previous definition is here
+14167-   26 | #define DESIGN_COMBOBOX_SIZE wxSize(FromDIP(120), -1)
+14168-      |         ^
+14169-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:110:
+14170-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendMultiMachinePage.hpp:32:10: warning: 'DESIGN_LARGE_COMBOBOX_SIZE' macro redefined [-Wmacro-redefined]
+14171-   32 | #define  DESIGN_LARGE_COMBOBOX_SIZE wxSize(FromDIP(160), -1)
+14172-      |          ^
+14173-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.hpp:27:9: note: previous definition is here
+14174-   27 | #define DESIGN_LARGE_COMBOBOX_SIZE wxSize(FromDIP(120), -1)
+14175-      |         ^
+14176-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:110:
+14177-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendMultiMachinePage.hpp:33:10: warning: 'DESIGN_INPUT_SIZE' macro redefined [-Wmacro-redefined]
+14178-   33 | #define  DESIGN_INPUT_SIZE wxSize(FromDIP(50), -1)
+14179-      |          ^
+14180-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.hpp:28:9: note: previous definition is here
+--
+14346-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:12429:76: warning: lambda capture 'cancel' is not used [-Wunused-lambda-capture]
+14347- 12429 |     boost::thread import_thread = Slic3r::create_thread([&percent, &cont, &cancel, &retry_count, max_retries, &msg, &target_path, &download_ok, download_url, &filename] {
+14348-       |                                                                         ~~~^~~~~~
+14349:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:14820:12: error: use of undeclared identifier 'wxGetNumberFromUser'; did you mean 'GetNumberFromUser'?
+14350- 14820 |     return wxGetNumberFromUser(msg, prompt, title, value, min, max, parent);
+14351-       |            ^~~~~~~~~~~~~~~~~~~
+14352-       |            GetNumberFromUser
+14353-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:14804:13: note: 'GetNumberFromUser' declared here
+14354- 14804 | static long GetNumberFromUser(  const wxString& msg,
+14355-       |             ^
+14356-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.cpp:86:
+14357-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+14358-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+14359-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+14360-  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+14361-      |                         ^
+14362-72 warnings and 5 errors generated.
+14363-[482/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ExportPresetBundleDialog.cpp.o
+14364-[483/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/PresetBundleDialog.cpp.o
+14365-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.cpp:14:
+14366-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+14367-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+14368-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:143:10: warning: 'Tabbook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+14369-  143 |     bool AddPage(wxWindow* page,
+14370-      |          ^
+14371-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: type mismatch at 3rd parameter ('bool' vs 'const std::string &' (aka 'const basic_string<char> &'))
+14372-  177 |     virtual bool AddPage(wxWindow *page,
+14373-      |                  ^
+14374-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.cpp:14:
+14375-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+14376-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+14377-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:187:10: warning: 'RemovePage' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+14378-  187 |     bool RemovePage(size_t n)
+14379-      |          ^
+14380-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:161:18: note: overridden virtual function is here
+14381-  161 |     virtual bool RemovePage(size_t n)
+14382-      |                  ^
+14383-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PresetBundleDialog.cpp:14:
+14384-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:24:
+--
+16725-      |                         ^
+16726-31 warnings generated.
+16727-[510/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/SendSystemInfoDialog.cpp.o
+16728:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/SendSystemInfoDialog.cpp.o 
+16729-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/SendSystemInfoDialog.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/SendSystemInfoDialog.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/SendSystemInfoDialog.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp
+16730-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:26:
+16731-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+16732-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+16733-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:143:10: warning: 'Tabbook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+16734-  143 |     bool AddPage(wxWindow* page,
+16735-      |          ^
+16736-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: type mismatch at 3rd parameter ('bool' vs 'const std::string &' (aka 'const basic_string<char> &'))
+16737-  177 |     virtual bool AddPage(wxWindow *page,
+16738-      |                  ^
+16739-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:26:
+16740-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+16741-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+16742-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:187:10: warning: 'RemovePage' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+16743-  187 |     bool RemovePage(size_t n)
+16744-      |          ^
+16745-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:161:18: note: overridden virtual function is here
+16746-  161 |     virtual bool RemovePage(size_t n)
+16747-      |                  ^
+16748-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:26:
+16749-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:24:
+16750-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationPanel.hpp:4:
+16751-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizard.hpp:8:
+16752-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizardStartPage.hpp:51:10: warning: 'on_reset_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+16753-   51 |     void on_reset_page();
+16754-      |          ^
+16755-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizardPage.hpp:310:18: note: overridden virtual function is here
+16756-  310 |     virtual void on_reset_page() {}
+16757-      |                  ^
+16758-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:26:
+16759-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:24:
+16760-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationPanel.hpp:4:
+16761-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizard.hpp:8:
+16762-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizardStartPage.hpp:52:10: warning: 'on_device_connected' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+16763-   52 |     void on_device_connected(MachineObject* obj);
+--
+16831-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:56:
+16832-In file included from /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CoreFoundation.h:54:
+16833-In file included from /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFBase.h:80:
+16834:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/MacTypes.h:556:16: error: reference to 'Rect' is ambiguous
+16835-  556 | typedef struct Rect                     Rect;
+16836-      |                ^
+16837-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/MacTypes.h:550:8: note: candidate found by name lookup is 'Rect'
+16838-  550 | struct Rect {
+16839-      |        ^
+16840-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.hpp:33:7: note: candidate found by name lookup is 'Slic3r::GUI::Rect'
+16841-   33 | class Rect
+16842-      |       ^
+16843-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:56:
+16844-In file included from /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CoreFoundation.h:54:
+16845-In file included from /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFBase.h:80:
+16846:/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/MacTypes.h:557:9: error: reference to 'Rect' is ambiguous
+16847-  557 | typedef Rect *                          RectPtr;
+16848-      |         ^
+16849-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Gizmos/GLGizmosManager.hpp:33:7: note: candidate found by name lookup is 'Slic3r::GUI::Rect'
+16850-   33 | class Rect
+16851-      |       ^
+16852-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/usr/include/MacTypes.h:550:8: note: candidate found by name lookup is 'Rect'
+16853-  550 | struct Rect {
+16854-      |        ^
+16855-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/SendSystemInfoDialog.cpp:26:
+16856-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+16857-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+16858-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+16859-  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+16860-      |                         ^
+16861-12 warnings and 2 errors generated.
+16862-[511/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Selection.cpp.o
+16863-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Selection.cpp:5:
+16864-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.hpp:1153:50: warning: all paths through this function will call itself [-Winfinite-recursion]
+16865- 1153 |     ArrangeSettings get_arrange_settings() const {
+16866-      |                                                  ^
+16867-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Selection.cpp:11:
+16868-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+16869-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+16870-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+16871-   18 |     void Refresh();
+16872-      |          ^
+16873-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+16874-   79 |     virtual void Refresh( bool eraseBackground = true,
+16875-      |                  ^
+16876-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Selection.cpp:11:
+16877-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+16878-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+16879-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:19:10: warning: 'ScrolledWindow::SetBackgroundColour' hides overloaded virtual function [-Woverloaded-virtual]
+16880-   19 |     void SetBackgroundColour(wxColour color);
+16881-      |          ^
+--
+17990-13 warnings generated.
+17991-[523/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/TextLines.cpp.o
+17992-[524/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/TroubleshootDialog.cpp.o
+17993:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/TroubleshootDialog.cpp.o 
+17994-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/TroubleshootDialog.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/TroubleshootDialog.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/TroubleshootDialog.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp
+17995-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:1:
+17996-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.hpp:13:
+17997-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ComboBox.hpp:4:
+17998-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+17999-   46 |     void SetLabel(const wxString& label);
+18000-      |          ^
+18001-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+18002-   56 |     virtual void SetLabel( const wxString& label ) override;
+18003-      |                  ^
+18004-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:1:
+18005-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.hpp:13:
+18006-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ComboBox.hpp:4:
+18007-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:72:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+18008-   72 |     virtual void DoSetSize(
+18009-      |                  ^
+18010-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+18011-  379 |     virtual void DoSetSize(int x, int y,
+18012-      |                  ^
+18013-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:1:
+18014-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.hpp:13:
+18015-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ComboBox.hpp:4:
+18016-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:75:10: warning: 'DoSetToolTipText' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+18017-   75 |     void DoSetToolTipText(wxString const &tip);
+18018-      |          ^
+18019-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/window.h:2005:18: note: overridden virtual function is here
+18020- 2005 |     virtual void DoSetToolTipText( const wxString &tip );
+18021-      |                  ^
+18022-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:6:
+18023-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+18024-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+18025-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:143:10: warning: 'Tabbook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+18026-  143 |     bool AddPage(wxWindow* page,
+18027-      |          ^
+18028-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: type mismatch at 3rd parameter ('bool' vs 'const std::string &' (aka 'const basic_string<char> &'))
+--
+18126-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:181:86: warning: lambda capture 'sys_copy_btn' is not used [-Wunused-lambda-capture]
+18127-  181 |     sys_less_btn->Bind(wxEVT_BUTTON, [this, sys_panel, sys_less_btn, sys_info_lines, sys_copy_btn](wxCommandEvent &e) {
+18128-      |                                                                                    ~~^~~~~~~~~~~~
+18129:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:834:17: error: use of undeclared identifier 'CGDirectDisplayID'
+18130-  834 |     std::vector<CGDirectDisplayID> cgDisplays;
+18131-      |                 ^
+18132:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:836:5: error: use of undeclared identifier 'CGGetActiveDisplayList'
+18133-  836 |     CGGetActiveDisplayList(0, nullptr, &displayCount);
+18134-      |     ^
+18135:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:850:9: error: unknown type name 'CGDirectDisplayID'
+18136-  850 |         CGDirectDisplayID cgDispID = (i < static_cast<int>(cgDisplays.size())) ? cgDisplays[i] : CGMainDisplayID();
+18137-      |         ^
+18138:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:850:98: error: use of undeclared identifier 'CGMainDisplayID'
+18139-  850 |         CGDirectDisplayID cgDispID = (i < static_cast<int>(cgDisplays.size())) ? cgDisplays[i] : CGMainDisplayID();
+18140-      |                                                                                                  ^
+18141:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:856:17: error: unknown type name 'CGDisplayModeRef'
+18142-  856 |                 CGDisplayModeRef mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(allModes, m);
+18143-      |                 ^
+18144:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:856:42: error: use of undeclared identifier 'CGDisplayModeRef'
+18145-  856 |                 CGDisplayModeRef mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(allModes, m);
+18146-      |                                          ^
+18147:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:857:53: error: use of undeclared identifier 'kDisplayModeNativeFlag'
+18148-  857 |                 if (CGDisplayModeGetIOFlags(mode) & kDisplayModeNativeFlag) {
+18149-      |                                                     ^
+18150-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/TroubleshootDialog.cpp:6:
+18151-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+18152-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+18153-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+18154-  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+18155-      |                         ^
+18156-17 warnings and 7 errors generated.
+18157-[525/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/UnsavedChangesDialog.cpp.o
+18158-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.cpp:1:
+18159-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.hpp:12:
+18160-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+18161-   18 |     void Refresh();
+18162-      |          ^
+18163-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+18164-   79 |     virtual void Refresh( bool eraseBackground = true,
+18165-      |                  ^
+18166-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.cpp:1:
+18167-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.hpp:12:
+18168-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:19:10: warning: 'ScrolledWindow::SetBackgroundColour' hides overloaded virtual function [-Woverloaded-virtual]
+18169-   19 |     void SetBackgroundColour(wxColour color);
+18170-      |          ^
+18171-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:86:18: note: hidden overloaded virtual function 'wxWindow::SetBackgroundColour' declared here: type mismatch at 1st parameter ('const wxColour &' vs 'wxColour')
+18172-   86 |     virtual bool SetBackgroundColour( const wxColour &colour ) override;
+18173-      |                  ^
+18174-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.cpp:1:
+18175-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.hpp:346:9: warning: 'ShowModal' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+18176-  346 |     int ShowModal();
+18177-      |         ^
+18178-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GUI_Utils.hpp:199:9: note: overridden virtual function is here
+18179-  199 |     int ShowModal()
+18180-      |         ^
+18181-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/UnsavedChangesDialog.cpp:16:
+18182-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+--
+19954-1 warning generated.
+19955-[570/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/SwitchButton.cpp.o
+19956-[571/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o
+19957:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o 
+19958-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp
+19959:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:12:10: fatal error: 'wx/osx/webview_webkit.h' file not found
+19960-   12 | #include <wx/osx/webview_webkit.h>
+19961-      |          ^~~~~~~~~~~~~~~~~~~~~~~~~
+19962-1 error generated.
+19963-[572/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/TextInput.cpp.o
+19964-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.cpp:1:
+19965-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+19966-   46 |     void SetLabel(const wxString& label);
+19967-      |          ^
+19968-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+19969-   56 |     virtual void SetLabel( const wxString& label ) override;
+19970-      |                  ^
+19971-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.cpp:1:
+19972-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:72:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+19973-   72 |     virtual void DoSetSize(
+19974-      |                  ^
+19975-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+19976-  379 |     virtual void DoSetSize(int x, int y,
+19977-      |                  ^
+19978-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.cpp:1:
+19979-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:75:10: warning: 'DoSetToolTipText' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+19980-   75 |     void DoSetToolTipText(wxString const &tip);
+19981-      |          ^
+19982-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/window.h:2005:18: note: overridden virtual function is here
+19983- 2005 |     virtual void DoSetToolTipText( const wxString &tip );
+19984-      |                  ^
+19985-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.cpp:79:40: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+19986-   79 |     text_ctrl->Bind(wxEVT_RIGHT_DOWN, [this](auto &e) {}); // disable context menu
+19987-      |                                        ^~~~
+19988-4 warnings generated.
+19989-[573/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/TempInput.cpp.o
+19990-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TempInput.cpp:1:
+19991-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TempInput.hpp:110:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+19992-  110 |     void SetLabel(const wxString &label);
+19993-      |          ^
+19994-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+--
+20350-[601/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/NetworkAgentFactory.cpp.o
+20351-[602/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/OrcaPrinterAgent.cpp.o
+20352-[603/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/OrcaCloudServiceAgent.cpp.o
+20353:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/OrcaCloudServiceAgent.cpp.o 
+20354-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/OrcaCloudServiceAgent.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/OrcaCloudServiceAgent.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/OrcaCloudServiceAgent.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp
+20355:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp:1506:31: error: incomplete type 'wxSecretStore' named in nested name specifier
+20356- 1506 |         wxSecretStore store = wxSecretStore::GetDefault();
+20357-      |                               ^~~~~~~~~~~~~~~
+20358-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.hpp:15:7: note: forward declaration of 'wxSecretStore'
+20359-   15 | class wxSecretStore;
+20360-      |       ^
+20361:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp:1506:23: error: variable has incomplete type 'wxSecretStore'
+20362- 1506 |         wxSecretStore store = wxSecretStore::GetDefault();
+20363-      |                       ^
+20364-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.hpp:15:7: note: forward declaration of 'wxSecretStore'
+20365-   15 | class wxSecretStore;
+20366-      |       ^
+20367:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp:1569:31: error: incomplete type 'wxSecretStore' named in nested name specifier
+20368- 1569 |         wxSecretStore store = wxSecretStore::GetDefault();
+20369-      |                               ^~~~~~~~~~~~~~~
+20370-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.hpp:15:7: note: forward declaration of 'wxSecretStore'
+20371-   15 | class wxSecretStore;
+20372-      |       ^
+20373:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp:1569:23: error: variable has incomplete type 'wxSecretStore'
+20374- 1569 |         wxSecretStore store = wxSecretStore::GetDefault();
+20375-      |                       ^
+20376-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.hpp:15:7: note: forward declaration of 'wxSecretStore'
+20377-   15 | class wxSecretStore;
+20378-      |       ^
+20379:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp:1587:27: error: incomplete type 'wxSecretStore' named in nested name specifier
+20380- 1587 |     wxSecretStore store = wxSecretStore::GetDefault();
+20381-      |                           ^~~~~~~~~~~~~~~
+20382-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.hpp:15:7: note: forward declaration of 'wxSecretStore'
+20383-   15 | class wxSecretStore;
+20384-      |       ^
+20385:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.cpp:1587:19: error: variable has incomplete type 'wxSecretStore'
+20386- 1587 |     wxSecretStore store = wxSecretStore::GetDefault();
+20387-      |                   ^
+20388-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/OrcaCloudServiceAgent.hpp:15:7: note: forward declaration of 'wxSecretStore'
+20389-   15 | class wxSecretStore;
+20390-      |       ^
+20391-6 errors generated.
+20392-[604/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/QidiPrinterAgent.cpp.o
+20393-[605/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/SnapmakerPrinterAgent.cpp.o
+20394-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/SnapmakerPrinterAgent.cpp:43:76: warning: result of comparison of constant 18446744073709551615 with expression of type 'unsigned int' is always true [-Wtautological-constant-out-of-range-compare]
+20395-   43 |                 p_color_value         = std::stoul(p_color.substr(hash_pos != std::string::npos ? hash_pos + 1 : 0), nullptr, 16);
+20396-      |                                                                   ~~~~~~~~ ^  ~~~~~~~~~~~~~~~~~
+20397-1 warning generated.
+20398-[606/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/Moonraker.cpp.o
+20399-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/Moonraker.cpp:83:22: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+20400-   83 |     .on_complete([&, this](std::string body, unsigned) {
+20401-      |                    ~~^~~~
+20402-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/Moonraker.cpp:144:22: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+20403-  144 |     .on_complete([&, this](std::string body, unsigned) {
+20404-      |                    ~~^~~~
+20405-2 warnings generated.
+20406-[607/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BBLCloudServiceAgent.cpp.o
+20407-[608/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BBLPrinterAgent.cpp.o
+20408-[609/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/MoonrakerPrinterAgent.cpp.o
+20409-[610/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BBLNetworkPlugin.cpp.o
+20410-[611/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/Obico.cpp.o
+20411-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/Obico.cpp:1:
+20412-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/Obico.hpp:23:18: warning: 'can_test' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+20413-   23 |     virtual bool can_test() const { return true; };
+20414-      |                  ^
+20415-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/PrintHost.hpp:68:18: note: overridden virtual function is here
+20416-   68 |     virtual bool can_test() const = 0;
+20417-      |                  ^
+20418-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/Obico.cpp:1:
+20419-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils/Obico.hpp:33:40: warning: 'get_post_upload_actions' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+20420-   33 |     PrintHostPostUploadActions         get_post_upload_actions() const;

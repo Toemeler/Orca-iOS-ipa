@@ -1,0 +1,22 @@
+=== FAILED files ===
+GUI/Plater.cpp
+GUI/SendSystemInfoDialog.cpp
+GUI/TroubleshootDialog.cpp
+GUI/Widgets/WebView.cpp
+Utils/OrcaCloudServiceAgent.cpp
+
+=== error signatures (deduped) ===
+   2 unknown type name 'wxFilePickerCtrl'
+   1 use of undeclared identifier 'wxGetNumberFromUser'
+   1 use of undeclared identifier 'wxFLP_DEFAULT_STYLE'
+   1 use of undeclared identifier 'kDisplayModeNativeFlag'
+   1 use of undeclared identifier 'CGMainDisplayID'
+   1 use of undeclared identifier 'CGGetActiveDisplayList'
+   1 use of undeclared identifier 'CGDisplayModeRef'
+   1 use of undeclared identifier 'CGDirectDisplayID'
+   1 unknown type name 'CGDisplayModeRef'
+   1 unknown type name 'CGDirectDisplayID'
+   1 no member named 'GetPath'
+   1 'wx/osx/webview_webkit.h' file not found
+
+total FAILED: 5

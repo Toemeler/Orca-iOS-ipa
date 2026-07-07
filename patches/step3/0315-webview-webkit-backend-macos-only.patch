@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/Widgets/WebView.cpp b/src/slic3r/GUI/Widgets/WebView.cpp
-index 1570ce9..e5f8665 100644
+index 1570ce9..90f98f0 100644
 --- a/src/slic3r/GUI/Widgets/WebView.cpp
 +++ b/src/slic3r/GUI/Widgets/WebView.cpp
 @@ -9,8 +9,10 @@
@@ -31,3 +31,24 @@ index 1570ce9..e5f8665 100644
      wxWebView* webView = new WebViewWebKit;
  #else
      auto webView = wxWebView::New();
+@@ -299,7 +301,8 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
+         webView->SetUserAgent(wxString::Format("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) BBL-Slicer/v%s (%s) BBL-Language/%s",
+                                                Slic3r::GUI::wxGetApp().get_bbl_client_version(), Slic3r::GUI::wxGetApp().dark_mode() ? "dark" : "light", language_code.mb_str()));
+ #endif
+-#ifdef __WXMAC__
++#if defined(__WXMAC__) && !defined(__WXOSX_IPHONE__)
++        // step 5: revive via the iOS WKWebView backend (class exists on iOS)
+         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+         Slic3r::GUI::WKWebView_setTransparentBackground(wkWebView);
+ #endif
+@@ -376,6 +379,10 @@ bool WebView::RunScript(wxWebView *webView, wxString const &javascript)
+         if (webView2 == nullptr)
+             return false;
+         return webView2->ExecuteScript(javascript, NULL) == 0;
++#elif defined(__WXOSX_IPHONE__)
++        // no webview backend on iOS yet (step 5); JS execution unavailable
++        (void) webView; (void) javascript;
++        return false;
+ #elif defined __WXMAC__
+         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+         Slic3r::GUI::WKWebView_evaluateJavaScript(wkWebView, javascript, nullptr);

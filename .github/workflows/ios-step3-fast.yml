@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euxo pipefail
           WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
-          echo "WX_KEY=ios-wxprefix-$WXH" >> "$GITHUB_ENV"
+          echo "WX_KEY=ios-wxprefix-v2-$WXH" >> "$GITHUB_ENV"
           echo "wx cache key: ios-wxprefix-$WXH"
 
       - name: Restore deps cache (required)

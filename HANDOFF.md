@@ -318,3 +318,71 @@ DragDropPanel + GUI_AuxiliaryList + NetworkPluginDialog + GUI_ObjectTable*
 failures from run 35 were never root-caused individually (some were fixed
 by tiers 5–6, run 36 had 22 left). The 400KB log + fixed signatures will
 finally show the full picture.
+
+═══════════════════════════════════════════════════════════════════════
+## ✅ MILESTONE: libslic3r_gui COMPILES for iPad — run 46 GREEN (2026-07-07)
+═══════════════════════════════════════════════════════════════════════
+ios-step3-gui.yml passed all 8 stages on commit 73af5ee. Every GUI
+translation unit (~652 targets) compiles for the iPhoneSimulator 18.5 SDK
+against the step-1 deps + patched wx iPhone port. This is the end of the
+"step-3 compile" phase the prior handoffs were grinding on.
+
+Fix arc this session (failing-file count per run):
+  36:22 -> [wx-build fixes 37-41] -> 42:236* -> 43:5 -> 44:2 -> 45:1 -> 46:0
+  (*the 236 was a single missing shipped header included everywhere -
+   wx/osx/webviewhistoryitem_webkit.h - not 236 distinct problems.)
+
+Patch stack now: step2 0201-0204, step3 0301-0315 (0303-0305 skipped in my
+sparse verify only because they touch deps_src/libvgcode/glad paths outside
+the GUI sparse-checkout; they still apply in CI). All verified applying to
+pristine upstream; every edited #if chain checked for balance + branch
+selection; wx-side flags validated through the real chkconf chain with the
+local probe (now SDK-faithful via the TargetConditionals/OSAtomic stubs).
+
+── WHAT'S NOT DONE (next agent starts here) ─────────────────────────────
+Run 46 only proves the milestone-1 COMPILE (the [7/8] step builds
+libslic3r_gui). It does NOT link an app or launch a simulator. Remaining:
+
+1. LINK stage. The 8 macOS-only .mm files (0302) are excluded on iOS and
+   their symbols are still unresolved: InstanceCheck, RemovableDriveManager,
+   MacDarkMode, RetinaHelper, Mouse3D, DeepLink, GUI_Utils, wxMediaCtrl2.mm.
+   Provide iOS stubs/impls (InstanceCheck no-op; RemovableDrive->
+   UIDocumentPicker; MacDarkMode->UIUserInterfaceStyle; RetinaHelper->
+   UIScreen.scale; Mouse3D/DeepLink no-ops; wxMediaCtrl2 -> the .cpp is
+   excluded too now, so the class needs an iOS impl or the referencing
+   MediaPlayCtrl paths guarded). Also the backendless webview: wxWebView::
+   New() returns NULL at runtime - Orca's WebView::CreateWebView must
+   tolerate NULL (check it does, or guard callers).
+2. Restore Orca's real main() (OrcaSlicer.cpp) - GUI-entangled, hard-
+   includes GLFW for CLI thumbnails; gate that off on iOS. Step 1 used a
+   custom harness instead, so this path has never been exercised.
+3. Launch in iPad simulator -> screenshot artifact = completes step 3.
+4. Then STEP 4 (iphoneos SDK build + Payload/OrcaSlicer.app + Info.plist
+   UIDeviceFamily=[2] + zip -> unsigned .ipa -> GitHub Release) and
+   STEP 5 (real WKWebView backend - the class exists on iOS and all the
+   revival sites are marked; AVPlayer camera; UIDocumentPicker export).
+
+── DEFERRED-TO-STEP-5 SITES ALREADY MARKED IN SOURCE ───────────────────
+- wxWebView: built backendless (all wxUSE_WEBVIEW_* = 0; New()->NULL).
+  Real headers compile; Widgets/WebView.cpp WKWebView revival sites are
+  guarded !defined(__WXOSX_IPHONE__) with "step 5" comments.
+- wxAnimationCtrl: ENABLED (generic) - SyncAmsInfoDialog spinner works.
+- wxMediaCtrl2: neither .mm nor .cpp compiled on iOS; header declaration
+  only. Camera video = step 5.
+- Serial/IOKit, SendSystemInfo/IORegistry, CloudAgent/gethostuuid,
+  Troubleshoot/CGDisplay: all guarded to macOS with graceful iOS
+  fallbacks (empty id / hostname / skipped enumeration).
+
+── INFRA STATE ──────────────────────────────────────────────────────────
+- ccache is live in both step3 workflows (issue #2). Run 46 populated the
+  cache under key ccache-step3-<run_id>; next run restores it via the
+  ccache-step3- prefix and should recompile only changed TUs. VERIFY the
+  speedup on the next iteration and report actual wall time - this is the
+  first run with a warm ccache available, so the hypothesis (28min ->
+  minutes) is now testable.
+- WX_KEY salted to v2 and hashes all overlay files recursively incl. the
+  file list. wx-prefix now correctly caches the fully-patched wx +
+  shipped private/webview/osx headers.
+- Log excerpt cap 400KB; SUMMARY "error signatures" grep fixed (both were
+  silently broken before). ci-logs newest-dir still via
+  GET /commits?path=ci-logs&per_page=1.

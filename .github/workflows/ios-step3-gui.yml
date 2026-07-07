@@ -117,16 +117,26 @@ jobs:
             -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
           ninja > /tmp/wx-ninja.log 2>&1 || (tail -50 /tmp/wx-ninja.log && exit 1)
-          ninja install > /dev/null
+          echo "MARK build-ok" | tee -a /tmp/wx-phase.log
+          ninja install > /tmp/wx-install.log 2>&1 || { echo "MARK install-FAILED" | tee -a /tmp/wx-phase.log; tail -80 /tmp/wx-install.log; exit 1; }
+          echo "MARK install-ok" | tee -a /tmp/wx-phase.log
           # overlay-after-install: ship non-installed iphone headers into the prefix
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+          echo "MARK wxinc=[$WXINC]" | tee -a /tmp/wx-phase.log
+          find "$WXPREFIX" -maxdepth 2 >> /tmp/wx-phase.log 2>&1 || true
+          [ -n "$WXINC" ] || WXINC="$WXPREFIX/include"
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
           # ship generic-dataview private headers (ExtraRenderers.cpp includes them
           # under wxHAS_GENERIC_DATAVIEWCTRL) and the real webview public headers
           # (webview is built with no backend on iOS) - neither is installed by ninja
           mkdir -p "$WXINC/wx/generic/private"
-          cp -r "$GITHUB_WORKSPACE"/wx/include/wx/generic/private/. "$WXINC/wx/generic/private/"
+          echo "MARK mkdir-ok" | tee -a /tmp/wx-phase.log
+          cp -R "$GITHUB_WORKSPACE"/wx/include/wx/generic/private/. "$WXINC/wx/generic/private/"
+          echo "MARK private-ship-ok" | tee -a /tmp/wx-phase.log
           cp "$GITHUB_WORKSPACE"/wx/include/wx/webview.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewarchivehandler.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewfshandler.h "$WXINC/wx/"
+          echo "MARK webview-ship-ok" | tee -a /tmp/wx-phase.log
+          ls -la "$WXINC/wx/webview.h" "$WXINC/wx/generic/private/markuptext.h"
+          echo "MARK ship-verified" | tee -a /tmp/wx-phase.log
 
       - name: Save wx prefix cache (for fast workflow)
         if: always()
@@ -213,6 +223,9 @@ jobs:
           mkdir -p "$D"
           for f in /tmp/step3-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
+          done
+          for f in /tmp/wx-phase.log /tmp/wx-install.log; do
+            [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
             [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 400000 > "$D/$(basename "$f" .log)-errors.log"

@@ -1,0 +1,56 @@
+3694-      |             ^
+3695-1 warning generated.
+3696-[663/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/carbon/statbrma.cpp.o
+3697:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/carbon/statbrma.cpp.o 
+3698-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/carbon/statbrma.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/carbon/statbrma.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/carbon/statbrma.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp
+3699-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:10:
+3700-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3701-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3702-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3703-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3704-      |             ^
+3705-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:76:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3706-   76 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_26_0
+3707-      |     ^
+3708-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:96:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3709-   96 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
+3710-      |     ^
+3711-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:120:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3712-  120 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14
+3713-      |     ^
+3714:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:154:75: error: use of undeclared identifier 'wxOSXGetKeyWindow'
+3715-  154 |     wxNonOwnedWindow* directKeyWindow = wxNonOwnedWindow::GetFromWXWindow(wxOSXGetKeyWindow());
+3716-      |                                                                           ^
+3717-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:165:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3718-  165 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_26_0
+3719-      |     ^
+3720-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:172:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3721-  172 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
+3722-      |     ^
+3723-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:183:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3724-  183 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
+3725-      |     ^
+3726-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:207:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3727-  207 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_26_0
+3728-      |     ^
+3729-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/carbon/statbrma.cpp:212:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3730-  212 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
+3731-      |     ^
+3732-9 warnings and 1 error generated.
+3733-[664/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/clrpickerg.cpp.o
+3734-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/clrpickerg.cpp:19:
+3735-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3736-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3737-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3738-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3739-      |             ^
+3740-1 warning generated.
+3741-[665/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/collpaneg.cpp.o
+3742-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/collpaneg.cpp:17:
+3743-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3744-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3745-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3746-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3747-      |             ^
+3748-1 warning generated.
+3749-[666/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/generic/colrdlgg.cpp.o

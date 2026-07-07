@@ -125,8 +125,8 @@ jobs:
           # under wxHAS_GENERIC_DATAVIEWCTRL) and the real webview public headers
           # (webview is built with no backend on iOS) - neither is installed by ninja
           mkdir -p "$WXINC/wx/generic/private"
-          cp -r include/wx/generic/private/. "$WXINC/wx/generic/private/"
-          cp include/wx/webview.h include/wx/webviewarchivehandler.h include/wx/webviewfshandler.h "$WXINC/wx/"
+          cp -r "$GITHUB_WORKSPACE"/wx/include/wx/generic/private/. "$WXINC/wx/generic/private/"
+          cp "$GITHUB_WORKSPACE"/wx/include/wx/webview.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewarchivehandler.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewfshandler.h "$WXINC/wx/"
 
       - name: Save wx prefix cache (for fast workflow)
         if: always()

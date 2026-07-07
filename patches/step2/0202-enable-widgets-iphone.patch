@@ -17,7 +17,7 @@ index 55d7045..b8e9ade 100644
  #       error "wxUSE_WEBVIEW requires at least one backend"
  #   else
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..cb0caad 100644
+index aea925c..ce3f9e4 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -52,7 +52,7 @@
@@ -153,6 +153,15 @@ index aea925c..cb0caad 100644
  #define wxUSE_STARTUP_TIPS 0
  #define wxUSE_WIZARDDLG 0
  #define wxUSE_TOOLBAR_NATIVE 0
+@@ -243,7 +245,7 @@
+ 
+ #if wxUSE_MENUBAR
+ #undef wxUSE_MENUBAR
+-#define wxUSE_MENUBAR 0
++#define wxUSE_MENUBAR 1
+ #endif
+ 
+ /*
 @@ -254,7 +256,7 @@
  
  #if wxUSE_COMBOBOX

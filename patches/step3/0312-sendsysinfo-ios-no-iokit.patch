@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/SendSystemInfoDialog.cpp b/src/slic3r/GUI/SendSystemInfoDialog.cpp
-index ed22a26..9f14cd7 100644
+index ed22a26..fa3a46f 100644
 --- a/src/slic3r/GUI/SendSystemInfoDialog.cpp
 +++ b/src/slic3r/GUI/SendSystemInfoDialog.cpp
 @@ -1,8 +1,11 @@
@@ -38,3 +38,21 @@ index ed22a26..9f14cd7 100644
      constexpr int buf_size = 100;
      char buf[buf_size] = "";
      memset(&buf, 0, sizeof(buf));
+@@ -389,12 +395,14 @@ static std::string generate_system_info_json()
+ 
+     // Get system language.
+     std::string sys_language = "Unknown"; // important to init, see the __APPLE__ block.
+-    #ifndef __APPLE__
+-        // Following apparently does not work on macOS.
++    #if !defined(__APPLE__) || !TARGET_OS_OSX
++        // Following apparently does not work on macOS (fine on iOS, where the
++        // CFLocale path below is unusable: any CoreFoundation include drags
++        // MacTypes.h whose struct Rect collides with Slic3r::GUI::Rect).
+         const wxLanguage lang_system = wxLanguage(wxLocale::GetSystemLanguage());
+         if (lang_system != wxLANGUAGE_UNKNOWN)
+             sys_language = wxLocale::GetLanguageInfo(lang_system)->CanonicalName.ToUTF8().data();
+-    #else // __APPLE__
++    #else // macOS
+         CFLocaleRef cflocale = CFLocaleCopyCurrent();
+         CFStringRef value = (CFStringRef)CFLocaleGetValue(cflocale, kCFLocaleLanguageCode);
+         char temp[10] = "";

@@ -136,6 +136,11 @@ jobs:
           cp "$GITHUB_WORKSPACE"/wx/include/wx/webview.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewarchivehandler.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewfshandler.h "$WXINC/wx/"
           mkdir -p "$WXINC/wx/osx"
           cp "$GITHUB_WORKSPACE"/wx/include/wx/osx/webviewhistoryitem_webkit.h "$WXINC/wx/osx/"
+          # ship the whole wx/private tree: Orca includes wx/private/jsscriptwrapper.h
+          # (Widgets/WebView.cpp) and wx/private/markupparser.h; only some of these
+          # are installed by ninja
+          mkdir -p "$WXINC/wx/private"
+          cp -R "$GITHUB_WORKSPACE"/wx/include/wx/private/. "$WXINC/wx/private/"
           echo "MARK webview-ship-ok" | tee -a /tmp/wx-phase.log
           ls -la "$WXINC/wx/webview.h" "$WXINC/wx/osx/webviewhistoryitem_webkit.h" "$WXINC/wx/generic/private/markuptext.h"
           echo "MARK ship-verified" | tee -a /tmp/wx-phase.log

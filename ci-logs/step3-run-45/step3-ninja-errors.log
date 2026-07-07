@@ -1,0 +1,88 @@
+19925-      |                                        ^~~~
+19926-4 warnings generated.
+19927-[573/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o
+19928:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o 
+19929-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r/CMakeFiles/libslic3r_gui.dir/cmake_pch.hxx -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/WebView.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp
+19930:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:305:9: error: use of undeclared identifier 'WKWebView'; did you mean 'webView'?
+19931-  305 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19932-      |         ^~~~~~~~~
+19933-      |         webView
+19934-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:274:10: note: 'webView' declared here
+19935-  274 |     auto webView = wxWebView::New();
+19936-      |          ^
+19937:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:305:34: error: use of undeclared identifier 'WKWebView'; did you mean 'webView'?
+19938-  305 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19939-      |                                  ^~~~~~~~~
+19940-      |                                  webView
+19941-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:274:10: note: 'webView' declared here
+19942-  274 |     auto webView = wxWebView::New();
+19943-      |          ^
+19944:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:305:45: error: expected expression
+19945-  305 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19946-      |                                             ^
+19947:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:305:21: error: use of undeclared identifier 'wkWebView'
+19948-  305 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19949-      |                     ^
+19950:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:306:57: error: use of undeclared identifier 'wkWebView'; did you mean 'webView'?
+19951-  306 |         Slic3r::GUI::WKWebView_setTransparentBackground(wkWebView);
+19952-      |                                                         ^~~~~~~~~
+19953-      |                                                         webView
+19954-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:274:10: note: 'webView' declared here
+19955-  274 |     auto webView = wxWebView::New();
+19956-      |          ^
+19957:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:382:9: error: use of undeclared identifier 'WKWebView'; did you mean 'webView'?
+19958-  382 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19959-      |         ^~~~~~~~~
+19960-      |         webView
+19961-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:369:36: note: 'webView' declared here
+19962-  369 | bool WebView::RunScript(wxWebView *webView, wxString const &javascript)
+19963-      |                                    ^
+19964:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:382:34: error: use of undeclared identifier 'WKWebView'; did you mean 'webView'?
+19965-  382 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19966-      |                                  ^~~~~~~~~
+19967-      |                                  webView
+19968-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:369:36: note: 'webView' declared here
+19969-  369 | bool WebView::RunScript(wxWebView *webView, wxString const &javascript)
+19970-      |                                    ^
+19971:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:382:45: error: expected expression
+19972-  382 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19973-      |                                             ^
+19974:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:382:21: error: use of undeclared identifier 'wkWebView'
+19975-  382 |         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+19976-      |                     ^
+19977:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:383:51: error: use of undeclared identifier 'wkWebView'; did you mean 'webView'?
+19978-  383 |         Slic3r::GUI::WKWebView_evaluateJavaScript(wkWebView, javascript, nullptr);
+19979-      |                                                   ^~~~~~~~~
+19980-      |                                                   webView
+19981-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/WebView.cpp:369:36: note: 'webView' declared here
+19982-  369 | bool WebView::RunScript(wxWebView *webView, wxString const &javascript)
+19983-      |                                    ^
+19984-10 errors generated.
+19985-[574/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/pchheader.cpp.o
+19986-[575/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/ASCIIFolding.cpp.o
+19987-[576/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/AstroBox.cpp.o
+19988-[577/652] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/WipeTowerDialog.cpp.o
+19989-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/WipeTowerDialog.cpp:16:
+19990-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+19991-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+19992-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:143:10: warning: 'Tabbook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+19993-  143 |     bool AddPage(wxWindow* page,
+19994-      |          ^
+19995-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: type mismatch at 3rd parameter ('bool' vs 'const std::string &' (aka 'const basic_string<char> &'))
+19996-  177 |     virtual bool AddPage(wxWindow *page,
+19997-      |                  ^
+19998-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/WipeTowerDialog.cpp:16:
+19999-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:21:
+20000-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Monitor.hpp:4:
+20001-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Tabbook.hpp:187:10: warning: 'RemovePage' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+20002-  187 |     bool RemovePage(size_t n)
+20003-      |          ^
+20004-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/bookctrl.h:161:18: note: overridden virtual function is here
+20005-  161 |     virtual bool RemovePage(size_t n)
+20006-      |                  ^
+20007-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/WipeTowerDialog.cpp:16:
+20008-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/MainFrame.hpp:24:
+20009-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationPanel.hpp:4:
+20010-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizard.hpp:8:
+20011-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/CalibrationWizardStartPage.hpp:51:10: warning: 'on_reset_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+20012-   51 |     void on_reset_page();

@@ -1,0 +1,8 @@
+=== FAILED files ===
+GUI/Widgets/WebView.cpp
+
+=== error signatures (deduped) ===
+   4 use of undeclared identifier 'WKWebView'
+   4 use of undeclared identifier 'wkWebView'
+
+total FAILED: 1

@@ -1,0 +1,87 @@
+4468-      |                                                              ^
+4469-5 warnings generated.
+4470-[701/1018] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o
+4471:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o 
+4472-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp
+4473-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp:10:
+4474-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4475-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4476-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4477-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4478-      |             ^
+4479-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp:15:
+4480:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:310:34: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4481-  310 |     virtual wxVector<wxSharedPtr<wxWebViewHistoryItem> > GetBackwardHistory() = 0;
+4482-      |                                  ^
+4483:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:311:34: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4484-  311 |     virtual wxVector<wxSharedPtr<wxWebViewHistoryItem> > GetForwardHistory() = 0;
+4485-      |                                  ^
+4486:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:312:46: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4487-  312 |     virtual void LoadHistoryItem(wxSharedPtr<wxWebViewHistoryItem> item) = 0;
+4488-      |                                              ^
+4489-1 warning and 3 errors generated.
+4490-[702/1018] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/dirdlg.mm.o
+4491-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/dirdlg.mm:12:
+4492-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4493-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4494-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4495-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4496-      |             ^
+4497-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/dirdlg.mm:69:63: warning: 'windows' is deprecated: first deprecated in iOS 15.0 - Use UIWindowScene.windows on a relevant window scene instead [-Wdeprecated-declarations]
+4498-   69 |         for (UIWindow *w in [UIApplication sharedApplication].windows) {
+4499-      |                                                               ^
+4500-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIApplication.h:109:62: note: 'windows' has been explicitly marked deprecated here
+4501-  109 | @property(nonatomic,readonly) NSArray<__kindof UIWindow *>  *windows API_DEPRECATED("Use UIWindowScene.windows on a relevant window scene instead", ios(2.0, 15.0), visionos(1.0, 1.0)) API_UNAVAILABLE(watchos);
+4502-      |                                                              ^
+4503-2 warnings generated.
+4504-[703/1018] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o
+4505:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o 
+4506-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewarchivehandler.cpp
+4507-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewarchivehandler.cpp:10:
+4508-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4509-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4510-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4511-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4512-      |             ^
+4513-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewarchivehandler.cpp:15:
+4514-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webviewarchivehandler.h:19:
+4515:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:310:34: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4516-  310 |     virtual wxVector<wxSharedPtr<wxWebViewHistoryItem> > GetBackwardHistory() = 0;
+4517-      |                                  ^
+4518:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:311:34: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4519-  311 |     virtual wxVector<wxSharedPtr<wxWebViewHistoryItem> > GetForwardHistory() = 0;
+4520-      |                                  ^
+4521:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:312:46: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4522-  312 |     virtual void LoadHistoryItem(wxSharedPtr<wxWebViewHistoryItem> item) = 0;
+4523-      |                                              ^
+4524-1 warning and 3 errors generated.
+4525-[704/1018] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewfshandler.cpp.o
+4526:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewfshandler.cpp.o 
+4527-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewfshandler.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewfshandler.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewfshandler.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewfshandler.cpp
+4528-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewfshandler.cpp:10:
+4529-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4530-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4531-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4532-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4533-      |             ^
+4534-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewfshandler.cpp:15:
+4535-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webviewfshandler.h:21:
+4536:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:310:34: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4537-  310 |     virtual wxVector<wxSharedPtr<wxWebViewHistoryItem> > GetBackwardHistory() = 0;
+4538-      |                                  ^
+4539:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:311:34: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4540-  311 |     virtual wxVector<wxSharedPtr<wxWebViewHistoryItem> > GetForwardHistory() = 0;
+4541-      |                                  ^
+4542:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/webview.h:312:46: error: use of undeclared identifier 'wxWebViewHistoryItem'
+4543-  312 |     virtual void LoadHistoryItem(wxSharedPtr<wxWebViewHistoryItem> item) = 0;
+4544-      |                                              ^
+4545-1 warning and 3 errors generated.
+4546-[705/1018] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/mediactrl_stub.cpp.o
+4547-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/mediactrl_stub.cpp:2:
+4548-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4549-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4550-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4551-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4552-      |             ^
+4553-1 warning generated.
+4554-ninja: build stopped: subcommand failed.

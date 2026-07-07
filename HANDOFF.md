@@ -262,3 +262,59 @@ Step 3 is the hard stage (flagged from the start). Steps 1–2 remain green. lib
 hidapi + the Orca GUI .cpp files that compiled before the wx-phase regression are fine.
 The wx control-enablement is a real sub-project; the UIDocumentPicker shim (approach 3)
 is the most promising path and is where a fresh session should probably start.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION UPDATE (2026-07-07, post run-37) — tier 7 + infra
+═══════════════════════════════════════════════════════════════════════
+Runs 24–36 walked step-3 failures 273→22 (the "273" was 3 shared-header
+errors seen through a stale wx cache; the cache-key hash fix landed earlier).
+This session (commits ea1d0f3..d2ac8d5) addressed all 22 known failures:
+
+wx side (0202/0203 regenerated; WX_KEY auto-changes):
+- enabled DIRDLG TEXTDLG CHOICEDLG ANIMATIONCTRL STATUSBAR MENUBAR
+- wxDirDialog = new UIDocumentPicker folder-mode shim (wx-overlay
+  iphone/dirdlg.h + .mm, mirrors the filedlg shim); generic dirdlgg.cpp
+  guarded out (drags wxDirCtrl/wxTreeCtrl)
+- webview: REAL wx/webview.h + src/common/webview.cpp{,archive,fs} compiled
+  backendless (all wxUSE_WEBVIEW_* = 0; master chkconf's silent
+  "requires a backend" re-disable waived for __WXOSX_IPHONE__). All 5
+  overlay webview stubs DELETED — Orca's Widgets/WebView.cpp overrides
+  ~20 wxWebView virtuals with `override`; only the real header satisfies
+  that (audited: all 32 overrides exist in the real class). New()->NULL,
+  Orca's backend-unavailable path handles it; step 5 = WKWebView backend.
+- MENUBAR: the port ships a full UIMenuBuilder implementation
+  (iphone/menu.mm OSXOnBuildMenu) — flag-on activates real iPad system
+  menus. Needed because MainFrame constructs wxMenuBar unconditionally,
+  AND because STATUSBAR=1 activated framecmn.cpp ShowMenuHelp which calls
+  MENUBAR-gated FindItemInMenuBar — exactly run 37's single wx failure.
+  Watch for more "flag A calls API of flag B" interactions.
+
+Orca side: 0310 (ObjectList native-renderer calls iphone-guarded),
+0311 (Serial: IOKit/IOSSIOSPEED macOS-only, iOS→plain termios),
+0312 (SendSystemInfo: IOKit UUID macOS-only, iOS→machine-id branch→""),
+0313 (CloudAgent: gethostuuid macOS-only, iOS→wxGetHostName),
+0302 amended (wxMediaCtrl2.cpp is Win/Linux-only — iOS compiles NEITHER
+variant, .h declaration suffices; .mm impl is step 5 AVPlayer).
+
+infra: ccache wired into both step3 workflows (launchers on Orca configure
+only; cache saved even on failure) — open issue #2 addressed; first warm
+run populates, then iteration = recompile-changed-TUs only. Error-log
+excerpt cap 70KB→400KB (run-36 was truncated mid-error; webview errors
+were never visible). SUMMARY "error signatures" grep fixed (the '"'"'
+escapes inside a double-quoted string matched nothing since day one).
+WX_KEY now hashes ALL overlay files recursively incl. the file list.
+tools/wx-sdk-stubs got TARGET_OS_MAC so the local probe reaches
+platform.h's Darwin branch (before this, probes silently validated the
+DESKTOP config). Faithful probe invocation:
+  gcc -fsyntax-only -D__DARWIN__ -D__MACH__ -D__WXOSX__ -D__WXOSX_IPHONE__ \
+      -D__WXMAC__ -I /tmp/wxtest -I include -I tools/wx-sdk-stubs probe.cpp
+(probe caveat: wxUSE_MENUS resolves OFF locally — it's gated on
+__IPHONE_OS_VERSION_MAX_ALLOWED>=130000 which only the real SDK defines.)
+
+Known-remaining risks for run 38+: Plater/GUI_App/MainFrame may have
+second-layer errors previously masked by the first error in each TU;
+PhysicalPrinterDialog + UpdateDialogs + PresetUpdater + GUI_Preview +
+DragDropPanel + GUI_AuxiliaryList + NetworkPluginDialog + GUI_ObjectTable*
+failures from run 35 were never root-caused individually (some were fixed
+by tiers 5–6, run 36 had 22 left). The 400KB log + fixed signatures will
+finally show the full picture.

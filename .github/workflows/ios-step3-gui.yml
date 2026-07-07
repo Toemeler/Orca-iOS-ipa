@@ -134,8 +134,10 @@ jobs:
           cp -R "$GITHUB_WORKSPACE"/wx/include/wx/generic/private/. "$WXINC/wx/generic/private/"
           echo "MARK private-ship-ok" | tee -a /tmp/wx-phase.log
           cp "$GITHUB_WORKSPACE"/wx/include/wx/webview.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewarchivehandler.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewfshandler.h "$WXINC/wx/"
+          mkdir -p "$WXINC/wx/osx"
+          cp "$GITHUB_WORKSPACE"/wx/include/wx/osx/webviewhistoryitem_webkit.h "$WXINC/wx/osx/"
           echo "MARK webview-ship-ok" | tee -a /tmp/wx-phase.log
-          ls -la "$WXINC/wx/webview.h" "$WXINC/wx/generic/private/markuptext.h"
+          ls -la "$WXINC/wx/webview.h" "$WXINC/wx/osx/webviewhistoryitem_webkit.h" "$WXINC/wx/generic/private/markuptext.h"
           echo "MARK ship-verified" | tee -a /tmp/wx-phase.log
 
       - name: Save wx prefix cache (for fast workflow)

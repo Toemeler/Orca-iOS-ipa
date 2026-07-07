@@ -1,0 +1,50 @@
+1816-      |             ^
+1817-1 warning generated.
+1818-[441/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/framecmn.cpp.o
+1819:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/framecmn.cpp.o 
+1820-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/framecmn.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/framecmn.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/framecmn.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/framecmn.cpp
+1821-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/framecmn.cpp:19:
+1822-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1823-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1824-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1825-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1826-      |             ^
+1827-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/framecmn.cpp:347:38: warning: unused parameter 'id' [-Wunused-parameter]
+1828-  347 | bool wxFrameBase::ProcessCommand(int id)
+1829-      |                                      ^
+1830:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/framecmn.cpp:542:41: error: use of undeclared identifier 'FindItemInMenuBar'
+1831-  542 |         const wxMenuItem * const item = FindItemInMenuBar(menuId);
+1832-      |                                         ^
+1833-2 warnings and 1 error generated.
+1834-[442/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/gbsizer.cpp.o
+1835-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/gbsizer.cpp:14:
+1836-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1837-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1838-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1839-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1840-      |             ^
+1841-1 warning generated.
+1842-[443/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/gdicmn.cpp.o
+1843-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/gdicmn.cpp:11:
+1844-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1845-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1846-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1847-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1848-      |             ^
+1849-1 warning generated.
+1850-[444/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/geometry.cpp.o
+1851-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/geometry.cpp:11:
+1852-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1853-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1854-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1855-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1856-      |             ^
+1857-1 warning generated.
+1858-[445/1019] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/gifdecod.cpp.o
+1859-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/gifdecod.cpp:11:
+1860-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+1861-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+1862-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+1863-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+1864-      |             ^
+1865-1 warning generated.

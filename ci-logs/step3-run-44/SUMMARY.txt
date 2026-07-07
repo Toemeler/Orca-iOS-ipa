@@ -1,0 +1,12 @@
+=== FAILED files ===
+GUI/SendSystemInfoDialog.cpp
+GUI/Widgets/WebView.cpp
+
+=== error signatures (deduped) ===
+   1 use of undeclared identifier 'kCFStringEncodingUTF8'
+   1 use of undeclared identifier 'kCFLocaleLanguageCode'
+   1 use of undeclared identifier 'CFLocaleCopyCurrent'
+   1 unknown type name 'CFLocaleRef'
+   1 'wx/private/jsscriptwrapper.h' file not found
+
+total FAILED: 2

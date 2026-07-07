@@ -1,0 +1,13 @@
+diff --git a/src/slic3r/GUI/TroubleshootDialog.cpp b/src/slic3r/GUI/TroubleshootDialog.cpp
+index 2c1e55a..23fd6ec 100644
+--- a/src/slic3r/GUI/TroubleshootDialog.cpp
++++ b/src/slic3r/GUI/TroubleshootDialog.cpp
+@@ -830,7 +830,7 @@ wxString TroubleshootDialog::GetMONinfo()
+ 
+         m_str += ((i > 0) ? "  " : "") + d_str;
+     }
+-#elif defined(__APPLE__)
++#elif defined(__APPLE__) && TARGET_OS_OSX
+     std::vector<CGDirectDisplayID> cgDisplays;
+     uint32_t displayCount = 0;
+     CGGetActiveDisplayList(0, nullptr, &displayCount);

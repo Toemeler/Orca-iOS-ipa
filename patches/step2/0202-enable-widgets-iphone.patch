@@ -17,7 +17,7 @@ index 55d7045..b8e9ade 100644
  #       error "wxUSE_WEBVIEW requires at least one backend"
  #   else
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..ce3f9e4 100644
+index aea925c..95c0912 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -52,7 +52,7 @@
@@ -105,7 +105,8 @@ index aea925c..ce3f9e4 100644
 +#define wxUSE_SPINCTRL 1
  #define wxUSE_DATEPICKCTRL 0
  #define wxUSE_EDITABLELISTBOX 0
- #define wxUSE_FILEPICKERCTRL 0
+-#define wxUSE_FILEPICKERCTRL 0
++#define wxUSE_FILEPICKERCTRL 1
  #define wxUSE_DIRPICKERCTRL 0
  #define wxUSE_FILECTRL 0
 -#define wxUSE_COLOURPICKERCTRL 0
@@ -143,11 +144,12 @@ index aea925c..ce3f9e4 100644
  #define  wxUSE_FONTDLG 0
 -#define wxUSE_FILEDLG 0
 -#define wxUSE_CHOICEDLG 0
-+#define wxUSE_FILEDLG 1
-+#define wxUSE_CHOICEDLG 1
- #define wxUSE_NUMBERDLG 0
+-#define wxUSE_NUMBERDLG 0
 -#define wxUSE_TEXTDLG 0
 -#define wxUSE_DIRDLG 0
++#define wxUSE_FILEDLG 1
++#define wxUSE_CHOICEDLG 1
++#define wxUSE_NUMBERDLG 1
 +#define wxUSE_TEXTDLG 1
 +#define wxUSE_DIRDLG 1
  #define wxUSE_STARTUP_TIPS 0

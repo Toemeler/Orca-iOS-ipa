@@ -1,0 +1,33 @@
+diff --git a/src/slic3r/GUI/Widgets/WebView.cpp b/src/slic3r/GUI/Widgets/WebView.cpp
+index 1570ce9..e5f8665 100644
+--- a/src/slic3r/GUI/Widgets/WebView.cpp
++++ b/src/slic3r/GUI/Widgets/WebView.cpp
+@@ -9,8 +9,10 @@
+ #if wxUSE_WEBVIEW_EDGE
+ #include <wx/msw/webview_edge.h>
+ #elif defined(__WXMAC__)
++#if !defined(__WXOSX_IPHONE__)
+ #include <wx/osx/webview_webkit.h>
+ #endif
++#endif
+ #include <wx/uri.h>
+ #if defined(__WIN32__) || defined(__WXMAC__)
+ #include "wx/private/jsscriptwrapper.h"
+@@ -172,7 +174,7 @@ private:
+     COREWEBVIEW2_PREFERRED_COLOR_SCHEME pendingColorScheme = COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO;
+ };
+ 
+-#elif defined __WXOSX__
++#elif defined(__WXOSX__) && !defined(__WXOSX_IPHONE__)
+ 
+ class WebViewWebKit : public wxWebViewWebKit
+ {
+@@ -266,7 +268,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
+ 
+ #ifdef __WIN32__
+     wxWebView* webView = new WebViewEdge;
+-#elif defined(__WXOSX__)
++#elif defined(__WXOSX__) && !defined(__WXOSX_IPHONE__)
+     wxWebView* webView = new WebViewWebKit;
+ #else
+     auto webView = wxWebView::New();

@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/SendSystemInfoDialog.cpp b/src/slic3r/GUI/SendSystemInfoDialog.cpp
-index ed22a26..57a5e4b 100644
+index ed22a26..9f14cd7 100644
 --- a/src/slic3r/GUI/SendSystemInfoDialog.cpp
 +++ b/src/slic3r/GUI/SendSystemInfoDialog.cpp
 @@ -1,8 +1,11 @@
@@ -14,7 +14,22 @@ index ed22a26..57a5e4b 100644
  
  #include "libslic3r/AppConfig.hpp"
  #include "libslic3r/BlacklistedLibraryCheck.hpp"
-@@ -323,7 +326,7 @@ static std::string get_unique_id()
+@@ -49,9 +52,12 @@
+     //#include <atlbase.h>
+     #include <Iphlpapi.h>
+     #pragma comment(lib, "iphlpapi.lib")
+-#elif __APPLE__
++#elif __APPLE__ && TARGET_OS_OSX
++    // Only the macOS IORegistry hardware-UUID code needs CoreFoundation; on
++    // iOS the include would drag MacTypes.h whose struct Rect collides with
++    // Slic3r::GUI::Rect.
+     #include <CoreFoundation/CoreFoundation.h>
+-#else // Linux/BSD
++#else // Linux/BSD (and iOS, which takes the machine-id branch)
+     #include <charconv>
+ #endif
+ 
+@@ -323,7 +329,7 @@ static std::string get_unique_id()
              unique = macs.front();
      }
      free(AdapterInfo);

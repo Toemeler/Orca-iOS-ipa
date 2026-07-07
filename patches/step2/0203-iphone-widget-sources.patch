@@ -1,5 +1,5 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..fb2b732 100644
+index c163c87..f98dc1c 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
 @@ -327,7 +327,7 @@ set(QT_SRC
@@ -95,9 +95,8 @@ index c163c87..fb2b732 100644
 +    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/dirdlgg.cpp>
      src/generic/fdrepdlg.cpp
 -    src/generic/filedlgg.cpp
--    src/generic/filepickerg.cpp
 +    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filedlgg.cpp>
-+    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/filepickerg.cpp>
+     src/generic/filepickerg.cpp
      src/generic/fontdlgg.cpp
      src/generic/fontpickerg.cpp
 -    src/generic/listctrl.cpp

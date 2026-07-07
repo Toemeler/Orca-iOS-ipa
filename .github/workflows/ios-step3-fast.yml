@@ -80,11 +80,33 @@ jobs:
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
 
+      - name: Set up ccache
+        run: |
+          brew install ccache || true
+          echo "CCACHE_DIR=$HOME/.ccache-step3" >> "$GITHUB_ENV"
+          echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
+          echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
+          # iOS cross-compiles embed the SDK path; slop keeps cache hits across
+          # runner image updates that only move the SDK
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache-step3
+          key: ccache-step3-${{ github.run_id }}
+          restore-keys: |
+            ccache-step3-
+
       - name: Configure Orca GUI
         run: |
           set -euxo pipefail
           cd orca && mkdir -p build && cd build
           cmake .. -G Ninja \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_OBJCXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
             -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \
@@ -103,6 +125,13 @@ jobs:
           set -euxo pipefail
           cd orca/build
           ninja -k 0 "$TARGET" 2>&1 | tee /tmp/fast-ninja.log
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache-step3
+          key: ccache-step3-${{ github.run_id }}
 
       - name: Publish failure logs
         if: failure()

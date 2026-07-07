@@ -1,0 +1,21 @@
+diff --git a/src/slic3r/Utils/OrcaCloudServiceAgent.cpp b/src/slic3r/Utils/OrcaCloudServiceAgent.cpp
+index f8c2c1a..557bb23 100644
+--- a/src/slic3r/Utils/OrcaCloudServiceAgent.cpp
++++ b/src/slic3r/Utils/OrcaCloudServiceAgent.cpp
+@@ -39,6 +39,7 @@
+ #endif
+ 
+ #if defined(__APPLE__)
++#include <TargetConditionals.h>
+ #include <unistd.h>
+ #include <uuid/uuid.h>
+ #endif
+@@ -198,7 +199,7 @@ std::string os_machine_id()
+             return wxString(buffer, wlen).ToStdString();
+         }
+     }
+-#elif defined(__APPLE__)
++#elif defined(__APPLE__) && TARGET_OS_OSX
+     // gethostuuid() returns the hardware-tied host UUID (same value as
+     // "Hardware UUID" in System Information). It persists across OS
+     // reinstalls and kernel updates. Do NOT use sysctl kern.uuid — that

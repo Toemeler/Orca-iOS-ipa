@@ -1,0 +1,26 @@
+diff --git a/src/slic3r/GUI/GUI_ObjectList.cpp b/src/slic3r/GUI/GUI_ObjectList.cpp
+index d56439f..b37ff2f 100644
+--- a/src/slic3r/GUI/GUI_ObjectList.cpp
++++ b/src/slic3r/GUI/GUI_ObjectList.cpp
+@@ -6421,8 +6421,12 @@ void ObjectList::start_filament_editor(wxDataViewItem item)
+     if (!started)
+         return;
+ 
++#ifndef __WXOSX_IPHONE__
++    // Native-macOS wxDataViewCtrl methods; the iPhone port uses the generic
++    // dataview which tracks the custom-renderer editor internally.
+     SetCustomRendererPtr(custom_renderer);
+     SetCustomRendererItem(item);
++#endif
+ }
+ #endif // __WXOSX__
+ 
+@@ -6527,7 +6531,7 @@ void ObjectList::OnEditingStarted(wxDataViewEvent &event)
+         if (col == colName) // TODO: for colName editing, disable shortcuts
+             SetAcceleratorTable(wxNullAcceleratorTable);
+     }
+-#ifdef __WXOSX__
++#if defined(__WXOSX__) && !defined(__WXOSX_IPHONE__)
+     SetCustomRendererPtr(dynamic_cast<wxDataViewCustomRenderer*>(renderer));
+ #endif
+ #endif //__WXMSW__

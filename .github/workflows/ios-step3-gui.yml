@@ -46,7 +46,7 @@ jobs:
       - name: Compute cache keys from patch/overlay hashes
         run: |
           set -euxo pipefail
-          WXH=$(cat patches/step2/*.patch wx-overlay/include/wx/osx/iphone/*.h wx-overlay/include/wx/*.h wx-overlay/src/osx/iphone/*.* 2>/dev/null | shasum | cut -c1-12)
+          WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
           echo "WX_KEY=ios-wxprefix-$WXH" >> "$GITHUB_ENV"
           echo "wx cache key: ios-wxprefix-$WXH"
 
@@ -121,6 +121,12 @@ jobs:
           # overlay-after-install: ship non-installed iphone headers into the prefix
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+          # ship generic-dataview private headers (ExtraRenderers.cpp includes them
+          # under wxHAS_GENERIC_DATAVIEWCTRL) and the real webview public headers
+          # (webview is built with no backend on iOS) - neither is installed by ninja
+          mkdir -p "$WXINC/wx/generic/private"
+          cp -r include/wx/generic/private/. "$WXINC/wx/generic/private/"
+          cp include/wx/webview.h include/wx/webviewarchivehandler.h include/wx/webviewfshandler.h "$WXINC/wx/"
 
       - name: Save wx prefix cache (for fast workflow)
         if: always()
@@ -180,7 +186,7 @@ jobs:
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
-            [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 70000 > "$D/$(basename "$f" .log)-errors.log"
+            [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 400000 > "$D/$(basename "$f" .log)-errors.log"
           done
           # -k0 summary: full map of remaining errors
           if [ -f /tmp/step3-ninja.log ]; then
@@ -188,7 +194,7 @@ jobs:
               echo "=== FAILED files ==="
               grep "FAILED:" /tmp/step3-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o.*##" | sort -u
               echo; echo "=== error signatures (deduped) ==="
-              grep -oE "(unknown type name '"'"'[^'"'"']+'"'"'|use of undeclared identifier '"'"'[^'"'"']+'"'"'|unknown class name '"'"'[^'"'"']+'"'"'|no member named '"'"'[^'"'"']+'"'"'|no type named '"'"'[^'"'"']+'"'"'|'"'"'wx/[^'"'"']+'"'"' file not found|'"'"'[A-Za-z0-9_/]+\\.h'"'"' file not found)" /tmp/step3-ninja.log | sort | uniq -c | sort -rn
+              grep -oE "(unknown type name '[^']+'|use of undeclared identifier '[^']+'|unknown class name '[^']+'|no member named '[^']+'|no type named '[^']+'|no matching [a-z ]+ for call to '[^']+'|'[A-Za-z0-9_/.]+' file not found|marked 'override' but does not override|only virtual member functions can be marked 'override'|base class has incomplete type|cannot initialize [a-z ]+ (parameter|object))" /tmp/step3-ninja.log | sort | uniq -c | sort -rn
               echo; echo "total FAILED: $(grep -c FAILED: /tmp/step3-ninja.log)"
             } > "$D/SUMMARY.txt"
           fi

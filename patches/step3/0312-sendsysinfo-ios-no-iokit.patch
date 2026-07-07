@@ -1,0 +1,25 @@
+diff --git a/src/slic3r/GUI/SendSystemInfoDialog.cpp b/src/slic3r/GUI/SendSystemInfoDialog.cpp
+index ed22a26..57a5e4b 100644
+--- a/src/slic3r/GUI/SendSystemInfoDialog.cpp
++++ b/src/slic3r/GUI/SendSystemInfoDialog.cpp
+@@ -1,8 +1,11 @@
+ #include "SendSystemInfoDialog.hpp"
+ 
+ #if __APPLE__
++#include <TargetConditionals.h>
++#if TARGET_OS_OSX
+ #import <IOKit/IOKitLib.h>
+ #endif
++#endif
+ 
+ #include "libslic3r/AppConfig.hpp"
+ #include "libslic3r/BlacklistedLibraryCheck.hpp"
+@@ -323,7 +326,7 @@ static std::string get_unique_id()
+             unique = macs.front();
+     }
+     free(AdapterInfo);
+-#elif __APPLE__
++#elif __APPLE__ && TARGET_OS_OSX
+     constexpr int buf_size = 100;
+     char buf[buf_size] = "";
+     memset(&buf, 0, sizeof(buf));

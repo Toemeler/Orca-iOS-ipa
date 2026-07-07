@@ -1,5 +1,23 @@
+diff --git a/include/wx/chkconf.h b/include/wx/chkconf.h
+index 55d7045..b8e9ade 100644
+--- a/include/wx/chkconf.h
++++ b/include/wx/chkconf.h
+@@ -2270,9 +2270,12 @@
+ #   endif
+ #endif /* wxUSE_TREELISTCTRL */
+ 
++/* Orca-iOS: the iphone port intentionally builds wxWebView with no backend
++   (wxWebView::New returns NULL until the step-5 WKWebView backend lands),
++   so the at-least-one-backend requirement is waived there. */
+ #if wxUSE_WEBVIEW && !(wxUSE_WEBVIEW_WEBKIT || wxUSE_WEBVIEW_WEBKIT2 || \
+                        wxUSE_WEBVIEW_IE || wxUSE_WEBVIEW_EDGE || \
+-                       wxUSE_WEBVIEW_CHROMIUM)
++                       wxUSE_WEBVIEW_CHROMIUM) && !defined(__WXOSX_IPHONE__)
+ #   ifdef wxABORT_ON_CONFIG_ERROR
+ #       error "wxUSE_WEBVIEW requires at least one backend"
+ #   else
 diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
-index aea925c..8e634b8 100644
+index aea925c..cb0caad 100644
 --- a/include/wx/osx/iphone/chkconf.h
 +++ b/include/wx/osx/iphone/chkconf.h
 @@ -52,7 +52,7 @@
@@ -35,8 +53,12 @@ index aea925c..8e634b8 100644
  #endif
  
  #ifndef __WXUNIVERSAL__
-@@ -106,12 +106,12 @@
- #define wxUSE_STATUSBAR 0
+@@ -103,15 +103,15 @@
+ #undef wxUSE_TOGGLEBTN
+ 
+ 
+-#define wxUSE_STATUSBAR 0
++#define wxUSE_STATUSBAR 1
  #define wxUSE_NATIVE_STATUSBAR 0
  #define wxUSE_ABOUTDLG 0
 -#define wxUSE_STATLINE 0
@@ -54,9 +76,12 @@ index aea925c..8e634b8 100644
  
  #undef wxUSE_RICHTEXT
  #define wxUSE_RICHTEXT 0
-@@ -147,28 +147,30 @@
+@@ -145,30 +145,32 @@
+ 
+ #define wxUSE_ACTIVITYINDICATOR 0
  #define wxUSE_ADDREMOVECTRL 0
- #define wxUSE_ANIMATIONCTRL 0
+-#define wxUSE_ANIMATIONCTRL 0
++#define wxUSE_ANIMATIONCTRL 1
  #define wxUSE_CALENDARCTRL 0
 -#define wxUSE_COMBOCTRL 0
 -#define wxUSE_ODCOMBOBOX 0
@@ -99,7 +124,7 @@ index aea925c..8e634b8 100644
  
  #undef wxUSE_LOGWINDOW
  #undef wxUSE_LOG_DIALOG
-@@ -193,7 +195,7 @@
+@@ -193,21 +195,21 @@
  #undef wxUSE_REARRANGECTRL
  #undef wxUSE_NATIVE_DATAVIEWCTRL
  
@@ -108,18 +133,26 @@ index aea925c..8e634b8 100644
  #define wxUSE_LOG_DIALOG 0
  #define wxUSE_LISTBOOK 0
  #define wxUSE_CHOICEBOOK 0
-@@ -201,9 +203,9 @@
+ #define wxUSE_TREEBOOK 0
  #define wxUSE_TOOLBOOK 0
- #define wxUSE_CHOICEDLG 0
+-#define wxUSE_CHOICEDLG 0
++#define wxUSE_CHOICEDLG 1
  #define wxUSE_HELP 0
 -#define wxUSE_PROGRESSDLG 0
 +#define wxUSE_PROGRESSDLG 1
  #define  wxUSE_FONTDLG 0
 -#define wxUSE_FILEDLG 0
+-#define wxUSE_CHOICEDLG 0
 +#define wxUSE_FILEDLG 1
- #define wxUSE_CHOICEDLG 0
++#define wxUSE_CHOICEDLG 1
  #define wxUSE_NUMBERDLG 0
- #define wxUSE_TEXTDLG 0
+-#define wxUSE_TEXTDLG 0
+-#define wxUSE_DIRDLG 0
++#define wxUSE_TEXTDLG 1
++#define wxUSE_DIRDLG 1
+ #define wxUSE_STARTUP_TIPS 0
+ #define wxUSE_WIZARDDLG 0
+ #define wxUSE_TOOLBAR_NATIVE 0
 @@ -254,7 +256,7 @@
  
  #if wxUSE_COMBOBOX
@@ -174,7 +207,7 @@ index aea925c..8e634b8 100644
  #endif
  
  #if wxUSE_UIACTIONSIMULATOR
-@@ -369,6 +368,13 @@
+@@ -369,6 +368,26 @@
  
  #endif // wxUSE_GUI
  
@@ -184,6 +217,19 @@ index aea925c..8e634b8 100644
 +#endif
 +#undef wxUSE_WEBVIEW
 +#define wxUSE_WEBVIEW 1
++/* Orca-iOS: real wx/webview.h + common impl are compiled, but no platform
++   backend exists on iPhone yet (step 5 = WKWebView). Force all backends off
++   so webview.cpp registers no factories and wxWebView::New returns NULL. */
++#undef wxUSE_WEBVIEW_WEBKIT
++#define wxUSE_WEBVIEW_WEBKIT 0
++#undef wxUSE_WEBVIEW_WEBKIT2
++#define wxUSE_WEBVIEW_WEBKIT2 0
++#undef wxUSE_WEBVIEW_IE
++#define wxUSE_WEBVIEW_IE 0
++#undef wxUSE_WEBVIEW_EDGE
++#define wxUSE_WEBVIEW_EDGE 0
++#undef wxUSE_WEBVIEW_CHROMIUM
++#define wxUSE_WEBVIEW_CHROMIUM 0
 +
  #endif
      /* _WX_OSX_IPHONE_CHKCONF_H_ */

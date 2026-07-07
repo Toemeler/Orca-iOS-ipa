@@ -1,5 +1,5 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..cd11495 100644
+index c163c87..c86a2cb 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
 @@ -327,7 +327,7 @@ set(QT_SRC
@@ -78,9 +78,12 @@ index c163c87..cd11495 100644
      src/osx/carbon/dcclient.cpp
      src/osx/carbon/dcprint.cpp
      src/osx/carbon/dcscreen.cpp
-@@ -2024,17 +2024,17 @@ set(OSX_COMMON_SRC
+@@ -2022,19 +2022,19 @@ set(OSX_COMMON_SRC
+     src/generic/clrpickerg.cpp
+     src/generic/collpaneg.cpp
      src/generic/colrdlgg.cpp
-     src/generic/dirdlgg.cpp
+-    src/generic/dirdlgg.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/generic/dirdlgg.cpp>
      src/generic/fdrepdlg.cpp
 -    src/generic/filedlgg.cpp
 -    src/generic/filepickerg.cpp
@@ -100,7 +103,7 @@ index c163c87..cd11495 100644
  )
  
  set(OSX_SHARED_HDR
-@@ -2235,6 +2235,16 @@ set(OSX_IPHONE_SRC
+@@ -2235,6 +2235,19 @@ set(OSX_IPHONE_SRC
      src/osx/iphone/statbmp.mm
      src/osx/iphone/menuitem.mm
      src/osx/iphone/menu.mm
@@ -112,12 +115,15 @@ index c163c87..cd11495 100644
 +    src/osx/bmpbuttn_osx.cpp
 +    src/generic/spinctlg.cpp
 +    src/osx/iphone/filedlg.mm
-+    src/osx/iphone/webview_stub.cpp
++    src/osx/iphone/dirdlg.mm
++    src/common/webview.cpp
++    src/common/webviewarchivehandler.cpp
++    src/common/webviewfshandler.cpp
 +    src/osx/iphone/mediactrl_stub.cpp
  )
  
  set(OSX_IPHONE_HDR
-@@ -2257,11 +2267,11 @@ set(UNIV_SRC
+@@ -2257,11 +2270,11 @@ set(UNIV_SRC
      src/generic/colrdlgg.cpp
      src/generic/dirdlgg.cpp
      src/generic/fdrepdlg.cpp
@@ -132,7 +138,7 @@ index c163c87..cd11495 100644
      src/generic/mdig.cpp
      src/generic/prntdlgg.cpp
      src/univ/anybutton.cpp
-@@ -2302,7 +2312,7 @@ set(UNIV_SRC
+@@ -2302,7 +2315,7 @@ set(UNIV_SRC
      src/univ/topluniv.cpp
      src/univ/winuniv.cpp
      src/generic/activityindicator.cpp
@@ -141,7 +147,7 @@ index c163c87..cd11495 100644
  )
  
  set(UNIV_HDR
-@@ -2751,13 +2761,13 @@ set(UNIX_SOUND_SDL_SRC
+@@ -2751,13 +2764,13 @@ set(UNIX_SOUND_SDL_SRC
  )
  
  set(AUI_CMN_SRC
@@ -176,6 +182,19 @@ index 264f4f7..db9b1fd 100644
  #elif defined(__WXMAC__) && !defined(__WXUNIVERSAL__)
      #include "wx/osx/colordlg.h"
  #elif defined(__WXGTK__) && !defined(__WXUNIVERSAL__)
+diff --git a/include/wx/dirdlg.h b/include/wx/dirdlg.h
+index 824a2e1..2fdbdad 100644
+--- a/include/wx/dirdlg.h
++++ b/include/wx/dirdlg.h
+@@ -117,6 +117,8 @@ protected:
+     #include "wx/msw/dirdlg.h"  // Native MSW or Qt under MSW
+ #elif defined(__WXGTK__)
+     #include "wx/gtk/dirdlg.h"  // Native GTK for gtk2.4
++#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
++    #include "wx/osx/iphone/dirdlg.h"
+ #elif defined(__WXMAC__)
+     #include "wx/osx/dirdlg.h"      // Native Mac
+ #elif defined(__WXX11__)
 diff --git a/include/wx/filedlg.h b/include/wx/filedlg.h
 index d3f0681..32bfdc8 100644
 --- a/include/wx/filedlg.h

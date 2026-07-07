@@ -1,0 +1,70 @@
+diff --git a/src/OrcaSlicer.cpp b/src/OrcaSlicer.cpp
+index 53f0352c..5a4e51c8 100644
+--- a/src/OrcaSlicer.cpp
++++ b/src/OrcaSlicer.cpp
+@@ -86,7 +86,20 @@ using namespace nlohmann;
+ #include "slic3r/GUI/Camera.hpp"
+ #include "slic3r/GUI/Plater.hpp"
+ #include "slic3r/GUI/GuiColor.hpp"
++#if defined(__APPLE__)
++#include <TargetConditionals.h>
++#endif
++// On iOS the deps GUI libraries (incl. GLFW) are gated off and there is no
++// desktop GL context for the CLI thumbnail path. Gate that path out. A plain
++// launch (no CLI actions) goes straight to GUI_Run and never touches it.
++#if defined(__APPLE__) && !TARGET_OS_OSX
++#define ORCA_IOS 1
++#else
++#define ORCA_IOS 0
++#endif
++#if !ORCA_IOS
+ #include <GLFW/glfw3.h>
++#endif
+ 
+ #ifdef __WXGTK__
+ #if __has_include(<X11/Xlib.h>)
+@@ -495,10 +508,12 @@ static int decode_png_to_thumbnail(std::string png_file, ThumbnailData& thumbnai
+     return 0;
+ }
+ 
++#if !ORCA_IOS
+ static void glfw_callback(int error_code, const char* description)
+ {
+     BOOST_LOG_TRIVIAL(error) << "error_code " <<error_code <<", description: " <<description<< std::endl;
+ }
++#endif // !ORCA_IOS
+ 
+ const float bed3d_ax3s_default_stem_radius = 0.5f;
+ const float bed3d_ax3s_default_stem_length = 25.0f;
+@@ -6512,11 +6527,12 @@ int CLI::run(int argc, char **argv)
+                 colors_out[color_idx] = ColorRGBA(float(rgb_color[0]) / 255.f, float(rgb_color[1]) / 255.f, float(rgb_color[2]) / 255.f, float(rgb_color[3]) / 255.f);
+             }
+ 
++            bool thumbnail_opengl_ready = false;
++#if !ORCA_IOS
+             int gl_major, gl_minor, gl_verbos;
+             glfwGetVersion(&gl_major, &gl_minor, &gl_verbos);
+             BOOST_LOG_TRIVIAL(info) << boost::format("opengl version %1%.%2%.%3%")%gl_major %gl_minor %gl_verbos;
+ 
+-            bool thumbnail_opengl_ready = false;
+             glfwSetErrorCallback(glfw_callback);
+             int ret = glfwInit();
+             if (ret == GLFW_FALSE) {
+@@ -6552,6 +6568,7 @@ int CLI::run(int argc, char **argv)
+                     thumbnail_opengl_ready = true;
+                 }
+             }
++#endif // !ORCA_IOS
+ 
+             //opengl manager related logic
+             if (!thumbnail_opengl_ready) {
+@@ -6855,7 +6872,9 @@ int CLI::run(int argc, char **argv)
+                 }
+             }
+             //BBS: release glfw
++#if !ORCA_IOS
+             glfwTerminate();
++#endif
+         }
+         else {
+             BOOST_LOG_TRIVIAL(info) << boost::format("Line %1%: use previous thumbnails, no need to regenerate")%__LINE__;

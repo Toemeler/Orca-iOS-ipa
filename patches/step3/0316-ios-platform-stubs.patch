@@ -1,0 +1,149 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 0375fc34..5dd908f3 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -716,6 +716,16 @@ elseif (NOT APPLE)
+         )
+ endif ()
+ 
++if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++    # iOS replacements for the excluded macOS-only .mm sources. Provides link-time
++    # definitions for RetinaHelper / MacDarkMode / InstanceCheck /
++    # RemovableDriveManager / Mouse3DController / DeepLink / GUI_UtilsMac helpers
++    # and an inert wxMediaCtrl2 (AVPlayer camera control is step 5).
++    list(APPEND SLIC3R_GUI_SOURCES
++            GUI/ios_platform_stubs.cpp
++        )
++endif ()
++
+ if (UNIX AND NOT APPLE)
+     list(APPEND SLIC3R_GUI_SOURCES
+         GUI/Printer/gstbambusrc.c
+diff --git a/src/slic3r/GUI/ios_platform_stubs.cpp b/src/slic3r/GUI/ios_platform_stubs.cpp
+new file mode 100644
+index 00000000..036f9c5e
+--- /dev/null
++++ b/src/slic3r/GUI/ios_platform_stubs.cpp
+@@ -0,0 +1,122 @@
++// iOS platform stubs
++// ------------------
++// The eight macOS-only Objective-C++ sources are excluded from the iOS build
++// (see src/slic3r/CMakeLists.txt, patch 0302). Their symbols are declared under
++// `#if __APPLE__` in the corresponding headers, and iOS *is* __APPLE__, so the
++// other (compiled) translation units still reference them and the OrcaSlicer
++// executable fails to link without definitions.
++//
++// This file provides iOS implementations of exactly those symbols. Almost all
++// are no-ops for the initial iPad launch:
++//   - InstanceCheck / RemovableDrive / Mouse3D / DeepLink: features that either
++//     do not apply on iOS (single-instance, 3Dconnexion) or are deferred
++//     (removable-drive export -> UIDocumentPicker in step 5).
++//   - MacDarkMode / RetinaHelper: dark-mode + HiDPI helpers; scale is taken from
++//     wx's own content-scale, appearance is reported light for now.
++//   - wxMediaCtrl2: the AVPlayer camera control is step 5; here it is an inert
++//     wxWindow so StatusPanel/MediaPlayCtrl construct and lay it out safely.
++//
++// Kept as plain C++ (no UIKit/Objective-C) to avoid dragging AppKit-era types
++// into the link. Compiled only on iOS.
++
++#include <string>
++#include <vector>
++
++#include <wx/window.h>
++#include <wx/event.h>
++#include <wx/gdicmn.h>   // wxSize
++
++#include "wxMediaCtrl2.h"          // class wxMediaCtrl2 (+ EVT_MEDIA_CTRL_STAT, wxMediaState)
++#include "InstanceCheck.hpp"       // OtherInstanceMessageHandler, send_message_mac*
++#include "RemovableDriveManager.hpp"
++#include "Mouse3DController.hpp"
++#include "DeepLinkHandlerMac.h"
++#include "GUI_Utils.hpp"           // dataview_remove_insets / staticbox_remove_margin / is_debugger_present
++#include "../Utils/RetinaHelper.hpp"
++#include "../Utils/MacDarkMode.hpp"
++
++// ---------------------------------------------------------------------------
++// wxMediaCtrl2  (declared in the __WXMAC__ branch of wxMediaCtrl2.h -> wxWindow)
++// The macOS/Win/Linux implementations both define this event; on iOS neither
++// compiles, so define it here.
++// ---------------------------------------------------------------------------
++wxDEFINE_EVENT(EVT_MEDIA_CTRL_STAT, wxCommandEvent);
++
++wxMediaCtrl2::wxMediaCtrl2(wxWindow *parent)
++    : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
++{
++    // No backing player yet (camera video is step 5). Inert, sized window.
++}
++
++wxMediaCtrl2::~wxMediaCtrl2() {}
++
++void wxMediaCtrl2::Load(wxURI /*url*/) {}
++void wxMediaCtrl2::Play() {}
++void wxMediaCtrl2::Stop() {}
++void wxMediaCtrl2::SetIdleImage(wxString const & /*image*/) {}
++
++wxMediaState wxMediaCtrl2::GetState() const { return wxMEDIASTATE_STOPPED; }
++wxSize       wxMediaCtrl2::GetVideoSize() const { return m_video_size; }
++
++// ---------------------------------------------------------------------------
++namespace Slic3r {
++
++// InstanceCheck free functions (namespace Slic3r)
++void send_message_mac(const std::string & /*msg*/, const std::string & /*version*/) {}
++void send_message_mac_closing(const std::string & /*msg*/, const std::string & /*version*/) {}
++
++namespace GUI {
++
++// --- InstanceCheck: OtherInstanceMessageHandler -----------------------------
++void OtherInstanceMessageHandler::register_for_messages(const std::string & /*version_hash*/)
++{
++    m_impl_osx = nullptr;   // no distributed-notification listener on iOS
++}
++void OtherInstanceMessageHandler::unregister_for_messages() { m_impl_osx = nullptr; }
++void OtherInstanceMessageHandler::bring_instance_forward() {}
++
++// --- RemovableDriveManager --------------------------------------------------
++void RemovableDriveManager::register_window_osx()   { m_impl_osx = nullptr; }
++void RemovableDriveManager::unregister_window_osx()  { m_impl_osx = nullptr; }
++void RemovableDriveManager::list_devices(std::vector<DriveData> & /*out*/) const {}
++void RemovableDriveManager::eject_device(const std::string & /*path*/) {}
++
++// --- Mouse3DController (3Dconnexion; no HID device path on iOS) --------------
++void Mouse3DController::init() {}
++void Mouse3DController::shutdown() {}
++
++// --- DeepLink (orcaslicer:// AppleEvent handler; no equivalent on iOS) ------
++void register_mac_deep_link_handler() {}
++
++// --- GUI_UtilsMac helpers ---------------------------------------------------
++void dataview_remove_insets(wxDataViewCtrl * /*dv*/) {}
++void staticbox_remove_margin(wxStaticBox * /*sb*/) {}
++bool is_debugger_present() { return false; }
++
++// --- MacDarkMode / window chrome / WKWebView bridge -------------------------
++bool   mac_dark_mode() { return false; }
++double mac_max_scaling_factor() { return 2.0; }
++void   set_miniaturizable(void * /*window*/) {}
++void   set_tag_when_enter_full_screen(bool /*isfullscreen*/) {}
++void   set_title_colour_after_set_title(void * /*window*/) {}
++void   WKWebView_evaluateJavaScript(void * /*web*/, wxString const & /*script*/,
++                                    void (* /*callback*/)(wxString const &)) {}
++void   WKWebView_setTransparentBackground(void * /*web*/) {}
++void   initGestures(void * /*view*/, wxEvtHandler * /*handler*/) {}
++void   openFolderForFile(wxString const & /*file*/) {}
++void   StaticGroup_layoutBadge(void * /*group*/, void * /*badge*/) {}
++
++// --- RetinaHelper (Utils/RetinaHelper.hpp; class in namespace Slic3r::GUI) --
++RetinaHelper::RetinaHelper(wxWindow *window)  { m_self = static_cast<void*>(window); }
++RetinaHelper::~RetinaHelper()                 {}
++void  RetinaHelper::set_use_retina(bool /*value*/) {}
++bool  RetinaHelper::get_use_retina()          { return true; }
++float RetinaHelper::get_scale_factor()
++{
++    // iOS GLKView is inherently HiDPI; report wx's content scale for the window.
++    return m_self ? static_cast<float>(static_cast<wxWindow*>(m_self)->GetContentScaleFactor())
++                  : 1.0f;
++}
++
++} // namespace GUI
++} // namespace Slic3r

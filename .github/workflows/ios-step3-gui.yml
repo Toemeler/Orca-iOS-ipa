@@ -199,11 +199,15 @@ jobs:
             -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step3-configure.log
 
-      - name: "[7/8] Build libslic3r_gui (milestone 1)"
+      - name: "[7/8] Build + link OrcaSlicer app (milestone 2)"
         run: |
           set -euxo pipefail
           cd orca/build
+          # Milestone 1 (compile): libslic3r_gui must stay green with the new
+          # iOS platform stubs. Then milestone 2 (link): the OrcaSlicer
+          # executable. Both logs land in step3-ninja.log for the summary.
           ninja -k 0 libslic3r_gui 2>&1 | tee /tmp/step3-ninja.log
+          ninja -k 0 OrcaSlicer 2>&1 | tee -a /tmp/step3-ninja.log
 
       - name: Save ccache
         if: always()
@@ -235,16 +239,20 @@ jobs:
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
-            [ -f "$f" ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 400000 > "$D/$(basename "$f" .log)-errors.log"
+            [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 500000 > "$D/$(basename "$f" .log)-errors.log"
           done
-          # -k0 summary: full map of remaining errors
+          # -k0 summary: full map of remaining compile + link errors
           if [ -f /tmp/step3-ninja.log ]; then
             {
-              echo "=== FAILED files ==="
-              grep "FAILED:" /tmp/step3-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o.*##" | sort -u
-              echo; echo "=== error signatures (deduped) ==="
+              echo "=== FAILED targets ==="
+              grep "FAILED:" /tmp/step3-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o .*##" | sort -u
+              echo; echo "=== undefined symbols (linker) ==="
+              # ld64 prints:  "  \"symbol\", referenced from:"
+              grep -oE '"[^"]+", referenced from' /tmp/step3-ninja.log | sed -E 's/, referenced from//' | sort -u
+              echo; echo "=== compile error signatures (deduped) ==="
               grep -oE "(unknown type name '[^']+'|use of undeclared identifier '[^']+'|unknown class name '[^']+'|no member named '[^']+'|no type named '[^']+'|no matching [a-z ]+ for call to '[^']+'|'[A-Za-z0-9_/.]+' file not found|marked 'override' but does not override|only virtual member functions can be marked 'override'|base class has incomplete type|cannot initialize [a-z ]+ (parameter|object))" /tmp/step3-ninja.log | sort | uniq -c | sort -rn
               echo; echo "total FAILED: $(grep -c FAILED: /tmp/step3-ninja.log)"
+              echo "undefined symbol count: $(grep -cE '"[^"]+", referenced from' /tmp/step3-ninja.log)"
             } > "$D/SUMMARY.txt"
           fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"

@@ -40,7 +40,7 @@ pattern of the user's other repos: `Toemeler/blender-iOS-ipa` and `Toemeler/Rayf
 |---|---|---|
 | 1. Slicing core on iOS | `ios-step1-core-cli.yml` | ✅ DONE (run 19): libslic3r sliced a cube **inside an iPad simulator**, artifact `orca-ios-step1-core-cli` (20.2 MB: iOS binary + G-code) |
 | 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | ✅ DONE: wx static libs for iOS + `WxSmoke.app` screenshot (frame, button, green GL canvas) on simulated iPad |
-| 3. Full GUI link-up | `ios-step3-gui.yml` | ▶️ IN PROGRESS — run 1 dispatched (milestone 1: `ninja libslic3r_gui`); proactive macOS-API sweep of `src/slic3r` started (findings below) |
+| 3. Full GUI link-up | `ios-step3-gui.yml` | ▶️ IN PROGRESS — milestone 1 (compile `libslic3r_gui`) GREEN @ run 46; milestone 2 (link `OrcaSlicer` app) implemented via patches 0316-0318 and dispatched. Launch+screenshot follows once link is green. |
 | 4. Device IPA | not written yet | pending |
 | 5. Feature parity (webview/camera/export) | not written yet | pending |
 
@@ -339,28 +339,87 @@ pristine upstream; every edited #if chain checked for balance + branch
 selection; wx-side flags validated through the real chkconf chain with the
 local probe (now SDK-faithful via the TargetConditionals/OSAtomic stubs).
 
-── WHAT'S NOT DONE (next agent starts here) ─────────────────────────────
-Run 46 only proves the milestone-1 COMPILE (the [7/8] step builds
-libslic3r_gui). It does NOT link an app or launch a simulator. Remaining:
+═══════════════════════════════════════════════════════════════════════
+## ▶️ LINK STAGE IMPLEMENTED + DISPATCHED (2026-07-07, milestone 2)
+═══════════════════════════════════════════════════════════════════════
+Added patches 0316-0318 and switched the [7/8] step target from
+`ninja libslic3r_gui` to `ninja OrcaSlicer` (compile milestone kept first,
+then link). All 26 patches (step1 + step3 0301-0318) verified applying
+cleanly to a fresh pristine clone.
 
-1. LINK stage. The 8 macOS-only .mm files (0302) are excluded on iOS and
-   their symbols are still unresolved: InstanceCheck, RemovableDriveManager,
-   MacDarkMode, RetinaHelper, Mouse3D, DeepLink, GUI_Utils, wxMediaCtrl2.mm.
-   Provide iOS stubs/impls (InstanceCheck no-op; RemovableDrive->
-   UIDocumentPicker; MacDarkMode->UIUserInterfaceStyle; RetinaHelper->
-   UIScreen.scale; Mouse3D/DeepLink no-ops; wxMediaCtrl2 -> the .cpp is
-   excluded too now, so the class needs an iOS impl or the referencing
-   MediaPlayCtrl paths guarded). Also the backendless webview: wxWebView::
-   New() returns NULL at runtime - Orca's WebView::CreateWebView must
-   tolerate NULL (check it does, or guard callers).
-2. Restore Orca's real main() (OrcaSlicer.cpp) - GUI-entangled, hard-
-   includes GLFW for CLI thumbnails; gate that off on iOS. Step 1 used a
-   custom harness instead, so this path has never been exercised.
-3. Launch in iPad simulator -> screenshot artifact = completes step 3.
-4. Then STEP 4 (iphoneos SDK build + Payload/OrcaSlicer.app + Info.plist
-   UIDeviceFamily=[2] + zip -> unsigned .ipa -> GitHub Release) and
-   STEP 5 (real WKWebView backend - the class exists on iOS and all the
-   revival sites are marked; AVPlayer camera; UIDocumentPicker export).
+- 0316-ios-platform-stubs: new file src/slic3r/GUI/ios_platform_stubs.cpp
+  (plain C++, NO Objective-C/UIKit - lowest link risk) + a
+  `if (CMAKE_SYSTEM_NAME STREQUAL "iOS")` block in src/slic3r/CMakeLists.txt
+  that appends it. Provides iOS definitions for EVERY symbol from the 8
+  excluded .mm files (all declared `#if __APPLE__`, so referenced on iOS):
+    * RetinaHelper ctor/dtor/set_use_retina/get_use_retina/get_scale_factor
+      (stashes wxWindow* in m_self; scale = wx GetContentScaleFactor()).
+    * MacDarkMode's 10 fns (mac_dark_mode->false, mac_max_scaling_factor->
+      2.0, WKWebView_*/set_*/initGestures/openFolderForFile/StaticGroup_
+      layoutBadge -> no-ops).
+    * InstanceCheck: send_message_mac[_closing] + OtherInstanceMessageHandler
+      register/unregister/bring_forward -> no-ops (m_impl_osx=nullptr).
+    * RemovableDriveManager register/unregister/list_devices/eject_device
+      -> no-ops.
+    * Mouse3DController init/shutdown -> no-ops (handle_input(DataPacketAxis)
+      is in the .cpp, NOT stubbed; init/shutdown for non-Apple are `#else`
+      in the .cpp so iOS needs them).
+    * register_mac_deep_link_handler -> no-op.
+    * dataview_remove_insets / staticbox_remove_margin -> no-ops;
+      is_debugger_present->false (its only caller in GUI_App.cpp is inside a
+      /* */ comment, but defined anyway - harmless).
+    * wxMediaCtrl2 (the `#ifdef __WXMAC__` branch -> `: public wxWindow`):
+      ctor (base wxWindow only, inert), dtor, Load/Play/Stop/SetIdleImage/
+      GetState/GetVideoSize. DoSetSize is in MediaPlayCtrl.cpp (compiled),
+      GetLastError is inline - both skipped.
+    * CRITICAL: `wxDEFINE_EVENT(EVT_MEDIA_CTRL_STAT, wxCommandEvent)` was
+      defined ONLY in the two excluded wxMediaCtrl2 files -> redefined here.
+  RetinaHelper is NOT duplicated: GLCanvas3D.cpp's copy is `#ifdef __WXGTK3__`
+  only.
+- 0317-orca-main-gate-glfw-ios: src/OrcaSlicer.cpp. Defines ORCA_IOS
+  (= `__APPLE__ && !TARGET_OS_OSX`) and gates the GLFW include, glfw_callback,
+  the CLI-thumbnail GLFW init block, and glfwTerminate behind `#if !ORCA_IOS`.
+  `bool thumbnail_opengl_ready=false` hoisted OUT of the guard so the existing
+  `if (!thumbnail_opengl_ready){...}` skips thumbnail render gracefully on iOS.
+  A plain launch (no CLI actions) takes the `start_gui` path -> GUI_Run and
+  never touches GLFW. #if/#endif balance verified (4 opens = 2 commented + 2
+  bare closes).
+- 0318-ios-app-link: src/CMakeLists.txt. The OrcaSlicer exe's APPLE link block
+  linked IOKit/AVFoundation/AVKit/CoreMedia/VideoToolbox/OpenGL (wrong for
+  iOS). Added `if (APPLE AND iOS)` using the PROVEN step-2 wx iOS link set
+  (UIKit/OpenGLES/GLKit/QuartzCore/CoreGraphics/CoreText/CoreFoundation/
+  Foundation/Security/AudioToolbox/CFNetwork/MobileCoreServices + -lz/-liconv/
+  -lexpat/-llzma/-lc++); `elseif (APPLE)` keeps macOS. Also added an empty
+  `elseif (APPLE AND iOS)` in the SLIC3R_GUI block so the desktop
+  `-framework OpenGL` is skipped on iOS.
+
+── WHAT'S NOT DONE (next agent starts here) ─────────────────────────────
+FIRST: read ci-logs for the dispatched run (newest step3-run-N). This is the
+first LINK attempt AND the first warm-ccache run (verify wall-time speedup).
+The 8-file sweep may not catch every `#if __APPLE__`-guarded symbol - the
+linker will surface any others in SUMMARY.txt's "undefined symbols (linker)"
+section (grep now captures `"sym", referenced from`). Iterate: add missing
+defs to ios_platform_stubs.cpp (regen 0316 from pristine base + re-run
+acceptance test), repeat until link is green.
+
+Known runtime item still open (compiles fine, matters at launch):
+- Backendless webview: wxWebView::New() returns NULL on iOS. Confirm Orca's
+  WebView::CreateWebView tolerates NULL (or guard callers) BEFORE the launch
+  milestone, else GUI_Run may crash creating a web panel.
+
+Once link is GREEN (follow-up milestone in same workflow):
+A. Add simulator launch + screenshot to ios-step3-gui.yml: assemble a minimal
+   Payload/OrcaSlicer.app (binary orca-slicer + Info.plist w/ CFBundleExecutable,
+   CFBundleIdentifier, UIDeviceFamily=[2], LSRequiresIPhoneOS, a
+   UILaunchStoryboard or launch-image key), `xcrun simctl create` an
+   "iPad Pro 13-inch (M4)" (16GB) device, boot, install, launch, then
+   `xcrun simctl io <udid> screenshot out.png` -> upload as artifact = STEP 3
+   COMPLETE. (Orca needs its resources/ dir; symlink or copy into the .app.)
+B. STEP 4: iphoneos SDK build + Payload/OrcaSlicer.app + zip -> unsigned .ipa
+   -> GitHub Release.
+C. STEP 5: real WKWebView backend (class exists on iOS, revival sites marked
+   !defined(__WXOSX_IPHONE__)); AVPlayer camera in wxMediaCtrl2; UIDocumentPicker
+   export in RemovableDriveManager.
 
 ── DEFERRED-TO-STEP-5 SITES ALREADY MARKED IN SOURCE ───────────────────
 - wxWebView: built backendless (all wxUSE_WEBVIEW_* = 0; New()->NULL).

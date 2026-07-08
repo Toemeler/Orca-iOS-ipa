@@ -1,0 +1,108 @@
+3389-      |     ^
+3390-2 warnings generated.
+3391-[629/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/combobox_osx.cpp.o
+3392:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/combobox_osx.cpp.o 
+3393-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/combobox_osx.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/combobox_osx.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/combobox_osx.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp
+3394-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:10:
+3395-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3396-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3397-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3398-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3399-      |             ^
+3400:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:105:9: error: use of undeclared identifier 'GetComboPeer'
+3401-  105 |         GetComboPeer()->InsertItem( idx, items[i] );
+3402-      |         ^
+3403:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:133:12: error: use of undeclared identifier 'GetComboPeer'
+3404-  133 |     return GetComboPeer()->GetNumberOfItems();
+3405-      |            ^
+3406:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:139:5: error: use of undeclared identifier 'GetComboPeer'
+3407-  139 |     GetComboPeer()->RemoveItem(n);
+3408-      |     ^
+3409:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:145:5: error: use of undeclared identifier 'GetComboPeer'
+3410-  145 |     GetComboPeer()->Clear();
+3411-      |     ^
+3412:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:155:12: error: use of undeclared identifier 'GetComboPeer'
+3413-  155 |     return GetComboPeer()->GetSelectedItem();
+3414-      |            ^
+3415:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:160:5: error: use of undeclared identifier 'GetComboPeer'
+3416-  160 |     GetComboPeer()->SetSelectedItem(n);
+3417-      |     ^
+3418:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:180:12: error: use of undeclared identifier 'GetComboPeer'
+3419-  180 |     return GetComboPeer()->FindString(s);
+3420-      |            ^
+3421:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:187:12: error: use of undeclared identifier 'GetComboPeer'
+3422-  187 |     return GetComboPeer()->GetStringAtIndex(n);
+3423-      |            ^
+3424:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:210:5: error: use of undeclared identifier 'GetComboPeer'
+3425-  210 |     GetComboPeer()->RemoveItem(n);
+3426-      |     ^
+3427:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:211:5: error: use of undeclared identifier 'GetComboPeer'
+3428-  211 |     GetComboPeer()->InsertItem(n, s);
+3429-      |     ^
+3430:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:237:32: error: out-of-line definition of 'GetComboPeer' does not match any declaration in 'wxComboBox'
+3431-  237 | wxComboWidgetImpl* wxComboBox::GetComboPeer() const
+3432-      |                                ^~~~~~~~~~~~
+3433:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:242:18: error: out-of-line definition of 'Popup' does not match any declaration in 'wxComboBox'
+3434-  242 | void wxComboBox::Popup()
+3435-      |                  ^~~~~
+3436:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/combobox_osx.cpp:247:18: error: out-of-line definition of 'Dismiss' does not match any declaration in 'wxComboBox'
+3437-  247 | void wxComboBox::Dismiss()
+3438-      |                  ^~~~~~~
+3439-1 warning and 13 errors generated.
+3440-[630/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/gauge_osx.cpp.o
+3441-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/gauge_osx.cpp:10:
+3442-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3443-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3444-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3445-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3446-      |             ^
+3447-1 warning generated.
+3448-[631/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/printdlg_osx.cpp.o
+3449-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/printdlg_osx.cpp:10:
+3450-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3451-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3452-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3453-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3454-      |             ^
+3455-1 warning generated.
+3456-[632/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/listbox_osx.cpp.o
+3457-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/listbox_osx.cpp:10:
+3458-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3459-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3460-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3461-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3462-      |             ^
+3463-1 warning generated.
+3464-[633/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/menu_osx.cpp.o
+3465-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/menu_osx.cpp:17:
+3466-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3467-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3468-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3469-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3470-      |             ^
+3471-1 warning generated.
+3472-[634/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/menuitem_osx.cpp.o
+3473-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/menuitem_osx.cpp:10:
+3474-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3475-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3476-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3477-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3478-      |             ^
+3479-1 warning generated.
+3480-[635/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/notebook_osx.cpp.o
+3481-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/notebook_osx.cpp:10:
+3482-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3483-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3484-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3485-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3486-      |             ^
+3487-1 warning generated.
+3488-[636/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/radiobox_osx.cpp.o
+3489-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/radiobox_osx.cpp:11:
+3490-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+3491-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+3492-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+3493-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+3494-      |             ^
+3495-1 warning generated.
+3496-[637/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/radiobut_osx.cpp.o

@@ -1,0 +1,120 @@
+4415-      |                                                                                                          ^
+4416-27 warnings generated.
+4417-[703/1035] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_stubs.mm.o
+4418:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_stubs.mm.o 
+4419-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_stubs.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_stubs.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_stubs.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_stubs.mm
+4420-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_stubs.mm:19:
+4421-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4422-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4423-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4424-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4425-      |             ^
+4426:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_stubs.mm:99:73: error: call to constructor of 'wxCFStringRef' is ambiguous
+4427-   99 | wxDataFormat::wxDataFormat()                    : m_type(wxDF_INVALID), m_format(NULL) {}
+4428-      |                                                                         ^        ~~~~
+4429-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/cfstring.h:43:5: note: candidate constructor
+4430-   43 |     wxCFStringRef(WX_NSString ref)
+4431-      |     ^
+4432-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/cfstring.h:49:5: note: candidate constructor
+4433-   49 |     wxCFStringRef(CFStringRef ref)
+4434-      |     ^
+4435:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_stubs.mm:100:73: error: call to constructor of 'wxCFStringRef' is ambiguous
+4436-  100 | wxDataFormat::wxDataFormat(wxDataFormatId vType): m_type(vType),        m_format(NULL) {}
+4437-      |                                                                         ^        ~~~~
+4438-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/cfstring.h:43:5: note: candidate constructor
+4439-   43 |     wxCFStringRef(WX_NSString ref)
+4440-      |     ^
+4441-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/cfstring.h:49:5: note: candidate constructor
+4442-   49 |     wxCFStringRef(CFStringRef ref)
+4443-      |     ^
+4444:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_stubs.mm:102:82: error: call to constructor of 'wxCFStringRef' is ambiguous
+4445-  102 | wxDataFormat::wxDataFormat(const wxString& WXUNUSED(id)) : m_type(wxDF_PRIVATE), m_format(NULL) {}
+4446-      |                                                                                  ^        ~~~~
+4447-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/cfstring.h:43:5: note: candidate constructor
+4448-   43 |     wxCFStringRef(WX_NSString ref)
+4449-      |     ^
+4450-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/cfstring.h:49:5: note: candidate constructor
+4451-   49 |     wxCFStringRef(CFStringRef ref)
+4452-      |     ^
+4453:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_stubs.mm:117:20: error: out-of-line definition of 'AddSupportedTypes' does not match any declaration in 'wxDataObject'
+4454-  117 | void wxDataObject::AddSupportedTypes(CFMutableArrayRef WXUNUSED(cfarray),
+4455-      |                    ^~~~~~~~~~~~~~~~~
+4456-1 warning and 4 errors generated.
+4457-[704/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/sound_osx.cpp.o
+4458-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/sound_osx.cpp:11:
+4459-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4460-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4461-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4462-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4463-      |             ^
+4464-1 warning generated.
+4465-[705/1035] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_peers.mm.o
+4466:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_peers.mm.o 
+4467-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_peers.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_peers.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/extra_peers.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_peers.mm
+4468-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_peers.mm:10:
+4469-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4470-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4471-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4472-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4473-      |             ^
+4474:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/extra_peers.mm:109:33: error: out-of-line definition of 'CreateComboBox' does not match any declaration in 'wxWidgetImpl'
+4475-  109 | wxWidgetImplType* wxWidgetImpl::CreateComboBox( wxComboBox* wxpeer,
+4476-      |                                 ^~~~~~~~~~~~~~
+4477-1 warning and 1 error generated.
+4478-[706/1035] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/core/sound.cpp.o
+4479-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/core/sound.cpp:12:
+4480-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4481-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4482-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4483-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4484-      |             ^
+4485-1 warning generated.
+4486-[707/1035] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/statbmp.mm.o
+4487-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/statbmp.mm:19:
+4488-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4489-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4490-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4491-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4492-      |             ^
+4493-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/statbmp.mm:45:36: warning: unused parameter 'title' [-Wunused-parameter]
+4494-   45 |     void SetLabel( const wxString& title ) override
+4495-      |                                    ^
+4496-2 warnings generated.
+4497-[708/1035] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menuitem.mm.o
+4498-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:10:
+4499-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4500-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4501-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4502-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4503-      |             ^
+4504-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:194:43: warning: unused parameter 'bitmap' [-Wunused-parameter]
+4505-  194 |     void SetBitmap( const wxBitmapBundle& bitmap ) override
+4506-      |                                           ^
+4507-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:234:36: warning: unused parameter 'text' [-Wunused-parameter]
+4508-  234 |     void SetLabel( const wxString& text, wxAcceleratorEntry *entry ) override
+4509-      |                                    ^
+4510-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:234:62: warning: unused parameter 'entry' [-Wunused-parameter]
+4511-  234 |     void SetLabel( const wxString& text, wxAcceleratorEntry *entry ) override
+4512-      |                                                              ^
+4513-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:254:9: warning: unused variable 'menuid' [-Wunused-variable]
+4514-  254 |     int menuid = m_peer->GetId();
+4515-      |         ^~~~~~
+4516-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:294:107: warning: unused parameter 'action' [-Wunused-parameter]
+4517-  294 |         UIAction* menuItem = [UIAction actionWithTitle:@"" image:nil identifier:nil handler: ^( UIAction* action) {} ];
+4518-      |                                                                                                           ^
+4519-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:317:74: warning: unused parameter 'action' [-Wunused-parameter]
+4520-  317 |                                                    handler: ^( UIAction* action) { peer->GetMenu()->HandleCommandProcess(peer);} ];
+4521-      |                                                                          ^
+4522-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:327:74: warning: unused parameter 'action' [-Wunused-parameter]
+4523-  327 |                                                    handler: ^( UIAction* action) { peer->GetMenu()->HandleCommandProcess(peer);} ];
+4524-      |                                                                          ^
+4525-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:281:67: warning: unused parameter 'pParentMenu' [-Wunused-parameter]
+4526-  281 | wxMenuItemImpl* wxMenuItemImpl::Create( wxMenuItem* peer, wxMenu *pParentMenu,
+4527-      |                                                                   ^
+4528-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:282:28: warning: unused parameter 'menuid' [-Wunused-parameter]
+4529-  282 |                        int menuid,
+4530-      |                            ^
+4531-10 warnings generated.
+4532-[709/1035] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menu.mm.o
+4533-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menu.mm:17:
+4534-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:

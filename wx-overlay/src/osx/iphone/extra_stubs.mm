@@ -22,6 +22,7 @@
 #include "wx/tooltip.h"
 #include "wx/clipbrd.h"
 #include "wx/dnd.h"
+#include "wx/dataobj.h"
 
 // ---------------------------------------------------------------------------
 // wxToolTip  (macOS impl: src/osx/cocoa/tooltip.mm)
@@ -85,31 +86,85 @@ bool wxClipboard::Flush()                                   { return false; }
 #endif // wxUSE_CLIPBOARD
 
 // ---------------------------------------------------------------------------
-// Drag-and-drop entry points  (macOS impl: src/osx/cocoa/dnd.mm)
+// wxDataFormat / wxDataObject / wxBitmapDataObject / wxFileDataObject
+// (macOS impl: src/osx/carbon/dataobj.cpp, which cannot compile against the
+// iOS 18.5 SDK: it uses the removed Carbon kUTType* constants and the
+// Pasteboard-Manager OSXPasteboard type). We stub the class members that Orca
+// and the now-enabled generic widgets reference, with complete vtables.
+// ---------------------------------------------------------------------------
+#if wxUSE_DATAOBJ
+
+// wxDataFormat is a plain value type (no vtable); m_type/m_format are its only
+// members. NativeFormat is CFStringRef; the stub keeps it null (inert).
+wxDataFormat::wxDataFormat()                    : m_type(wxDF_INVALID), m_format(NULL) {}
+wxDataFormat::wxDataFormat(wxDataFormatId vType): m_type(vType),        m_format(NULL) {}
+wxDataFormat::wxDataFormat(const wxDataFormat& r): m_type(r.m_type),    m_format(r.m_format) {}
+wxDataFormat::wxDataFormat(const wxString& WXUNUSED(id)) : m_type(wxDF_PRIVATE), m_format(NULL) {}
+wxDataFormat::~wxDataFormat() {}
+bool wxDataFormat::operator==(const wxDataFormat& f) const { return m_type == f.m_type; }
+wxDataFormat& wxDataFormat::operator=(const wxDataFormat& f)
+{
+    m_type = f.m_type;
+    m_format = f.m_format;
+    return *this;
+}
+
+// wxDataObject is abstract; defining its two non-inline virtuals emits its
+// vtable/typeinfo (the base's pure virtuals remain __cxa_pure_virtual).
+wxDataObject::wxDataObject() {}
+bool wxDataObject::IsSupportedFormat(const wxDataFormat& WXUNUSED(format),
+                                     Direction WXUNUSED(dir)) const { return false; }
+void wxDataObject::AddSupportedTypes(CFMutableArrayRef WXUNUSED(cfarray),
+                                     Direction WXUNUSED(dir)) const {}
+
+// Concrete data objects: stub the non-inline osx virtual overrides so their
+// vtables link (the format-qualified overloads are inline in the header).
+wxBitmapDataObject::wxBitmapDataObject() {}
+wxBitmapDataObject::~wxBitmapDataObject() {}
+size_t wxBitmapDataObject::GetDataSize() const { return 0; }
+bool   wxBitmapDataObject::GetDataHere(void* WXUNUSED(buf)) const { return false; }
+bool   wxBitmapDataObject::SetData(size_t WXUNUSED(len), const void* WXUNUSED(buf)) { return false; }
+
+size_t wxFileDataObject::GetDataSize() const { return 0; }
+bool   wxFileDataObject::GetDataHere(void* WXUNUSED(buf)) const { return false; }
+bool   wxFileDataObject::SetData(size_t WXUNUSED(len), const void* WXUNUSED(buf)) { return false; }
+
+#endif // wxUSE_DATAOBJ
+
+// ---------------------------------------------------------------------------
+// Drag-and-drop  (macOS impl: src/osx/dnd_osx.cpp + cocoa/dnd.mm). dnd_osx.cpp
+// is co-dependent on the un-compilable carbon/dataobj.cpp and on the AppKit
+// pasteboard, so we stub wxDropTarget/wxDropSource in full here instead of
+// un-gating it. Every non-inline virtual is defined so both vtables link.
 // ---------------------------------------------------------------------------
 #if wxUSE_DRAG_AND_DROP
 
 wxDropTarget::wxDropTarget(wxDataObject* dataObject)
-    : wxDropTargetBase(dataObject)
+    : wxDropTargetBase(dataObject), m_currentDragPasteboard(nullptr)
 {
 }
 
-wxDropSource::wxDropSource(wxWindow* WXUNUSED(win),
+wxDragResult wxDropTarget::OnDragOver(wxCoord WXUNUSED(x), wxCoord WXUNUSED(y),
+                                      wxDragResult def)              { return def; }
+bool         wxDropTarget::OnDrop(wxCoord WXUNUSED(x), wxCoord WXUNUSED(y)) { return false; }
+wxDragResult wxDropTarget::OnData(wxCoord WXUNUSED(x), wxCoord WXUNUSED(y),
+                                  wxDragResult WXUNUSED(def))        { return wxDragNone; }
+bool         wxDropTarget::GetData()                                { return false; }
+wxDataFormat wxDropTarget::GetMatchingPair()                        { return wxDataFormat(); }
+
+wxDropSource::wxDropSource(wxWindow* win,
                            const wxCursorBundle& cursorCopy,
                            const wxCursorBundle& cursorMove,
                            const wxCursorBundle& cursorStop)
-    : wxDropSourceBase(cursorCopy, cursorMove, cursorStop)
+    : wxDropSourceBase(cursorCopy, cursorMove, cursorStop),
+      m_window(win), m_currentDragPasteboard(nullptr)
 {
 }
 
-wxDragResult wxDropSource::DoDragDrop(int WXUNUSED(flags))
-{
-    return wxDragNone;
-}
+wxDropSource::~wxDropSource() {}
 
-wxDropSource* wxDropSource::GetCurrentDropSource()
-{
-    return nullptr;
-}
+wxDragResult wxDropSource::DoDragDrop(int WXUNUSED(flags))          { return wxDragNone; }
+
+wxDropSource* wxDropSource::GetCurrentDropSource()                  { return nullptr; }
 
 #endif // wxUSE_DRAG_AND_DROP

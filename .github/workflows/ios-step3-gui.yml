@@ -116,7 +116,7 @@ jobs:
             -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF \
             -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
-          ninja > /tmp/wx-ninja.log 2>&1 || (tail -50 /tmp/wx-ninja.log && exit 1)
+          ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
           echo "MARK build-ok" | tee -a /tmp/wx-phase.log
           ninja install > /tmp/wx-install.log 2>&1 || { echo "MARK install-FAILED" | tee -a /tmp/wx-phase.log; tail -80 /tmp/wx-install.log; exit 1; }
           echo "MARK install-ok" | tee -a /tmp/wx-phase.log

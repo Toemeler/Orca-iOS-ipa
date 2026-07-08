@@ -1,8 +1,17 @@
 diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
-index c163c87..b6d47d3 100644
+index c163c87..20d1691 100644
 --- a/build/cmake/files.cmake
 +++ b/build/cmake/files.cmake
-@@ -1997,7 +1997,7 @@ set(OSX_COMMON_SRC
+@@ -1971,7 +1971,7 @@ set(OSX_COMMON_SRC
+     src/osx/checklst_osx.cpp
+     src/osx/choice_osx.cpp
+     src/osx/combobox_osx.cpp
+-    src/osx/dnd_osx.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/osx/dnd_osx.cpp>
+     src/osx/gauge_osx.cpp
+     src/osx/listbox_osx.cpp
+     src/osx/menu_osx.cpp
+@@ -1997,13 +1997,13 @@ set(OSX_COMMON_SRC
      src/osx/carbon/fontdlgosx.mm
      # other shared files
      src/osx/accel.cpp
@@ -11,6 +20,13 @@ index c163c87..b6d47d3 100644
      src/osx/carbon/cursor.cpp
      src/osx/carbon/fontdlg.cpp
      src/osx/carbon/gdiobj.cpp
+     src/osx/carbon/app.cpp
+     src/osx/carbon/control.cpp
+-    src/osx/carbon/dataobj.cpp
++    $<$<NOT:$<BOOL:${IPHONE}>>:src/osx/carbon/dataobj.cpp>
+     src/osx/carbon/dcclient.cpp
+     src/osx/carbon/dcprint.cpp
+     src/osx/carbon/dcscreen.cpp
 @@ -2013,7 +2013,7 @@ set(OSX_COMMON_SRC
      src/osx/carbon/mdi.cpp
      src/osx/carbon/metafile.cpp

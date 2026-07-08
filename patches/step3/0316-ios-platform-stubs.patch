@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
-index 0375fc34..5dd908f3 100644
+index 0375fc3..64a2edf 100644
 --- a/src/slic3r/CMakeLists.txt
 +++ b/src/slic3r/CMakeLists.txt
 @@ -716,6 +716,16 @@ elseif (NOT APPLE)
@@ -19,12 +19,30 @@ index 0375fc34..5dd908f3 100644
  if (UNIX AND NOT APPLE)
      list(APPEND SLIC3R_GUI_SOURCES
          GUI/Printer/gstbambusrc.c
+@@ -767,7 +777,16 @@ else()
+     set(_opengl_link_lib OpenGL::GL)
+ endif()
+ 
+-target_link_libraries(libslic3r_gui libslic3r cereal::cereal imgui imguizmo minilzo libvgcode md4c-html glad ${_opengl_link_lib} hidapi mdns ${wxWidgets_LIBRARIES} glfw libcurl OpenSSL::SSL OpenSSL::Crypto noise::noise)
++# GLFW provides the desktop GL context used only by the CLI headless-thumbnail
++# path in OrcaSlicer.cpp, which is gated out on iOS (patch 0317). There is no
++# GLFW for iOS (UIKit/GLKView own the surface), and linking -lglfw transitively
++# into the app breaks the iOS link ("library 'glfw' not found"). Drop it on iOS.
++if (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS")
++    set(_orca_glfw_link "")
++else ()
++    set(_orca_glfw_link glfw)
++endif ()
++target_link_libraries(libslic3r_gui libslic3r cereal::cereal imgui imguizmo minilzo libvgcode md4c-html glad ${_opengl_link_lib} hidapi mdns ${wxWidgets_LIBRARIES} ${_orca_glfw_link} libcurl OpenSSL::SSL OpenSSL::Crypto noise::noise)
+ 
+ 
+ if (MSVC)
 diff --git a/src/slic3r/GUI/ios_platform_stubs.cpp b/src/slic3r/GUI/ios_platform_stubs.cpp
 new file mode 100644
-index 00000000..036f9c5e
+index 0000000..fc75c9f
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_platform_stubs.cpp
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,132 @@
 +// iOS platform stubs
 +// ------------------
 +// The eight macOS-only Objective-C++ sources are excluded from the iOS build
@@ -84,6 +102,16 @@ index 00000000..036f9c5e
 +
 +wxMediaState wxMediaCtrl2::GetState() const { return wxMEDIASTATE_STOPPED; }
 +wxSize       wxMediaCtrl2::GetVideoSize() const { return m_video_size; }
++
++// DoSetSize is the only virtual wxMediaCtrl2 declares (override), so it is the
++// class key function: the vtable for wxMediaCtrl2 is emitted in whatever TU
++// defines it. Without a definition here the constructor (which sets the vptr)
++// fails to link with "undefined symbol: vtable for wxMediaCtrl2". Forward to
++// wxWindow so the inert control still lays out.
++void wxMediaCtrl2::DoSetSize(int x, int y, int width, int height, int sizeFlags)
++{
++    wxWindow::DoSetSize(x, y, width, height, sizeFlags);
++}
 +
 +// ---------------------------------------------------------------------------
 +namespace Slic3r {

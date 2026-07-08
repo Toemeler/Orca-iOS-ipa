@@ -1,8 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index e3361ef8..28c6d46a 100644
+index e3361ef..20b3e0e 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -141,7 +141,18 @@ endif ()
+@@ -141,7 +141,22 @@ endif ()
  
  target_link_libraries(OrcaSlicer libslic3r cereal::cereal)
  # target_include_directories(OrcaSlicer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/slic3r)
@@ -17,12 +17,16 @@ index e3361ef8..28c6d46a 100644
 +        "-framework CoreGraphics" "-framework CoreText" "-framework CoreFoundation"
 +        "-framework Foundation" "-framework Security" "-framework AudioToolbox"
 +        "-framework CFNetwork" "-framework MobileCoreServices"
++        # UniformTypeIdentifiers: the wx iOS wxFileDialog/wxDirDialog shims use
++        # UTTypeItem / UTTypeFolder (UIDocumentPicker). WxSmoke in step 2 never
++        # opened a dialog so these symbols were not pulled then; the full app does.
++        "-framework UniformTypeIdentifiers"
 +        "-lz" "-lexpat" "-llzma")
 +elseif (APPLE)
  #    add_compile_options(-stdlib=libc++)
  #    add_definitions(-DBOOST_THREAD_DONT_USE_CHRONO -DBOOST_NO_CXX11_RVALUE_REFERENCES -DBOOST_THREAD_USES_MOVE)
      # -liconv: boost links to libiconv by default
-@@ -164,6 +175,9 @@ target_link_libraries(OrcaSlicer libslic3r_gui)
+@@ -164,6 +179,9 @@ target_link_libraries(OrcaSlicer libslic3r_gui)
          target_link_libraries(OrcaSlicer ws2_32.lib user32.lib Setupapi.lib)
      elseif (MINGW)
          target_link_libraries(OrcaSlicer ws2_32 uxtheme setupapi)

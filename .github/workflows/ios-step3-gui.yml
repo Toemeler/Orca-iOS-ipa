@@ -115,6 +115,10 @@ jobs:
             -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
             -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF \
             -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
+            -DwxUSE_GRID=ON -DwxUSE_LISTCTRL=ON -DwxUSE_IMAGLIST=ON \
+            -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
+            -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
+            -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
           ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
           echo "MARK build-ok" | tee -a /tmp/wx-phase.log

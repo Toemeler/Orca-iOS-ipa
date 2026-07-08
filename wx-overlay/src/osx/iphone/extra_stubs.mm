@@ -96,10 +96,12 @@ bool wxClipboard::Flush()                                   { return false; }
 
 // wxDataFormat is a plain value type (no vtable); m_type/m_format are its only
 // members. NativeFormat is CFStringRef; the stub keeps it null (inert).
-wxDataFormat::wxDataFormat()                    : m_type(wxDF_INVALID), m_format(NULL) {}
-wxDataFormat::wxDataFormat(wxDataFormatId vType): m_type(vType),        m_format(NULL) {}
-wxDataFormat::wxDataFormat(const wxDataFormat& r): m_type(r.m_type),    m_format(r.m_format) {}
-wxDataFormat::wxDataFormat(const wxString& WXUNUSED(id)) : m_type(wxDF_PRIVATE), m_format(NULL) {}
+// m_format is a wxCFStringRef wrapper; leave it default-constructed (null)
+// rather than m_format(NULL), which is an ambiguous wxCFStringRef ctor call.
+wxDataFormat::wxDataFormat()                    : m_type(wxDF_INVALID) {}
+wxDataFormat::wxDataFormat(wxDataFormatId vType): m_type(vType) {}
+wxDataFormat::wxDataFormat(const wxDataFormat& r): m_type(r.m_type), m_format(r.m_format) {}
+wxDataFormat::wxDataFormat(const wxString& WXUNUSED(id)) : m_type(wxDF_PRIVATE) {}
 wxDataFormat::~wxDataFormat() {}
 bool wxDataFormat::operator==(const wxDataFormat& f) const { return m_type == f.m_type; }
 wxDataFormat& wxDataFormat::operator=(const wxDataFormat& f)
@@ -114,8 +116,8 @@ wxDataFormat& wxDataFormat::operator=(const wxDataFormat& f)
 wxDataObject::wxDataObject() {}
 bool wxDataObject::IsSupportedFormat(const wxDataFormat& WXUNUSED(format),
                                      Direction WXUNUSED(dir)) const { return false; }
-void wxDataObject::AddSupportedTypes(CFMutableArrayRef WXUNUSED(cfarray),
-                                     Direction WXUNUSED(dir)) const {}
+// (AddSupportedTypes is declared only under wxOSX_USE_COCOA, so it is not a
+// member on the iPhone port and must not be defined here.)
 
 // Concrete data objects: stub the non-inline osx virtual overrides so their
 // vtables link (the format-qualified overloads are inline in the header).

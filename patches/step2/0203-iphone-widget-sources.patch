@@ -126,6 +126,19 @@ index d3f0681..32bfdc8 100644
  #elif defined(__WXMAC__)
      #include "wx/osx/filedlg.h"
  #elif defined(__WXQT__)
+diff --git a/include/wx/osx/core/private.h b/include/wx/osx/core/private.h
+index 8fb3fa6..1f5e80f 100644
+--- a/include/wx/osx/core/private.h
++++ b/include/wx/osx/core/private.h
+@@ -606,7 +606,7 @@ public :
+                                     long style,
+                                     long extraStyle);
+ 
+-#if wxOSX_USE_COCOA
++#if wxOSX_USE_COCOA || wxOSX_USE_IPHONE
+     static wxWidgetImplType*    CreateComboBox( wxComboBox* wxpeer,
+                                     wxWindowMac* parent,
+                                     wxWindowID id,
 diff --git a/include/wx/osx/webviewhistoryitem_webkit.h b/include/wx/osx/webviewhistoryitem_webkit.h
 index 6a15e46..e59199f 100644
 --- a/include/wx/osx/webviewhistoryitem_webkit.h
@@ -158,3 +171,16 @@ index 46d1e19..544af40 100644
  #elif defined(__WXMAC__)
      #define wxStatusBarMac wxStatusBar
      #include "wx/generic/statusbr.h"
+diff --git a/src/osx/combobox_osx.cpp b/src/osx/combobox_osx.cpp
+index 40916b5..277f13d 100644
+--- a/src/osx/combobox_osx.cpp
++++ b/src/osx/combobox_osx.cpp
+@@ -9,7 +9,7 @@
+ 
+ #include "wx/wxprec.h"
+ 
+-#if wxUSE_COMBOBOX && wxOSX_USE_COCOA
++#if wxUSE_COMBOBOX && (wxOSX_USE_COCOA || wxOSX_USE_IPHONE)
+ 
+ #include "wx/combobox.h"
+ #include "wx/osx/private.h"

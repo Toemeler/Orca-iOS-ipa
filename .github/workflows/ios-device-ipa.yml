@@ -1,0 +1,156 @@
+name: iOS Device IPA - sideloadable wx app
+
+# Produces an UNSIGNED, sideloadable .ipa for a real iPad.
+#
+# Deliberately independent of the step-3 patch stack: the smoke app only uses
+# wxFrame/wxPanel/wxButton/wxStaticText/wxGLCanvas, which the stock wx iPhone
+# port already provides. So wx is built from the pinned upstream ref with NO
+# patches and NO overlay — the configuration that was green in step 2 — which
+# keeps this track green regardless of what the Orca GUI work is doing.
+#
+# Difference from step 2: SDK is iphoneos (device) rather than iphonesimulator,
+# and the .app is wrapped in Payload/ and zipped into an .ipa attached to a
+# GitHub Release, so it can be downloaded and installed straight from the iPad.
+
+on:
+  workflow_dispatch:
+    inputs:
+      wx_ref:
+        description: "SoftFever/Orca-deps-wxWidgets ref"
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        description: "Minimum iOS version"
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  device-ipa:
+    name: Build unsigned IPA for iPad
+    runs-on: macos-15
+    timeout-minutes: 120
+
+    env:
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/wx-prefix-device
+      SDK: iphoneos
+
+    steps:
+      - name: "[1/8] Environment"
+        run: |
+          set -x
+          xcodebuild -version
+          xcrun --sdk $SDK --show-sdk-path
+          xcrun --sdk $SDK --show-sdk-version
+
+      - name: "[2/8] Checkout this repo"
+        uses: actions/checkout@v4
+
+      - name: "[3/8] Restore cached wx device build"
+        id: wxcache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PREFIX }}
+          key: wx-device-v1-${{ env.WX_REF }}-${{ env.SDK }}-${{ env.IOS_MIN }}
+
+      - name: "[4/8] Fetch + build wxWidgets for iOS device (stock, unpatched)"
+        if: steps.wxcache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          mkdir -p build-ios && cd build-ios
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DIPHONE=ON \
+            -DwxBUILD_TOOLKIT=osx_iphone \
+            -DwxBUILD_SHARED=OFF \
+            -DwxBUILD_PRECOMP=OFF \
+            -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON \
+            -DwxUSE_WEBVIEW=OFF \
+            -DwxUSE_XRC=OFF \
+            -DwxUSE_MEDIACTRL=OFF \
+            -DwxUSE_SECRETSTORE=OFF \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" 2>&1 | tee /tmp/wx-configure.log
+          ninja 2>&1 | tee /tmp/wx-ninja.log
+          ninja install
+
+      - name: "[5/8] Build the app for the device SDK"
+        run: |
+          set -euxo pipefail
+          chmod +x smoke-app/build.sh
+          ./smoke-app/build.sh "$PREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee /tmp/app-build.log
+
+      - name: "[6/8] Verify the binary really targets iOS device arm64"
+        run: |
+          set -euxo pipefail
+          BIN=smoke-app/build/WxSmoke.app/WxSmoke
+          file "$BIN"
+          lipo -info "$BIN"
+          # LC_BUILD_VERSION platform must be IOS. IOSSIMULATOR would install
+          # nowhere, so fail loudly here rather than on the iPad. The anchor
+          # matters: "platform IOSSIMULATOR" contains "platform IOS".
+          vtool -show-build "$BIN" | tee /tmp/vtool.log
+          grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$" /tmp/vtool.log
+          lipo -info "$BIN" | grep -q arm64
+
+      - name: "[7/8] Assemble unsigned IPA"
+        run: |
+          set -euxo pipefail
+          rm -rf ipa-staging && mkdir -p ipa-staging/Payload
+          cp -R smoke-app/build/WxSmoke.app ipa-staging/Payload/
+          # Unsigned on purpose: SideStore/AltStore re-sign on install.
+          rm -rf ipa-staging/Payload/WxSmoke.app/_CodeSignature
+          mkdir -p artifact
+          (cd ipa-staging && zip -qry "../artifact/OrcaSmoke-iPad.ipa" Payload)
+          unzip -l artifact/OrcaSmoke-iPad.ipa
+          ls -lh artifact/
+
+      - name: "[8/8] Upload artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-device-ipa
+          path: artifact/
+          if-no-files-found: error
+
+      - name: "Publish IPA to a GitHub Release (downloadable on the iPad)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          TAG="smoke-ipa-run${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "Sideloadable iPad smoke build (run ${GITHUB_RUN_NUMBER})" \
+            --notes "Unsigned IPA of the wxWidgets iPad smoke app (window + button + live OpenGL ES canvas), built for the iphoneos SDK, arm64, min iOS ${IOS_MIN}.
+
+          Install with SideStore/AltStore (re-signs with your Apple ID) or TrollStore. See docs/SIDELOADING.md." \
+            artifact/OrcaSmoke-iPad.ipa
+          gh release view "$TAG" --json assets --jq '.assets[].url'
+
+      - name: "Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/device-ipa-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/wx-configure.log /tmp/app-build.log /tmp/vtool.log; do
+            [ -f "$f" ] && tail -c 200000 "$f" > "$D/$(basename "$f")"
+          done
+          if [ -f /tmp/wx-ninja.log ]; then
+            grep -n -B3 -A30 -E "FAILED:|error:" /tmp/wx-ninja.log | head -c 300000 > "$D/wx-errors.log"
+          fi
+          git config user.name "ci-bot"
+          git config user.email "ci@users.noreply.github.com"
+          git add "$D"
+          git commit -m "device-ipa ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"

@@ -221,6 +221,83 @@ jobs:
           path: ~/.ccache-step3
           key: ccache-step3-${{ github.run_id }}
 
+      - name: "[7b/8] Launch in iPad simulator + screenshot (milestone 3)"
+        id: launch
+        run: |
+          set -uxo pipefail
+          BIN=""
+          while IFS= read -r f; do
+            file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
+          done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          [ -n "$BIN" ] || { echo "no linked executable yet - skipping launch"; exit 0; }
+          echo "executable: $BIN"
+
+          APP=sim/OrcaSlicer.app
+          rm -rf sim && mkdir -p "$APP"
+          cp "$BIN" "$APP/OrcaSlicer"
+          cp -R orca/resources "$APP/resources"
+          cat > "$APP/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>OrcaSlicer</string>
+            <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
+            <key>CFBundleName</key><string>OrcaSlicer</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIDeviceFamily</key><array><integer>2</integer></array>
+            <key>UILaunchScreen</key><dict/>
+            <key>UIRequiresFullScreen</key><true/>
+          </dict></plist>
+          PLIST
+
+          RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
+          UDID=$(xcrun simctl create "orca-ipad" \
+            "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" "$RT")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          sleep 10
+          xcrun simctl install "$UDID" "$APP" 2>&1 | tee /tmp/sim-install.log
+          # --console-pty surfaces stdout/stderr, which is where Orca's boost log
+          # and any wx assert goes. Backgrounded and killed rather than wrapped
+          # in `timeout`, which macOS does not ship: a healthy app would stream
+          # until the job timed out, and a crashed one exits on its own.
+          xcrun simctl launch --console-pty "$UDID" org.orca-ios.orcaslicer \
+            > /tmp/sim-launch.log 2>&1 &
+          LPID=$!
+          sleep 45
+          kill "$LPID" 2>/dev/null || true
+          wait "$LPID" 2>/dev/null
+          mkdir -p artifact
+          xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
+          tail -60 /tmp/sim-launch.log || true
+
+      - name: "Collect simulator crash reports"
+        if: always()
+        run: |
+          set -ux
+          mkdir -p artifact
+          for d in "$HOME/Library/Logs/DiagnosticReports"; do
+            [ -d "$d" ] && find "$d" -name "OrcaSlicer*" -exec cp {} artifact/ \; 2>/dev/null
+          done
+          if [ -n "${UDID:-}" ]; then
+            xcrun simctl spawn "$UDID" log show --last 5m \
+              --predicate 'process == "OrcaSlicer"' > artifact/sim-oslog.txt 2>&1 || true
+          fi
+          cp /tmp/sim-launch.log /tmp/sim-install.log artifact/ 2>/dev/null || true
+          ls -la artifact/ || true
+
+      - name: "Upload launch artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-step3-launch
+          path: artifact/
+          if-no-files-found: ignore
+
       - name: "[8/8] Save caches + upload logs artifact"
         if: always()
         uses: actions/cache/save@v4
@@ -240,9 +317,13 @@ jobs:
           for f in /tmp/step3-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
-          for f in /tmp/wx-phase.log /tmp/wx-install.log; do
+          for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/sim-launch.log /tmp/sim-install.log; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
+          # simulator crash reports name the failing frame, which is the fastest
+          # route from "it aborted" to the offending call
+          find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" \
+            -exec cp {} "$D/" \; 2>/dev/null || true
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
             [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 500000 > "$D/$(basename "$f" .log)-errors.log"
           done

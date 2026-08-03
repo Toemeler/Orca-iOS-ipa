@@ -11,9 +11,24 @@ wxWidgets pin: `SoftFever/Orca-deps-wxWidgets` @ `v3.3.2`
 
 ## Why this is tractable (findings from source analysis, 2026-07-02)
 
-1. **The renderer already speaks OpenGL ES.** Orca inherits PrusaSlicer's
-   `SLIC3R_OPENGL_ES` compile path (see `OpenGLManager`, `GLShadersManager`, `GLModel`,
-   `ImGuiWrapper`). iOS ships EAGL/GLES3. No ANGLE, no Metal rewrite needed for v1.
+1. **The renderer already speaks OpenGL ES — the *code* does, not the assets.**
+   Orca inherits PrusaSlicer's `SLIC3R_OPENGL_ES` compile path (see `OpenGLManager`,
+   `GLShadersManager`, `GLModel`, `ImGuiWrapper`). iOS ships EAGL/GLES3. No ANGLE, no
+   Metal rewrite needed for v1.
+   **Correction (2026-08-03):** that path had never actually been built. Two things
+   were missing and neither is visible to the compiler or linker:
+   - `GLShadersManager` loads its shaders from an `ES/` prefix, but
+     `resources/shaders/` contains only `110/` and `140/` — at our pinned ref *and*
+     on upstream `main`. Orca has never shipped GLSL ES shaders. Every
+     `append_shader` would fail, and shaders only load inside `if (valid_version)`,
+     so the 3D view would be dead behind "Error loading shaders". The 38-file ES set
+     now lives in `orca-overlay/resources/shaders/ES/` (34 converted from `140/`,
+     which is already ES-3.00-shaped; `wireframe` and `dashed_lines` authored).
+   - `OpenGLManager` parsed the GL version by `atoi`-ing the first token, which is
+     `"OpenGL"` for an ES `GL_VERSION` string — so a healthy ES 3.0 context reported
+     version 0 and failed its own `>= 2.0` check (patch `0322`).
+   The wx side needed an ES3 context and a depth buffer too: the iPhone port pinned
+   every canvas to ES1 and left GLKView at `DrawableDepthFormatNone` (patch `0206`).
 2. **wxWidgets ships a working iOS base port.** `src/osx/iphone/` implements the hard
    foundation: `window`, `nonownedwnd`, `evtloop`, `glcanvas` (EAGL), `textctrl`, `menu`,
    `dialog`, `notebook`, `toolbar`, buttons/checkbox/choice/slider/etc. (24 files — see

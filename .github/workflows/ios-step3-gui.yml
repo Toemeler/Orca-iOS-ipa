@@ -119,6 +119,7 @@ jobs:
             -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
             -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
             -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
+            -DwxUSE_LOGWINDOW=ON \
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
           ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
           echo "MARK build-ok" | tee -a /tmp/wx-phase.log

@@ -159,13 +159,15 @@ diff --git a/include/wx/statusbr.h b/include/wx/statusbr.h
 index 46d1e19..544af40 100644
 --- a/include/wx/statusbr.h
 +++ b/include/wx/statusbr.h
-@@ -253,6 +253,11 @@ protected:
+@@ -253,6 +253,13 @@ protected:
      #include "wx/univ/statusbr.h"
  #elif defined(__WXMSW__) && wxUSE_NATIVE_STATUSBAR
      #include "wx/msw/statusbar.h"
 +#elif defined(__WXMAC__) && defined(__WXOSX_IPHONE__)
-+    /* Orca-iOS: wxStatusBarMac needs AppKit (wxOSXGetKeyWindow); the iphone
-+       port uses the pure generic statusbar. */
++    /* Orca-iOS: wxStatusBarMac needs AppKit (wxOSXGetKeyWindow), so the iphone
++       port uses the generic statusbar exactly as the non-native ports do --
++       the alias below is what declares wxStatusBar. See 0207, which stops
++       generic/statusbr.cpp implementing it a second time. */
 +    #define wxStatusBarGeneric wxStatusBar
 +    #include "wx/generic/statusbr.h"
  #elif defined(__WXMAC__)

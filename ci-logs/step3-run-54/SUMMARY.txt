@@ -1,0 +1,50 @@
+=== FAILED targets ===
+GUI/3DScene.cpp
+GUI/Gizmos/GLGizmoMove.cpp
+GUI/Gizmos/GLGizmoPainterBase.cpp
+GUI/Gizmos/GLGizmoScale.cpp
+GUI/Gizmos/GLGizmosCommon.cpp
+GUI/Gizmos/GLGizmoSimplify.cpp
+GUI/Gizmos/GLGizmosManager.cpp
+GUI/GLCanvas3D.cpp
+GUI/GLSelectionRectangle.cpp
+GUI/GLShader.cpp
+GUI/GLTexture.cpp
+GUI/ImGuiWrapper.cpp
+GUI/IMToolbar.cpp
+GUI/OpenGLManager.cpp
+GUI/PartPlate.cpp
+GUI/Plater.cpp
+GUI/SkipPartCanvas.cpp
+Utils/EmbossStyleManager.cpp
+
+=== undefined symbols (linker) ===
+
+=== compile error signatures (deduped) ===
+  13 use of undeclared identifier 'GL_COMPRESSED_RGBA_S3TC_DXT5_EXT'
+   6 use of undeclared identifier 'GL_LINE_STIPPLE'
+   4 use of undeclared identifier 'GL_FRAMEBUFFER_EXT'
+   4 no member named 'glPopAttrib'
+   3 use of undeclared identifier 'GL_TEXTURE_MAX_ANISOTROPY_EXT'
+   3 no member named 'glBindFramebufferEXT'
+   2 use of undeclared identifier 'glLineStipple'
+   2 no type named 'glPushAttrib'
+   2 no member named 'glPolygonMode'
+   2 no member named 'glLineStipple'
+   2 no member named 'glColor4fv'
+   1 use of undeclared identifier 'GL_TEXTURE_ENV'
+   1 use of undeclared identifier 'GL_TEXTURE_ENV_MODE'
+   1 use of undeclared identifier 'GL_TESS_EVALUATION_SHADER'
+   1 use of undeclared identifier 'GL_TESS_CONTROL_SHADER'
+   1 use of undeclared identifier 'GL_LINE'
+   1 use of undeclared identifier 'GL_GEOMETRY_SHADER'
+   1 use of undeclared identifier 'GL_FILL'
+   1 use of undeclared identifier 'GL_DEPTH_ATTACHMENT_EXT'
+   1 use of undeclared identifier 'GL_COMPUTE_SHADER'
+   1 no member named 'glTexEnvi'
+   1 no member named 'glPushAttrib'
+   1 no member named 'glGenFramebuffersEXT'
+   1 no member named 'glDeleteFramebuffersEXT'
+
+total FAILED: 18
+undefined symbol count: 0

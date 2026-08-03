@@ -445,3 +445,128 @@ C. STEP 5: real WKWebView backend (class exists on iOS, revival sites marked
 - Log excerpt cap 400KB; SUMMARY "error signatures" grep fixed (both were
   silently broken before). ci-logs newest-dir still via
   GET /commits?path=ci-logs&per_page=1.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION UPDATE (2026-08-03) — wx regression fixed, runtime bugs
+## pre-empted, device deps built, sideloadable IPA track added
+═══════════════════════════════════════════════════════════════════════
+
+### Where runs 49-51 actually were
+Runs 49, 50 and 51 all died in the **wx build phase** — no link was ever
+attempted after run 48. Commit 2f45ea2 (the fix for run 48's 351 undefined
+symbols) un-guarded `src/osx/combobox_osx.cpp` for the iPhone port but left the
+matching declarations in `include/wx/osx/combobox.h` behind `#if wxOSX_USE_COCOA`,
+so `GetComboPeer`/`Popup`/`Dismiss` matched no declaration: 13 errors, one file,
+and `-k 0` proves it was the *only* failing file.
+
+**Run 48 remains the reference for the link stage**: 351 undefined symbols, ONE
+failing target (the final executable), everything else compiling. Grouped by
+class those 351 are 8 families, not 351 problems:
+  wxGrid ~175 | wxGenericListCtrl 57 | wxComboBox 42 | wxAui 27 |
+  dataobject/DnD/clipboard ~23 | wxWidgetImpl peers 7 | wxToolTip 6 |
+  wxLogWindow 2
+2f45ea2's cmake feature flags cover seven of the eight. The eighth,
+`wxUSE_LOGWINDOW`, was missing from that flag list and is now passed.
+
+### KEY INSIGHT for whoever continues this
+`wxUSE_*` values come from the **cmake-option-driven generated setup.h**, not
+from the checked-in `chkconf.h` edits in patch 0202 — that is why 0202 alone
+left grid/listctrl/aui/combobox compiling to empty objects. Any wx feature Orca
+needs must ALSO be passed as `-DwxUSE_<FEATURE>=ON` in the workflow's wx
+configure step. Check `build/cmake/options.cmake` for whether a flag is a real
+cmake option before assuming a chkconf edit is enough.
+
+### Patches added this session
+- step2/**0205** iphone-combobox-decls — extends the two `#if wxOSX_USE_COCOA`
+  guards in `include/wx/osx/combobox.h` to include `wxOSX_USE_IPHONE`.
+  `wxComboBoxBase` declares Popup/Dismiss as unconditional virtuals, so the
+  `override` resolves. ALSO fixes a latent null-deref: `combobox_osx.cpp` reaches
+  its peer via `dynamic_cast<wxComboWidgetImpl*>(GetPeer())` and dereferences it
+  unchecked, but `extra_peers.mm`'s `CreateComboBox` returned a plain
+  `wxWidgetIPhoneImpl`, which is not a `wxComboWidgetImpl` — every populated
+  combobox would have crashed. `extra_peers.mm` now defines
+  `wxIPhoneComboBoxPeer` deriving from both (mirroring the Cocoa
+  `wxNSComboBoxControl`) and stores items in a `wxArrayString`. NOTE the port's
+  own iphone `wxNSComboBoxControl` is dead code inside `#if 0` (it wraps
+  NSComboBox, which does not exist on iOS) — do not try to revive it.
+- step2/**0206** glcanvas-es3-depth — TWO runtime-only defects:
+  (a) `WXGLCreateContext` pinned every canvas to `kEAGLRenderingAPIOpenGLES1`.
+      ES1 has no shader entry points, but Orca renders GLES2/3 GLSL under
+      SLIC3R_OPENGL_ES. This LINKS FINE (the OpenGLES framework exports ES1/2/3
+      and 0305 removed glad's runtime loader on Apple) and fails only at runtime.
+      Now ES3 with ES2/ES1 fallback.
+  (b) GLKView defaults to `GLKViewDrawableDepthFormatNone` — a 3D scene would
+      draw with no occlusion. Depth24 + Stencil8 requested at view creation.
+- step3/**0319** webview-null-guards — wx is backendless on iOS so
+  `WebView::CreateWebView` returns NULL. 10 of its 14 call sites check; 4 did
+  not. The critical one is a **guaranteed startup crash**:
+  `MainFrame::init_tabpanel` unconditionally builds MonitorPanel -> StatusPanel,
+  whose ctor dereferences the null view immediately. Also guarded
+  UpdateVersionDialog::CreateTipView and MarkdownTip's `topsizer->Add` (wxSizer
+  asserts on a null window). MarkdownTip/PrivacyUpdateDialog's own CreateTipView
+  bodies bind on `this`, not the view, so they were already safe.
+- step3/**0320** ios-resources-dir — `CLI::setup`'s `__APPLE__` branch walks
+  `parent_path().parent_path()/"Resources"`, right for `.app/Contents/MacOS/` but
+  an iOS bundle is FLAT (`OrcaSlicer.app/OrcaSlicer`), so it resolved outside the
+  bundle. Uses `parent_path()/"resources"` under ORCA_IOS (macro from 0317).
+  Must sort after 0317; both patch OrcaSlicer.cpp.
+- step3/**0321** ios-create-data-dir-parents — an iOS sandbox provisions only
+  Documents, Library/Caches, Library/Preferences and tmp, so the
+  `Library/Application Support` parent of the data dir is missing and boost's
+  single-level `create_directory` throws at startup. Now `create_directories`.
+
+All 21 in-scope patches verified applying in order to a pristine checkout.
+(6 more apply in CI only — they touch deps/, libvgcode and glad paths outside a
+GUI sparse checkout.)
+
+### Verified NOT broken (checked, do not re-investigate)
+- Entry path is sound: `main()` -> CLI::run -> `GUI_Run` -> `wxEntry` ->
+  `wxGUIEventLoop::OSXDoRun` -> `UIApplicationMain(@"wxAppDelegate")`
+  (`src/osx/iphone/evtloop.mm:87`). Same path the step-2 smoke app launched on.
+- 0318's link block uses `CMAKE_SYSTEM_NAME STREQUAL "iOS"`, not a bare `iOS`
+  variable, so it does not silently fall through to the macOS framework list.
+- The portable-mode `data_dir` probe next to the executable fails harmlessly on
+  iOS rather than crashing.
+
+### Milestone 3 added to ios-step3-gui.yml
+After the link, the workflow now assembles OrcaSlicer.app (binary + resources +
+Info.plist), boots an iPad Pro 13-inch simulator, installs, launches and
+screenshots. The DIAGNOSTICS are the point, not the screenshot:
+`simctl launch --console-pty` captures stdout/stderr (Orca's boost log, wx
+asserts), DiagnosticReports crash reports name the failing frame, and
+`log show` gives the process log — all uploaded and copied to ci-logs/ on
+failure. Launch is backgrounded and killed rather than wrapped in `timeout`,
+which macOS does not ship.
+
+### NEW: ios-step4-device-ipa.yml — the device (iphoneos) build
+Device counterpart of step 3, ending in an unsigned sideloadable
+`OrcaSlicer-iPad.ipa` published to a GitHub Release. **The whole dependency
+stack built successfully for iphoneos on its first run** and is cached under
+`ios-deps-device-v1-` — that was the multi-hour long pole and it is now done, so
+later device runs restore it. The step-1 patches already branched device vs
+simulator (OpenSSL `ios64-xcrun`, GMP/MPFR `-miphoneos-version-min`), which is
+why this needed no new porting work. Packaging locates the executable by Mach-O
+type rather than name, asserts `LC_BUILD_VERSION platform == IOS` (not
+IOSSIMULATOR — the classic silent "installs nowhere" bug) and ships resources/
+inside the bundle.
+
+### NEW: ios-device-ipa.yml — a working sideloadable iPad app, today
+Independent of the step-3 patch stack: builds **stock unpatched wx** and ships
+two IPAs. `ipad-app/` is a native STL viewer (loads .stl from the Files-app
+folder, renders with lighting, reports triangle count and bounding box in mm);
+`smoke-app/` is the minimal wx proof. Both verified as arm64 Mach-O with
+`platform = IOS`, unsigned, correct Payload/ layout.
+Released at tag `ipad-app-run2`. Because it uses stock wx it keeps its ES1
+fixed-function context — 0206 only affects patched (step 3/4) builds.
+NOTE these two workflows trigger on **push** with path filters, because
+`workflow_dispatch` only registers for workflows already on the default branch
+and these are not on main yet.
+
+### Where to pick up
+1. Read the newest `ci-logs/step3-run-N/SUMMARY.txt` — "undefined symbol count"
+   is the number that matters. Families, not individual symbols.
+2. When the link is green, milestone 3 runs automatically; read
+   `sim-launch.log` + the crash report before guessing at runtime causes.
+3. Then dispatch step 4 (deps + wx now cached) for the device IPA.
+4. Still deferred to step 5: the real WKWebView backend (revival sites are
+   marked `!defined(__WXOSX_IPHONE__)`), AVPlayer camera, UIDocumentPicker export.

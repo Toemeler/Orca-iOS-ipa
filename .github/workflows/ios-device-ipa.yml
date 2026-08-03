@@ -23,6 +23,7 @@ on:
     paths:
       - '.github/workflows/ios-device-ipa.yml'
       - 'smoke-app/**'
+      - 'ipad-app/**'
   workflow_dispatch:
     inputs:
       wx_ref:
@@ -93,35 +94,46 @@ jobs:
           ninja 2>&1 | tee /tmp/wx-ninja.log
           ninja install
 
-      - name: "[5/8] Build the app for the device SDK"
+      - name: "[5/8] Build the apps for the device SDK"
         run: |
           set -euxo pipefail
-          chmod +x smoke-app/build.sh
+          chmod +x smoke-app/build.sh ipad-app/build.sh
           ./smoke-app/build.sh "$PREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee /tmp/app-build.log
+          ./ipad-app/build.sh  "$PREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee -a /tmp/app-build.log
 
-      - name: "[6/8] Verify the binary really targets iOS device arm64"
+      - name: "[6/8] Verify the binaries really target iOS device arm64"
         run: |
           set -euxo pipefail
-          BIN=smoke-app/build/WxSmoke.app/WxSmoke
-          file "$BIN"
-          lipo -info "$BIN"
-          # LC_BUILD_VERSION platform must be IOS. IOSSIMULATOR would install
-          # nowhere, so fail loudly here rather than on the iPad. The anchor
-          # matters: "platform IOSSIMULATOR" contains "platform IOS".
-          vtool -show-build "$BIN" | tee /tmp/vtool.log
-          grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$" /tmp/vtool.log
-          lipo -info "$BIN" | grep -q arm64
+          : > /tmp/vtool.log
+          for BIN in smoke-app/build/WxSmoke.app/WxSmoke \
+                     ipad-app/build/OrcaViewer.app/OrcaViewer; do
+            file "$BIN"
+            lipo -info "$BIN" | tee -a /tmp/vtool.log
+            # LC_BUILD_VERSION platform must be IOS. IOSSIMULATOR would install
+            # nowhere, so fail loudly here rather than on the iPad. The anchor
+            # matters: "platform IOSSIMULATOR" contains "platform IOS".
+            vtool -show-build "$BIN" | tee -a /tmp/vtool.log
+            vtool -show-build "$BIN" \
+              | grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$"
+            lipo -info "$BIN" | grep -q arm64
+          done
 
-      - name: "[7/8] Assemble unsigned IPA"
+      - name: "[7/8] Assemble unsigned IPAs"
         run: |
           set -euxo pipefail
-          rm -rf ipa-staging && mkdir -p ipa-staging/Payload
-          cp -R smoke-app/build/WxSmoke.app ipa-staging/Payload/
-          # Unsigned on purpose: SideStore/AltStore re-sign on install.
-          rm -rf ipa-staging/Payload/WxSmoke.app/_CodeSignature
           mkdir -p artifact
-          (cd ipa-staging && zip -qry "../artifact/OrcaSmoke-iPad.ipa" Payload)
-          unzip -l artifact/OrcaSmoke-iPad.ipa
+          pack() { # pack <path-to-.app> <output-ipa-name>
+            local app="$1" out="$2" stage
+            stage=$(mktemp -d)
+            mkdir -p "$stage/Payload"
+            cp -R "$app" "$stage/Payload/"
+            # Unsigned on purpose: SideStore/AltStore re-sign on install.
+            rm -rf "$stage/Payload/$(basename "$app")/_CodeSignature"
+            (cd "$stage" && zip -qry "$out" Payload)
+            unzip -l "$out"
+          }
+          pack smoke-app/build/WxSmoke.app     "$PWD/artifact/OrcaSmoke-iPad.ipa"
+          pack ipad-app/build/OrcaViewer.app   "$PWD/artifact/OrcaViewer-iPad.ipa"
           ls -lh artifact/
 
       - name: "[8/8] Upload artifact"
@@ -136,15 +148,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
-          TAG="smoke-ipa-run${GITHUB_RUN_NUMBER}"
+          TAG="ipad-app-run${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" \
             --target "$GITHUB_SHA" \
-            --title "Sideloadable iPad smoke build (run ${GITHUB_RUN_NUMBER})" \
-            --notes "Unsigned IPA of the wxWidgets iPad smoke app (window + button + live OpenGL ES canvas), built for the iphoneos SDK, arm64, min iOS ${IOS_MIN}.
+            --title "Sideloadable iPad build (run ${GITHUB_RUN_NUMBER})" \
+            --notes "Unsigned IPAs for iPad — arm64, iphoneos SDK, min iOS ${IOS_MIN}.
+
+          **OrcaViewer-iPad.ipa** — native STL viewer. Ships with a 20 mm cube; drop your own .stl files into the app's folder in the Files app and hit Reload. Drag to rotate, +/- to zoom. Shows triangle count and bounding-box size in mm.
+
+          **OrcaSmoke-iPad.ipa** — the minimal wx proof (window, button, GL canvas). Keep as a fallback.
 
           Install with SideStore/AltStore (re-signs with your Apple ID) or TrollStore. See docs/SIDELOADING.md." \
-            artifact/OrcaSmoke-iPad.ipa
-          gh release view "$TAG" --json assets --jq '.assets[].url'
+            artifact/OrcaViewer-iPad.ipa artifact/OrcaSmoke-iPad.ipa
+          gh release view "$TAG" --json assets --jq '.assets[].browser_download_url'
 
       - name: "Publish failure logs to repo (ci-logs/)"
         if: failure()

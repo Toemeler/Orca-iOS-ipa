@@ -1,0 +1,314 @@
+name: iOS Step 4 - OrcaSlicer device IPA
+
+# The device (iphoneos) counterpart of step 3, ending in a sideloadable
+# unsigned .ipa of the real OrcaSlicer.
+#
+# Same build as step 3 with SDK=iphoneos, so the whole dependency stack has to
+# be built again for the device slice — the step-1 patches already branch on
+# simulator vs device (OpenSSL ios64-xcrun, GMP/MPFR -miphoneos-version-min),
+# so this is a long build rather than a new porting problem. It is started
+# early and in parallel with the step-3 link iteration precisely because those
+# deps are the multi-hour long pole; every run warms the device deps cache
+# even when the link stage still fails.
+
+on:
+  push:
+    branches:
+      - claude/basic-ipad-app-plan-pb0b4p
+    paths:
+      - '.github/workflows/ios-step4-device-ipa.yml'
+      - 'patches/**'
+      - 'wx-overlay/**'
+      - 'ios/**'
+  workflow_dispatch:
+    inputs:
+      orca_ref:
+        required: false
+        default: "395e070a0e675fd4723f93967cefede730c482d9"
+      wx_ref:
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  device:
+    name: OrcaSlicer for iPad (device)
+    runs-on: macos-15
+    timeout-minutes: 360
+
+    env:
+      ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/ios-prefix
+      WXPREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: iphoneos
+
+    steps:
+      - name: "[1/9] Checkout + tools"
+        uses: actions/checkout@v4
+      - run: |
+          set -euxo pipefail
+          brew install cmake ninja automake autoconf libtool nasm texinfo
+          echo "$(brew --prefix texinfo)/bin" >> "$GITHUB_PATH"
+
+      - name: Compute cache keys from patch/overlay hashes
+        run: |
+          set -euxo pipefail
+          WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
+          echo "WX_KEY=ios-wxprefix-device-v1-$WXH" >> "$GITHUB_ENV"
+
+      - name: "[2/9] Fetch Orca + apply step1+step3 patches"
+        run: |
+          set -euxo pipefail
+          git clone https://github.com/SoftFever/OrcaSlicer.git orca
+          cd orca && git checkout "$ORCA_REF"
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch "$GITHUB_WORKSPACE"/patches/step3/*.patch; do
+            git apply --verbose "$p"
+          done
+          mkdir -p deps_src/hidapi/ios
+          cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
+
+      - name: "[3/9] Restore device deps cache"
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          key: ios-deps-device-v1-${{ github.run_number }}
+          restore-keys: |
+            ios-deps-device-v1-
+
+      - name: "[4/9] Build deps for the device slice"
+        run: |
+          set -euxo pipefail
+          cd orca/deps
+          if [ -d build ]; then
+            for d in build/dep_*-prefix; do
+              [ -d "$d" ] || continue
+              ls "$d"/src/*-stamp/*-install >/dev/null 2>&1 || rm -rf "$d"
+            done
+          fi
+          mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 -DORCA_DEPS_GUI=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_JPEG=ON \
+            -DDESTDIR="$PREFIX" -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" > /dev/null
+          WANT="dep_ZLIB dep_PNG dep_EXPAT dep_FREETYPE dep_Boost dep_TBB \
+                dep_OpenSSL dep_CURL dep_Cereal dep_Eigen dep_NLopt dep_Qhull \
+                dep_JPEG dep_GMP dep_MPFR dep_CGAL dep_Blosc dep_OpenEXR dep_OpenVDB \
+                dep_Draco dep_libnoise dep_OCCT dep_OpenCV"
+          ninja -t targets all > /tmp/t.txt
+          B=""; for t in $WANT; do grep -q "^${t}:" /tmp/t.txt && B="$B $t" || true; done
+          ninja $B 2>&1 | tee /tmp/deps-ninja.log
+
+      - name: Save device deps cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          key: ios-deps-device-v1-${{ github.run_number }}
+
+      - name: "[5/9] Build wxWidgets iPhone port (device)"
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/src/. src/
+          mkdir -p build-ios && cd build-ios
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DIPHONE=ON -DwxBUILD_TOOLKIT=osx_iphone \
+            -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF \
+            -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
+            -DwxUSE_GRID=ON -DwxUSE_LISTCTRL=ON -DwxUSE_IMAGLIST=ON \
+            -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
+            -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
+            -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
+            -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
+          ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
+          ninja install > /tmp/wx-install.log 2>&1 || { tail -80 /tmp/wx-install.log; exit 1; }
+          WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+          [ -n "$WXINC" ] || WXINC="$WXPREFIX/include"
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+          mkdir -p "$WXINC/wx/generic/private"
+          cp -R "$GITHUB_WORKSPACE"/wx/include/wx/generic/private/. "$WXINC/wx/generic/private/"
+          cp "$GITHUB_WORKSPACE"/wx/include/wx/webview.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewarchivehandler.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewfshandler.h "$WXINC/wx/"
+          mkdir -p "$WXINC/wx/osx"
+          cp "$GITHUB_WORKSPACE"/wx/include/wx/osx/webviewhistoryitem_webkit.h "$WXINC/wx/osx/"
+          mkdir -p "$WXINC/wx/private"
+          cp -R "$GITHUB_WORKSPACE"/wx/include/wx/private/. "$WXINC/wx/private/"
+
+      - name: Save wx device prefix cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: wx-prefix
+          key: ${{ env.WX_KEY }}
+
+      - name: Set up ccache
+        run: |
+          brew install ccache || true
+          echo "CCACHE_DIR=$HOME/.ccache-step4" >> "$GITHUB_ENV"
+          echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
+          echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache-step4
+          key: ccache-step4-${{ github.run_id }}
+          restore-keys: |
+            ccache-step4-
+
+      - name: "[6/9] Configure Orca GUI build (device)"
+        run: |
+          set -euxo pipefail
+          cd orca && mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_OBJCXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DSLIC3R_GUI=1 -DSLIC3R_OPENGL_ES=1 -DSLIC3R_STATIC=1 \
+            -DCMAKE_PREFIX_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
+            -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step4-configure.log
+
+      - name: "[7/9] Build + link OrcaSlicer (device)"
+        run: |
+          set -euxo pipefail
+          cd orca/build
+          ninja -k 0 libslic3r_gui 2>&1 | tee /tmp/step4-ninja.log
+          ninja -k 0 OrcaSlicer 2>&1 | tee -a /tmp/step4-ninja.log
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache-step4
+          key: ccache-step4-${{ github.run_id }}
+
+      - name: "[8/9] Assemble unsigned OrcaSlicer.ipa"
+        run: |
+          set -euxo pipefail
+          # The executable's name has moved around upstream (OrcaSlicer vs
+          # orca-slicer), so locate it by Mach-O type rather than by name.
+          BIN=""
+          while IFS= read -r f; do
+            file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
+          done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          [ -n "$BIN" ] || { echo "no Mach-O executable found under orca/build/src"; \
+                             find orca/build/src -maxdepth 2 -type f -perm -111 | head -40; exit 1; }
+          echo "executable: $BIN"
+          vtool -show-build "$BIN" | grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$"
+
+          APP=stage/Payload/OrcaSlicer.app
+          rm -rf stage && mkdir -p "$APP"
+          cp "$BIN" "$APP/OrcaSlicer"
+          # Orca reads profiles/shaders/icons out of resources/ at runtime.
+          cp -R orca/resources "$APP/resources"
+          cat > "$APP/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>OrcaSlicer</string>
+            <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
+            <key>CFBundleName</key><string>OrcaSlicer</string>
+            <key>CFBundleDisplayName</key><string>OrcaSlicer</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleSupportedPlatforms</key><array><string>iPhoneOS</string></array>
+            <key>DTPlatformName</key><string>iphoneos</string>
+            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIDeviceFamily</key><array><integer>2</integer></array>
+            <key>UILaunchScreen</key><dict/>
+            <key>UIRequiresFullScreen</key><true/>
+            <key>UIFileSharingEnabled</key><true/>
+            <key>LSSupportsOpeningDocumentsInPlace</key><true/>
+            <key>UISupportedInterfaceOrientations</key><array>
+              <string>UIInterfaceOrientationLandscapeLeft</string>
+              <string>UIInterfaceOrientationLandscapeRight</string>
+              <string>UIInterfaceOrientationPortrait</string>
+            </array>
+          </dict></plist>
+          PLIST
+          mkdir -p artifact
+          OUT="$PWD/artifact/OrcaSlicer-iPad.ipa"
+          (cd stage && zip -qry "$OUT" Payload)
+          ls -lh artifact/
+
+      - name: "[9/9] Upload + publish release"
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          TAG="orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "OrcaSlicer for iPad (run ${GITHUB_RUN_NUMBER})" \
+            --notes "Unsigned arm64 iphoneos build of OrcaSlicer, min iOS ${IOS_MIN}. See docs/SIDELOADING.md." \
+            artifact/OrcaSlicer-iPad.ipa
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: orcaslicer-device-ipa
+          path: artifact/
+          if-no-files-found: ignore
+
+      - name: "Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/step4-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/step4-configure.log; do
+            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
+          done
+          for f in /tmp/step4-ninja.log /tmp/wx-ninja.log /tmp/deps-ninja.log; do
+            [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 400000 > "$D/$(basename "$f" .log)-errors.log"
+          done
+          if [ -f /tmp/step4-ninja.log ]; then
+            {
+              echo "=== FAILED targets ==="
+              grep "FAILED:" /tmp/step4-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o .*##" | sort -u
+              echo; echo "=== undefined symbols (linker) ==="
+              grep -oE '"[^"]+", referenced from' /tmp/step4-ninja.log | sed -E 's/, referenced from//' | sort -u
+              echo; echo "total FAILED: $(grep -c FAILED: /tmp/step4-ninja.log)"
+              echo "undefined symbol count: $(grep -cE '"[^"]+", referenced from' /tmp/step4-ninja.log)"
+            } > "$D/SUMMARY.txt"
+          fi
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "step4 ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" || true; git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done

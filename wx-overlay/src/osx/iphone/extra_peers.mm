@@ -18,6 +18,7 @@
 #include "wx/spinbutt.h"
 #include "wx/srchctrl.h"
 #include "wx/combobox.h"
+#include "wx/arrstr.h"
 
 #include "wx/osx/private.h"
 
@@ -106,6 +107,63 @@ wxWidgetImplType* wxWidgetImpl::CreateSpinButton( wxWindowMac* wxpeer,
     return wxIPhoneMakePlainPeer( wxpeer, pos, size );
 }
 
+// wxComboBox is the one control here that cannot use the plain peer. Every
+// list operation in combobox_osx.cpp goes through GetComboPeer(), which is
+// dynamic_cast<wxComboWidgetImpl*>(GetPeer()), and the result is dereferenced
+// without a null check — a plain peer would return nullptr and crash as soon
+// as a combobox is populated. So the iPhone combo peer derives from
+// wxComboWidgetImpl (same shape as the Cocoa wxNSComboBoxControl) and keeps
+// the items itself, which makes wxComboBox correct as a data container.
+// Presenting them as a dropdown is step-5 UI work (UIPickerView); until then
+// Popup/Dismiss inherit the base no-ops.
+class wxIPhoneComboBoxPeer : public wxWidgetIPhoneImpl, public wxComboWidgetImpl
+{
+public:
+    wxIPhoneComboBoxPeer( wxWindowMac* wxpeer, UIView* v )
+        : wxWidgetIPhoneImpl( wxpeer, v ) {}
+
+    int GetSelectedItem() const override { return m_selection; }
+    void SetSelectedItem(int item) override { m_selection = item; }
+
+    int GetNumberOfItems() const override
+        { return static_cast<int>(m_items.GetCount()); }
+
+    void InsertItem(int pos, const wxString& item) override
+    {
+        m_items.Insert( item, pos );
+        if ( m_selection >= pos )
+            ++m_selection;
+    }
+
+    void RemoveItem(int pos) override
+    {
+        m_items.RemoveAt( pos );
+        if ( m_selection == pos )
+            m_selection = wxNOT_FOUND;
+        else if ( m_selection > pos )
+            --m_selection;
+    }
+
+    void Clear() override
+    {
+        m_items.Clear();
+        m_selection = wxNOT_FOUND;
+    }
+
+    wxString GetStringAtIndex(int pos) const override
+    {
+        return ( pos >= 0 && pos < static_cast<int>(m_items.GetCount()) )
+                    ? m_items[pos] : wxString();
+    }
+
+    int FindString(const wxString& text) const override
+        { return m_items.Index( text ); }
+
+private:
+    wxArrayString m_items;
+    int           m_selection = wxNOT_FOUND;
+};
+
 wxWidgetImplType* wxWidgetImpl::CreateComboBox( wxComboBox* wxpeer,
                                     wxWindowMac* WXUNUSED(parent),
                                     wxWindowID WXUNUSED(id),
@@ -115,5 +173,7 @@ wxWidgetImplType* wxWidgetImpl::CreateComboBox( wxComboBox* wxpeer,
                                     long WXUNUSED(style),
                                     long WXUNUSED(extraStyle))
 {
-    return wxIPhoneMakePlainPeer( wxpeer, pos, size );
+    CGRect r = wxOSXGetFrameForControl( wxpeer, pos, size );
+    UIView* v = [[UIView alloc] initWithFrame:r];
+    return new wxIPhoneComboBoxPeer( wxpeer, v );
 }

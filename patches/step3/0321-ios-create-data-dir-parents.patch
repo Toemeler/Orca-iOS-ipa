@@ -1,0 +1,17 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 11019fa08..9a115b516 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -2419,7 +2419,11 @@ void GUI_App::init_app_config()
+                 set_data_dir(data_dir_path.string());
+             #endif
+             if (!boost::filesystem::exists(data_dir_path)){
+-                boost::filesystem::create_directory(data_dir_path);
++                // create_directories, not create_directory: an iOS sandbox ships
++                // only Documents, Library/Caches, Library/Preferences and tmp, so
++                // the "Application Support" parent of the data dir does not exist
++                // yet and the single-level call would throw at startup.
++                boost::filesystem::create_directories(data_dir_path);
+             }
+         }
+ 

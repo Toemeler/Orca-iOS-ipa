@@ -23,6 +23,38 @@
 #include "wx/clipbrd.h"
 #include "wx/dnd.h"
 #include "wx/dataobj.h"
+#include "wx/utils.h"
+#include "wx/osx/core/cfstring.h"
+
+#import <UIKit/UIKit.h>
+
+// ---------------------------------------------------------------------------
+// wxLaunchDefaultApplication  (macOS impl: src/osx/utils_osx.cpp, whose body is
+// gated behind wxOSX_USE_COCOA_OR_CARBON and so compiles to nothing here)
+// ---------------------------------------------------------------------------
+#if wxUSE_GUI
+
+bool wxLaunchDefaultApplication(const wxString& document, int flags)
+{
+    wxUnusedVar(flags);
+
+    // iOS has no LaunchServices equivalent for handing an arbitrary file path
+    // to another app: only URLs with a scheme the system knows can be opened.
+    // Presenting a document would need a UIDocumentInteractionController and a
+    // view controller to present from, which this entry point has no access to.
+    NSString* const str = wxCFStringRef(document).AsNSString();
+    NSURL* const url = [NSURL URLWithString:str];
+    if ( url != nil && url.scheme != nil &&
+         [[UIApplication sharedApplication] canOpenURL:url] )
+    {
+        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+        return true;
+    }
+
+    return false;
+}
+
+#endif // wxUSE_GUI
 
 // ---------------------------------------------------------------------------
 // wxToolTip  (macOS impl: src/osx/cocoa/tooltip.mm)
@@ -126,6 +158,12 @@ wxBitmapDataObject::~wxBitmapDataObject() {}
 size_t wxBitmapDataObject::GetDataSize() const { return 0; }
 bool   wxBitmapDataObject::GetDataHere(void* WXUNUSED(buf)) const { return false; }
 bool   wxBitmapDataObject::SetData(size_t WXUNUSED(len), const void* WXUNUSED(buf)) { return false; }
+// The osx SetBitmap override lives in carbon/dataobj.cpp, which cannot compile
+// here; keep the base bitmap so GetBitmap() still round-trips.
+void   wxBitmapDataObject::SetBitmap(const wxBitmap& bitmap)
+{
+    wxBitmapDataObjectBase::SetBitmap(bitmap);
+}
 
 size_t wxFileDataObject::GetDataSize() const { return 0; }
 bool   wxFileDataObject::GetDataHere(void* WXUNUSED(buf)) const { return false; }

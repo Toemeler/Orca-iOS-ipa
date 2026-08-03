@@ -17,11 +17,22 @@ most Orca chrome is custom-drawn and portable) and lays out the stage-by-stage b
 
 | Stage | Workflow | Proof artifact | Status |
 |---|---|---|---|
-| 1. Slicing core on iOS | `ios-step1-core-cli.yml` | G-code sliced inside an iPad simulator | scaffolded — run + iterate |
-| 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | Screenshot of wx GLES canvas on iPad | scaffolded — run + iterate |
-| 3. Full GUI link-up | (added after 1+2 are green) | Orca launch screenshot | planned |
-| 4. Device IPA | | unsigned `.ipa` release | planned |
+| 1. Slicing core on iOS | `ios-step1-core-cli.yml` | G-code sliced inside an iPad simulator | ✅ done |
+| 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | Screenshot of wx GLES canvas on iPad | ✅ done |
+| 3. Full GUI link-up | `ios-step3-gui.yml` | Orca launch screenshot | ▶️ in progress (linking) |
+| 4. Device IPA | `ios-device-ipa.yml` | unsigned `.ipa` release | ✅ pipeline proven |
 | 5. Feature parity | | webview/camera/export on device | planned |
+
+## Sideloadable builds
+
+`ios-device-ipa.yml` builds against the **iphoneos** SDK and publishes an
+unsigned, sideloadable `.ipa` to [Releases](../../releases) — downloadable
+straight from the iPad. See [`docs/SIDELOADING.md`](docs/SIDELOADING.md).
+
+It runs against **stock, unpatched wxWidgets** on purpose: the app it ships only
+needs widgets the iPhone port already provides, so this track stays green no
+matter what state the step-3 patch stack is in. That keeps a working install
+path on the iPad available at all times while the full GUI is still being linked.
 
 Each stage's build breakages are fixed via ordered patches in `patches/stepN/` — never by
 forking upstream. `analysis/` contains the generated wx symbol usage data and the gap

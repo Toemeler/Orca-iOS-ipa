@@ -13,6 +13,16 @@ name: iOS Device IPA - sideloadable wx app
 # GitHub Release, so it can be downloaded and installed straight from the iPad.
 
 on:
+  # Runs on push to the development branch: workflow_dispatch is only
+  # registered for workflows already on the default branch, and this one is
+  # not there yet. Path-scoped so unrelated commits (and the ci-logs commit
+  # this workflow makes on failure) do not retrigger it.
+  push:
+    branches:
+      - claude/basic-ipad-app-plan-pb0b4p
+    paths:
+      - '.github/workflows/ios-device-ipa.yml'
+      - 'smoke-app/**'
   workflow_dispatch:
     inputs:
       wx_ref:

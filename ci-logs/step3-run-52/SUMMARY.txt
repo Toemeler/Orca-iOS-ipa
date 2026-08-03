@@ -1,0 +1,13 @@
+=== FAILED targets ===
+FAILED: [code=1] src/OrcaSlicer.app/OrcaSlicer 
+
+=== undefined symbols (linker) ===
+"wxBitmapDataObject::SetBitmap(wxBitmap const&)"
+"wxComboBox::DoGetBestSize() const"
+"wxLaunchDefaultApplication(wxString const&, int)"
+"wxWidgetImpl::CreateBitmapToggleButton(wxWindow*, wxWindow*, int, wxBitmapBundle const&, wxPoint const&, wxSize const&, long, long)"
+
+=== compile error signatures (deduped) ===
+
+total FAILED: 1
+undefined symbol count: 4

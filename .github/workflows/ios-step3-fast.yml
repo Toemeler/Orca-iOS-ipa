@@ -18,6 +18,20 @@ on:
 permissions:
   contents: write
 
+# Only the newest run per branch is useful: an older one is building code that
+# has already been superseded, and while the wx loop iterates it would otherwise
+# keep a device build busy for forty minutes on a fix that is already in.
+#
+# Safe to cancel now in a way it was not before: the deps caches are keyed on
+# hashFiles(patches/step1) rather than the run number, and actions/cache skips
+# the save when the key already exists -- so a cancelled run part-way through
+# its deps step can no longer write the partial entry that cost run 11 twenty
+# five minutes.
+concurrency:
+  group: step3-fast-${{ github.ref }}
+  cancel-in-progress: true
+
+
 jobs:
   gui-fast:
     runs-on: macos-15

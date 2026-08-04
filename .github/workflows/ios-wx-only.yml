@@ -1,0 +1,114 @@
+name: iOS wx-only - fast parity iteration
+
+# Builds ONLY the patched wxWidgets iPhone port, for both the simulator and the
+# device slice, and compiles the step-2 smoke app against it.
+#
+# The point is turnaround. The parity work that is left -- pointer and keyboard
+# input, the WKWebView backend, live control peers, the clipboard -- all lives in
+# patches/step2 and wx-overlay/, and none of it needs Orca. wx alone builds in
+# about five minutes, against roughly forty for a full step-3 round, so this is
+# the loop to iterate those tracks in. Validate here first, then let step 3 and
+# step 4 pick the changes up.
+#
+# Device slice included deliberately: several of these files are UIKit code that
+# compiles differently for iphoneos than for the simulator, and finding that out
+# here costs minutes rather than an IPA round.
+
+on:
+  workflow_dispatch:
+    inputs:
+      wx_ref:
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  wx:
+    name: wx iPhone port (${{ matrix.sdk }})
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [iphonesimulator, iphoneos]
+
+    env:
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      WXPREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: ${{ matrix.sdk }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install cmake ninja >/dev/null
+
+      - name: Build the patched wx iPhone port
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/src/. src/
+          mkdir -p build-ios && cd build-ios
+          # Deliberately WITHOUT the jpeg pinning the step-3/4 workflows use:
+          # there is no dependency prefix here, so wx keeps its builtin libjpeg.
+          # Nothing links Orca in this workflow, so the duplicate-symbol clash
+          # that motivated the pinning cannot arise.
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DIPHONE=ON -DwxBUILD_TOOLKIT=osx_iphone \
+            -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF \
+            -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
+            -DwxUSE_GRID=ON -DwxUSE_LISTCTRL=ON -DwxUSE_IMAGLIST=ON \
+            -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
+            -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
+            -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
+            -DwxUSE_NANOSVG=OFF -DwxUSE_LOGWINDOW=ON \
+            -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
+          ninja -k 0 2>&1 | tee /tmp/wx-ninja.log
+          ninja install > /tmp/wx-install.log 2>&1 || { tail -60 /tmp/wx-install.log; exit 1; }
+
+      - name: Report what was built
+        run: |
+          set -ux
+          ls -la "$WXPREFIX/lib" | head -30
+          echo "--- iphone port objects that must exist ---"
+          for o in window.mm utils.mm glcanvas.mm nonownedwnd.mm; do
+            find wx/build-ios -name "${o}.o" | head -1
+          done
+
+      - name: Publish failure logs
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/wx-${SDK}-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/wx-ninja.log /tmp/wx-install.log; do
+            [ -f "$f" ] && grep -n -B3 -A40 -E "FAILED:|error:|Error [0-9]" "$f" | head -c 300000 > "$D/$(basename "$f" .log)-errors.log"
+          done
+          if [ -f /tmp/wx-ninja.log ]; then
+            {
+              echo "=== FAILED targets ==="
+              grep "FAILED:" /tmp/wx-ninja.log | sed -E "s#.*/##; s#\.o .*##" | sort -u
+              echo; echo "=== error signatures (deduped) ==="
+              grep -oE "(unknown type name '[^']+'|use of undeclared identifier '[^']+'|no member named '[^']+'|no known instance method for selector '[^']+'|property '[^']+' not found|'[A-Za-z0-9_/.]+' file not found)" /tmp/wx-ninja.log | sort | uniq -c | sort -rn
+              echo; echo "total FAILED: $(grep -c FAILED: /tmp/wx-ninja.log)"
+            } > "$D/SUMMARY.txt"
+          fi
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "wx-only ci logs ${SDK} run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

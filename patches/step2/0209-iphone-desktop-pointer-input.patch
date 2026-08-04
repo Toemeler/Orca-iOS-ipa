@@ -1,0 +1,267 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 81e9fd0..7108399 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -174,25 +174,50 @@ CGRect wxOSXGetFrameForControl( wxWindowMac* window , const wxPoint& pos , const
+ //
+ //
+ 
++// Which physical button an indirect pointer press started with. UIKit reports
++// buttonMask only while the button is held, so the up and drag events have to
++// be attributed from what went down.
++static UInt32 gs_lastPointerButton = 0;
++
+ void SetupMouseEvent( wxMouseEvent &wxevent , NSSet* touches, UIEvent * nsEvent )
+ {
+-    UInt32 modifiers = 0 ;
+     UITouch *touch = [touches anyObject];
+ 
+-    // these parameters are not given for all events
+-    UInt32 button = 0; // no secondary button
+     UInt32 clickCount = [touch tapCount];
+-    UInt32 mouseChord = 0; // TODO does this exist for cocoa
+ 
+     // will be overridden
+     wxevent.m_x = 0;
+     wxevent.m_y = 0;
+-    wxevent.m_shiftDown = 0;
+-    wxevent.m_controlDown = 0;
+-    wxevent.m_altDown = 0;
+-    wxevent.m_metaDown = 0;
++
++    // Real modifier state. These were hardcoded to 0, which silently disabled
++    // every modified click in the application above: shift-drag rectangle
++    // select, cmd-click multi-select, alt-drag and so on. Same mapping the key
++    // path further down uses, and the same one wxOSX/cocoa uses -- Command is
++    // m_controlDown (so wxMouseEvent::CmdDown() means Command, as on macOS) and
++    // the physical Control key is m_rawControlDown.
++    UIKeyModifierFlags modifiers = 0;
++    if ( nsEvent != nil )
++        modifiers = [nsEvent modifierFlags];
++
++    wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
++    wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
++    wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
++    wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++    wxevent.m_metaDown       = (modifiers & UIKeyModifierCommand) != 0;
+     wxevent.m_clickCount = clickCount;
+     wxevent.SetTimestamp( [touch timestamp] ) ;
++
++    // A trackpad or mouse arrives as UITouchTypeIndirectPointer and carries a
++    // button mask; a finger on the glass is always the primary button.
++    UInt32 button = 0;
++    if ( touch.type == UITouchTypeIndirectPointer && nsEvent != nil )
++    {
++        const UIEventButtonMask mask = [nsEvent buttonMask];
++        if ( mask & UIEventButtonMaskSecondary )
++            button = 1;
++        else if ( mask & (1 << 2) )   // middle; iPadOS has no named constant
++            button = 2;
++    }
+ /*
+     // a control click is interpreted as a right click
+     bool thisButtonIsFakeRight = false ;
+@@ -242,34 +267,57 @@ void SetupMouseEvent( wxMouseEvent &wxevent , NSSet* touches, UIEvent * nsEvent
+     switch (eventType)
+     {
+         case UITouchPhaseBegan :
++            gs_lastPointerButton = button;
+             switch ( button )
+             {
+-                case 0 :
+-                    wxevent.SetEventType( clickCount > 1 ? wxEVT_LEFT_DCLICK : wxEVT_LEFT_DOWN );
+-                    wxevent.SetLeftDown(true);
++                case 1 :
++                    wxevent.SetEventType( clickCount > 1 ? wxEVT_RIGHT_DCLICK : wxEVT_RIGHT_DOWN );
++                    wxevent.SetRightDown(true);
++                    break ;
++
++                case 2 :
++                    wxevent.SetEventType( clickCount > 1 ? wxEVT_MIDDLE_DCLICK : wxEVT_MIDDLE_DOWN );
++                    wxevent.SetMiddleDown(true);
+                     break ;
+ 
+                 default:
++                    wxevent.SetEventType( clickCount > 1 ? wxEVT_LEFT_DCLICK : wxEVT_LEFT_DOWN );
++                    wxevent.SetLeftDown(true);
+                     break ;
+             }
+             break ;
+ 
+         case UITouchPhaseEnded :
+-            switch ( button )
++            // buttonMask is already clear by the time the button comes up, so
++            // release whichever one went down.
++            switch ( gs_lastPointerButton )
+             {
+-                case 0 :
+-                    wxevent.SetEventType( wxEVT_LEFT_UP );
+-                    wxevent.SetLeftDown(false);
++                case 1 :
++                    wxevent.SetEventType( wxEVT_RIGHT_UP );
++                    wxevent.SetRightDown(false);
++                    break ;
++
++                case 2 :
++                    wxevent.SetEventType( wxEVT_MIDDLE_UP );
++                    wxevent.SetMiddleDown(false);
+                     break ;
+ 
+                 default:
++                    wxevent.SetEventType( wxEVT_LEFT_UP );
++                    wxevent.SetLeftDown(false);
+                     break ;
+             }
++            gs_lastPointerButton = 0;
+             break ;
+ 
+         case UITouchPhaseMoved :
+             wxevent.SetEventType( wxEVT_MOTION );
+-            wxevent.SetLeftDown(true);
++            switch ( gs_lastPointerButton )
++            {
++                case 1 : wxevent.SetRightDown(true);  break ;
++                case 2 : wxevent.SetMiddleDown(true); break ;
++                default: wxevent.SetLeftDown(true);   break ;
++            }
+             break;
+         default :
+             break ;
+@@ -347,8 +395,107 @@ void wxOSX_drawRect(UIView* self, SEL _cmd, CGRect rect)
+ }
+ 
+ 
++// Scroll wheel and trackpad two-finger scroll. UIKit does not deliver these as
++// touches at all -- they only reach an app through a pan recognizer that opts
++// in via allowedScrollTypesMask, and they arrive with no touches attached,
++// which is what separates them from a pointer drag.
++void wxOSX_scrollGesture(UIView* self, SEL _cmd, UIPanGestureRecognizer* gesture)
++{
++    wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
++    if ( impl == nullptr )
++        return;
++    wxWindowMac* peer = impl->GetWXPeer();
++    if ( peer == nullptr )
++        return;
++    if ( [gesture numberOfTouches] > 0 )
++        return;     // a real drag, already handled as touches
++
++    static CGPoint s_lastTranslation = { 0, 0 };
++    const CGPoint translation = [gesture translationInView:self];
++
++    if ( [gesture state] == UIGestureRecognizerStateBegan )
++        s_lastTranslation = CGPointZero;
++
++    const CGFloat dx = translation.x - s_lastTranslation.x;
++    const CGFloat dy = translation.y - s_lastTranslation.y;
++    s_lastTranslation = translation;
++
++    if ( dx == 0 && dy == 0 )
++        return;
++
++    const bool horizontal = fabs(dx) > fabs(dy);
++    const CGFloat delta = horizontal ? dx : dy;
++
++    wxMouseEvent wxevent(wxEVT_MOUSEWHEEL);
++    const CGPoint where = [gesture locationInView:self];
++    wxevent.m_x = where.x;
++    wxevent.m_y = where.y;
++
++    UIKeyModifierFlags modifiers = 0;
++    if ( @available(iOS 13.4, *) )
++        modifiers = [gesture modifierFlags];
++    wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
++    wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
++    wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
++    wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++
++    wxevent.m_wheelAxis = horizontal ? wxMOUSE_WHEEL_HORIZONTAL : wxMOUSE_WHEEL_VERTICAL;
++    wxevent.m_wheelDelta = 120;
++    wxevent.m_linesPerAction = 3;
++    // Pan translation grows downwards; a scroll-wheel notch away from the user
++    // is positive in wx. Scale so an ordinary scroll gesture produces a few
++    // notches rather than hundreds.
++    wxevent.m_wheelRotation = (int) lround( -delta * (120.0 / 40.0) );
++    if ( wxevent.m_wheelRotation == 0 )
++        return;
++
++    wxevent.SetEventObject(peer);
++    wxevent.SetId(peer->GetId());
++    peer->HandleWindowEvent(wxevent);
++}
++
++// Pointer movement with no button held. Without this wxEVT_MOTION only fires
++// during a drag, so nothing in the application hover-highlights: no toolbar
++// feedback, no gizmo hover state, no tooltips.
++void wxOSX_hoverGesture(UIView* self, SEL _cmd, UIHoverGestureRecognizer* gesture)
++{
++    wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
++    if ( impl == nullptr )
++        return;
++    wxWindowMac* peer = impl->GetWXPeer();
++    if ( peer == nullptr )
++        return;
++
++    const UIGestureRecognizerState state = [gesture state];
++    if ( state != UIGestureRecognizerStateBegan &&
++         state != UIGestureRecognizerStateChanged &&
++         state != UIGestureRecognizerStateEnded )
++        return;
++
++    wxMouseEvent wxevent(state == UIGestureRecognizerStateEnded ? wxEVT_LEAVE_WINDOW
++                                                               : wxEVT_MOTION);
++    const CGPoint where = [gesture locationInView:self];
++    wxevent.m_x = where.x;
++    wxevent.m_y = where.y;
++
++    UIKeyModifierFlags modifiers = 0;
++    if ( @available(iOS 13.4, *) )
++        modifiers = [gesture modifierFlags];
++    wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
++    wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
++    wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
++    wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++
++    wxevent.SetEventObject(peer);
++    wxevent.SetId(peer->GetId());
++    peer->HandleWindowEvent(wxevent);
++}
++
+ void wxOSXIPhoneClassAddWXMethods(Class c)
+ {
++    class_addMethod(c, @selector(WX_scrollGesture:), (IMP) wxOSX_scrollGesture, "v@:@");
++    class_addMethod(c, @selector(WX_hoverGesture:), (IMP) wxOSX_hoverGesture, "v@:@");
++
+     class_addMethod(c, @selector(touchesBegan:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(touchesMoved:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(touchesEnded:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+@@ -804,6 +951,29 @@ void wxWidgetIPhoneImpl::InstallEventHandler( WXWidget control )
+         [cc addTarget:cc action:@selector(WX_touchUpInsideAction:event:) forControlEvents:UIControlEventTouchUpInside];
+         [cc addTarget:cc action:@selector(WX_valueChangedAction:event:) forControlEvents:UIControlEventValueChanged];
+     }
++
++    // Desktop pointer behaviour has to be opted into per view: scroll only
++    // arrives through a pan recognizer with allowedScrollTypesMask set, and
++    // hover only through a hover recognizer.
++    if ( [c isKindOfClass:[UIView class]] )
++    {
++        UIView* view = (UIView*) c;
++
++        UIPanGestureRecognizer* scroll =
++            [[UIPanGestureRecognizer alloc] initWithTarget:view action:@selector(WX_scrollGesture:)];
++        scroll.allowedScrollTypesMask = UIScrollTypeMaskAll;
++        // Let touch drags fall through to touchesMoved: rather than being
++        // swallowed here; the handler also ignores any pan carrying touches.
++        scroll.cancelsTouchesInView = NO;
++        [view addGestureRecognizer:scroll];
++        [scroll release];
++
++        UIHoverGestureRecognizer* hover =
++            [[UIHoverGestureRecognizer alloc] initWithTarget:view action:@selector(WX_hoverGesture:)];
++        hover.cancelsTouchesInView = NO;
++        [view addGestureRecognizer:hover];
++        [hover release];
++    }
+ }
+ 
+ void wxWidgetIPhoneImpl::DoNotifyFocusEvent(bool receivedFocus, wxWidgetImpl* otherWindow)

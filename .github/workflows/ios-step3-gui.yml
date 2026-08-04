@@ -132,11 +132,35 @@ jobs:
             -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
             -DwxUSE_NANOSVG=OFF \
             -DwxUSE_LOGWINDOW=ON \
+            -DwxUSE_LIBJPEG=sys \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_LIBRARY_RELEASE="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
           ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
           echo "MARK build-ok" | tee -a /tmp/wx-phase.log
           ninja install > /tmp/wx-install.log 2>&1 || { echo "MARK install-FAILED" | tee -a /tmp/wx-phase.log; tail -80 /tmp/wx-install.log; exit 1; }
           echo "MARK install-ok" | tee -a /tmp/wx-phase.log
+          # NB the JPEG_* values are pinned outright rather than found through
+          # CMAKE_PREFIX_PATH / CMAKE_FIND_ROOT_PATH_MODE_*=BOTH: opening those
+          # up lets Homebrew's macOS libjpeg into an iOS link, which is a trap
+          # this repo already fell into once (see the deps notes in HANDOFF.md).
+          # FindJPEG honours preset cache entries, and JPEG_LIBRARY_RELEASE is
+          # set too because select_library_configurations derives JPEG_LIBRARY
+          # from it in newer CMake.
+          #
+          # wx defaults its third-party libs to "builtin" on Apple, which builds
+          # libwxjpeg-3.3.a alongside the libjpeg.a the dependency stack already
+          # provides. Both end up on the OrcaSlicer link line, ld pulls
+          # jcomapi.c.o out of each, and the four jpeg_* symbols they share are
+          # duplicate-symbol errors (step-4 run 11). Point wx at the one libjpeg
+          # instead. build/cmake/lib/jpeg.cmake silently forces itself back to
+          # "builtin" when find_package(JPEG) misses, so assert rather than
+          # discover it 40 minutes later at the link.
+          test ! -f "$WXPREFIX/lib/libwxjpeg-3.3.a" || {
+            echo "wx fell back to its builtin libjpeg -- JPEG_LIBRARY/JPEG_INCLUDE_DIR did not take"
+            exit 1
+          }
           # overlay-after-install: ship non-installed iphone headers into the prefix
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           echo "MARK wxinc=[$WXINC]" | tee -a /tmp/wx-phase.log

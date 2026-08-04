@@ -776,3 +776,81 @@ Two consequences worth keeping:
   preferred over the prefix fallback, so once a complete entry exists under
   `ios-deps{,-device}-v1-<hash of patches/step1>` the partial ones stop being
   reachable. They still occupy quota until they age out.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION (2026-08-04, cont.) — compile closed out, parity tracks opened
+═══════════════════════════════════════════════════════════════════════
+
+### The compile burn-down is DONE
+Step-3 run 57 and step-4 run 10 each built **652 of 653 targets** with
+`ninja -k 0`, failing on the same single file. That is the whole compile
+surface, on both the simulator and the device slice. 0330 fixed it.
+
+### Patches added (0325-0333 step3, 0209-0211 step2)
+- **0325** last two link symbols (GLES2 glad loader, not compiled on iOS).
+- **0326** MainFrame sized to the display. A wx top-level window is a UIWindow
+  and a UIWindow is the whole screen; the hardcoded 1200x800 left dead space.
+- **0327 ▲** `SLIC3R_OPENGL_ES` was **never a preprocessor macro** — only a
+  CMake variable read by src/libvgcode. So every iOS build compiled the desktop
+  GL path, and GLShadersManager loaded the `110/` desktop GLSL set, which no
+  GLES driver compiles. The ES/ shader overlay in this repo was dead weight.
+- **0328 ▲** 140 live calls into entry points OpenGL ES does not have. Orca's
+  GUI is written against the desktop `<glad/gl.h>`, so they compile and then
+  resolve to null on iOS. `glClearDepth` in `GLCanvas3D::init()` runs before
+  the first frame — a certain crash. `ios_gl_compat.cpp` fills the null slots
+  with ES equivalents or no-ops. Re-derive with `tools/gl-es-gap-scan.py`.
+- **0329** iOS has no window-system framebuffer at object 0: wxGLCanvas is a
+  GLKView and GLKit's drawable has a non-zero name. Orca's offscreen passes
+  restore with `glBindFramebuffer(..., 0)`, which unbinds the drawable for
+  good — the scene stops appearing from the first selection onward.
+- **0330** `viewport` redefinition GLGizmoMeasure; the `if (is_core_profile())`
+  braces that scoped the first one are themselves inside `#if !SLIC3R_OPENGL_ES`.
+- **0331** duplicate `wxMediaCtrl2::DoSetSize` (0316's stub vs MediaPlayCtrl.cpp).
+- **0332/0333** WebKit.framework on the iOS link lines; Orca's webview call
+  sites un-guarded; `ios_webview_support.mm` implements the two WKWebView
+  helpers for real (evaluateJavaScript matters — Orca drives the embedded pages
+  through it almost entirely).
+- **step2/0209 ▲** desktop pointer input. `SetupMouseEvent` assigned every
+  modifier `= 0` and hardcoded the button to left, so shift-drag, cmd-click and
+  alt-drag were all dead, and there was no right/middle button, no scroll wheel
+  and no hover. Keyboard was already correct.
+- **step2/0210+0211** real WKWebView backend. The backend is only lightly
+  AppKit-coupled (7 sites in 1365 lines, most already `#if !__WXOSX_IPHONE__`);
+  it needed a wxWidgetIPhoneImpl peer, the print path guarded, and
+  `OSXWebViewPtr`/`WKWebView` added to defs.h's **iPhone** branch — that
+  typedef exists only in the Cocoa branch, and its absence made four targets
+  fail with six error signatures that all traced back to one line.
+- **clipboard** wxClipboard backed by UIPasteboard.
+
+### CI infrastructure — this is the important part for velocity
+- **`ios-wx-only.yml` (NEW)**: builds just the patched wx port, simulator and
+  device in a parallel matrix, in **~5 minutes** (run 1: 4m51s). Every
+  remaining parity track is wx-side. Iterate here, not in the 40-minute Orca
+  build. Triggers on pushes touching `patches/step2/**` or `wx-overlay/**`.
+  It caught the 0210 webview breakage 40 minutes before step-4 run 14 hit the
+  identical error.
+- **`ios-step3-fast.yml`**: already existed and was unused. Restores the deps
+  and wx prefixes instead of rebuilding them. Now also ships orca-overlay,
+  defaults to the OrcaSlicer target, and does the full simulator launch +
+  screenshot, publishing to ci-logs on `always()`.
+- **deps cache keys are now stable** (`hashFiles('patches/step1/*.patch')`
+  rather than `github.run_number`). The old per-run keys minted a multi-GB
+  entry every run against a 10 GB quota, evicting the entry the next run
+  needed — every round paid for a full dependency rebuild. Step-3 run 58
+  restored in 50s and topped up in 4s, versus 37 minutes cold.
+- **Do not cancel a run inside its deps step.** `if: always()` is true for
+  cancelled jobs too, so it saves a *partial* cache, and a restore-keys prefix
+  lookup prefers the newest match. That cost run 11 25 minutes.
+- WX_KEY salted to **v3**: the `wxUSE_LIBJPEG=sys` change lives in the
+  workflows, not in a patch, so it does not move the key on its own.
+
+### Still open
+Control peers (radio/toggle/spin return inert UIView wrappers), document-picker
+export, AVPlayer camera, and the immediate-mode drawing 0328 turned into no-ops
+(PartPlate 67 calls, SkipPartCanvas 58 — likely visible build-plate geometry).
+
+**And the big one: the app has still never launched.** Everything above is
+compile-validated only. The step-3 fast workflow now carries the launch; that
+is the next thing to get evidence from. Two items in 0209 cannot be settled
+without real hardware: the sign of the wheel rotation, and whether the pan
+recognizer ever steals a drag.

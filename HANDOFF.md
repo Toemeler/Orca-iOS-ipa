@@ -758,3 +758,21 @@ it) and rely on `ios-prefix` plus the ExternalProject `*-install` stamps.
 concurrent jobs were in flight this session; each rebuilt the whole dependency
 stack and each would have raced to save a multi-GB cache at the end, guaranteeing
 eviction. Three were cancelled for exactly that reason.
+
+### Cancelling a run mid-deps poisons the next run's cache
+Run 11 restored a device deps cache in 45 s and then still spent **25 minutes**
+building deps, where run 10 had spent 5 seconds. Cause: `if: always()` is true
+for a **cancelled** job as well as a failed one, so the three runs cancelled
+earlier in this session (56, 8, 9) each ran their "Save deps cache" step partway
+through their dependency build and wrote a **partial** entry. A `restore-keys`
+prefix lookup returns the *most recently created* match, and those partial
+entries were newer than run 10's complete one — so run 11 restored a half-built
+stack and had to finish it.
+
+Two consequences worth keeping:
+- Do not cancel a run that is inside its deps step. Let it fail on its own, or
+  accept that the next run pays for the difference.
+- The stable-key change helps here beyond the quota problem: an exact key hit is
+  preferred over the prefix fallback, so once a complete entry exists under
+  `ios-deps{,-device}-v1-<hash of patches/step1>` the partial ones stop being
+  reachable. They still occupy quota until they age out.

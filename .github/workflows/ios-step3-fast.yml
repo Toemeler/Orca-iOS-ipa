@@ -13,7 +13,7 @@ on:
       target:
         description: "ninja target to build"
         required: false
-        default: "libslic3r_gui"
+        default: "OrcaSlicer"
 
 permissions:
   contents: write
@@ -28,7 +28,7 @@ jobs:
       PREFIX: ${{ github.workspace }}/ios-prefix
       WXPREFIX: ${{ github.workspace }}/wx-prefix
       SDK: iphonesimulator
-      TARGET: ${{ github.event.inputs.target || 'libslic3r_gui' }}
+      TARGET: ${{ github.event.inputs.target || 'OrcaSlicer' }}
 
     steps:
       - name: Checkout
@@ -46,13 +46,17 @@ jobs:
           done
           mkdir -p deps_src/hidapi/ios
           cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
+          # The ES/ shader set upstream has never had. Required for the launch,
+          # and harmless for a compile-only run.
+          cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
+          test "$(ls resources/shaders/ES | wc -l)" -eq 38
 
       - name: Compute cache keys from patch/overlay hashes
         run: |
           set -euxo pipefail
           WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
-          echo "WX_KEY=ios-wxprefix-v2-$WXH" >> "$GITHUB_ENV"
-          echo "wx cache key: ios-wxprefix-$WXH"
+          echo "WX_KEY=ios-wxprefix-v3-$WXH" >> "$GITHUB_ENV"
+          echo "wx cache key: ios-wxprefix-v3-$WXH"
 
       - name: Restore deps cache (required)
         uses: actions/cache/restore@v4
@@ -133,13 +137,85 @@ jobs:
           path: ~/.ccache-step3
           key: ccache-step3-${{ github.run_id }}
 
-      - name: Publish failure logs
-        if: failure()
+
+      - name: Launch in iPad simulator + screenshot
+        if: success()
+        run: |
+          set -uxo pipefail
+          BIN=""
+          [ -f orca/build/src/OrcaSlicer.app/OrcaSlicer ] && BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          [ -n "$BIN" ] || { echo "no linked executable (target was $TARGET) - nothing to launch"; exit 0; }
+          APP=sim/OrcaSlicer.app
+          rm -rf sim && mkdir -p "$APP"
+          cp "$BIN" "$APP/OrcaSlicer"
+          cp -R orca/resources "$APP/resources"
+          cat > "$APP/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>OrcaSlicer</string>
+            <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
+            <key>CFBundleName</key><string>OrcaSlicer</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIDeviceFamily</key><array><integer>2</integer></array>
+            <key>UILaunchScreen</key><dict/>
+            <key>UIRequiresFullScreen</key><true/>
+          </dict></plist>
+          PLIST
+          RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
+          UDID=$(xcrun simctl create "orca-ipad" \
+            "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" "$RT")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          sleep 10
+          xcrun simctl install "$UDID" "$APP" 2>&1 | tee /tmp/sim-install.log
+          xcrun simctl launch --console-pty "$UDID" org.orca-ios.orcaslicer \
+            > /tmp/sim-launch.log 2>&1 &
+          LPID=$!
+          sleep 60
+          xcrun simctl spawn "$UDID" launchctl list > /tmp/sim-launchctl.txt 2>&1 || true
+          ALIVE=$(grep -c "orca-ios.orcaslicer" /tmp/sim-launchctl.txt || true)
+          kill "$LPID" 2>/dev/null || true
+          wait "$LPID" 2>/dev/null
+          mkdir -p artifact
+          xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
+          tail -80 /tmp/sim-launch.log || true
+          {
+            echo "process entries matching orca-ios.orcaslicer: $ALIVE"
+            echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name 'OrcaSlicer*' 2>/dev/null | wc -l | tr -d ' ')"
+          } | tee /tmp/launch-verdict.txt
+          if [ -n "${UDID:-}" ]; then
+            xcrun simctl spawn "$UDID" log show --last 5m \
+              --predicate 'process == "OrcaSlicer"' > artifact/sim-oslog.txt 2>&1 || true
+          fi
+
+      - name: Upload launch artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-fast-launch
+          path: artifact/
+          if-no-files-found: ignore
+
+      # always(), not failure(): once the link is green the interesting failure
+      # is a runtime one, and a crashed app still leaves the job green.
+      - name: Publish logs
+        if: always()
         run: |
           set -ux
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
+          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt; do
+            [ -f "$l" ] && tail -c 20000 "$l" > "$D/$(basename "$l")"
+          done
+          [ -f artifact/orca-on-ipad.png ] && cp artifact/orca-on-ipad.png "$D/"
+          [ -f artifact/sim-oslog.txt ] && tail -c 60000 artifact/sim-oslog.txt > "$D/sim-oslog.txt"
+          find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" -exec cp {} "$D/" \; 2>/dev/null || true
           [ -f /tmp/fast-ninja.log ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/fast-ninja.log | head -c 400000 > "$D/errors.log"
           # -k0 summary: full map of remaining errors
           if [ -f /tmp/fast-ninja.log ]; then
@@ -152,5 +228,10 @@ jobs:
             } > "$D/SUMMARY.txt"
           fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
-          git pull --rebase || true
-          git add ci-logs && git commit -m "fast-run ${GITHUB_RUN_NUMBER} logs" && git push
+          git add -A ci-logs || true
+          git commit -m "fast ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

@@ -164,11 +164,6 @@ int BambuLanPrinterAgent::connect_printer(std::string dev_id, std::string dev_ip
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
     }
 
-    // Tear down any previous session first; the plugin behaved the same way and
-    // DeviceManager relies on it when switching machines.
-    m_mqtt.disconnect();
-    join_connect_thread();
-
     {
         std::lock_guard<std::mutex> lock(m_state_mutex);
         m_dev_id   = dev_id;
@@ -182,8 +177,25 @@ int BambuLanPrinterAgent::connect_printer(std::string dev_id, std::string dev_ip
     // that may be asleep. The plugin reported the outcome through
     // set_on_local_connect_fn rather than blocking, and DeviceManager calls this
     // from the UI thread, so do the same here.
+    //
+    // Tearing down the previous session happens on the worker too: waiting for
+    // an attempt against an unreachable printer would otherwise freeze the UI
+    // for the whole connect timeout when the user switches machines mid-attempt.
+    const int  generation = m_connect_generation.fetch_add(1) + 1;
+    std::thread previous  = std::move(m_connect_thread);
+
     m_connecting.store(true);
-    m_connect_thread = std::thread([this, dev_id, dev_ip, username, password, use_ssl]() {
+    m_connect_thread = std::thread([this, dev_id, dev_ip, username, password, use_ssl, generation,
+                                    previous = std::move(previous)]() mutable {
+        if (previous.joinable())
+            previous.join();
+        m_mqtt.disconnect();
+
+        // A newer connect_printer() overtook us while we waited; its own worker
+        // owns the connection now and reporting here would fight with it.
+        if (m_connect_generation.load() != generation)
+            return;
+
         BambuLan::MqttConfig cfg;
         cfg.host     = dev_ip;
         // The firmware only serves MQTT behind TLS; the plaintext port is here
@@ -193,10 +205,21 @@ int BambuLanPrinterAgent::connect_printer(std::string dev_id, std::string dev_ip
         cfg.use_tls  = use_ssl;
         cfg.username = username.empty() ? std::string("bblp") : username;
         cfg.password = password;
+        // Short enough that switching machines feels responsive, long enough
+        // for a printer that is awake but busy.
+        cfg.connect_timeout_s = 6;
 
         std::string error;
         const int   rc = m_mqtt.connect(cfg, error);
         m_connecting.store(false);
+
+        if (m_connect_generation.load() != generation) {
+            // Superseded while we were connecting: hand the socket over to
+            // nobody rather than report a machine the UI has moved on from.
+            if (rc == BambuLan::ConnackAccepted)
+                m_mqtt.disconnect();
+            return;
+        }
 
         if (rc != BambuLan::ConnackAccepted) {
             BOOST_LOG_TRIVIAL(error) << "BambuLanPrinterAgent: connect to " << dev_ip << " failed: " << error;

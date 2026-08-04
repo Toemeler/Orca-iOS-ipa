@@ -120,6 +120,9 @@ private:
 
     std::thread       m_connect_thread;
     std::atomic<bool> m_connecting{false};
+    // Bumped by every connect_printer(); a worker whose generation is stale
+    // stays quiet instead of reporting a machine the UI has already left.
+    std::atomic<int>  m_connect_generation{0};
     std::atomic<int>  m_sequence_id{0};
 
     OnMsgArrivedFn       m_on_ssdp_msg_fn;

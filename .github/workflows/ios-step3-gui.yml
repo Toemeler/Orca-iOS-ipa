@@ -274,7 +274,10 @@ jobs:
           APP=sim/OrcaSlicer.app
           rm -rf sim && mkdir -p "$APP"
           cp "$BIN" "$APP/OrcaSlicer"
-          cp -R orca/resources "$APP/resources"
+          # Info.plist first, resources second. simctl reads the plist to get the
+          # bundle id, and resources is the biggest thing on the disk - if space
+          # runs out mid-copy, a plist written afterwards ends up empty and the
+          # install fails with the useless "Missing bundle ID".
           cat > "$APP/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -301,6 +304,26 @@ jobs:
             <key>UIRequiresFullScreen</key><true/>
           </dict></plist>
           PLIST
+
+          cp -R orca/resources "$APP/resources"
+
+          # Prove the bundle is installable before handing it to simctl, so a
+          # failure names the actual cause instead of "Missing bundle ID".
+          df -h /Users/runner 2>/dev/null || df -h .
+          ls -la "$APP"
+          python3 - "$APP/Info.plist" <<'VERIFY'
+          import plistlib, sys
+          path = sys.argv[1]
+          raw = open(path, 'rb').read()
+          if not raw:
+              sys.exit('Info.plist is EMPTY (disk full while writing?)')
+          d = plistlib.loads(raw)
+          missing = [k for k in ('CFBundleIdentifier', 'CFBundleExecutable') if not d.get(k)]
+          if missing:
+              sys.exit('Info.plist lacks %s' % missing)
+          print('Info.plist ok: %s / %s' % (d['CFBundleIdentifier'], d['CFBundleExecutable']))
+          VERIFY
+          test -x "$APP/OrcaSlicer" || { echo "::error::$APP/OrcaSlicer missing or not executable"; exit 1; }
 
           RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
           UDID=$(xcrun simctl create "orca-ipad" \

@@ -23,6 +23,29 @@ most Orca chrome is custom-drawn and portable) and lays out the stage-by-stage b
 | 4. Device IPA | `ios-device-ipa.yml` | unsigned `.ipa` release | ✅ pipeline proven |
 | 5. Feature parity | | webview/camera/export on device | planned |
 
+## Printer connection (Bambu LAN mode)
+
+Orca reaches Bambu printers through a closed-source network plugin it downloads
+per platform. There is no iOS build of it, and iOS will not load a
+runtime-downloaded dylib in any case — so the port would slice and render
+perfectly and never reach the printer.
+
+`orca-overlay/src/slic3r/Utils/BambuLan*` replaces it with the documented
+protocols: **MQTT 3.1.1 over TLS** on port 8883 for status and control, **FTPS**
+on 990 to send the sliced 3mf, and SSDP discovery. It registers as the same
+`"bbl"` printer agent the plugin used, so nothing above it changes.
+
+`tools/bambu-lan/` holds a mock printer and a self test that links the shipping
+sources — run `tools/bambu-lan/run-selftest.sh` on any host with OpenSSL and
+libcurl headers.
+
+**[`lan-test-app/`](lan-test-app/)** is a small iPad app that links the same
+backend and nothing else, so the protocol can be tried against a real printer in
+half a minute rather than a 40-minute Orca build: connect, jog, extrude, set
+temperatures, fans, light, job control, raw gcode/JSON, and upload-and-print a
+3mf. Built by `ios-lan-test-ipa.yml` and published to
+[Releases](../../releases) as `BambuLAN.ipa`.
+
 ## Sideloadable builds
 
 `ios-device-ipa.yml` builds against the **iphoneos** SDK and publishes an

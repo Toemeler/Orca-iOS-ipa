@@ -1,0 +1,18 @@
+=== R1-100files-2MB ===
+plutil -lint: variants/R1-100files-2MB.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.R1-100files-2MB
+file count:      102
+bundle size: 2.0M
+INSTALL: FAILED after 52s -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/R1-100files-2MB.app 	Missing bundle ID. 
+=== R2-1000files-20MB ===
+plutil -lint: variants/R2-1000files-20MB.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.R2-1000files-20MB
+file count:     1002
+bundle size:  20M
+INSTALL: FAILED after 3s -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/R2-1000files-20MB.app 	Missing bundle ID. 
+=== R3-3000files-60MB ===
+plutil -lint: variants/R3-3000files-60MB.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.R3-3000files-60MB
+file count:     3002
+bundle size:  59M
+INSTALL: FAILED after 4s -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/R3-3000files-60MB.app 	Missing bundle ID. 

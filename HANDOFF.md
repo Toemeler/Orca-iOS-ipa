@@ -899,3 +899,57 @@ OUT (explicitly declined):
   the plugin dependency was understood)
 - Files-app / document-picker export (wireless to printer only)
 - Tooltips, dark-mode detection, drag-and-drop of files
+
+═══════════════════════════════════════════════════════════════════════
+## DESIGN: native Bambu LAN backend (task #13) — scoped, not yet built
+═══════════════════════════════════════════════════════════════════════
+
+### The surface to satisfy is only six functions
+`src/slic3r/Utils/NetworkAgent.hpp` is 120 methods wide, but LAN-only operation
+touches just these (verified against the call sites in DeviceManager.cpp):
+
+    set_on_local_connect_fn(OnLocalConnectedFn)   // connect result callback
+    set_on_local_message_fn(OnMessageFn)          // inbound MQTT payloads
+    connect_printer(dev_id, dev_ip, username, password, use_ssl)
+    disconnect_printer()
+    send_message_to_printer(dev_id, json_str, qos, flag)
+    start_local_print(PrintParams, update_fn, cancel_fn)
+
+DeviceManager.cpp:2412 is the live call: `m_agent->connect_printer(get_dev_id(),
+get_dev_ip(), username, password, use_openssl)`. Everything else in the LAN flow
+is Orca's own JSON on top of those.
+
+### What has to be written
+**No MQTT library exists in the tree.** deps_src/ has no mosquitto and no paho,
+because the protocol lived inside Bambu's closed plugin. So:
+
+1. **MQTT 3.1.1 client over TLS** (~500-600 lines). Connect to
+   `mqtts://<dev_ip>:8883`, username `bblp`, password = the LAN access code from
+   the printer's screen. Self-signed cert, so verification must be off. Needs:
+   CONNECT/CONNACK, SUBSCRIBE to `device/<serial>/report`, PUBLISH to
+   `device/<serial>/request`, PINGREQ/PINGRESP keepalive, DISCONNECT, the
+   variable-length-integer packet framing, and a receive thread that feeds
+   `set_on_local_message_fn`. OpenSSL is already linked (dep_OpenSSL) so a BIO
+   over a socket is the natural transport.
+2. **FTPS upload** (~80 lines). CURL is already linked. `ftps://<dev_ip>:990/`,
+   implicit TLS, `CURLOPT_USE_SSL=CURLUSESSL_ALL`, verifypeer off, user `bblp`
+   + access code. Upload the sliced 3mf to the printer's cache directory, then
+   publish the print command over MQTT.
+3. **Wiring** (~150 lines). On iOS, route those six NetworkAgent entry points to
+   the native agent instead of the plugin, and stop
+   `GUI_App::show_network_plugin_download_dialog` from prompting for a plugin
+   that will never exist on this platform.
+
+Roughly 800-1000 lines of new C++ plus several CI rounds to compile-validate.
+This is the single largest remaining item and it is a real implementation job,
+not a shim.
+
+### Notes for whoever writes it
+- The camera (TCP 6000) is explicitly OUT of scope — do not let it pull the
+  BambuSource dependency back in.
+- Printer discovery already works without the plugin: deps_src/mdns is compiled
+  and Bambu printers advertise over mDNS, so `dev_ip` arrives without help.
+- Keep it in `src/slic3r/Utils/` as plain C++ (no Objective-C) so it compiles for
+  both slices and could later serve desktop builds that want a plugin-free path.
+- Validate the MQTT framing against a real A1 early; the protocol is documented
+  by community projects but the payload schema is Orca's own.

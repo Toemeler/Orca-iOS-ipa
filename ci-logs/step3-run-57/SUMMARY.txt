@@ -1,0 +1,9 @@
+=== FAILED targets ===
+GUI/Gizmos/GLGizmoMeasure.cpp
+
+=== undefined symbols (linker) ===
+
+=== compile error signatures (deduped) ===
+
+total FAILED: 1
+undefined symbol count: 0

@@ -1,0 +1,38 @@
+MARK build-ok
+MARK install-ok
+MARK wxinc=[/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3]
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/bin
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/bin/wx-config
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxjpeg-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/cmake
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/share
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/share/locale
+MARK mkdir-ok
+MARK private-ship-ok
+MARK webview-ship-ok
+MARK ship-verified

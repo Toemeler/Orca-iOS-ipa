@@ -707,3 +707,42 @@ a launch verdict (process still present in the simulator + crash-report
 count) instead of trusting `simctl launch`'s exit code, which only says the
 process was spawned. Both workflows take the executable from the link rule's
 known output path before falling back to the Mach-O scan.
+
+### ⚠ Two corrections to long-standing assumptions in this document
+
+**1. Actions job logs ARE readable from the dev environment.** The top of this
+file says log downloads are blocked, and the whole `ci-logs/` commit-the-errors
+mechanism was built around that. It is true of the *artifact/zip* download
+endpoint, but the GitHub MCP server's `get_job_logs` (with
+`return_content: true` and a `tail_lines`) returns log text directly. That is
+how the cache miss below was diagnosed while the run was still going. Use it for
+live progress; keep `ci-logs/` for the post-mortem, since it survives log
+expiry and is greppable.
+
+**2. The deps cache is being evicted between runs, and that is the long pole.**
+`[3/8] Restore deps cache` completing in about a second, followed by Boost
+configuring and installing from source, means a miss — the full dependency stack
+is rebuilding, which is the multi-hour part of every run.
+
+Cause: both step-3 and step-4 save a **new cache entry on every run**
+(`ios-deps-v1-step3-${{ github.run_number }}`,
+`ios-deps-device-v1-${{ github.run_number }}`). Each is multiple GB, covering
+`orca/deps/build` + `ios-prefix` + `~/dep-dl`. A repository's total cache quota
+is 10 GB, so two runs of each workflow are enough to push everything else out by
+LRU — including the entry the next run needs. The `restore-keys` prefix then
+finds nothing and the stack rebuilds from scratch.
+
+Fix to make before the next round (NOT pushed yet, deliberately — editing
+`ios-step4-device-ipa.yml` is itself a push trigger, and doing it mid-run would
+start a redundant build): key the deps cache on a hash of the inputs that
+actually change it (`patches/step1/*` plus the dep list in the workflow) instead
+of `github.run_number`. Repeated runs then reuse one entry rather than minting a
+new multi-GB one each time; when the key already exists GitHub skips the save
+with a warning rather than failing. If that is not enough, the next lever is to
+stop caching `orca/deps/build` (object files for OCCT/OpenCV/OpenVDB dominate
+it) and rely on `ios-prefix` plus the ExternalProject `*-install` stamps.
+
+**Do not run more than one step-3 and one step-4 job at a time.** Five
+concurrent jobs were in flight this session; each rebuilt the whole dependency
+stack and each would have raced to save a multi-GB cache at the end, guaranteeing
+eviction. Three were cancelled for exactly that reason.

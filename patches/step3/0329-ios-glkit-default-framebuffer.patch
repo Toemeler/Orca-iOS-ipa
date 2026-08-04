@@ -1,0 +1,111 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index 8ffac135..26147c74 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -48,6 +48,14 @@
+ 
+ #include <glad/gl.h>
+ 
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_gl_compat.cpp
++extern void orca_ios_note_default_framebuffer();
++#endif
++
+ #include <wx/glcanvas.h>
+ #include <wx/bitmap.h>
+ #include <wx/dcmemory.h>
+@@ -1951,6 +1959,12 @@ void GLCanvas3D::render(bool only_init)
+     if (!_is_shown_on_screen() || !_set_current() || !wxGetApp().init_opengl())
+         return;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Note the drawable GLKit just bound, before any offscreen pass can replace
++    // it -- see src/slic3r/GUI/ios_gl_compat.cpp.
++    orca_ios_note_default_framebuffer();
++#endif
++
+     if (!is_initialized() && !init())
+         return;
+ 
+diff --git a/src/slic3r/GUI/ios_gl_compat.cpp b/src/slic3r/GUI/ios_gl_compat.cpp
+index 7e6dea11..c4d13cae 100644
+--- a/src/slic3r/GUI/ios_gl_compat.cpp
++++ b/src/slic3r/GUI/ios_gl_compat.cpp
+@@ -56,6 +56,31 @@ template<typename Fn> Fn es_entry(const char *name)
+ 
+ PFNGLCLEARDEPTHFPROC s_glClearDepthf = nullptr;
+ 
++// On iOS the window system framebuffer is not object 0. wxGLCanvas is a GLKView
++// (src/osx/iphone/glcanvas.mm), and GLKit hands the context a framebuffer of its
++// own with a non-zero name; -bindDrawable binds that. Orca's offscreen passes --
++// GLVolume::render_with_outline and GLCanvas3D's thumbnail and picking targets --
++// finish by restoring the drawable with glBindFramebuffer(GL_FRAMEBUFFER, 0),
++// which is right everywhere else and on iOS unbinds the drawable for good: every
++// later draw goes to a default framebuffer that does not exist, so the scene
++// simply stops appearing from the first time anything is selected.
++//
++// glBindFramebuffer is wrapped so that a request for 0 lands on the drawable
++// instead. The name is sampled at the top of each frame, when GLKit has just
++// bound it in -drawRect: and before Orca can bind anything of its own; GLKit
++// recreates the drawable on resize, so it cannot be cached once and kept.
++// Until the first sample the remembered value stays 0, which is exactly the
++// unwrapped behaviour.
++GLuint s_default_framebuffer = 0;
++PFNGLBINDFRAMEBUFFERPROC s_glBindFramebuffer = nullptr;
++
++void compat_glBindFramebuffer(GLenum target, GLuint framebuffer)
++{
++    if (framebuffer == 0)
++        framebuffer = s_default_framebuffer;
++    s_glBindFramebuffer(target, framebuffer);
++}
++
+ void compat_glClearDepth(GLdouble depth)
+ {
+     if (s_glClearDepthf != nullptr)
+@@ -97,6 +122,12 @@ void orca_ios_install_gl_es_compat()
+ {
+     s_glClearDepthf = es_entry<PFNGLCLEARDEPTHFPROC>("glClearDepthf");
+ 
++    if (glad_glBindFramebuffer == nullptr)
++        glad_glBindFramebuffer = es_entry<PFNGLBINDFRAMEBUFFERPROC>("glBindFramebuffer");
++    s_glBindFramebuffer = glad_glBindFramebuffer;
++    if (s_glBindFramebuffer != nullptr)
++        glad_glBindFramebuffer = &compat_glBindFramebuffer;
++
+     if (glad_glClearDepth == nullptr)
+         glad_glClearDepth = &compat_glClearDepth;
+ 
+@@ -105,8 +136,10 @@ void orca_ios_install_gl_es_compat()
+     // and no ES driver advertises that ARB string.
+     if (glad_glGenFramebuffersEXT == nullptr)
+         glad_glGenFramebuffersEXT = es_entry<PFNGLGENFRAMEBUFFERSEXTPROC>("glGenFramebuffers");
+-    if (glad_glBindFramebufferEXT == nullptr)
+-        glad_glBindFramebufferEXT = es_entry<PFNGLBINDFRAMEBUFFEREXTPROC>("glBindFramebuffer");
++    // GL_FRAMEBUFFER_EXT and GL_FRAMEBUFFER are the same token, so the EXT alias
++    // can share the wrapper and gets the drawable fix with it.
++    if (glad_glBindFramebufferEXT == nullptr && s_glBindFramebuffer != nullptr)
++        glad_glBindFramebufferEXT = &compat_glBindFramebuffer;
+     if (glad_glDeleteFramebuffersEXT == nullptr)
+         glad_glDeleteFramebuffersEXT = es_entry<PFNGLDELETEFRAMEBUFFERSEXTPROC>("glDeleteFramebuffers");
+ 
+@@ -137,4 +170,16 @@ void orca_ios_install_gl_es_compat()
+     if (glad_glPolygonMode == nullptr)        glad_glPolygonMode = &compat_glPolygonMode;
+ }
+ 
++// Called at the top of GLCanvas3D::render(), where GLKit has just bound its
++// drawable and Orca has not yet bound a target of its own.
++void orca_ios_note_default_framebuffer()
++{
++    if (glad_glGetIntegerv == nullptr)
++        return;
++    GLint bound = 0;
++    glad_glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound);
++    if (bound > 0)
++        s_default_framebuffer = static_cast<GLuint>(bound);
++}
++
+ #endif // __APPLE__ && !TARGET_OS_OSX

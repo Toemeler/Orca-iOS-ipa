@@ -1,0 +1,212 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 64a2edf7..a3f7e967 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -723,6 +723,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+     # and an inert wxMediaCtrl2 (AVPlayer camera control is step 5).
+     list(APPEND SLIC3R_GUI_SOURCES
+             GUI/ios_platform_stubs.cpp
++            GUI/ios_gl_compat.cpp
+         )
+ endif ()
+ 
+diff --git a/src/slic3r/GUI/OpenGLManager.cpp b/src/slic3r/GUI/OpenGLManager.cpp
+index d5d7f999..7c111642 100644
+--- a/src/slic3r/GUI/OpenGLManager.cpp
++++ b/src/slic3r/GUI/OpenGLManager.cpp
+@@ -6,6 +6,11 @@
+ #include <dlfcn.h>
+ #endif
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_gl_compat.cpp
++extern void orca_ios_install_gl_es_compat();
++#endif
++
+ #include "GUI.hpp"
+ #include "I18N.hpp"
+ #include "3DScene.hpp"
+@@ -292,12 +297,29 @@ bool OpenGLManager::init_gl(bool popup_error)
+             return false;
+         }
+         BOOST_LOG_TRIVIAL(info) << "GLAD loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Roughly 140 call sites in the GUI reach for entry points OpenGL ES
++        // does not have -- the fixed-function matrix stack, immediate mode,
++        // glPolygonMode, glLineStipple, the EXT framebuffer names, and
++        // glClearDepth right below here in GLCanvas3D::init(). The loader leaves
++        // all of them null on iOS. Point them at an ES equivalent or a no-op
++        // before anything can call through one.
++        orca_ios_install_gl_es_compat();
++#endif
+         m_gl_initialized = true;
+         if (GLAD_GL_EXT_texture_compression_s3tc)
+             s_compressed_textures_supported = true;
+         else
+             s_compressed_textures_supported = false;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Framebuffer objects are core in OpenGL ES 3.0, but no ES driver
++        // advertises ARB_framebuffer_object or EXT_framebuffer_object, so the
++        // detection below would land on Unknown -- and 3DScene's outline pass
++        // treats anything that is not Arb as "use the EXT entry points".
++        s_framebuffers_type = EFramebufferType::Arb;
++        BOOST_LOG_TRIVIAL(info) << "Framebuffer Type ARB (core in OpenGL ES 3.0)." << std::endl;
++#else
+         if (GLAD_GL_ARB_framebuffer_object) {
+             s_framebuffers_type = EFramebufferType::Arb;
+             BOOST_LOG_TRIVIAL(info) << "Found Framebuffer Type ARB."<< std::endl;
+@@ -310,6 +332,7 @@ bool OpenGLManager::init_gl(bool popup_error)
+             s_framebuffers_type = EFramebufferType::Unknown;
+             BOOST_LOG_TRIVIAL(warning) << "Found Framebuffer Type unknown!"<< std::endl;
+         }
++#endif
+ 
+         bool valid_version = s_gl_info.is_version_greater_or_equal_to(2, 0);
+         if (!valid_version) {
+diff --git a/src/slic3r/GUI/ios_gl_compat.cpp b/src/slic3r/GUI/ios_gl_compat.cpp
+new file mode 100644
+index 00000000..7e6dea11
+--- /dev/null
++++ b/src/slic3r/GUI/ios_gl_compat.cpp
+@@ -0,0 +1,140 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// Fills in the desktop-OpenGL entry points that OpenGL ES does not have.
++//
++// Orca's GUI is written against <glad/gl.h>, the desktop loader, and calls a
++// number of entry points that exist in desktop GL but not in OpenGL ES:
++//
++//   * the fixed-function matrix stack and immediate mode (glPushMatrix,
++//     glTranslate*, glBegin/glVertex*/glEnd) in PartPlate and SkipPartCanvas,
++//   * glPushAttrib / glPopAttrib / glLineStipple around the selection rectangle
++//     and several gizmos,
++//   * glPolygonMode for the wireframe overlays in the simplify and painter
++//     gizmos,
++//   * the EXT framebuffer aliases in 3DScene's outline pass,
++//   * glClearDepth in GLCanvas3D::init(),
++//   * a handful of client-state and texture-environment leftovers.
++//
++// On iOS the loader resolves names out of OpenGLES.framework, which exports
++// none of those, so each slot comes back null and the first call through one is
++// a jump to address zero. GLCanvas3D::init() calls glClearDepth before the
++// first frame is ever drawn, so without this the app dies on the way to its
++// first render.
++//
++// Where ES has an equivalent, the slot is pointed at it: glClearDepth becomes
++// glClearDepthf, and the *EXT framebuffer names become the core entry points ES
++// 3.0 promoted them to. Where it does not, the slot gets a no-op. Fixed-function
++// state has no meaning against the shader pipeline Orca renders with under
++// SLIC3R_OPENGL_ES, and the immediate-mode geometry that remains is decoration
++// that cannot be expressed in ES at all -- losing that drawing is the correct
++// outcome for this port, whereas crashing is not.
++//
++// Everything is resolved with dlsym rather than taken from glad's own slots:
++// glad only loads the entry points belonging to versions up to the one the
++// context reports, and an ES 3.0 context reports 3.0, so names that desktop GL
++// introduced later (glClearDepthf is GL 4.1) are never loaded even though
++// OpenGLES.framework exports them.
++
++#include <glad/gl.h>
++
++#if defined(__APPLE__)
++#include <TargetConditionals.h>
++#endif
++
++#if defined(__APPLE__) && !TARGET_OS_OSX
++
++#include <dlfcn.h>
++
++namespace {
++
++template<typename Fn> Fn es_entry(const char *name)
++{
++    return reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, name));
++}
++
++PFNGLCLEARDEPTHFPROC s_glClearDepthf = nullptr;
++
++void compat_glClearDepth(GLdouble depth)
++{
++    if (s_glClearDepthf != nullptr)
++        s_glClearDepthf(static_cast<GLfloat>(depth));
++}
++
++// Fixed-function and immediate mode: no meaning under ES, so these do nothing.
++void compat_glPushMatrix() {}
++void compat_glPopMatrix() {}
++void compat_glLoadIdentity() {}
++void compat_glMatrixMode(GLenum) {}
++void compat_glTranslated(GLdouble, GLdouble, GLdouble) {}
++void compat_glTranslatef(GLfloat, GLfloat, GLfloat) {}
++void compat_glRotated(GLdouble, GLdouble, GLdouble, GLdouble) {}
++void compat_glRotatef(GLfloat, GLfloat, GLfloat, GLfloat) {}
++void compat_glScalef(GLfloat, GLfloat, GLfloat) {}
++void compat_glOrtho(GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble) {}
++void compat_glBegin(GLenum) {}
++void compat_glEnd() {}
++void compat_glVertex2f(GLfloat, GLfloat) {}
++void compat_glVertex3f(GLfloat, GLfloat, GLfloat) {}
++void compat_glNormal3d(GLdouble, GLdouble, GLdouble) {}
++void compat_glNormal3f(GLfloat, GLfloat, GLfloat) {}
++void compat_glColor3f(GLfloat, GLfloat, GLfloat) {}
++void compat_glColor4fv(const GLfloat *) {}
++void compat_glVertexPointer(GLint, GLenum, GLsizei, const void *) {}
++void compat_glDisableClientState(GLenum) {}
++void compat_glTexEnvi(GLenum, GLenum, GLint) {}
++void compat_glPushAttrib(GLbitfield) {}
++void compat_glPopAttrib() {}
++void compat_glLineStipple(GLint, GLushort) {}
++void compat_glPolygonMode(GLenum, GLenum) {}
++
++} // namespace
++
++// Called from OpenGLManager::init_gl once the loader has run, before anything
++// renders.
++void orca_ios_install_gl_es_compat()
++{
++    s_glClearDepthf = es_entry<PFNGLCLEARDEPTHFPROC>("glClearDepthf");
++
++    if (glad_glClearDepth == nullptr)
++        glad_glClearDepth = &compat_glClearDepth;
++
++    // ES 3.0 has framebuffer objects in core; 3DScene reaches for the EXT
++    // spelling whenever OpenGLManager did not detect ARB_framebuffer_object,
++    // and no ES driver advertises that ARB string.
++    if (glad_glGenFramebuffersEXT == nullptr)
++        glad_glGenFramebuffersEXT = es_entry<PFNGLGENFRAMEBUFFERSEXTPROC>("glGenFramebuffers");
++    if (glad_glBindFramebufferEXT == nullptr)
++        glad_glBindFramebufferEXT = es_entry<PFNGLBINDFRAMEBUFFEREXTPROC>("glBindFramebuffer");
++    if (glad_glDeleteFramebuffersEXT == nullptr)
++        glad_glDeleteFramebuffersEXT = es_entry<PFNGLDELETEFRAMEBUFFERSEXTPROC>("glDeleteFramebuffers");
++
++    if (glad_glPushMatrix == nullptr)         glad_glPushMatrix = &compat_glPushMatrix;
++    if (glad_glPopMatrix == nullptr)          glad_glPopMatrix = &compat_glPopMatrix;
++    if (glad_glLoadIdentity == nullptr)       glad_glLoadIdentity = &compat_glLoadIdentity;
++    if (glad_glMatrixMode == nullptr)         glad_glMatrixMode = &compat_glMatrixMode;
++    if (glad_glTranslated == nullptr)         glad_glTranslated = &compat_glTranslated;
++    if (glad_glTranslatef == nullptr)         glad_glTranslatef = &compat_glTranslatef;
++    if (glad_glRotated == nullptr)            glad_glRotated = &compat_glRotated;
++    if (glad_glRotatef == nullptr)            glad_glRotatef = &compat_glRotatef;
++    if (glad_glScalef == nullptr)             glad_glScalef = &compat_glScalef;
++    if (glad_glOrtho == nullptr)              glad_glOrtho = &compat_glOrtho;
++    if (glad_glBegin == nullptr)              glad_glBegin = &compat_glBegin;
++    if (glad_glEnd == nullptr)                glad_glEnd = &compat_glEnd;
++    if (glad_glVertex2f == nullptr)           glad_glVertex2f = &compat_glVertex2f;
++    if (glad_glVertex3f == nullptr)           glad_glVertex3f = &compat_glVertex3f;
++    if (glad_glNormal3d == nullptr)           glad_glNormal3d = &compat_glNormal3d;
++    if (glad_glNormal3f == nullptr)           glad_glNormal3f = &compat_glNormal3f;
++    if (glad_glColor3f == nullptr)            glad_glColor3f = &compat_glColor3f;
++    if (glad_glColor4fv == nullptr)           glad_glColor4fv = &compat_glColor4fv;
++    if (glad_glVertexPointer == nullptr)      glad_glVertexPointer = &compat_glVertexPointer;
++    if (glad_glDisableClientState == nullptr) glad_glDisableClientState = &compat_glDisableClientState;
++    if (glad_glTexEnvi == nullptr)            glad_glTexEnvi = &compat_glTexEnvi;
++    if (glad_glPushAttrib == nullptr)         glad_glPushAttrib = &compat_glPushAttrib;
++    if (glad_glPopAttrib == nullptr)          glad_glPopAttrib = &compat_glPopAttrib;
++    if (glad_glLineStipple == nullptr)        glad_glLineStipple = &compat_glLineStipple;
++    if (glad_glPolygonMode == nullptr)        glad_glPolygonMode = &compat_glPolygonMode;
++}
++
++#endif // __APPLE__ && !TARGET_OS_OSX

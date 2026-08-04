@@ -131,6 +131,16 @@ jobs:
                   done
                 done
                 ;;
+              named:*)
+                # named:<relative dir>:<file count>
+                local dir count
+                dir=$(echo "$res" | cut -d: -f2)
+                count=$(echo "$res" | cut -d: -f3)
+                mkdir -p "$app/$dir"
+                for f in $(seq 1 "$count"); do
+                  head -c 2000 /dev/zero > "$app/$dir/file$f.bin"
+                done
+                ;;
               deep:*)
                 # deep:<levels>:<bytes> - one file at each level of nesting
                 local levels bytes path
@@ -164,16 +174,17 @@ jobs:
           }
 
           mkdir -p variants
-          # Round 1 established that the plist is irrelevant (A, B, C all
-          # installed) and that adding a resources tree is what breaks it
-          # (D, E failed with "Missing bundle ID"). Round 2 bisects the tree:
-          # is it the file count, the bytes, or the directory depth?
-          try_variant "R1-100files-2MB"    "" xml "files:1:100:20000"
-          try_variant "R2-1000files-20MB"  "" xml "files:10:100:20000"
-          try_variant "R3-3000files-60MB"  "" xml "files:30:100:20000"
-          try_variant "R4-3000files-empty" "" xml "files:30:100:0"
-          try_variant "R5-3files-60MB"     "" xml "files:1:3:20000000"
-          try_variant "R6-deep-nesting"    "" xml "deep:12:20000"
+          # Round 2 showed even 100 files / 2 MB fails, so it is not size or
+          # count. What every failing variant had in common is a top-level
+          # directory called "resources" - and macOS filesystems are
+          # case-insensitive, so that is indistinguishable from "Resources",
+          # the marker of an old-style bundle layout whose Info.plist lives
+          # inside it. Round 3 varies nothing but the directory name.
+          try_variant "S1-dir-resources"  "" xml "named:resources:10"
+          try_variant "S2-dir-Resources"  "" xml "named:Resources:10"
+          try_variant "S3-dir-orcadata"   "" xml "named:orca-resources:10"
+          try_variant "S4-dir-data"       "" xml "named:data:10"
+          try_variant "S5-nested-res"     "" xml "named:share/resources:10"
 
           echo "================ RESULT ================"
           cat "$REPORT"

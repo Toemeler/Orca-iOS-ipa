@@ -299,6 +299,9 @@ jobs:
             <key>CFBundleVersion</key><string>1</string>
             <key>CFBundleShortVersionString</key><string>1.0</string>
             <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+            <key>CFBundleDevelopmentRegion</key><string>en</string>
+            <key>CFBundleSignature</key><string>????</string>
             <key>CFBundleSupportedPlatforms</key><array><string>iPhoneOS</string></array>
             <key>DTPlatformName</key><string>iphoneos</string>
             <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
@@ -345,6 +348,24 @@ jobs:
           VERIFY
           unzip -l "$OUT" | head -6
 
+          # A second, minimal IPA for bisection. The full bundle is ~331 MB
+          # across 15,557 files, and SideStore has rejected two structurally
+          # valid IPAs with "Missing bundle ID" -- an error raised after
+          # extraction, which points at the payload rather than the metadata.
+          # This one is the executable and Info.plist only, ~120 MB and 3
+          # entries. If it installs, the resources payload is the problem and
+          # the fix is trimming it; if it fails identically, the payload is
+          # innocent and the problem is the binary or the bundle shape.
+          # It will NOT run correctly -- Orca needs resources/ at startup --
+          # but it answers the install question.
+          MINAPP=stage-min/Payload/OrcaSlicer.app
+          rm -rf stage-min && mkdir -p "$MINAPP"
+          cp "$APP/OrcaSlicer" "$MINAPP/OrcaSlicer"
+          cp "$APP/Info.plist" "$MINAPP/Info.plist"
+          MINOUT="$PWD/artifact/OrcaSlicer-iPad-minimal.ipa"
+          (cd stage-min && zip -qr "$MINOUT" Payload)
+          ls -lh artifact/
+
       - name: "[9/9] Upload + publish release"
         if: success()
         env:
@@ -356,7 +377,8 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "OrcaSlicer for iPad (run ${GITHUB_RUN_NUMBER})" \
             --notes "Unsigned arm64 iphoneos build of OrcaSlicer, min iOS ${IOS_MIN}. See docs/SIDELOADING.md." \
-            artifact/OrcaSlicer-iPad.ipa
+            artifact/OrcaSlicer-iPad.ipa \
+            artifact/OrcaSlicer-iPad-minimal.ipa
 
       - uses: actions/upload-artifact@v4
         if: always()

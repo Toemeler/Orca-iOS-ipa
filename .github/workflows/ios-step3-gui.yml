@@ -231,9 +231,12 @@ jobs:
         run: |
           set -uxo pipefail
           BIN=""
-          while IFS= read -r f; do
-            file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
-          done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          [ -f orca/build/src/OrcaSlicer.app/OrcaSlicer ] && BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          if [ -z "$BIN" ]; then
+            while IFS= read -r f; do
+              file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
+            done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          fi
           [ -n "$BIN" ] || { echo "no linked executable yet - skipping launch"; exit 0; }
           echo "executable: $BIN"
 
@@ -273,12 +276,22 @@ jobs:
           xcrun simctl launch --console-pty "$UDID" org.orca-ios.orcaslicer \
             > /tmp/sim-launch.log 2>&1 &
           LPID=$!
-          sleep 45
+          sleep 60
+          # A live app still has a process in the simulator; a crashed one does
+          # not. This is the verdict the step reports, because simctl launch
+          # returns 0 the moment the process is spawned and says nothing about
+          # whether it survived.
+          xcrun simctl spawn "$UDID" launchctl list > /tmp/sim-launchctl.txt 2>&1 || true
+          ALIVE=$(grep -c "orca-ios.orcaslicer" /tmp/sim-launchctl.txt || true)
           kill "$LPID" 2>/dev/null || true
           wait "$LPID" 2>/dev/null
           mkdir -p artifact
           xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
           tail -60 /tmp/sim-launch.log || true
+          {
+            echo "process entries matching orca-ios.orcaslicer: $ALIVE"
+            echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name 'OrcaSlicer*' 2>/dev/null | wc -l | tr -d ' ')"
+          } | tee /tmp/launch-verdict.txt
 
       - name: "Collect simulator crash reports"
         if: always()
@@ -313,8 +326,13 @@ jobs:
             ~/dep-dl
           key: ios-deps-v1-step3-${{ github.run_number }}
 
-      - name: "Publish failure logs to repo (ci-logs/)"
-        if: failure()
+      # Runs on success too: once the link is green the interesting failure is a
+      # runtime one, and a crashed app still lets the job report success. Actions
+      # artifact downloads are not reachable from the dev environment, so the
+      # launch console, the crash report and the screenshot have to land in the
+      # repo to be readable at all.
+      - name: "Publish logs to repo (ci-logs/)"
+        if: always()
         run: |
           set -ux
           D="ci-logs/step3-run-${GITHUB_RUN_NUMBER}"
@@ -322,9 +340,11 @@ jobs:
           for f in /tmp/step3-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
-          for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/sim-launch.log /tmp/sim-install.log; do
+          for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
+          [ -f artifact/orca-on-ipad.png ] && cp artifact/orca-on-ipad.png "$D/"
+          [ -f artifact/sim-oslog.txt ] && tail -c 60000 artifact/sim-oslog.txt > "$D/sim-oslog.txt"
           # simulator crash reports name the failing frame, which is the fastest
           # route from "it aborted" to the offending call
           find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" \
@@ -347,7 +367,10 @@ jobs:
             } > "$D/SUMMARY.txt"
           fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
-          git pull --rebase || true
           git add -A ci-logs || true
-          git commit -m "step3 ci logs run ${GITHUB_RUN_NUMBER}" || true
-          for i in 1 2 3; do git pull --rebase || true; git push && break; sleep 5; done
+          git commit -m "step3 ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

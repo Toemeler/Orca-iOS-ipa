@@ -15,6 +15,7 @@ on:
   push:
     branches:
       - claude/basic-ipad-app-plan-pb0b4p
+      - claude/step-4-ipa-parity-bkdym6
     paths:
       - '.github/workflows/ios-step4-device-ipa.yml'
       - 'patches/**'
@@ -224,12 +225,16 @@ jobs:
       - name: "[8/9] Assemble unsigned OrcaSlicer.ipa"
         run: |
           set -euxo pipefail
-          # The executable's name has moved around upstream (OrcaSlicer vs
-          # orca-slicer), so locate it by Mach-O type rather than by name.
+          # The link rule writes src/OrcaSlicer.app/OrcaSlicer; fall back to a
+          # Mach-O scan because the executable's name has moved around upstream
+          # (OrcaSlicer vs orca-slicer).
           BIN=""
-          while IFS= read -r f; do
-            file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
-          done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          [ -f orca/build/src/OrcaSlicer.app/OrcaSlicer ] && BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          if [ -z "$BIN" ]; then
+            while IFS= read -r f; do
+              file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
+            done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          fi
           [ -n "$BIN" ] || { echo "no Mach-O executable found under orca/build/src"; \
                              find orca/build/src -maxdepth 2 -type f -perm -111 | head -40; exit 1; }
           echo "executable: $BIN"

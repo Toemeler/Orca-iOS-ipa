@@ -321,7 +321,15 @@ jobs:
           </dict></plist>
           PLIST
 
-          cp -R orca/resources "$APP/resources"
+          cp -R orca/resources "$APP/orca-resources"
+          # A top-level "resources" directory is "Resources" on a case-insensitive
+          # filesystem, and CFBundle then reads the flat bundle as an old-style
+          # one whose Info.plist lives inside it - the installer reports the
+          # useless "Missing bundle ID". Proved by ios-sim-probe.yml round 3.
+          if [ -e "$APP/resources" ] || [ -e "$APP/Resources" ]; then
+            echo "::error::$APP has a top-level resources directory; installers will reject it"
+            exit 1
+          fi
 
           # Prove the bundle is installable before handing it to simctl, so a
           # failure names the actual cause instead of "Missing bundle ID".

@@ -287,7 +287,15 @@ jobs:
           rm -rf stage && mkdir -p "$APP"
           cp "$BIN" "$APP/OrcaSlicer"
           # Orca reads profiles/shaders/icons out of resources/ at runtime.
-          cp -R orca/resources "$APP/resources"
+          cp -R orca/resources "$APP/orca-resources"
+          # A top-level "resources" directory is "Resources" on a case-insensitive
+          # filesystem, and CFBundle then reads the flat bundle as an old-style
+          # one whose Info.plist lives inside it - the installer reports the
+          # useless "Missing bundle ID". Proved by ios-sim-probe.yml round 3.
+          if [ -e "$APP/resources" ] || [ -e "$APP/Resources" ]; then
+            echo "::error::$APP has a top-level resources directory; installers will reject it"
+            exit 1
+          fi
           cat > "$APP/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -334,6 +342,11 @@ jobs:
           # which reports as "Failed to get bundle ID / Missing bundle ID".
           # Ordering it first makes a truncated extraction fail loudly somewhere
           # else instead of in the one file the installer reads first.
+          #
+          # NOTE (2026-08-04): "Missing bundle ID" was in fact caused by the
+          # bundle's top-level "resources" directory, not by truncation - see
+          # ios-sim-probe.yml. The directory is now called orca-resources and
+          # the ordering below is kept only because it costs nothing.
           (cd stage && zip -qr "$OUT" Payload/OrcaSlicer.app/Info.plist \
                                       Payload/OrcaSlicer.app/OrcaSlicer)
           (cd stage && zip -qr "$OUT" Payload)

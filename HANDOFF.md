@@ -1054,3 +1054,70 @@ Nothing about the protocol is speculative any more.
 - `start_local_print_with_record` is the plain LAN print (no cloud record) and
   does not call `wait_fn`, which would poll for a cloud job id that never
   arrives.
+
+═══════════════════════════════════════════════════════════════════════
+## ✅ ROOT CAUSE: "Missing bundle ID" was the resources directory
+═══════════════════════════════════════════════════════════════════════
+
+Every attempt to install OrcaSlicer.app - simulator and, almost certainly,
+device - failed with
+
+    Failed to get bundle ID from .../OrcaSlicer.app - Missing bundle ID
+
+The bundle's `resources/` directory is the cause. macOS filesystems are
+case-insensitive, so a top-level `resources` is `Resources` to CFBundle,
+which is the marker of an **old-style bundle** whose `Info.plist` lives
+*inside* that directory. Not finding one there, the installer reports a
+missing bundle id - about a plist that is present, lints clean, and from
+which `defaults read CFBundleIdentifier` returns the right answer.
+
+**Proved, not guessed.** `.github/workflows/ios-sim-probe.yml` builds a
+30-line UIKit app and installs one bundle variant per hypothesis, so a round
+takes ~2 minutes instead of a 50-minute Orca build:
+
+| round | variant | result |
+|---|---|---|
+| 1 | plist exactly as step 3 writes it, 2 files | OK |
+| 1 | + CFBundleSupportedPlatforms/DTPlatformName | OK |
+| 1 | binary plist | OK |
+| 1 | same plist + 3000 resource files | **FAILED** |
+| 2 | 100 files / 2 MB · 1000 / 20 MB · 3000 / 59 MB | **all FAILED** |
+| 3 | directory named `resources` | **FAILED** |
+| 3 | directory named `Resources` | **FAILED** |
+| 3 | directory named `orca-resources` | OK |
+| 3 | directory named `data` | OK |
+| 3 | nested `share/resources` | OK |
+
+Size, file count and depth are all irrelevant; only the top-level name is.
+
+**Fix:** the directory is `orca-resources` everywhere - patch 0320
+(`resources_dir()` at runtime), patch 0334 (`BIN_RESOURCES_DIR` at build
+time) and the three workflows that assemble a bundle. Each of those
+workflows now refuses to package a bundle containing a top-level
+`resources`/`Resources`, so it cannot come back.
+
+The step-4 comment blaming this error on a truncated zip extraction was
+wrong; it has been corrected in place. Keep ios-sim-probe.yml - the next
+"why won't it install" question is two minutes away instead of an hour.
+
+### Build speed - where the time actually goes
+Measured on fast run 4 (18:45:49 -> 19:39:16):
+
+    checkout + patches + cache restores + configure    45 s
+    ninja                                          50 m 34 s
+
+so "fast" is entirely about ccache, and **nothing in either workflow has
+ever printed a ccache statistic**. The circumstantial evidence says it was
+not working: run 62 saved its ccache in 5 seconds and run 4 restored it in
+4 - empty-cache numbers after 650 translation units. Both workflows now run
+`ccache -z` before the build and publish `ccache -s -v` to ci-logs, and the
+cache is sized for the job (3G, was 1.5G), with CCACHE_BASEDIR/NOHASHDIR so
+an object's absolute path stays out of the hash and `system_headers` so the
+SDK does not get hashed into every object.
+
+**Caches are per-branch.** A run can only restore caches created on its own
+branch or on the repository's default branch. That is why run 62 spent
+21m52s "topping up" deps whose key had not changed: the entries existed, but
+on sibling branches. Anything long-lived (deps prefix, wx prefix) should be
+built once on `main` so every future branch inherits it - otherwise each new
+branch pays ~28 minutes before it compiles a line of Orca.

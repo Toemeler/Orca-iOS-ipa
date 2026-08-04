@@ -2,7 +2,7 @@ diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index 33831e61..990ac556 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -273,7 +273,18 @@ else ()
+@@ -273,7 +273,21 @@ else ()
      else ()
          set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/../resources")
      endif ()
@@ -17,7 +17,10 @@ index 33831e61..990ac556 100644
 +        # file or directory`).
 +        #
 +        # Flat layout it is, which is also where patch 0320 points resources_dir.
-+        set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/OrcaSlicer.app/resources")
++        # The name matters: a top-level "resources" is "Resources" on a
++        # case-insensitive filesystem, which makes CFBundle read the bundle as an
++        # old-style one and the installer report "Missing bundle ID".
++        set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/OrcaSlicer.app/orca-resources")
 +    elseif (CMAKE_MACOSX_BUNDLE)
          if (CMAKE_CONFIGURATION_TYPES)
              set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/OrcaSlicer.app/Contents/Resources")

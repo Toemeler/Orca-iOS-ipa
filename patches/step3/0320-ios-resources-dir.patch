@@ -2,7 +2,7 @@ diff --git a/src/OrcaSlicer.cpp b/src/OrcaSlicer.cpp
 index 5a4e51c8c..3e06d3d20 100644
 --- a/src/OrcaSlicer.cpp
 +++ b/src/OrcaSlicer.cpp
-@@ -7172,7 +7172,13 @@ bool CLI::setup(int argc, char **argv)
+@@ -7172,7 +7172,19 @@ bool CLI::setup(int argc, char **argv)
      boost::filesystem::path path_to_binary = boost::dll::program_location();
  
      // Path from the Slic3r binary to its resources.
@@ -11,8 +11,14 @@ index 5a4e51c8c..3e06d3d20 100644
 +    // An iOS .app bundle is flat: the executable sits at OrcaSlicer.app/OrcaSlicer
 +    // rather than under Contents/MacOS, so the macOS parent_path().parent_path()
 +    // walk would land outside the bundle entirely. Resources ship alongside the
-+    // executable at OrcaSlicer.app/resources.
-+    boost::filesystem::path path_resources = boost::filesystem::canonical(path_to_binary).parent_path() / "resources";
++    // executable -- but NOT in a directory called "resources": macOS filesystems
++    // are case-insensitive, so a top-level "resources" is "Resources" to
++    // CFBundle, which then treats the flat bundle as an old-style one and looks
++    // for Info.plist inside it. The installer's complaint is "Missing bundle ID"
++    // (proved by .github/workflows/ios-sim-probe.yml: identical bundles install
++    // with the directory named orca-resources or data, and fail when it is named
++    // resources or Resources).
++    boost::filesystem::path path_resources = boost::filesystem::canonical(path_to_binary).parent_path() / "orca-resources";
 +#elif defined(__APPLE__)
      // The application is packed in the .dmg archive as 'Slic3r.app/Contents/MacOS/Slic3r'
      // The resources are packed to 'Slic3r.app/Contents/Resources'

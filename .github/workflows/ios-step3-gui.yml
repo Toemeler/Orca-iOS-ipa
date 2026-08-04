@@ -292,6 +292,16 @@ jobs:
             <key>UIRequiresFullScreen</key><true/>
           </dict></plist>
           PLIST
+          # installd reads Info.plist through CFBundle and wants it in BINARY
+          # plist format. A hand-written XML one parses fine with every other
+          # tool -- plutil, plistlib, CFPropertyList -- and is then rejected at
+          # install time with "Failed to get bundle ID ... Missing bundle ID",
+          # which reads like the key is absent rather than the encoding wrong.
+          # Xcode always emits binary, so a normal app never hits this.
+          # Reproduced in the simulator (step-3 run 61) installing straight from
+          # a directory, which ruled out zip ordering, payload size and AFC.
+          plutil -convert binary1 "$APP/Info.plist"
+          plutil -lint "$APP/Info.plist"
 
           RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
           UDID=$(xcrun simctl create "orca-ipad" \

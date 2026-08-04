@@ -87,7 +87,11 @@ jobs:
             orca/deps/build
             ios-prefix
             ~/dep-dl
-          key: ios-deps-device-v1-${{ github.run_number }}
+          # Keyed on what changes the dependency build, not on the run number:
+          # a per-run key mints a new multi-GB entry every time, and against a
+          # 10 GB repository quota that evicts the entry the next run needs.
+          # See the matching change in ios-step3-gui.yml.
+          key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
           restore-keys: |
             ios-deps-device-v1-
 
@@ -124,7 +128,8 @@ jobs:
             orca/deps/build
             ios-prefix
             ~/dep-dl
-          key: ios-deps-device-v1-${{ github.run_number }}
+          # Same key as the restore: an existing key makes the save a skip.
+          key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
 
       - name: "[5/9] Build wxWidgets iPhone port (device)"
         run: |

@@ -209,6 +209,11 @@ class MqttServer(threading.Thread):
             self._record("mqtt_published.jsonl", {"topic": topic, "qos": qos, "payload": payload})
             if qos == 1:
                 conn.sendall(bytes([PUBACK << 4, 2]) + struct.pack("!H", packet_id))
+            # Test hook: lets the self test simulate a printer that drops the
+            # connection (reboot, Wi-Fi glitch) without any timing games.
+            if "__mock_drop__" in payload:
+                log("dropping the connection on request")
+                return False
             return True
 
         if ptype == PINGREQ:

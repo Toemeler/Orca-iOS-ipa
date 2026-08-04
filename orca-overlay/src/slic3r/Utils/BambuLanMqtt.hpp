@@ -155,6 +155,9 @@ private:
     bool wait_readable(int timeout_ms);
     bool wait_writable(int timeout_ms);
     void close_socket();
+    // Stops the receive thread and closes the socket. The caller must hold
+    // m_lifecycle_mutex.
+    void teardown_locked(bool send_disconnect);
     void rx_loop();
     void fire_lost(const std::string& reason);
 

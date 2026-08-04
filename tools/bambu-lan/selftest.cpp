@@ -409,6 +409,41 @@ void test_live(const std::string& host, uint16_t mqtt_port, uint16_t ftp_port, c
     check(!read_file(state_dir + "/mqtt_disconnect.jsonl").empty(), "printer saw a clean DISCONNECT");
 }
 
+// The client has to survive a printer that goes away and comes back on the
+// same object: assigning over a finished-but-joinable receive thread would
+// call std::terminate.
+void test_reconnect(const std::string& host, uint16_t mqtt_port, const std::string& access_code, const std::string& serial)
+{
+    std::cout << "live: reconnect on the same client\n";
+    MqttClient client;
+
+    std::atomic<int> lost_count{0};
+    client.set_lost_fn([&](const std::string&) { lost_count.fetch_add(1); });
+
+    MqttConfig cfg;
+    cfg.host        = host;
+    cfg.port        = mqtt_port;
+    cfg.password    = access_code;
+    cfg.keepalive_s = 10;
+
+    std::string error;
+    check(client.connect(cfg, error) == ConnackAccepted, "first connect");
+    client.disconnect();
+    check(lost_count.load() == 0, "a deliberate disconnect is not reported as a lost connection");
+
+    check(client.connect(cfg, error) == ConnackAccepted, "reconnect after disconnect");
+
+    // Now make the printer hang up on us and reconnect from the lost callback's
+    // aftermath - the case that used to leave a joinable thread behind.
+    check(client.publish("device/" + serial + "/request", "{\"__mock_drop__\":true}", 0), "drop request sent");
+    check(wait_for([&] { return lost_count.load() > 0; }, 5000), "loss of connection is reported");
+    check(!client.is_connected(), "client knows it is disconnected");
+
+    check(client.connect(cfg, error) == ConnackAccepted, "reconnect after an unexpected drop");
+    check(client.is_connected(), "connected again");
+    client.disconnect();
+}
+
 void test_discovery_live(uint16_t ssdp_port)
 {
     std::cout << "live: SSDP discovery\n";
@@ -470,6 +505,7 @@ int main(int argc, char** argv)
 
     if (!state_dir.empty()) {
         test_live(host, mqtt_port, ftp_port, access_code, serial, state_dir);
+        test_reconnect(host, mqtt_port, access_code, serial);
         test_discovery_live(ssdp_port);
     } else {
         std::cout << "(no --state-dir: offline tests only)\n";

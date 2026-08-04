@@ -568,10 +568,48 @@ void MqttClient::close_socket()
     }
 }
 
+void MqttClient::teardown_locked(bool send_disconnect)
+{
+    const bool was_connected = m_connected.exchange(false);
+    m_stop.store(true);
+    // A deliberate teardown is not a lost connection. Claiming the one-shot
+    // flag here also means the receive thread cannot be inside the callback
+    // while the owner is destroying itself right after this call.
+    m_lost_fired.store(true);
+
+    if (send_disconnect && was_connected && m_fd >= 0) {
+        const std::vector<uint8_t> pkt = encode_disconnect();
+        write_all(pkt.data(), pkt.size());
+    }
+
+    // Shut the socket down before joining: the receive thread is parked in
+    // poll(), and a half-close wakes it immediately instead of after its
+    // poll slice.
+    if (m_fd >= 0) {
+#ifdef _WIN32
+        ::shutdown(m_fd, SD_BOTH);
+#else
+        ::shutdown(m_fd, SHUT_RDWR);
+#endif
+    }
+    if (m_rx_thread.joinable()) {
+        if (m_rx_thread.get_id() == std::this_thread::get_id())
+            m_rx_thread.detach(); // called from inside the lost callback
+        else
+            m_rx_thread.join();
+    }
+    close_socket();
+}
+
 int MqttClient::connect(const MqttConfig& cfg, std::string& error)
 {
     std::lock_guard<std::mutex> lifecycle(m_lifecycle_mutex);
     error.clear();
+
+    // A previous session may have ended on its own (connection lost), leaving a
+    // finished-but-joinable receive thread behind. Assigning over a joinable
+    // std::thread calls std::terminate, so always tear the old one down first.
+    teardown_locked(false);
 
     m_stop.store(false);
     m_lost_fired.store(false);
@@ -650,35 +688,7 @@ int MqttClient::connect(const MqttConfig& cfg, std::string& error)
 void MqttClient::disconnect()
 {
     std::lock_guard<std::mutex> lifecycle(m_lifecycle_mutex);
-    const bool was_connected = m_connected.exchange(false);
-    m_stop.store(true);
-    // A deliberate teardown is not a lost connection. Claiming the one-shot
-    // flag here also means the receive thread cannot be inside the callback
-    // while the owner is destroying itself right after this call.
-    m_lost_fired.store(true);
-
-    if (was_connected && m_fd >= 0) {
-        const std::vector<uint8_t> pkt = encode_disconnect();
-        write_all(pkt.data(), pkt.size());
-    }
-
-    // Shut the socket down before joining: the receive thread is parked in
-    // poll(), and a half-close wakes it immediately instead of after its
-    // poll slice.
-    if (m_fd >= 0) {
-#ifdef _WIN32
-        ::shutdown(m_fd, SD_BOTH);
-#else
-        ::shutdown(m_fd, SHUT_RDWR);
-#endif
-    }
-    if (m_rx_thread.joinable()) {
-        if (m_rx_thread.get_id() == std::this_thread::get_id())
-            m_rx_thread.detach(); // disconnect() called from the lost callback
-        else
-            m_rx_thread.join();
-    }
-    close_socket();
+    teardown_locked(true);
 }
 
 void MqttClient::fire_lost(const std::string& reason)

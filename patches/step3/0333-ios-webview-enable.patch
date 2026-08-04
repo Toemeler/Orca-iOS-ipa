@@ -1,0 +1,142 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 6c881cac..1365e54d 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -724,6 +724,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+     list(APPEND SLIC3R_GUI_SOURCES
+             GUI/ios_platform_stubs.cpp
+             GUI/ios_gl_compat.cpp
++            GUI/ios_webview_support.mm
+         )
+ endif ()
+ 
+diff --git a/src/slic3r/GUI/Widgets/WebView.cpp b/src/slic3r/GUI/Widgets/WebView.cpp
+index 90f98f06..86e496da 100644
+--- a/src/slic3r/GUI/Widgets/WebView.cpp
++++ b/src/slic3r/GUI/Widgets/WebView.cpp
+@@ -9,10 +9,9 @@
+ #if wxUSE_WEBVIEW_EDGE
+ #include <wx/msw/webview_edge.h>
+ #elif defined(__WXMAC__)
+-#if !defined(__WXOSX_IPHONE__)
++// The WKWebView backend is compiled for the iPhone port too now (step2/0210).
+ #include <wx/osx/webview_webkit.h>
+ #endif
+-#endif
+ #include <wx/uri.h>
+ #if defined(__WIN32__) || defined(__WXMAC__)
+ #include "wx/private/jsscriptwrapper.h"
+@@ -174,7 +173,7 @@ private:
+     COREWEBVIEW2_PREFERRED_COLOR_SCHEME pendingColorScheme = COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO;
+ };
+ 
+-#elif defined(__WXOSX__) && !defined(__WXOSX_IPHONE__)
++#elif defined(__WXOSX__)
+ 
+ class WebViewWebKit : public wxWebViewWebKit
+ {
+@@ -301,8 +300,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
+         webView->SetUserAgent(wxString::Format("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) BBL-Slicer/v%s (%s) BBL-Language/%s",
+                                                Slic3r::GUI::wxGetApp().get_bbl_client_version(), Slic3r::GUI::wxGetApp().dark_mode() ? "dark" : "light", language_code.mb_str()));
+ #endif
+-#if defined(__WXMAC__) && !defined(__WXOSX_IPHONE__)
+-        // step 5: revive via the iOS WKWebView backend (class exists on iOS)
++#if defined(__WXMAC__)
+         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+         Slic3r::GUI::WKWebView_setTransparentBackground(wkWebView);
+ #endif
+@@ -379,10 +377,6 @@ bool WebView::RunScript(wxWebView *webView, wxString const &javascript)
+         if (webView2 == nullptr)
+             return false;
+         return webView2->ExecuteScript(javascript, NULL) == 0;
+-#elif defined(__WXOSX_IPHONE__)
+-        // no webview backend on iOS yet (step 5); JS execution unavailable
+-        (void) webView; (void) javascript;
+-        return false;
+ #elif defined __WXMAC__
+         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
+         Slic3r::GUI::WKWebView_evaluateJavaScript(wkWebView, javascript, nullptr);
+diff --git a/src/slic3r/GUI/ios_platform_stubs.cpp b/src/slic3r/GUI/ios_platform_stubs.cpp
+index e1876971..b6ec8685 100644
+--- a/src/slic3r/GUI/ios_platform_stubs.cpp
++++ b/src/slic3r/GUI/ios_platform_stubs.cpp
+@@ -107,9 +107,10 @@ double mac_max_scaling_factor() { return 2.0; }
+ void   set_miniaturizable(void * /*window*/) {}
+ void   set_tag_when_enter_full_screen(bool /*isfullscreen*/) {}
+ void   set_title_colour_after_set_title(void * /*window*/) {}
+-void   WKWebView_evaluateJavaScript(void * /*web*/, wxString const & /*script*/,
+-                                    void (* /*callback*/)(wxString const &)) {}
+-void   WKWebView_setTransparentBackground(void * /*web*/) {}
++// WKWebView_evaluateJavaScript and WKWebView_setTransparentBackground are NOT
++// stubbed here any more: GUI/ios_webview_support.mm implements them against the
++// real WKWebView backend. Defining them in both places is a duplicate symbol at
++// link time -- the same way wxMediaCtrl2::DoSetSize was (patch 0331).
+ void   initGestures(void * /*view*/, wxEvtHandler * /*handler*/) {}
+ void   openFolderForFile(wxString const & /*file*/) {}
+ void   StaticGroup_layoutBadge(void * /*group*/, void * /*badge*/) {}
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+new file mode 100644
+index 00000000..f8431bb2
+--- /dev/null
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -0,0 +1,60 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// iOS implementations of the two WKWebView helpers Orca calls directly.
++//
++// On macOS these live in Utils/MacDarkMode.mm, which is excluded from the iOS
++// build (patch 0302), so patch 0316 stubbed them out as no-ops while wxWebView
++// had no backend at all. Now that the WKWebView backend is compiled for the
++// iPhone port (patch step2/0210) they need to do the real thing, otherwise the
++// web panels load but nothing can be pushed into them: Orca drives the embedded
++// pages almost entirely through evaluateJavaScript.
++
++#import <WebKit/WebKit.h>
++#import <UIKit/UIKit.h>
++
++#include "libslic3r/libslic3r.h"
++#include "slic3r/Utils/MacDarkMode.hpp"
++#include <wx/osx/core/cfstring.h>
++
++namespace Slic3r {
++namespace GUI {
++
++void WKWebView_evaluateJavaScript(void *web, wxString const &script,
++                                  void (*callback)(wxString const &))
++{
++    if (web == nullptr)
++        return;
++
++    // Identical API to the macOS implementation this mirrors.
++    [(WKWebView *) web evaluateJavaScript:wxCFStringRef(script).AsNSString()
++                       completionHandler:^(id result, NSError *error) {
++        if (callback && error != nil) {
++            wxString err = wxCFStringRef(error.localizedFailureReason).AsString();
++            callback(err);
++        }
++    }];
++}
++
++void WKWebView_setTransparentBackground(void *web)
++{
++    if (web == nullptr)
++        return;
++
++    WKWebView *webView = (WKWebView *) web;
++
++    // The macOS version clears the backing layer and registers for dragged
++    // file types. There is no NSFilenamesPboardType here -- dropping files onto
++    // a view is a UIDropInteraction, which is separate work -- so this does the
++    // transparency only. On iOS a web view also has to be made non-opaque and
++    // its scroll view cleared, or the white page background shows through
++    // whatever Orca draws behind it.
++    webView.opaque = NO;
++    webView.backgroundColor = [UIColor clearColor];
++    webView.scrollView.backgroundColor = [UIColor clearColor];
++    webView.layer.backgroundColor = [UIColor clearColor].CGColor;
++}
++
++} // namespace GUI
++} // namespace Slic3r

@@ -1,0 +1,28 @@
+diff --git a/src/osx/webview_webkit.mm b/src/osx/webview_webkit.mm
+index 99122f4..f72a081 100644
+--- a/src/osx/webview_webkit.mm
++++ b/src/osx/webview_webkit.mm
+@@ -693,12 +693,23 @@ wxString wxWebViewWebKit::GetCurrentTitle() const
+ 
+ float wxWebViewWebKit::GetZoomFactor() const
+ {
++#if defined(__WXOSX_IPHONE__)
++    // WKWebView.magnification is AppKit-only. iOS has pageZoom (14+), which is
++    // the same idea -- a scale factor applied to the page -- and the
++    // deployment target here is well past that.
++    return float(m_webView.pageZoom);
++#else
+     return float(m_webView.magnification);
++#endif
+ }
+ 
+ void wxWebViewWebKit::SetZoomFactor(float zoom)
+ {
++#if defined(__WXOSX_IPHONE__)
++    m_webView.pageZoom = double(zoom);
++#else
+     m_webView.magnification = double(zoom);
++#endif
+ }
+ 
+ void wxWebViewWebKit::DoSetPage(const wxString& src, const wxString& baseUrl)

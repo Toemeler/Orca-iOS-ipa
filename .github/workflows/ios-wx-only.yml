@@ -15,6 +15,17 @@ name: iOS wx-only - fast parity iteration
 # here costs minutes rather than an IPA round.
 
 on:
+  # workflow_dispatch only registers for workflows that already exist on the
+  # default branch, and this one does not yet, so pushes are the trigger. The
+  # path filter is exactly the wx-side surface: iterating any of it validates
+  # here in ~5 minutes.
+  push:
+    branches:
+      - claude/step-4-ipa-parity-bkdym6
+    paths:
+      - '.github/workflows/ios-wx-only.yml'
+      - 'patches/step2/**'
+      - 'wx-overlay/**'
   workflow_dispatch:
     inputs:
       wx_ref:

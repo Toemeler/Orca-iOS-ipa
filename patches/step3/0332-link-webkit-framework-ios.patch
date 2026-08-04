@@ -1,0 +1,27 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 20b3e0e6..33831e61 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -148,6 +148,9 @@ if (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS")
+     target_link_libraries(OrcaSlicer
+         "-liconv" "-lc++"
+         "-framework UIKit" "-framework OpenGLES" "-framework GLKit" "-framework QuartzCore"
++        # WebKit: wx's WKWebView backend is compiled for the iPhone port now
++        # (patch step2/0210), so wxWebView is real rather than returning NULL.
++        "-framework WebKit"
+         "-framework CoreGraphics" "-framework CoreText" "-framework CoreFoundation"
+         "-framework Foundation" "-framework Security" "-framework AudioToolbox"
+         "-framework CFNetwork" "-framework MobileCoreServices"
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 1342cfab..6c881cac 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -807,7 +807,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+     )
+ elseif (APPLE)
+     if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+-        target_link_libraries(libslic3r_gui "-framework Security" "-framework UIKit" "-framework OpenGLES" "-framework GLKit")
++        target_link_libraries(libslic3r_gui "-framework Security" "-framework UIKit" "-framework OpenGLES" "-framework GLKit" "-framework WebKit")
+     elseif(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+         target_link_libraries(libslic3r_gui ${DISKARBITRATION_LIBRARY} "-framework Security" "-framework OpenGL")
+     else()

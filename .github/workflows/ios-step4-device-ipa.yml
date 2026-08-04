@@ -352,6 +352,12 @@ jobs:
           for f in /tmp/step4-ninja.log /tmp/wx-ninja.log /tmp/deps-ninja.log; do
             [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 400000 > "$D/$(basename "$f" .log)-errors.log"
           done
+          # Verbatim tail as well as the grep excerpt. A failing link prints one
+          # enormous command line, which swallows the -A context before the
+          # actual ld diagnosis is reached -- step-4 run 17 failed with neither
+          # undefined nor duplicate symbols and the reason was simply not in
+          # the captured excerpt.
+          [ -f /tmp/step4-ninja.log ] && tail -n 200 /tmp/step4-ninja.log > "$D/step4-ninja-tail.log"
           if [ -f /tmp/step4-ninja.log ]; then
             {
               echo "=== FAILED targets ==="

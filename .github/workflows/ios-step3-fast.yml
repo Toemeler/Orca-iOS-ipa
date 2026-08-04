@@ -196,8 +196,8 @@ jobs:
 
           # Prove the bundle is installable before handing it to simctl, so a
           # failure names the actual cause instead of "Missing bundle ID".
-          df -h /Users/runner 2>/dev/null || df -h .
-          ls -la "$APP"
+          { df -h /Users/runner 2>/dev/null || df -h .; echo; ls -la "$APP"; echo;
+            echo "--- Info.plist as written ---"; cat "$APP/Info.plist"; } | tee /tmp/bundle-check.log
           python3 - "$APP/Info.plist" <<'VERIFY'
           import plistlib, sys
           path = sys.argv[1]
@@ -256,7 +256,7 @@ jobs:
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
-          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt; do
+          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt /tmp/bundle-check.log; do
             [ -f "$l" ] && tail -c 20000 "$l" > "$D/$(basename "$l")"
           done
           [ -f artifact/orca-on-ipad.png ] && cp artifact/orca-on-ipad.png "$D/"

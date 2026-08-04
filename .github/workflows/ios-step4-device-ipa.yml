@@ -305,6 +305,15 @@ jobs:
             <key>LSRequiresIPhoneOS</key><true/>
             <key>UIDeviceFamily</key><array><integer>2</integer></array>
             <key>UILaunchScreen</key><dict/>
+            <!-- iOS 14+ blocks every local-network connection until the user
+                 agrees. Without this key the native Bambu LAN backend cannot reach
+                 the printer at all, and the failure is silent. -->
+            <key>NSLocalNetworkUsageDescription</key>
+            <string>OrcaSlicer talks to 3D printers on your local network.</string>
+            <key>NSBonjourServices</key><array><string>_bambulab._tcp</string></array>
+            <key>NSAppTransportSecurity</key><dict>
+              <key>NSAllowsLocalNetworking</key><true/>
+            </dict>
             <key>UIRequiresFullScreen</key><true/>
             <key>UIFileSharingEnabled</key><true/>
             <key>LSSupportsOpeningDocumentsInPlace</key><true/>

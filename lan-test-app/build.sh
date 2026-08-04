@@ -48,6 +48,9 @@ fi
 rm -rf "$OUT"
 mkdir -p "$APP"
 
+# -x objective-c++ stays in force for every argument that follows it, static
+# libraries included - clang would try to *compile* libssl.a. -x none puts the
+# language back to "infer from the file" before the link inputs.
 set -x
 xcrun --sdk "$SDK" clang++ \
     -x objective-c++ -std=c++17 -fobjc-arc -O1 -g \
@@ -58,6 +61,7 @@ xcrun --sdk "$SDK" clang++ \
     "$SRC/BambuLanFtps.cpp" \
     "$SRC/BambuLanDiscovery.cpp" \
     "$SRC/BambuLanPrintCommand.cpp" \
+    -x none \
     "$SSL_PREFIX/lib/libssl.a" "$SSL_PREFIX/lib/libcrypto.a" "${CURL_LIBS[@]}" \
     -framework UIKit -framework Foundation -framework CoreGraphics \
     -framework UniformTypeIdentifiers -framework Security \

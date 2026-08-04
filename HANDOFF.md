@@ -953,3 +953,93 @@ not a shim.
   both slices and could later serve desktop builds that want a plugin-free path.
 - Validate the MQTT framing against a real A1 early; the protocol is documented
   by community projects but the payload schema is Orca's own.
+
+═══════════════════════════════════════════════════════════════════════
+## ✅ BUILT: native Bambu LAN backend (task #13) — 2026-08-04
+═══════════════════════════════════════════════════════════════════════
+
+The design above is implemented. Sources live in
+`orca-overlay/src/slic3r/Utils/` (shipped into the Orca tree by every
+step-3/4 workflow's `cp -R orca-overlay/. .`), wiring is
+`patches/step3/0335-ios-bambu-lan-agent.patch`.
+
+### What it is
+| File | What it does |
+|---|---|
+| `BambuLanMqtt.{hpp,cpp}` | MQTT 3.1.1 over TLS (OpenSSL). Codec + client: CONNECT/CONNACK, SUBSCRIBE/SUBACK, PUBLISH both ways, PUBACK for inbound QoS 1, PINGREQ keepalive, DISCONNECT, receive thread, dead-link detection. No Orca/wx/boost dependency. |
+| `BambuLanFtps.{hpp,cpp}` | Implicit-TLS FTPS upload on 990 through libcurl, progress + cancel. |
+| `BambuLanDiscovery.{hpp,cpp}` | SSDP listener on 1990/2021, emits exactly the JSON `DeviceManager::on_machine_alive()` parses. |
+| `BambuLanPrintCommand.{hpp,cpp}` | The `project_file` command and its `file:///sdcard/<name>` URL. |
+| `BambuLanPrinterAgent.{hpp,cpp}` | `IPrinterAgent` implementation, registered under the **same `"bbl"` id** as the plugin wrapper. |
+
+Registering under `"bbl"` is the whole trick: `GUI_App::switch_printer_agent()`
+picks that id for every Bambu-vendor preset, so DeviceManager, PrintJob,
+Monitor and the Device tab are untouched. `switch_printer_agent()` runs at
+startup via `load_current_presets()` -> `Tab::load_current_preset()` ->
+`on_presets_changed()`, and `NetworkAgent::set_printer_agent()` re-applies
+the cached callbacks, so the agent is live before the first connect.
+
+### Decisions worth knowing
+- **connect_printer is asynchronous.** It returns `BAMBU_NETWORK_SUCCESS`
+  immediately and reports through `set_on_local_connect_fn`, exactly as the
+  plugin did — `DeviceManager::set_selected_machine()` ignores the return
+  value and calls it from the UI thread, so blocking would freeze the app for
+  the TLS handshake. CONNACK 5 is passed through as the string `"5"`, which is
+  the value `GUI_App` special-cases into "Incorrect password".
+- **TLS verification is off.** The printer's certificate is self-signed with
+  no name to match; the access code is the authenticator, as in Bambu's own
+  client. `SSL_CTX_set_security_level(0)` goes with it because the firmware's
+  cipher suites predate OpenSSL 3's defaults.
+- **Upload goes to the FTP root, print URL is `file:///sdcard/<name>`.** The
+  firmware exposes the SD card as the FTP root, and Orca's per-model config
+  carries `"ftp_folder": "sdcard/"` for C11/C12/N1/N2S (empty for X1, where
+  the same path works). Matches TFyre/bambu-farm, which is proven on X1/P1/A1.
+- **Both spellings of `bed_leveling`/`bed_levelling` are sent**; firmware
+  generations disagree and unknown keys are ignored.
+- **Cloud calls return errors on purpose** (bind, ping_bind, cloud print with
+  no LAN credentials). This is a LAN-only agent.
+- `GUI_App::on_init_network()` forces `should_load_networking_plugin = false`
+  on iOS, which switches off every plugin load attempt *and* every
+  "install the network plug-in" dialog.
+- **Discovery is a convenience, not a requirement.** Joining a multicast group
+  needs an entitlement a sideloaded build does not have, so joins are best
+  effort. The manual IP + access-code path (which `InputIpAddressDialog`
+  already forces on Apple platforms) needs none of it.
+- **`NSLocalNetworkUsageDescription` is mandatory** in the Info.plist or iOS
+  14+ blocks every connection to the printer. It is in `lan-test-app/build.sh`;
+  the step-4 IPA plist needs it too.
+
+### How it was validated
+`tools/bambu-lan/` holds a mock printer (`mock_printer.py`: TLS MQTT broker +
+implicit-FTPS server + SSDP announcer) and `selftest.cpp`, which links the
+shipping sources. `tools/bambu-lan/run-selftest.sh` builds and runs both:
+**111/111 checks pass**, covering the codec (varints, partial reads,
+malformed input, multi-packet TLS records), the print command JSON, SSDP
+parsing, and a live round trip — wrong access code -> CONNACK 5, connect,
+subscribe, pushed report, QoS-1 publish, keepalive, clean disconnect, then a
+byte-verified FTPS upload and an auth-failure case. Run it on any host with
+OpenSSL + libcurl headers; it needs no iOS.
+
+`BambuLanPrinterAgent.cpp` and the patched `NetworkAgentFactory.cpp` were also
+`-fsyntax-only` checked against the real Orca headers before pushing (needs
+boost, eigen3, tbb, cereal, and a generated `libslic3r_version.h`).
+
+### `lan-test-app/` — the fast device check
+`BambuLAN.app` is a UIKit app that links the same four backend sources and
+nothing else. `.github/workflows/ios-lan-test-ipa.yml` builds OpenSSL (68 s
+cold, cached after) and curl for `iphoneos`, compiles the app, and publishes
+an unsigned IPA to a Release — minutes, not the 40-minute Orca build. It
+covers connect, push-all, get_version, home, jog X/Y/Z, extrude/retract,
+unload, nozzle/bed temperature, part/aux fans, chamber light, print speed,
+pause/resume/stop, raw gcode, raw JSON, SSDP scan, and (with curl) upload a
+3mf and start it. Every payload was copied from `DeviceManager.cpp` /
+`DeviceCore/Dev*.cpp`, so a green result there is a green result in Orca.
+
+### What is NOT done
+- Never yet spoken to a real printer. The protocol is right per the mock and
+  the community documentation, but the payload schema is Bambu's; use the test
+  app against the A1 first.
+- Camera (TCP 6000) stays out of scope, as agreed.
+- `start_local_print_with_record` is the plain LAN print (no cloud record) and
+  does not call `wait_fn`, which would poll for a cloud job id that never
+  arrives.

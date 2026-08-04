@@ -854,3 +854,48 @@ compile-validated only. The step-3 fast workflow now carries the launch; that
 is the next thing to get evidence from. Two items in 0209 cannot be settled
 without real hardware: the sign of the wheel rotation, and whether the pan
 recognizer ever steals a drag.
+
+═══════════════════════════════════════════════════════════════════════
+## SCOPE DECIDED WITH THE USER (2026-08-04)
+═══════════════════════════════════════════════════════════════════════
+
+Target hardware: **Bambu A1 in LAN-only mode.** That single fact reshapes the
+remaining work.
+
+### ⚠ THE BLOCKER NOBODY HAD NOTICED
+Bambu LAN mode in Orca does **not** talk to the printer directly. Both paths go
+through prebuilt closed-source binaries that Orca downloads per platform:
+- printing: `NetworkAgent::connect_printer(dev_id, dev_ip, ...)` ->
+  `BBLNetworkPlugin` (BambuNetworkEngine)
+- camera: `BambuSource` (`src/slic3r/Utils/BBLNetworkPlugin.cpp`)
+
+`GUI_App.cpp` picks between windows/windows_arm/macOS/Linux builds of these.
+**There is no iOS build, and iOS cannot load a runtime-downloaded dylib** — it
+would have to be bundled and signed, and we do not have the binaries.
+
+So the app as it stands would slice, render and load profiles perfectly and be
+**unable to reach the printer at all**. That is not a porting bug; it is a
+dependency that does not exist for this platform.
+
+The way through is a native LAN backend speaking the documented protocols
+directly, bypassing the plugin:
+- **MQTT over TLS, port 8883**, authenticated with device serial + LAN access
+  code — status and print control
+- **FTPS, port 990** — upload the sliced 3mf
+Orca already links CURL and OpenSSL, so the pieces are in the tree. This is
+substantial but legitimate work, not reverse-engineering a closed binary.
+
+### Agreed scope
+IN:
+1. Get it launching (in flight)
+2. **Native Bambu LAN backend** (MQTT + FTPS) — the big one
+3. **Live control peers** — radio / toggle / spin / statbox / searchctrl render
+   blank and do not respond; Preferences and several dialogs need them
+4. PartPlate drawing dropped by 0328 — **decide after the first screenshot**;
+   if the plate renders correctly those were dead paths and this is free
+
+OUT (explicitly declined):
+- Printer camera (would need the port-6000 stream reimplemented; dropped once
+  the plugin dependency was understood)
+- Files-app / document-picker export (wireless to printer only)
+- Tooltips, dark-mode detection, drag-and-drop of files

@@ -570,3 +570,140 @@ and these are not on main yet.
 3. Then dispatch step 4 (deps + wx now cached) for the device IPA.
 4. Still deferred to step 5: the real WKWebView backend (revival sites are
    marked `!defined(__WXOSX_IPHONE__)`), AVPlayer camera, UIDocumentPicker export.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION UPDATE (2026-08-04) — link closed out, and why the GUI would
+## not have rendered even once the link went green
+═══════════════════════════════════════════════════════════════════════
+
+Branch note: work continues on `claude/step-4-ipa-parity-bkdym6`, branched
+from `claude/basic-ipad-app-plan-pb0b4p` at faaa588 so nothing is lost.
+`ios-step4-device-ipa.yml` now triggers on pushes to both branches (it has
+no usable `workflow_dispatch` — the file is not on the default branch yet).
+`ios-step3-gui.yml` IS on main, so `workflow_dispatch` with `ref=<branch>`
+works and runs the branch's copy of the file.
+
+### The link: 2 symbols, closed (patch 0325)
+Run 55 (simulator) and run 7 (device) both stopped at the same place:
+`_gladLoaderLoadGLES2` / `_gladLoaderUnloadGLES2`, referenced from
+libvgcode's `OpenGLWrapper`. 0323 had removed `glad/src/gles2.c` from
+libvgcode because it defines the same `glad_gl*` entry points as the shared
+`src/glad` target (263 duplicate symbols), which left the two loader
+functions undefined. There is nothing for them to do on iOS anyway —
+OpenGLES.framework is linked directly and 0324 already resolves every entry
+point out of the process image — so 0325 skips them there. Branch selection
+verified with a preprocessor trace; the macOS and non-Apple ES
+configurations are byte-identical to upstream.
+
+### ▲ THE BIG ONE: `SLIC3R_OPENGL_ES` was never a preprocessor macro (0327)
+`SLIC3R_OPENGL_ES` exists **only as a CMake variable**, read by exactly one
+file — `src/libvgcode/CMakeLists.txt`, which turns it into
+`ENABLE_OPENGL_ES` for libvgcode's own sources. Nothing ever defined it for
+the GUI. Confirmed against a real CI compile line for `libslic3r_gui`
+(ci-logs/step3-run-11): the define is simply not there.
+
+But `src/slic3r/GUI` writes its ES branches as `#if SLIC3R_OPENGL_ES`,
+which with the macro undefined is `#if 0`. So **every iOS build so far
+compiled the desktop OpenGL path**. What that costs:
+
+- `GLShadersManager::init()` picks `"110/"` or `"140/"` instead of `"ES/"`.
+  An ES 3.0 context reports version 3.0, so it lands on `110/` — desktop
+  GLSL that no GLES driver will compile. Every shader fails, the 3D scene
+  never draws, and the 38-file `orca-overlay/resources/shaders/ES/` set this
+  repo ships would never have been opened.
+- All the `#if !SLIC3R_OPENGL_ES` desktop-only fallbacks stay live.
+
+0327 defines it on `libslic3r_gui` when the option is on. Audited what that
+newly compiles: 15 regions, every one a single
+`get_shader("dashed_lines")` / `get_shader("wireframe")` line plus the
+prefix block. No new symbols, no compile risk.
+
+The ES shader set was checked against the `140/` reference: all 38 are
+`#version 300 es`, and every uniform and attribute present in `140/` is
+present in the ES rewrite. `dashed_lines`/`wireframe` have no `140/`
+counterpart because they are ES-only (desktop uses geometry shaders).
+
+### ▲ 140 calls into entry points OpenGL ES does not have (0328)
+Method: extract every `gl*(` call in `src/slic3r`, extract the entry points
+glad's GLES2 header declares, diff, then evaluate each site's `#if` nesting
+for `SLIC3R_OPENGL_ES=1`. Result: **140 live calls the ES driver has no
+symbol for** — and glad leaves each slot null on iOS, so a call through one
+jumps to address zero.
+
+  PartPlate 67 | SkipPartCanvas 58 | 3DScene 5 | GLCanvas3D 3 | gizmos 6 |
+  GLTexture 1
+
+The one that matters most: `glClearDepth` in `GLCanvas3D::init()`. That runs
+before the first frame is ever drawn, so this was a **certain crash on the
+way to the first render**, independent of everything else. Turning on 0327
+does not help — it fences off only 12 of the 140.
+
+`src/slic3r/GUI/ios_gl_compat.cpp` (new, added to the iOS block 0316
+created) fills the null slots right after the loader runs, called from
+`OpenGLManager::init_gl`:
+- ES equivalents where they exist: `glClearDepth` → `glClearDepthf`, the
+  `*EXT` framebuffer names → the core entry points ES 3.0 promoted them to.
+- No-ops otherwise: the fixed-function matrix stack, immediate mode,
+  `glPushAttrib`/`glPopAttrib`, `glLineStipple`, `glPolygonMode`,
+  `glTexEnvi`, client-state leftovers. None of that means anything against
+  the shader pipeline Orca actually renders with; losing the drawing is the
+  right outcome, crashing is not.
+- Everything resolves via `dlsym(RTLD_DEFAULT, …)`, **not** glad's slots:
+  glad only loads entry points up to the version the context reports, and an
+  ES 3.0 context reports 3.0 — `glClearDepthf` is GL 4.1 in the desktop
+  header and is never loaded.
+- Verified the 29 installed functions are exactly the live-and-missing set:
+  no gaps, no dead entries. Compiles clean in both configurations.
+
+0328 also forces `s_framebuffers_type = Arb` on iOS. FBOs are core in ES
+3.0, but no ES driver advertises `ARB_framebuffer_object` or
+`EXT_framebuffer_object`, so detection landed on `Unknown` — and 3DScene's
+outline pass treats anything that is not `Arb` as "use the EXT entry
+points".
+
+### Two more runtime fixes prepared the same way
+- **0326** — MainFrame's hardcoded `SetSize(FromDIP(1200), FromDIP(800))`.
+  A wx top-level window is a UIWindow and a UIWindow is the whole display,
+  so that leaves dead space on a 13-inch iPad (1376x1032 pt) and would clip
+  the sidebar off a smaller one. `FromDIP` is the identity here
+  (`wxHAS_DPI_INDEPENDENT_PIXELS` is set for `__WXOSX__`), so the number is
+  literal points. Now takes `wxDisplay`'s client area — which resolves on
+  the iPhone port via `wxDisplayFactorySingleiOS` in `src/osx/iphone/utils.mm`
+  — and clamps the desktop 76x49 em minimum to it.
+- **step2/0208** — `wxAppDelegate` ran `OSXOnDidFinishLaunching()`, and so
+  the app's `OnInit()`, **synchronously inside
+  `applicationDidFinishLaunching:`**. iOS watchdogs that at roughly twenty
+  seconds (0x8badf00d) and Orca's `on_init_inner` loads the whole preset
+  bundle and builds MainFrame before returning. **The simulator does not run
+  the watchdog at all**, so this is invisible in step 3 and only bites the
+  device IPA. Now dispatched to the next main-runloop turn. Nothing on the
+  iPhone port depended on the old ordering: `m_inited`/`m_onInitResult` are
+  written only by the Cocoa `CallOnInit` and read only by Cocoa call sites,
+  and the iPhone `wxApp::CallOnInit` is a no-op returning true.
+
+### Startup path verified sound (do not re-investigate)
+- `wxApp::CallOnInit` on the iPhone port is a no-op; `OnInit()` is reached
+  through `OSXOnDidFinishLaunching()` (`src/osx/carbon/app.cpp:216`,
+  `#if wxOSX_USE_IPHONE`). It IS called — just late, hence 0208.
+- `instance_check()` is safe on iOS: `get_lock()` returns false on a fresh
+  lock file, and `*cla.should_send` is only evaluated when it returns true.
+- `set_miniaturizable` / `set_title_colour_after_set_title` /
+  `set_tag_when_enter_full_screen` are all stubbed by 0316 (they are behind
+  `#ifdef __WXOSX__`, which is defined for the iPhone port too).
+- libvgcode's `glTexBuffer`/`glMapBuffer` sites are in the `#else` of
+  `ENABLE_OPENGL_ES` — dead on iOS.
+- `ENABLE_OPENGL_ES` appears in no libvgcode *public* header, and 0304's
+  `Vec4` addition to `Types.hpp` is unguarded, so there is no ODR hazard
+  from `src/slic3r` including `libvgcode/include/Types.hpp` without it.
+- `resources/` is 242 MB; that is what ships inside the .app.
+
+### CI changes
+Step 3 now publishes `ci-logs/` on `always()`, not just on failure — once
+the link is green a crashed app still leaves the job green, and Actions
+artifact downloads are not reachable from the dev environment. The launch
+console, crash report, os_log excerpt and the **simulator screenshot PNG**
+now land in the repo where they can actually be read. The step also reports
+a launch verdict (process still present in the simulator + crash-report
+count) instead of trusting `simctl launch`'s exit code, which only says the
+process was spawned. Both workflows take the executable from the link rule's
+known output path before falling back to the Mach-O scan.

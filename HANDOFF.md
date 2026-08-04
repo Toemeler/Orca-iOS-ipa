@@ -710,14 +710,26 @@ known output path before falling back to the Mach-O scan.
 
 ### ⚠ Two corrections to long-standing assumptions in this document
 
-**1. Actions job logs ARE readable from the dev environment.** The top of this
-file says log downloads are blocked, and the whole `ci-logs/` commit-the-errors
-mechanism was built around that. It is true of the *artifact/zip* download
-endpoint, but the GitHub MCP server's `get_job_logs` (with
-`return_content: true` and a `tail_lines`) returns log text directly. That is
-how the cache miss below was diagnosed while the run was still going. Use it for
-live progress; keep `ci-logs/` for the post-mortem, since it survives log
-expiry and is greppable.
+**1. Actions job logs are PARTIALLY readable — not a live tail.** The top of
+this file says log downloads are blocked. The GitHub MCP server's
+`get_job_logs` (`return_content: true`, plus `tail_lines`) does return log text,
+so that is too absolute. But measured against two in-progress jobs it is not a
+substitute for `ci-logs/`:
+
+- step-3 run 57's job returned ~23 KB and then returned **byte-identical
+  content on a later call** — a snapshot taken when the log was first flushed,
+  not a tail that advances.
+- step-4 run 10's job returned **HTTP 404** for the same call at the same time.
+
+So: useful for a one-shot look at a job that has been running a while, useless
+for watching progress, and not guaranteed to answer at all. It is worth trying
+once when a run is stuck, and worth nothing as a polling mechanism. `ci-logs/`
+remains the mechanism to rely on — it also survives log expiry and is greppable.
+
+(The cache-miss finding below still holds: that snapshot showed Boost
+*configuring and installing from source* seven minutes into the deps step, which
+cannot happen on a cache hit. The diagnosis was sound; the claim that the
+endpoint gives live progress was not.)
 
 **2. The deps cache is being evicted between runs, and that is the long pole.**
 `[3/8] Restore deps cache` completing in about a second, followed by Boost

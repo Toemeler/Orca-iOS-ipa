@@ -1,0 +1,24 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 33831e61..990ac556 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -273,7 +273,18 @@ else ()
+     else ()
+         set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/../resources")
+     endif ()
+-    if (CMAKE_MACOSX_BUNDLE)
++    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++        # An iOS bundle is flat: the executable is at OrcaSlicer.app/OrcaSlicer,
++        # there is no Contents/ directory, so the macOS rule below symlinks into
++        # a path that does not exist and `ln` fails -- which ninja reports as the
++        # OrcaSlicer target failing even though the link itself succeeded
++        # (step-3 run 60, step-4 run 17: zero undefined and zero duplicate
++        # symbols, binary produced, then `ln: .../Contents/Resources: No such
++        # file or directory`).
++        #
++        # Flat layout it is, which is also where patch 0320 points resources_dir.
++        set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/OrcaSlicer.app/resources")
++    elseif (CMAKE_MACOSX_BUNDLE)
+         if (CMAKE_CONFIGURATION_TYPES)
+             set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/OrcaSlicer.app/Contents/Resources")
+         else()

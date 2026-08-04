@@ -61,12 +61,10 @@ jobs:
           done
           mkdir -p deps_src/hidapi/ios
           cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
-          # orca-overlay supplies two things upstream's ES path lacks:
-          #  - resources/shaders/ES/  (Orca ships only 110/ and 140/)
-          #  - src/glad/include-es/   (<glad/gl.h> shim, see patch 0323)
+          # Orca ships resources/shaders/{110,140} only; the SLIC3R_OPENGL_ES
+          # path asks for an "ES/" set that upstream has never had, so supply it.
           cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
-          ls resources/shaders/ES | wc -l
-          test -f src/glad/include-es/glad/gl.h
+          test "$(ls resources/shaders/ES | wc -l)" -eq 38
 
       - name: "[3/8] Restore deps cache (shared with step 1)"
         uses: actions/cache/restore@v4

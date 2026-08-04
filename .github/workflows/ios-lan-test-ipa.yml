@@ -64,9 +64,11 @@ jobs:
             https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
           test -s lan-test-app/third_party/nlohmann/json.hpp
 
+      # restore + save rather than actions/cache: its post step is skipped when
+      # the job fails, so a broken app build used to throw away a good OpenSSL.
       - name: Restore OpenSSL cache
         id: sslcache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ${{ env.SSL_PREFIX }}
           key: lan-openssl-${{ env.OPENSSL_VERSION }}-${{ env.SDK }}-${{ env.IOS_MIN }}-v1
@@ -88,9 +90,16 @@ jobs:
           make install_sw 2>&1 | tail -5
           ls -l "$SSL_PREFIX/lib"
 
+      - name: Save OpenSSL cache
+        if: always() && steps.sslcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.SSL_PREFIX }}
+          key: lan-openssl-${{ env.OPENSSL_VERSION }}-${{ env.SDK }}-${{ env.IOS_MIN }}-v1
+
       - name: Restore curl cache
         id: curlcache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ${{ env.CURL_PREFIX }}
           key: lan-curl-${{ env.CURL_VERSION }}-${{ env.OPENSSL_VERSION }}-${{ env.SDK }}-${{ env.IOS_MIN }}-v1
@@ -123,6 +132,13 @@ jobs:
           make -j"$(sysctl -n hw.ncpu)" 2>&1 | tail -20
           make install 2>&1 | tail -5
           ls -l "$CURL_PREFIX/lib"
+
+      - name: Save curl cache
+        if: always() && steps.curlcache.outputs.cache-hit != 'true' && steps.curlbuild.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CURL_PREFIX }}
+          key: lan-curl-${{ env.CURL_VERSION }}-${{ env.OPENSSL_VERSION }}-${{ env.SDK }}-${{ env.IOS_MIN }}-v1
 
       - name: Build the app
         run: |

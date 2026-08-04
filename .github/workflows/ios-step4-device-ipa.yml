@@ -337,6 +337,12 @@ jobs:
           (cd stage && zip -qr "$OUT" Payload/OrcaSlicer.app/Info.plist \
                                       Payload/OrcaSlicer.app/OrcaSlicer)
           (cd stage && zip -qr "$OUT" Payload)
+          # A .dSYM anywhere in the bundle makes ldid assert on filetype
+          # (MH_DSYM) and the sideload fails before the app is ever installed.
+          if unzip -l "$OUT" | grep -q '\.dSYM'; then
+            echo "::error::the IPA contains a .dSYM; ldid will refuse to sign it"
+            exit 1
+          fi
           ls -lh artifact/
 
           # Verify the artifact the way an installer reads it, rather than

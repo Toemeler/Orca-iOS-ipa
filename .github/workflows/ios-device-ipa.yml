@@ -130,6 +130,11 @@ jobs:
             # Unsigned on purpose: SideStore/AltStore re-sign on install.
             rm -rf "$stage/Payload/$(basename "$app")/_CodeSignature"
             (cd "$stage" && zip -qry "$out" Payload)
+            # ldid asserts on a dSYM's MH_DSYM filetype and the sideload fails.
+            if unzip -l "$out" | grep -q '\.dSYM'; then
+              echo "::error::$out contains a .dSYM; ldid will refuse to sign it"
+              exit 1
+            fi
             unzip -l "$out"
           }
           pack smoke-app/build/WxSmoke.app     "$PWD/artifact/OrcaSmoke-iPad.ipa"

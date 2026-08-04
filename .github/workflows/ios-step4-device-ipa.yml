@@ -317,8 +317,33 @@ jobs:
           PLIST
           mkdir -p artifact
           OUT="$PWD/artifact/OrcaSlicer-iPad.ipa"
-          (cd stage && zip -qry "$OUT" Payload)
+          # Info.plist and the executable go in FIRST, ahead of the ~15k files
+          # under resources/. zip appends in the order given, so with resources
+          # first the plist lands as the very last entry in the archive -- and an
+          # installer whose extraction stops early (the bundle is ~370 MB
+          # expanded) then produces an App.app with everything except the plist,
+          # which reports as "Failed to get bundle ID / Missing bundle ID".
+          # Ordering it first makes a truncated extraction fail loudly somewhere
+          # else instead of in the one file the installer reads first.
+          (cd stage && zip -qr "$OUT" Payload/OrcaSlicer.app/Info.plist \
+                                      Payload/OrcaSlicer.app/OrcaSlicer)
+          (cd stage && zip -qr "$OUT" Payload)
           ls -lh artifact/
+
+          # Verify the artifact the way an installer reads it, rather than
+          # trusting that the zip did what was intended.
+          rm -rf verify && mkdir verify
+          unzip -q -o "$OUT" "Payload/OrcaSlicer.app/Info.plist" -d verify
+          python3 - <<'VERIFY'
+          import plistlib, sys
+          with open('verify/Payload/OrcaSlicer.app/Info.plist','rb') as fh:
+              d = plistlib.load(fh)
+          bid = d.get('CFBundleIdentifier')
+          exe = d.get('CFBundleExecutable')
+          assert bid and exe, 'Info.plist is missing CFBundleIdentifier/CFBundleExecutable'
+          print('IPA verified: bundle id %s, executable %s' % (bid, exe))
+          VERIFY
+          unzip -l "$OUT" | head -6
 
       - name: "[9/9] Upload + publish release"
         if: success()

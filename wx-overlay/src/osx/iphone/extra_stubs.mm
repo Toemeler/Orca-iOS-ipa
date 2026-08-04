@@ -105,15 +105,103 @@ wxClipboard::~wxClipboard()
 {
 }
 
-bool wxClipboard::Open()                                    { return false; }
-void wxClipboard::Close()                                   {}
-bool wxClipboard::IsOpened() const                          { return false; }
-bool wxClipboard::SetData( wxDataObject* WXUNUSED(data) )    { return false; }
-bool wxClipboard::AddData( wxDataObject* WXUNUSED(data) )    { return false; }
-bool wxClipboard::IsSupported( const wxDataFormat& WXUNUSED(format) ) { return false; }
-bool wxClipboard::GetData( wxDataObject& WXUNUSED(data) )    { return false; }
-void wxClipboard::Clear()                                   {}
-bool wxClipboard::Flush()                                   { return false; }
+// Backed by UIPasteboard, which is the system clipboard on iOS and is shared
+// with every other app. These were all returning false, so copy and paste did
+// nothing anywhere in the application.
+//
+// Text is the format that matters here: Orca copies and pastes object names,
+// numeric field contents and G-code snippets as text, and the custom 3mf object
+// format it uses for copying model objects is handled internally by the Plater
+// rather than through the system clipboard. wxDataObject on this port is a stub
+// (dataobj.cpp cannot compile against the iOS SDK -- see below), so a general
+// format-negotiating implementation has nothing to negotiate with; text is
+// pulled out of a wxTextDataObject directly.
+
+bool wxClipboard::Open()
+{
+    wxCHECK_MSG( !m_open, false, wxT("clipboard already open") );
+    m_open = true;
+    return true;
+}
+
+void wxClipboard::Close()
+{
+    wxCHECK_RET( m_open, wxT("clipboard not open") );
+    m_open = false;
+    if ( m_data )
+    {
+        delete m_data;
+        m_data = nullptr;
+    }
+}
+
+bool wxClipboard::IsOpened() const
+{
+    return m_open;
+}
+
+bool wxClipboard::SetData( wxDataObject* data )
+{
+    Clear();
+    return AddData( data );
+}
+
+bool wxClipboard::AddData( wxDataObject* data )
+{
+    wxCHECK_MSG( data, false, wxT("data is invalid") );
+
+    // NB not IsSupported(): wxDataObject::IsSupportedFormat is one of the stubs
+    // further down this file and answers false for everything, so it cannot be
+    // used to identify the payload. GetPreferredFormat comes from
+    // wxDataObjectSimple in dobjcmn.cpp and is real. GetType() is compared
+    // rather than the wxDataFormat itself because only operator==(wxDataFormat)
+    // is defined here, not the wxDataFormatId overload.
+    const wxDataFormatId fmt = data->GetPreferredFormat( wxDataObject::Get ).GetType();
+    if ( fmt == wxDF_UNICODETEXT || fmt == wxDF_TEXT )
+    {
+        wxTextDataObject* textData = static_cast<wxTextDataObject*>(data);
+        [[UIPasteboard generalPasteboard]
+            setString:wxCFStringRef(textData->GetText()).AsNSString()];
+        delete data;
+        return true;
+    }
+
+    delete data;
+    return false;
+}
+
+bool wxClipboard::IsSupported( const wxDataFormat& format )
+{
+    const wxDataFormatId type = format.GetType();
+    if ( type == wxDF_UNICODETEXT || type == wxDF_TEXT )
+        return [[UIPasteboard generalPasteboard] hasStrings];
+    return false;
+}
+
+bool wxClipboard::GetData( wxDataObject& data )
+{
+    const wxDataFormatId fmt = data.GetPreferredFormat( wxDataObject::Get ).GetType();
+    if ( fmt != wxDF_UNICODETEXT && fmt != wxDF_TEXT )
+        return false;
+
+    NSString* str = [[UIPasteboard generalPasteboard] string];
+    if ( str == nil )
+        return false;
+
+    static_cast<wxTextDataObject&>(data).SetText( wxString::FromUTF8([str UTF8String]) );
+    return true;
+}
+
+void wxClipboard::Clear()
+{
+    [[UIPasteboard generalPasteboard] setItems:@[]];
+}
+
+bool wxClipboard::Flush()
+{
+    // UIPasteboard already outlives the process.
+    return true;
+}
 
 #endif // wxUSE_CLIPBOARD
 

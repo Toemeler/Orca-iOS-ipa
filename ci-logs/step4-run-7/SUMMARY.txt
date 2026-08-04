@@ -1,0 +1,9 @@
+=== FAILED targets ===
+FAILED: [code=1] src/OrcaSlicer.app/OrcaSlicer 
+
+=== undefined symbols (linker) ===
+"_gladLoaderLoadGLES2"
+"_gladLoaderUnloadGLES2"
+
+total FAILED: 1
+undefined symbol count: 2

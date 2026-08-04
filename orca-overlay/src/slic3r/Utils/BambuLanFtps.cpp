@@ -151,6 +151,17 @@ int ftps_upload_file(const FtpsConfig&  cfg,
     // The firmware's FTP server does not answer EPSV; PASV is what it speaks.
     curl_easy_setopt(curl, CURLOPT_FTP_USE_EPSV, 0L);
     curl_easy_setopt(curl, CURLOPT_FTP_USE_EPRT, 0L);
+    // Embedded FTP servers routinely announce an address in their PASV reply
+    // that is not reachable from the client. The data connection belongs to the
+    // same host as the control connection, so use that and keep only the port.
+    curl_easy_setopt(curl, CURLOPT_FTP_SKIP_PASV_IP, 1L);
+
+    // The firmware refuses STOR over an existing file, so sending the same
+    // project twice would fail on the second try. The leading '*' makes libcurl
+    // ignore the reply, which is what a first upload gets (550, no such file).
+    const std::string delete_first = "*DELE " + remote_path;
+    struct curl_slist* prequote = curl_slist_append(nullptr, delete_first.c_str());
+    curl_easy_setopt(curl, CURLOPT_PREQUOTE, prequote);
 
     if (cfg.use_tls) {
         // Encrypt the data channel too. The printer's certificate is self-signed
@@ -171,6 +182,7 @@ int ftps_upload_file(const FtpsConfig&  cfg,
     long response_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
     curl_easy_cleanup(curl);
+    curl_slist_free_all(prequote);
     std::fclose(state.fp);
 
     if (res == CURLE_OK) {

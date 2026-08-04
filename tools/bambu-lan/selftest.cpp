@@ -386,6 +386,12 @@ void test_live(const std::string& host, uint16_t mqtt_port, uint16_t ftp_port, c
     check(uploaded.size() == 40000, "uploaded byte count matches (" + std::to_string(uploaded.size()) + ")");
     check(uploaded == read_file(local), "uploaded bytes match the source exactly");
 
+    // Uploading the same name again must work: the firmware will not STOR over
+    // an existing file, so the client deletes first.
+    const int up_again = ftps_upload_file(ftps, local, "selftest.gcode.3mf", nullptr, nullptr, ftp_error);
+    check(up_again == FtpsOk, "re-uploading the same name succeeds" + std::string(up_again == FtpsOk ? "" : ": " + ftp_error));
+    check(read_file(state_dir + "/uploads/selftest.gcode.3mf").size() == 40000, "the replaced file is intact");
+
     std::string bad_error;
     FtpsConfig  bad = ftps;
     bad.password    = "00000000";

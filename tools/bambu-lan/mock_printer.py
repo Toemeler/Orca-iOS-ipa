@@ -351,6 +351,15 @@ class FtpServer(threading.Thread):
                         finally:
                             data_listener.close()
                             data_listener = None
+                    elif cmd == "DELE":
+                        target = os.path.join(self.upload_dir, os.path.basename(arg))
+                        if os.path.exists(target):
+                            os.remove(target)
+                            conn.sendall(b"250 deleted\r\n")
+                        else:
+                            # What a first upload sees; the client has to shrug
+                            # this off rather than abort the transfer.
+                            conn.sendall(b"550 no such file\r\n")
                     elif cmd == "SIZE":
                         target = os.path.join(self.upload_dir, os.path.basename(arg))
                         if os.path.exists(target):

@@ -53,7 +53,7 @@ mkdir -p "$APP"
 # language back to "infer from the file" before the link inputs.
 set -x
 xcrun --sdk "$SDK" clang++ \
-    -x objective-c++ -std=c++17 -fobjc-arc -O1 -g \
+    -x objective-c++ -std=c++17 -fobjc-arc -O1 \
     -isysroot "$SDK_PATH" -arch arm64 "$MIN_FLAG" \
     -I"$SRC" -I"$JSON_INC" -I"$SSL_PREFIX/include" "${CURL_FLAGS[@]}" \
     "$HERE/main.mm" \
@@ -67,6 +67,20 @@ xcrun --sdk "$SDK" clang++ \
     -framework UniformTypeIdentifiers -framework Security \
     -o "$APP/BambuLAN"
 set +x
+
+# Belt and braces: -g would make clang run dsymutil and drop a BambuLAN.dSYM
+# next to the binary, i.e. inside the bundle. ldid signs every Mach-O it finds
+# in an .app, and a dSYM is filetype MH_DSYM - it asserts and the install fails
+# with "ldid.cpp(869): _assert()". Nothing but the binary and Info.plist belongs
+# in this bundle.
+rm -rf "$APP"/*.dSYM
+
+EXTRA=$(find "$APP" -mindepth 1 -not -name BambuLAN -not -name Info.plist)
+if [ -n "$EXTRA" ]; then
+    echo "error: unexpected files in the app bundle (signing tools will choke):" >&2
+    echo "$EXTRA" >&2
+    exit 1
+fi
 
 cat > "$APP/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

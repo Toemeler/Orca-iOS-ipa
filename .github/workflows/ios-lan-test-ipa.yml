@@ -170,6 +170,13 @@ jobs:
           (cd "$STAGE" && zip -qry "$PWD/BambuLAN.ipa" Payload)
           cp "$STAGE/BambuLAN.ipa" artifact/
           unzip -l artifact/BambuLAN.ipa
+          # A .dSYM inside the bundle makes ldid assert on filetype and the
+          # sideload fails ("ldid.cpp(869): _assert()"). Catch it here rather
+          # than on the iPad.
+          if unzip -l artifact/BambuLAN.ipa | grep -q '\.dSYM'; then
+            echo "::error::the IPA contains a .dSYM; ldid will refuse to sign it"
+            exit 1
+          fi
           ls -lh artifact/
 
       - name: Upload artifact

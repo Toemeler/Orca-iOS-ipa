@@ -73,7 +73,14 @@ jobs:
             orca/deps/build
             ios-prefix
             ~/dep-dl
-          key: ios-deps-v1-step3-${{ github.run_number }}
+          # Keyed on what actually changes the dependency build, not on the run
+          # number. A per-run key mints a new multi-GB entry every time, and the
+          # repository cache quota is 10 GB -- two runs of each workflow were
+          # enough to evict everything by LRU, so every round paid for a full
+          # rebuild of the stack. With a stable key the second run onward hits
+          # exactly; the prefix restore-key still picks up the older
+          # run-numbered entries.
+          key: ios-deps-v1-step3-${{ hashFiles('patches/step1/*.patch') }}
           restore-keys: |
             ios-deps-v1-
 
@@ -324,7 +331,9 @@ jobs:
             orca/deps/build
             ios-prefix
             ~/dep-dl
-          key: ios-deps-v1-step3-${{ github.run_number }}
+          # Same key as the restore: when it already exists the save is skipped
+          # with a warning instead of adding another entry.
+          key: ios-deps-v1-step3-${{ hashFiles('patches/step1/*.patch') }}
 
       # Runs on success too: once the link is green the interesting failure is a
       # runtime one, and a crashed app still lets the job report success. Actions

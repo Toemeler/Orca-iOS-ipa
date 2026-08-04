@@ -1035,10 +1035,21 @@ pause/resume/stop, raw gcode, raw JSON, SSDP scan, and (with curl) upload a
 3mf and start it. Every payload was copied from `DeviceManager.cpp` /
 `DeviceCore/Dev*.cpp`, so a green result there is a green result in Orca.
 
+### ✅ CONFIRMED AGAINST A REAL PRINTER (2026-08-04)
+The user ran `BambuLAN.ipa` against their Bambu A1 in LAN-only mode: it
+connected and everything worked. So the parts that could only be argued from
+documentation before are now observed facts on real hardware:
+  - MQTT 3.1.1 over TLS on 8883 with `bblp` + the LAN access code
+  - the `device/<serial>/report` subscription and the status push
+  - the control commands (they are byte-for-byte what `DeviceManager.cpp`
+    sends, so Orca's own buttons drive the same JSON)
+  - iOS's local-network permission path with `NSLocalNetworkUsageDescription`
+Nothing about the protocol is speculative any more.
+
 ### What is NOT done
-- Never yet spoken to a real printer. The protocol is right per the mock and
-  the community documentation, but the payload schema is Bambu's; use the test
-  app against the A1 first.
+- The print path (FTPS upload + `project_file`) had not been exercised at the
+  time of that test. If a print ever refuses to start, the URL is the thing to
+  check: "List SD card" in the test app shows where the FTP root really maps.
 - Camera (TCP 6000) stays out of scope, as agreed.
 - `start_local_print_with_record` is the plain LAN print (no cloud record) and
   does not call `wait_fn`, which would poll for a cloud job id that never

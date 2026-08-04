@@ -351,6 +351,28 @@ class FtpServer(threading.Thread):
                         finally:
                             data_listener.close()
                             data_listener = None
+                    elif cmd in ("LIST", "NLST", "MLSD"):
+                        if data_listener is None:
+                            conn.sendall(b"425 use PASV first\r\n")
+                            continue
+                        conn.sendall(b"150 here it comes\r\n")
+                        try:
+                            data_conn, _ = data_listener.accept()
+                            if self.ctx is not None:
+                                data_conn = self.ctx.wrap_socket(data_conn, server_side=True)
+                            lines = []
+                            for name in sorted(os.listdir(self.upload_dir)):
+                                size = os.path.getsize(os.path.join(self.upload_dir, name))
+                                lines.append("-rw-r--r-- 1 root root %8d Jan  1 00:00 %s" % (size, name))
+                            data_conn.sendall(("\r\n".join(lines) + "\r\n").encode())
+                            data_conn.close()
+                            conn.sendall(b"226 transfer complete\r\n")
+                        except Exception as exc:
+                            log("list failed: %r" % (exc,))
+                            conn.sendall(b"426 transfer failed\r\n")
+                        finally:
+                            data_listener.close()
+                            data_listener = None
                     elif cmd == "DELE":
                         target = os.path.join(self.upload_dir, os.path.basename(arg))
                         if os.path.exists(target):

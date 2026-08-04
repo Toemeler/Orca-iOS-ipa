@@ -242,6 +242,7 @@ static NSString* const kDefaultsSerial = @"serial";
 #ifdef BAMBU_LAN_WITH_FTPS
         [self buttonTitled:@"Upload + print a 3mf..." action:@selector(onSendPrint)],
         [self buttonTitled:@"Upload only..." action:@selector(onUploadOnly)],
+        [self buttonTitled:@"List SD card" action:@selector(onListSdCard)],
 #endif
     ]]];
 
@@ -617,6 +618,37 @@ static NSString* const kDefaultsSerial = @"serial";
     picker.allowsMultipleSelection = NO;
     _pendingPrint                  = print;
     [self presentViewController:picker animated:YES completion:nil];
+}
+
+// Confirms where the FTP root actually maps on this printer, which is what the
+// print command's file:///sdcard/<name> URL depends on.
+- (void)onListSdCard
+{
+    NSString* ip   = _ipField.text;
+    NSString* code = _codeField.text;
+    if (ip.length == 0 || code.length == 0) {
+        [self log:@"need an IP and an access code"];
+        return;
+    }
+    [self log:@"listing the FTP root over FTPS..."];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        Slic3r::BambuLan::FtpsConfig cfg;
+        cfg.host     = ip.UTF8String;
+        cfg.port     = 990;
+        cfg.username = "bblp";
+        cfg.password = code.UTF8String;
+
+        std::string listing, err;
+        const int   rc = Slic3r::BambuLan::ftps_list_directory(cfg, "", listing, err);
+        if (rc != Slic3r::BambuLan::FtpsOk) {
+            [self log:[NSString stringWithFormat:@"listing failed (%d): %s", rc, err.c_str()]];
+            return;
+        }
+        if (listing.empty())
+            [self log:@"(the FTP root is empty)"];
+        else
+            [self log:[NSString stringWithFormat:@"%s", listing.c_str()]];
+    });
 }
 
 - (void)onSendPrint  { [self pickFileThenPrint:YES]; }

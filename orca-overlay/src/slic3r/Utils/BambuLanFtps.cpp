@@ -95,6 +95,82 @@ std::string build_ftps_url(const std::string& host, uint16_t port, const std::st
     return url;
 }
 
+namespace {
+
+size_t collect_callback(char* data, size_t size, size_t nmemb, void* userdata)
+{
+    static_cast<std::string*>(userdata)->append(data, size * nmemb);
+    return size * nmemb;
+}
+
+// The connection options that make libcurl talk to the printer's FTP server;
+// shared by the upload and the listing.
+void apply_common_options(CURL* curl, const FtpsConfig& cfg)
+{
+    curl_easy_setopt(curl, CURLOPT_USERNAME, cfg.username.c_str());
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, cfg.password.c_str());
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, static_cast<long>(cfg.connect_timeout_s));
+    curl_easy_setopt(curl, CURLOPT_FTP_USE_EPSV, 0L);
+    curl_easy_setopt(curl, CURLOPT_FTP_USE_EPRT, 0L);
+    curl_easy_setopt(curl, CURLOPT_FTP_SKIP_PASV_IP, 1L);
+    if (cfg.use_tls) {
+        curl_easy_setopt(curl, CURLOPT_USE_SSL, (long) CURLUSESSL_ALL);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_SESSIONID_CACHE, 1L);
+    }
+}
+
+} // namespace
+
+int ftps_list_directory(const FtpsConfig& cfg, const std::string& remote_dir, std::string& listing, std::string& error)
+{
+    listing.clear();
+    error.clear();
+
+    CURL* curl = curl_easy_init();
+    if (curl == nullptr) {
+        error = "curl_easy_init failed";
+        return FtpsTransferFailed;
+    }
+
+    // A trailing slash is what tells libcurl to list rather than download.
+    std::string dir = remote_dir;
+    while (!dir.empty() && dir.front() == '/')
+        dir.erase(dir.begin());
+    if (!dir.empty() && dir.back() != '/')
+        dir.push_back('/');
+
+    const std::string url = build_ftps_url(cfg.host, cfg.port, dir, cfg.use_tls);
+
+    char errbuf[CURL_ERROR_SIZE];
+    errbuf[0] = '\0';
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, collect_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &listing);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+    apply_common_options(curl, cfg);
+
+    const CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    if (res == CURLE_OK)
+        return FtpsOk;
+
+    error = errbuf[0] != '\0' ? std::string(errbuf) : std::string(curl_easy_strerror(res));
+    switch (res) {
+    case CURLE_LOGIN_DENIED:
+    case CURLE_REMOTE_ACCESS_DENIED: return FtpsAuthFailed;
+    case CURLE_COULDNT_CONNECT:
+    case CURLE_COULDNT_RESOLVE_HOST:
+    case CURLE_OPERATION_TIMEDOUT:
+    case CURLE_SSL_CONNECT_ERROR: return FtpsConnectFailed;
+    default: return FtpsTransferFailed;
+    }
+}
+
 int ftps_upload_file(const FtpsConfig&  cfg,
                      const std::string& local_path,
                      const std::string& remote_path,
@@ -138,44 +214,20 @@ int ftps_upload_file(const FtpsConfig&  cfg,
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
     curl_easy_setopt(curl, CURLOPT_READDATA, &state);
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, state.total);
-    curl_easy_setopt(curl, CURLOPT_USERNAME, cfg.username.c_str());
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, cfg.password.c_str());
+    apply_common_options(curl, cfg);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, xfer_callback);
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &state);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, static_cast<long>(cfg.connect_timeout_s));
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1L);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, static_cast<long>(cfg.stall_timeout_s));
     // Orca may name a plate file inside a folder the printer does not have yet.
     curl_easy_setopt(curl, CURLOPT_FTP_CREATE_MISSING_DIRS, (long) CURLFTP_CREATE_DIR_RETRY);
-    // The firmware's FTP server does not answer EPSV; PASV is what it speaks.
-    curl_easy_setopt(curl, CURLOPT_FTP_USE_EPSV, 0L);
-    curl_easy_setopt(curl, CURLOPT_FTP_USE_EPRT, 0L);
-    // Embedded FTP servers routinely announce an address in their PASV reply
-    // that is not reachable from the client. The data connection belongs to the
-    // same host as the control connection, so use that and keep only the port.
-    curl_easy_setopt(curl, CURLOPT_FTP_SKIP_PASV_IP, 1L);
-
     // The firmware refuses STOR over an existing file, so sending the same
     // project twice would fail on the second try. The leading '*' makes libcurl
     // ignore the reply, which is what a first upload gets (550, no such file).
     const std::string delete_first = "*DELE " + remote_path;
     struct curl_slist* prequote = curl_slist_append(nullptr, delete_first.c_str());
     curl_easy_setopt(curl, CURLOPT_PREQUOTE, prequote);
-
-    if (cfg.use_tls) {
-        // Encrypt the data channel too. The printer's certificate is self-signed
-        // and its CN never matches the IP, so neither peer nor host can be
-        // verified - the access code is the authenticator here, exactly as in
-        // the MQTT path.
-        curl_easy_setopt(curl, CURLOPT_USE_SSL, (long) CURLUSESSL_ALL);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        // The firmware insists the data connection resume the control
-        // connection's TLS session; libcurl does that by default with OpenSSL,
-        // and this keeps it from being disabled by a global default elsewhere.
-        curl_easy_setopt(curl, CURLOPT_SSL_SESSIONID_CACHE, 1L);
-    }
 
     const CURLcode res = curl_easy_perform(curl);
 

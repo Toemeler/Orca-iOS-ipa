@@ -58,6 +58,12 @@ int ftps_upload_file(const FtpsConfig&  cfg,
                      FtpsCancelFn       cancel_fn,
                      std::string&       error);
 
+// Lists a directory on the printer (empty path = the FTP root, which the
+// firmware maps to the SD card). Useful for confirming that an upload landed
+// where the print command expects it. `listing` receives the raw server
+// response, one entry per line.
+int ftps_list_directory(const FtpsConfig& cfg, const std::string& remote_dir, std::string& listing, std::string& error);
+
 // Builds the URL used above. Exposed for the self test, which asserts the
 // escaping rules (the access code is not part of the URL: credentials go
 // through CURLOPT_USERNAME/PASSWORD so they never need escaping at all).

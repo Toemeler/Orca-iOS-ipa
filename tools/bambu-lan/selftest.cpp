@@ -392,6 +392,12 @@ void test_live(const std::string& host, uint16_t mqtt_port, uint16_t ftp_port, c
     check(up_again == FtpsOk, "re-uploading the same name succeeds" + std::string(up_again == FtpsOk ? "" : ": " + ftp_error));
     check(read_file(state_dir + "/uploads/selftest.gcode.3mf").size() == 40000, "the replaced file is intact");
 
+    std::string listing;
+    std::string list_error;
+    const int   list_rc = ftps_list_directory(ftps, "", listing, list_error);
+    check(list_rc == FtpsOk, "directory listing succeeded" + std::string(list_rc == FtpsOk ? "" : ": " + list_error));
+    check(listing.find("selftest.gcode.3mf") != std::string::npos, "the uploaded file shows up in the listing");
+
     std::string bad_error;
     FtpsConfig  bad = ftps;
     bad.password    = "00000000";

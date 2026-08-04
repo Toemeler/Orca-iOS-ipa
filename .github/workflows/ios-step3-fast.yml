@@ -101,12 +101,24 @@ jobs:
       - name: Set up ccache
         run: |
           brew install ccache || true
+          ccache --version | head -1
           echo "CCACHE_DIR=$HOME/.ccache-step3" >> "$GITHUB_ENV"
           echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
-          echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
+          # Cheap compression: the runner has 3 cores and they are all wanted
+          # for compiling, not for zstd.
+          echo "CCACHE_COMPRESSLEVEL=1" >> "$GITHUB_ENV"
+          # 650 Orca translation units do not fit in 1.5G, and an undersized
+          # cache evicts the objects it is about to be asked for again.
+          echo "CCACHE_MAXSIZE=3G" >> "$GITHUB_ENV"
+          # The build tree path is stable on the runner, but BASEDIR rewrites
+          # absolute paths anyway and NOHASHDIR keeps the object's own directory
+          # out of the hash - both are what make a hit survive across runs.
+          echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "CCACHE_NOHASHDIR=1" >> "$GITHUB_ENV"
           # iOS cross-compiles embed the SDK path; slop keeps cache hits across
-          # runner image updates that only move the SDK
-          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+          # runner image updates that only move the SDK. system_headers stops
+          # the whole SDK being hashed into every single object.
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,system_headers,locale" >> "$GITHUB_ENV"
 
       - name: Restore ccache
         uses: actions/cache/restore@v4
@@ -142,7 +154,12 @@ jobs:
         run: |
           set -euxo pipefail
           cd orca/build
+          ccache -z >/dev/null 2>&1 || true
           ninja -k 0 "$TARGET" 2>&1 | tee /tmp/fast-ninja.log
+          # Nobody has ever looked at whether ccache is earning its keep here;
+          # the hit rate is the difference between a 50-minute round trip and a
+          # 5-minute one, so make it visible in ci-logs every run.
+          { ccache -s -v 2>/dev/null || ccache -s; } | tee /tmp/ccache-stats.txt
 
       - name: Save ccache
         if: always()
@@ -256,7 +273,7 @@ jobs:
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
-          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt /tmp/bundle-check.log; do
+          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt /tmp/bundle-check.log /tmp/ccache-stats.txt; do
             [ -f "$l" ] && tail -c 20000 "$l" > "$D/$(basename "$l")"
           done
           [ -f artifact/orca-on-ipad.png ] && cp artifact/orca-on-ipad.png "$D/"

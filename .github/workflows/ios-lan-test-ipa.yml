@@ -1,0 +1,202 @@
+name: BambuLAN test IPA - fast LAN backend check
+
+# A small sideloadable iPad app that links the native Bambu LAN backend
+# (orca-overlay/src/slic3r/Utils/BambuLan*.cpp) and nothing else, so the
+# protocol work can be tried against a real printer without the 40-minute
+# OrcaSlicer build. Connect, move, extrude, set temperatures, fans, light,
+# job control, raw gcode/JSON, and - when libcurl builds - upload a 3mf over
+# FTPS and start it.
+#
+# First run builds OpenSSL (and curl) for the device SDK and caches them;
+# after that the whole job is a couple of minutes.
+
+on:
+  push:
+    branches:
+      - claude/lan-backend-implementation-gxu2jr
+    paths:
+      - '.github/workflows/ios-lan-test-ipa.yml'
+      - 'lan-test-app/**'
+      - 'orca-overlay/src/slic3r/Utils/BambuLan*'
+  workflow_dispatch:
+    inputs:
+      ios_min:
+        description: "Minimum iOS version"
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lan-test-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lan-test-ipa:
+    name: Build BambuLAN.ipa
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    env:
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      SDK: iphoneos
+      OPENSSL_VERSION: "3.0.15"
+      CURL_VERSION: "8.9.1"
+      SSL_PREFIX: ${{ github.workspace }}/ios-openssl
+      CURL_PREFIX: ${{ github.workspace }}/ios-curl
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Environment
+        run: |
+          set -x
+          xcodebuild -version
+          xcrun --sdk "$SDK" --show-sdk-version
+
+      - name: Fetch nlohmann/json single header
+        run: |
+          set -euxo pipefail
+          mkdir -p lan-test-app/third_party/nlohmann
+          curl -fsSL -o lan-test-app/third_party/nlohmann/json.hpp \
+            https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
+          test -s lan-test-app/third_party/nlohmann/json.hpp
+
+      - name: Restore OpenSSL cache
+        id: sslcache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SSL_PREFIX }}
+          key: lan-openssl-${{ env.OPENSSL_VERSION }}-${{ env.SDK }}-${{ env.IOS_MIN }}-v1
+
+      - name: Build OpenSSL for iOS
+        if: steps.sslcache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -fsSL -o openssl.tar.gz \
+            "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz"
+          tar xf openssl.tar.gz
+          cd "openssl-${OPENSSL_VERSION}"
+          # ios64-xcrun is OpenSSL's own iOS target; the same one patch
+          # step1/0002 uses for the Orca dependency chain.
+          ./Configure ios64-xcrun no-shared no-tests no-legacy \
+            --prefix="$SSL_PREFIX" \
+            -miphoneos-version-min=${IOS_MIN} 2>&1 | tail -20
+          make -j"$(sysctl -n hw.ncpu)" 2>&1 | tail -20
+          make install_sw 2>&1 | tail -5
+          ls -l "$SSL_PREFIX/lib"
+
+      - name: Restore curl cache
+        id: curlcache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CURL_PREFIX }}
+          key: lan-curl-${{ env.CURL_VERSION }}-${{ env.OPENSSL_VERSION }}-${{ env.SDK }}-${{ env.IOS_MIN }}-v1
+
+      # Only the upload/print buttons need curl. If it does not build, the app
+      # still ships with everything else, so this step must not fail the job.
+      - name: Build curl for iOS (optional)
+        id: curlbuild
+        continue-on-error: true
+        if: steps.curlcache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          curl -fsSL -o curl.tar.gz "https://curl.se/download/curl-${CURL_VERSION}.tar.gz"
+          tar xf curl.tar.gz
+          cd "curl-${CURL_VERSION}"
+          SDK_PATH="$(xcrun --sdk $SDK --show-sdk-path)"
+          export CC="$(xcrun -f clang) -arch arm64 -isysroot $SDK_PATH -miphoneos-version-min=${IOS_MIN}"
+          export CFLAGS="-arch arm64 -isysroot $SDK_PATH -miphoneos-version-min=${IOS_MIN}"
+          export LDFLAGS="-arch arm64 -isysroot $SDK_PATH -miphoneos-version-min=${IOS_MIN} -L$SSL_PREFIX/lib"
+          export CPPFLAGS="-I$SSL_PREFIX/include"
+          ./configure --host=arm64-apple-darwin --prefix="$CURL_PREFIX" \
+            --with-openssl="$SSL_PREFIX" \
+            --enable-static --disable-shared \
+            --enable-ftp --enable-ipv6 \
+            --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet \
+            --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp \
+            --disable-gopher --disable-mqtt --disable-manual --disable-docs \
+            --without-libpsl --without-libidn2 --without-brotli --without-zstd \
+            --without-nghttp2 --without-librtmp 2>&1 | tail -30
+          make -j"$(sysctl -n hw.ncpu)" 2>&1 | tail -20
+          make install 2>&1 | tail -5
+          ls -l "$CURL_PREFIX/lib"
+
+      - name: Build the app
+        run: |
+          set -euxo pipefail
+          chmod +x lan-test-app/build.sh
+          CURL_ARG=""
+          [ -f "$CURL_PREFIX/lib/libcurl.a" ] && CURL_ARG="$CURL_PREFIX"
+          ./lan-test-app/build.sh "$SSL_PREFIX" "$SDK" "$IOS_MIN" "$CURL_ARG" \
+            "$PWD/lan-test-app/third_party" 2>&1 | tee /tmp/lan-app-build.log
+
+      - name: Verify the binary targets an iOS device
+        run: |
+          set -euxo pipefail
+          BIN=lan-test-app/build/BambuLAN.app/BambuLAN
+          file "$BIN"
+          lipo -info "$BIN" | grep -q arm64
+          # IOSSIMULATOR contains IOS, so anchor the match.
+          vtool -show-build "$BIN" | grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$"
+          otool -L "$BIN" | head -20
+
+      - name: Assemble the unsigned IPA
+        run: |
+          set -euxo pipefail
+          mkdir -p artifact
+          STAGE=$(mktemp -d)
+          mkdir -p "$STAGE/Payload"
+          cp -R lan-test-app/build/BambuLAN.app "$STAGE/Payload/"
+          rm -rf "$STAGE/Payload/BambuLAN.app/_CodeSignature"
+          (cd "$STAGE" && zip -qry "$PWD/BambuLAN.ipa" Payload)
+          cp "$STAGE/BambuLAN.ipa" artifact/
+          unzip -l artifact/BambuLAN.ipa
+          ls -lh artifact/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bambulan-test-ipa
+          path: artifact/
+          if-no-files-found: error
+
+      - name: Publish IPA to a GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          FTPS="without FTPS upload (libcurl did not build)"
+          [ -f "$CURL_PREFIX/lib/libcurl.a" ] && FTPS="with FTPS upload + print"
+          TAG="bambulan-test-run${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "BambuLAN test app (run ${GITHUB_RUN_NUMBER})" \
+            --notes "Unsigned iPad/iPhone IPA for testing the native Bambu LAN backend — $FTPS.
+
+          Put the printer in **LAN Only** mode, then enter its IP, the 8-character access code and the serial number, and press Connect. Buttons: push-all status, get version, home, jog X/Y/Z, extrude/retract, unload, nozzle/bed temperature, part and aux fans, chamber light, print speed, pause/resume/stop, raw gcode, raw JSON, and SSDP scan. Everything it receives is printed in the log.
+
+          The first connection triggers iOS's local-network permission prompt — allow it, or nothing will reach the printer.
+
+          Install with SideStore/AltStore (re-signs with your Apple ID) or TrollStore. See docs/SIDELOADING.md." \
+            artifact/BambuLAN.ipa
+          gh release view "$TAG" --json assets --jq '.assets[].browser_download_url'
+
+      - name: Publish failure logs to ci-logs/
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/lan-test-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          [ -f /tmp/lan-app-build.log ] && tail -c 200000 /tmp/lan-app-build.log > "$D/app-build.log"
+          git config user.name "ci-bot"
+          git config user.email "ci@users.noreply.github.com"
+          git add "$D" || true
+          git commit -m "lan-test ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

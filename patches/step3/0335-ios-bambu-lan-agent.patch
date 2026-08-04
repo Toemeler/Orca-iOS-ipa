@@ -1,0 +1,113 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 1365e54d..fd829a07 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -734,6 +734,26 @@ if (UNIX AND NOT APPLE)
+     )
+ endif ()
+ 
++# Native Bambu LAN backend (MQTT over TLS + FTPS), replacing the closed network
++# plugin that has no iOS build and could not be loaded there anyway. The sources
++# are shipped by this repo's orca-overlay/, so the guard keeps a plain upstream
++# checkout building unchanged.
++if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Utils/BambuLanPrinterAgent.cpp")
++    list(APPEND SLIC3R_GUI_SOURCES
++            Utils/BambuLanMqtt.cpp
++            Utils/BambuLanMqtt.hpp
++            Utils/BambuLanFtps.cpp
++            Utils/BambuLanFtps.hpp
++            Utils/BambuLanDiscovery.cpp
++            Utils/BambuLanDiscovery.hpp
++            Utils/BambuLanPrintCommand.cpp
++            Utils/BambuLanPrintCommand.hpp
++            Utils/BambuLanPrinterAgent.cpp
++            Utils/BambuLanPrinterAgent.hpp
++        )
++    set(ORCA_BAMBU_LAN_AGENT ON)
++endif ()
++
+ set(ORCA_UPDATER_SIG_KEY_B64 "${ORCA_UPDATER_SIG_KEY}")
+ string(STRIP "${ORCA_UPDATER_SIG_KEY_B64}" ORCA_UPDATER_SIG_KEY_B64)
+ string(REPLACE "\n" "" ORCA_UPDATER_SIG_KEY_B64 "${ORCA_UPDATER_SIG_KEY_B64}")
+@@ -790,6 +810,12 @@ else ()
+ endif ()
+ target_link_libraries(libslic3r_gui libslic3r cereal::cereal imgui imguizmo minilzo libvgcode md4c-html glad ${_opengl_link_lib} hidapi mdns ${wxWidgets_LIBRARIES} ${_orca_glfw_link} libcurl OpenSSL::SSL OpenSSL::Crypto noise::noise)
+ 
++# Switches NetworkAgentFactory over to the native LAN agent. Set above, only
++# when the overlay sources are present.
++if (ORCA_BAMBU_LAN_AGENT)
++    target_compile_definitions(libslic3r_gui PRIVATE ORCA_BAMBU_LAN_AGENT)
++endif ()
++
+ 
+ if (MSVC)
+     target_link_libraries(libslic3r_gui Setupapi.lib)
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 9a115b51..e59cee0b 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -9,6 +9,9 @@
+ #include "format.hpp"
+ #include "libslic3r_version.h"
+ #include "Downloader.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include <boost/chrono/duration.hpp>
+ #include <boost/log/detail/native_typeof.hpp>
+ #include <libslic3r/Config.hpp>
+@@ -3349,7 +3352,17 @@ void GUI_App::copy_network_if_available()
+ 
+ bool GUI_App::on_init_network(bool try_backup)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // iOS: Bambu's network plugin is a dylib downloaded at runtime. There is no
++    // iOS build of it, and iOS will not load a downloaded dylib regardless, so
++    // the load attempt can only fail and the "install the network plug-in"
++    // dialogs can only nag about something unobtainable. Bambu printers are
++    // reached by the native LAN agent instead (patch 0335); leaving this false
++    // keeps every plugin code path - and every prompt - switched off.
++    auto should_load_networking_plugin = false;
++#else
+     auto should_load_networking_plugin = app_config->get_bool("installed_networking");
++#endif
+ 
+     std::string config_version = app_config->get_network_plugin_version();
+ 
+diff --git a/src/slic3r/Utils/NetworkAgentFactory.cpp b/src/slic3r/Utils/NetworkAgentFactory.cpp
+index 5f7e0e83..8e6e99da 100644
+--- a/src/slic3r/Utils/NetworkAgentFactory.cpp
++++ b/src/slic3r/Utils/NetworkAgentFactory.cpp
+@@ -2,6 +2,9 @@
+ #include "IPrinterAgent.hpp"
+ #include "ICloudServiceAgent.hpp"
+ #include "BBLPrinterAgent.hpp"
++#ifdef ORCA_BAMBU_LAN_AGENT
++#include "BambuLanPrinterAgent.hpp"
++#endif
+ #include "OrcaPrinterAgent.hpp"
+ #include "QidiPrinterAgent.hpp"
+ #include "SnapmakerPrinterAgent.hpp"
+@@ -139,6 +142,14 @@ void NetworkAgentFactory::register_all_agents()
+                                             // for K-series boards with CFS support.
+     register_agent<MoonrakerPrinterAgent>();
+ 
++#ifdef ORCA_BAMBU_LAN_AGENT
++    // The "bbl" slot is taken by the native LAN agent. BBLPrinterAgent forwards
++    // everything to a closed-source plugin that is downloaded at runtime, which
++    // there is no build of for this platform and which iOS would refuse to load
++    // in any case. Registering the native agent under the same id keeps every
++    // caller above it (DeviceManager, PrintJob, the Device tab) unchanged.
++    register_agent<BambuLanPrinterAgent>();
++#else
+     // BBLPrinterAgent takes no constructor args, so register manually
+     {
+         auto info = BBLPrinterAgent::get_agent_info_static();
+@@ -151,6 +162,7 @@ void NetworkAgentFactory::register_all_agents()
+                                    return agent;
+                                });
+     }
++#endif
+ }
+ 
+ std::unique_ptr<NetworkAgent> create_agent_from_config(const std::string& log_dir, AppConfig* app_config)

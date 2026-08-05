@@ -1,0 +1,2 @@
+process entries matching orca-ios.orcaslicer: 0
+crash reports: 0

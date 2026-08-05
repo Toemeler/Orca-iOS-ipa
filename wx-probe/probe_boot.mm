@@ -53,6 +53,9 @@
 
 #include <dispatch/dispatch.h>
 #include <signal.h>
+#include <execinfo.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -101,7 +104,34 @@ static void probe_signal_handler(int sig)
         case SIGPIPE: name = "SIGPIPE"; break;
     }
     probe_log("FATAL signal", name);
-    _exit(128 + sig);
+
+    // Where, exactly. "SIGSEGV somewhere after the launch callback" does not
+    // say whether the fault is in wx, in UIKit, or in this file's own
+    // swizzles - and since the control app links this file too, that last one
+    // cannot be ruled out by comparing the two apps. backtrace_symbols_fd is
+    // async-signal-safe (it formats into a static buffer and writes), which
+    // fprintf is not, so the frames go straight to fds.
+    void* frames[64];
+    const int n = backtrace(frames, 64);
+    backtrace_symbols_fd(frames, n, STDERR_FILENO);
+
+    const char* home = getenv("HOME");
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/Documents/wxprobe.log", home ? home : "/tmp");
+    const int fd = open(path, O_WRONLY | O_APPEND | O_CREAT, 0644);
+    if (fd >= 0) {
+        static const char hdr[] = "WXPROBE backtrace:\n";
+        write(fd, hdr, sizeof(hdr) - 1);
+        backtrace_symbols_fd(frames, n, fd);
+        close(fd);
+    }
+
+    // Hand the signal back to the default handler so the OS still writes a
+    // proper symbolicated .ips report. The previous _exit() here suppressed
+    // it, which is why "crash reports: 0" was reported for a process that had
+    // just taken a SIGSEGV.
+    signal(sig, SIG_DFL);
+    raise(sig);
 }
 
 static void probe_uncaught_exception(NSException* e)

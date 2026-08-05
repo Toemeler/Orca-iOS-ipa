@@ -6,9 +6,9 @@
 # as soon as the process is spawned, and `simctl io screenshot` will happily
 # photograph the home screen, so "installed, launched, here is a picture" was
 # reported for a build that exited during startup and left the simulator sitting
-# on SpringBoard. Aliveness is polled from the simulator's own process list, the
-# screenshots are taken between those polls, and a build that never appears - or
-# appears and then goes away - fails the step.
+# on SpringBoard. Aliveness is polled from the host pid `simctl launch` prints,
+# the screenshots are taken between those polls, and a build that never appears
+# - or appears and then goes away - fails the step.
 #
 # usage: sim-launch-verify.sh <path to .app> <bundle id> <output dir>
 #
@@ -55,8 +55,34 @@ xcrun simctl install "$UDID" "$APP" 2>&1 | tee /tmp/sim-install.log
 xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" > "$OUT/sim-launch.log" 2>&1 &
 LPID=$!
 
+EXE=$(basename "$APP" .app)
+
+# How NOT to ask whether a simulator app is running: `simctl spawn <udid>
+# launchctl list`. It does not list app processes under their bundle id, so it
+# answers "no" for an app that is plainly up - wx probe run 2 reported "never
+# alive" for a process the system log shows as PID 4992 with a full UIKit scene
+# stack, and no screenshot was taken of a perfectly healthy app.
+#
+# A simulator app is an ordinary process on the host, and `simctl launch` prints
+# its host pid as "<bundle id>: <pid>". That pid is the exact answer, and
+# `kill -0` on it costs nothing - which also keeps the checkpoints honest,
+# because a per-poll `simctl spawn` took the better part of a second each time.
+APP_PID=""
+for i in $(seq 1 20); do
+  APP_PID=$(sed -n "s/^${BUNDLE_ID}: \([0-9][0-9]*\).*/\1/p" "$OUT/sim-launch.log" 2>/dev/null | head -1)
+  [ -n "$APP_PID" ] && break
+  sleep 1
+done
+echo "launch reported pid: ${APP_PID:-none}"
+
 alive() {
-  xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "$BUNDLE_ID"
+  if [ -n "$APP_PID" ]; then
+    kill -0 "$APP_PID" 2>/dev/null && return 0
+    return 1
+  fi
+  # No pid line (older simctl, or the launch failed outright): fall back to
+  # matching the executable inside the simulator's bundle container.
+  pgrep -f "\.app/${EXE}\$" >/dev/null 2>&1 || pgrep -x "$EXE" >/dev/null 2>&1
 }
 
 FIRST_ALIVE=""
@@ -88,8 +114,8 @@ fi
 LATEST=$(ls -1 "$OUT"/ui-t*.png 2>/dev/null | tail -1 || true)
 [ -n "$LATEST" ] && cp "$LATEST" "$OUT/orca-on-ipad.png"
 
-xcrun simctl spawn "$UDID" launchctl list > /tmp/sim-launchctl.txt 2>&1 || true
-ALIVE_ENTRIES=$(grep -c "$BUNDLE_ID" /tmp/sim-launchctl.txt || true)
+ALIVE_ENTRIES=0
+alive && ALIVE_ENTRIES=1
 kill "$LPID" 2>/dev/null || true
 wait "$LPID" 2>/dev/null
 
@@ -174,7 +200,7 @@ tail -80 "$OUT/sim-launch.log" || true
   echo "first seen alive after: ${FIRST_ALIVE:-never} s"
   echo "still alive at t=${LAST_ALIVE_AT:-none} s (last checkpoint ${LAST_CHECKPOINT}s)"
   echo "screenshots taken while alive: $SHOTS"
-  echo "process entries matching $BUNDLE_ID: $ALIVE_ENTRIES"
+  echo "still running at the end: $ALIVE_ENTRIES (pid ${APP_PID:-none})"
   echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name 'OrcaSlicer*' 2>/dev/null | wc -l | tr -d ' ')"
 } | tee "$OUT/launch-verdict.txt"
 find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" -exec cp {} "$OUT/" \; 2>/dev/null || true

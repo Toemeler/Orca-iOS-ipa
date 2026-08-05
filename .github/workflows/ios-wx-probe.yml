@@ -99,6 +99,24 @@ jobs:
           bash tools/ci/sim-launch-verify.sh \
             wx-probe/build/WxProbe.app org.orca-ios.wxprobe "$PWD/artifact"
 
+      # Control experiment. smoke-app/ is the step-2 proof that this port
+      # renders: a frame, a button and a wxGLCanvas cleared to green, screenshot
+      # and all. Building it from the same cached prefix separates the two
+      # explanations for a probe that dies - my choice of widgets, or a wx prefix
+      # that no longer starts an app at all. Never fails the job; it is evidence,
+      # not a gate.
+      - name: Control - the step-2 smoke app
+        if: always()
+        env:
+          SIM_CHECKPOINTS: "2 6"
+        run: |
+          set -uxo pipefail
+          chmod +x smoke-app/build.sh
+          ./smoke-app/build.sh "$WXPREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee /tmp/smoke-build.log || exit 0
+          mkdir -p artifact-smoke
+          bash tools/ci/sim-launch-verify.sh \
+            smoke-app/build/WxSmoke.app org.orca-ios.wxsmoke "$PWD/artifact-smoke" || true
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -114,6 +132,11 @@ jobs:
           D="ci-logs/wx-probe-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           cp artifact/*.png "$D/" 2>/dev/null || true
+          for f in artifact-smoke/*.png; do
+            [ -e "$f" ] && cp "$f" "$D/smoke-$(basename "$f")"
+          done 2>/dev/null || true
+          [ -f artifact-smoke/launch-verdict.txt ] && cp artifact-smoke/launch-verdict.txt "$D/smoke-launch-verdict.txt"
+          [ -f /tmp/smoke-build.log ] && tail -c 8000 /tmp/smoke-build.log > "$D/smoke-build.log"
           for f in artifact/launch-verdict.txt artifact/screenshot-stats.txt \
                    artifact/sim-launch.log artifact/sim-oslog.txt \
                    artifact/orca-app-log.txt artifact/alive-methods.txt \

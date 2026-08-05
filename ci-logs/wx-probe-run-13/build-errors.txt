@@ -1,0 +1,4 @@
+153:+ echo PROBE_BUILD=with-webview
+154:PROBE_BUILD=with-webview
+159:+ echo '::error::wxAppDelegate is not in the binary even with -u; the app cannot reach OnInit'
+160:::error::wxAppDelegate is not in the binary even with -u; the app cannot reach OnInit

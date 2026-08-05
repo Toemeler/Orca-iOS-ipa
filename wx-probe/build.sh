@@ -103,7 +103,36 @@ delegate_present() {
 if delegate_present; then
   echo "PROBE_DELEGATE=linked (wxAppDelegate is in the binary)"
 else
-  echo "::error::wxAppDelegate is not in the binary even with -u; the app cannot reach OnInit"
+  # -u names a symbol as undefined and lets archive loading resolve it. It was
+  # passed verbatim (the log shows -Wl,-u,_OBJC_CLASS_$_wxAppDelegate), ld
+  # raised no error, and the class is still absent -- which is what happens when
+  # nothing defines it anywhere, since the current linker drops an -u it cannot
+  # satisfy instead of failing the link. So ask the archives directly, rather
+  # than guessing at the link line again: either the symbol is there under
+  # another name, or wx never compiled the delegate into this prefix at all,
+  # and those need completely different fixes.
+  echo "PROBE_DELEGATE=MISSING - interrogating the wx archives"
+  echo "--- any symbol matching wxappdelegate, case-insensitive ---"
+  nm -a $WXLIBS 2>/dev/null | grep -i "wxappdelegate" | sort -u | head -20 \
+    || echo "(no match in any wx archive)"
+  echo "--- which archive member, if any ---"
+  for L in $WXLIBS; do
+    if nm -o "$L" 2>/dev/null | grep -qi "wxappdelegate"; then
+      echo "found in: $L"
+      nm -o "$L" 2>/dev/null | grep -i "wxappdelegate" | head -5
+    fi
+  done
+  echo "--- is utils.mm.o in the core archive at all? ---"
+  for L in $WXLIBS; do
+    case "$L" in *iphoneu_core*) ar -t "$L" 2>/dev/null | grep -i "utils" | head -10 ;; esac
+  done
+  echo "--- every OBJC_CLASS the core archive defines (first 40) ---"
+  for L in $WXLIBS; do
+    case "$L" in *iphoneu_core*)
+      nm -a "$L" 2>/dev/null | grep -o "_OBJC_CLASS_\$_[A-Za-z_]*" | sort -u | head -40 ;;
+    esac
+  done
+  echo "::error::wxAppDelegate is not in the binary; see the archive dump above"
   exit 1
 fi
 

@@ -166,6 +166,18 @@ jobs:
           # the hit rate is the difference between a 50-minute round trip and a
           # 5-minute one, so make it visible in ci-logs every run.
           { ccache -s -v 2>/dev/null || ccache -s; } | tee /tmp/ccache-stats.txt
+          # Run 6 hit 76 of 639, and the 76 line up with the targets that do not
+          # use a precompiled header: deps_src, imgui, libvgcode. libslic3r and
+          # libslic3r_gui both build a cmake_pch.hxx.pch, every one of their
+          # objects is compiled with -include-pch, and ccache hashes that file's
+          # content. A .pch embeds the size and mtime of every header it consumed
+          # - and Orca is re-cloned every run, so those mtimes are new every run.
+          # If that is the story, these digests differ from run to run while the
+          # sources do not. Compare them across two runs before changing anything.
+          find . -name "cmake_pch.hxx*" -type f -exec shasum -a 256 {} + \
+            | sed "s#\./##" | sort -k2 | tee /tmp/pch-fingerprint.txt
+          find . -name "cmake_pch.hxx*" -type f -exec stat -f "%m %z %N" {} + \
+            | sort -k3 | tee -a /tmp/pch-fingerprint.txt
 
       - name: Save ccache
         if: always()
@@ -277,7 +289,7 @@ jobs:
               cp "$f" "$D/ccache-hit-$(basename "$f")" 2>/dev/null || true
             done
           fi
-          for l in /tmp/bundle-check.log /tmp/ccache-stats.txt \
+          for l in /tmp/bundle-check.log /tmp/ccache-stats.txt /tmp/pch-fingerprint.txt \
                    artifact/sim-launch.log artifact/sim-install.log \
                    artifact/launch-verdict.txt artifact/screenshot-stats.txt \
                    artifact/orca-app-log.txt; do

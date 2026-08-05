@@ -378,13 +378,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euxo pipefail
+          set -uxo pipefail
           TAG="orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" \
+          # Not fatal. Run 24 built, linked and packaged a clean device IPA and
+          # was then marked failed because this call returned
+          # "HTTP 403: Resource not accessible by integration" - the token a
+          # workflow_dispatch from an app integration gets cannot always create
+          # a release, even with contents: write, though the same token pushes
+          # ci-logs in the same job. The IPA is uploaded as a workflow artifact
+          # either way, and that is the deliverable; losing the release is a
+          # distribution inconvenience, not a broken build.
+          if gh release create "$TAG" \
             --target "$GITHUB_SHA" \
             --title "OrcaSlicer for iPad (run ${GITHUB_RUN_NUMBER})" \
             --notes "Unsigned arm64 iphoneos build of OrcaSlicer, min iOS ${IOS_MIN}. See docs/SIDELOADING.md." \
-            artifact/OrcaSlicer-iPad.ipa
+            artifact/OrcaSlicer-iPad.ipa; then
+            echo "published release $TAG"
+          else
+            echo "::warning::could not create release $TAG; download the OrcaSlicer-iPad.ipa workflow artifact instead"
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()

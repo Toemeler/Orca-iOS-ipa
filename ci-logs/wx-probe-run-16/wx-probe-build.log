@@ -1,0 +1,332 @@
+| GL_API void           GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar* name)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:147:17: warning: 'glBindAttribLocation' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  147 |                 glBindAttribLocation(m_prog, 1, "col");
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:484:35: note: 'glBindAttribLocation' has been explicitly marked deprecated here
+  484 | GL_API void           GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar* name)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:148:17: warning: 'glLinkProgram' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  148 |                 glLinkProgram(m_prog);
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:571:35: note: 'glLinkProgram' has been explicitly marked deprecated here
+  571 | GL_API void           GL_APIENTRY glLinkProgram (GLuint program)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:150:17: warning: 'glGetProgramiv' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  150 |                 glGetProgramiv(m_prog, GL_LINK_STATUS, &ok);
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:546:35: note: 'glGetProgramiv' has been explicitly marked deprecated here
+  546 | GL_API void           GL_APIENTRY glGetProgramiv (GLuint program, GLenum pname, GLint* params)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:162:13: warning: 'glUseProgram' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  162 |             glUseProgram(m_prog);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:612:35: note: 'glUseProgram' has been explicitly marked deprecated here
+  612 | GL_API void           GL_APIENTRY glUseProgram (GLuint program)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:163:13: warning: 'glVertexAttribPointer' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  163 |             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:622:35: note: 'glVertexAttribPointer' has been explicitly marked deprecated here
+  622 | GL_API void           GL_APIENTRY glVertexAttribPointer (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:164:13: warning: 'glVertexAttribPointer' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  164 |             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, cols);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:622:35: note: 'glVertexAttribPointer' has been explicitly marked deprecated here
+  622 | GL_API void           GL_APIENTRY glVertexAttribPointer (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:165:13: warning: 'glEnableVertexAttribArray' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  165 |             glEnableVertexAttribArray(0);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:525:35: note: 'glEnableVertexAttribArray' has been explicitly marked deprecated here
+  525 | GL_API void           GL_APIENTRY glEnableVertexAttribArray (GLuint index)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:166:13: warning: 'glEnableVertexAttribArray' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  166 |             glEnableVertexAttribArray(1);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:525:35: note: 'glEnableVertexAttribArray' has been explicitly marked deprecated here
+  525 | GL_API void           GL_APIENTRY glEnableVertexAttribArray (GLuint index)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+17 warnings generated.
+ld: warning: ignoring duplicate libraries: '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxjpeg-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a'
++ echo PROBE_BUILD=with-webview
+PROBE_BUILD=with-webview
++ EXTRA_FLAGS='-DPROBE_WEBVIEW -framework WebKit'
++ delegate_present
++ grep -q '_OBJC_CLASS_\$_wxAppDelegate'
++ nm -a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/WxProbe
++ echo 'PROBE_DELEGATE=MISSING - interrogating the wx archives'
+PROBE_DELEGATE=MISSING - interrogating the wx archives
++ echo '--- any symbol matching wxappdelegate, case-insensitive ---'
+--- any symbol matching wxappdelegate, case-insensitive ---
++ nm -a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxjpeg-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a
++ grep -i wxappdelegate
++ sort -u
++ head -20
+0000000000000000 t -[wxAppDelegate application:willFinishLaunchingWithOptions:]
+0000000000000088 t -[wxAppDelegate applicationDidFinishLaunching:]
+00000000000000c8 t ___47-[wxAppDelegate applicationDidFinishLaunching:]_block_invoke
+00000000000000fc t -[wxAppDelegate applicationWillTerminate:]
+0000000000000138 t -[wxAppDelegate dealloc]
+000000000000017c t -[wxAppDelegate buildMenuWithBuilder:]
+0000000000002c40 S _OBJC_CLASS_$_wxAppDelegate
+0000000000002c68 S _OBJC_METACLASS_$_wxAppDelegate
+0000000000004bd0 s __OBJC_CLASS_PROTOCOLS_$_wxAppDelegate
+0000000000004be8 s __OBJC_METACLASS_RO_$_wxAppDelegate
+0000000000004c30 s __OBJC_$_INSTANCE_METHODS_wxAppDelegate
+0000000000004cb0 s __OBJC_$_PROP_LIST_wxAppDelegate
+0000000000004d08 s __OBJC_CLASS_RO_$_wxAppDelegate
++ echo '--- which archive member, if any ---'
+--- which archive member, if any ---
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ grep -qi wxappdelegate
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ grep -qi wxappdelegate
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ grep -qi wxappdelegate
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxjpeg-3.3.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ grep -qi wxappdelegate
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ grep -qi wxappdelegate
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a
++ grep -qi wxappdelegate
++ for L in '$WXLIBS'
++ nm -o /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a
++ grep -qi wxappdelegate
++ echo '--- is utils.mm.o in the core archive at all? ---'
+--- is utils.mm.o in the core archive at all? ---
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ ar -t /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a
++ grep -i utils
++ head -10
+utilscmn.cpp.o
+utils_osx.cpp.o
+utilsexc_cf.cpp.o
+utilscocoa.mm.o
+utils.mm.o
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ echo '--- every OBJC_CLASS the core archive defines (first 40) ---'
+--- every OBJC_CLASS the core archive defines (first 40) ---
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ nm -a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a
++ grep -o '_OBJC_CLASS_$_[A-Za-z_]*'
++ sort -u
++ head -40
+_OBJC_CLASS_$_NSArray
+_OBJC_CLASS_$_NSData
+_OBJC_CLASS_$_NSDate
+_OBJC_CLASS_$_NSDictionary
+_OBJC_CLASS_$_NSIndexPath
+_OBJC_CLASS_$_NSJSONSerialization
+_OBJC_CLASS_$_NSMutableArray
+_OBJC_CLASS_$_NSMutableSet
+_OBJC_CLASS_$_NSMutableString
+_OBJC_CLASS_$_NSNull
+_OBJC_CLASS_$_NSNumber
+_OBJC_CLASS_$_NSObject
+_OBJC_CLASS_$_NSRunLoop
+_OBJC_CLASS_$_NSString
+_OBJC_CLASS_$_NSURL
+_OBJC_CLASS_$_NSURLRequest
+_OBJC_CLASS_$_UIAction
+_OBJC_CLASS_$_UIAlertView
+_OBJC_CLASS_$_UIApplication
+_OBJC_CLASS_$_UIBarButtonItem
+_OBJC_CLASS_$_UIButton
+_OBJC_CLASS_$_UIColor
+_OBJC_CLASS_$_UIControl
+_OBJC_CLASS_$_UIDocumentPickerViewController
+_OBJC_CLASS_$_UIFont
+_OBJC_CLASS_$_UIHoverGestureRecognizer
+_OBJC_CLASS_$_UIImage
+_OBJC_CLASS_$_UIImageView
+_OBJC_CLASS_$_UILabel
+_OBJC_CLASS_$_UIMenu
+_OBJC_CLASS_$_UIMenuSystem
+_OBJC_CLASS_$_UIPanGestureRecognizer
+_OBJC_CLASS_$_UIPasteboard
+_OBJC_CLASS_$_UIPickerView
+_OBJC_CLASS_$_UIProgressView
+_OBJC_CLASS_$_UIResponder
+_OBJC_CLASS_$_UIScreen
+_OBJC_CLASS_$_UIScrollView
+_OBJC_CLASS_$_UISegmentedControl
+_OBJC_CLASS_$_UISlider
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ for L in '$WXLIBS'
++ case "$L" in
++ echo '::warning::nm did not find wxAppDelegate in the binary; launching anyway to get the real answer'
+::warning::nm did not find wxAppDelegate in the binary; launching anyway to get the real answer
++ echo '--- what nm does report for OBJC classes in the built binary (first 25) ---'
+--- what nm does report for OBJC classes in the built binary (first 25) ---
++ nm -a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/WxProbe
++ grep -o '_OBJC_CLASS_$_[A-Za-z_]*'
++ sort -u
++ head -25
+_OBJC_CLASS_$_EAGLContext
+_OBJC_CLASS_$_GLKView
+_OBJC_CLASS_$_NSArray
+_OBJC_CLASS_$_NSAutoreleasePool
+_OBJC_CLASS_$_NSBundle
+_OBJC_CLASS_$_NSCalendar
+_OBJC_CLASS_$_NSCharacterSet
+_OBJC_CLASS_$_NSDate
+_OBJC_CLASS_$_NSDateFormatter
+_OBJC_CLASS_$_NSDictionary
+_OBJC_CLASS_$_NSFileManager
+_OBJC_CLASS_$_NSIndexPath
+_OBJC_CLASS_$_NSJSONSerialization
+_OBJC_CLASS_$_NSLocale
+_OBJC_CLASS_$_NSMutableArray
+_OBJC_CLASS_$_NSMutableSet
+_OBJC_CLASS_$_NSMutableString
+_OBJC_CLASS_$_NSNull
+_OBJC_CLASS_$_NSNumber
+_OBJC_CLASS_$_NSNumberFormatter
+_OBJC_CLASS_$_NSObject
+_OBJC_CLASS_$_NSProcessInfo
+_OBJC_CLASS_$_NSString
+_OBJC_CLASS_$_NSURL
+_OBJC_CLASS_$_NSURLRequest
++ rm -rf '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/*.dSYM'
++ cat
++ find /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app -mindepth 1 -maxdepth 1
++ sort
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/Info.plist
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/WxProbe
++ echo 'built: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app'
+built: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app

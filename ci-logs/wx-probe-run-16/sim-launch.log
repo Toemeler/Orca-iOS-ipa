@@ -1,0 +1,51 @@
+WXPROBE image                  loaded (+load ran)
+WXPROBE wxAppDelegate class    present in the binary
+WXPROBE hook                   applicationDidFinishLaunching: installed
+WXPROBE hook                   willFinishLaunchingWithOptions: installed
+WXPROBE static init            ran
+WXPROBE wxApp ctor             ran
+WXPROBE delegate               application:willFinishLaunchingWithOptions: ENTERED
+WXPROBE delegate               willFinishLaunching returned YES
+WXPROBE delegate               applicationDidFinishLaunching: ENTERED
+WXPROBE delegate               applicationDidFinishLaunching: returned
+WXPROBE FATAL signal           SIGSEGV
+0   WxProbe                             0x000000010082f574 _ZL20probe_signal_handleri + 308
+1   libsystem_platform.dylib            0x000000010140b6a0 _sigtramp + 52
+2   WxProbe                             0x0000000100be59b8 _ZN9wxMenuBar14OSXOnBuildMenuEP8NSObject + 376
+3   WxProbe                             0x0000000100ba79bc _ZN5wxApp14OSXOnBuildMenuEP8NSObject + 32
+4   WxProbe                             0x0000000100bdb8f4 -[wxAppDelegate buildMenuWithBuilder:] + 96
+5   UIKitCore                           0x00000001868ba824 -[UIMenuSystem _buildMenuWithBuilder:fromResponderChain:atLocation:inCoordinateSpace:] + 92
+6   UIKitCore                           0x00000001857016dc -[UIMainMenuSystem _buildMenuWithBuilder:fromResponderChain:atLocation:inCoordinateSpace:] + 188
+7   UIKitCore                           0x00000001868ba768 -[UIMenuSystem _newBuilderFromResponderChain:atLocation:inCoordinateSpace:] + 208
+8   UIKitCore                           0x0000000185700ef8 -[UIMainMenuSystem _automaticallyRebuildIfNeeded] + 172
+9   UIKitCore                           0x0000000185700f34 -[UIMainMenuSystem _keyCommands] + 24
+10  UIKitCore                           0x0000000186376660 -[UIResponder _enumerateKeyboardShortcutsInChainWithOptions:usingBlock:] + 512
+11  UIKitCore                           0x0000000186364bc0 -[UIApplication _immediatelyUpdateSerializableKeyCommands] + 224
+12  UIKitCore                           0x00000001868b2950 -[_UIAfterCACommitBlock run] + 64
+13  UIKitCore                           0x00000001868b2d64 -[_UIAfterCACommitQueue flush] + 164
+14  UIKitCore                           0x0000000186354f04 _runAfterCACommitDeferredBlocks + 256
+15  UIKitCore                           0x0000000186346bec _cleanUpAfterCAFlushAndRunDeferredBlocks + 76
+16  CoreFoundation                      0x0000000180456170 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 20
+17  CoreFoundation                      0x00000001804558f8 __CFRunLoopDoBlocks + 340
+18  CoreFoundation                      0x0000000180454c68 __CFRunLoopRun + 788
+19  CoreFoundation                      0x000000018044fcec _CFRunLoopRunSpecificWithOptions + 496
+20  GraphicsServices                    0x0000000192a669bc GSEventRunModal + 116
+21  UIKitCore                           0x0000000186348574 -[UIApplication _run] + 772
+22  UIKitCore                           0x000000018634c79c UIApplicationMain + 124
+23  WxProbe                             0x0000000100bce38c _ZN14wxGUIEventLoop8OSXDoRunEv + 84
+24  WxProbe                             0x0000000100972770 _ZZN13wxCFEventLoop5DoRunEvENK3$_0clEv + 40
+25  WxProbe                             0x0000000100971e00 _Z10wxSafeCallIvZN13wxCFEventLoop5DoRunEvE3$_0ZNS0_5DoRunEvE3$_1ET_RKT0_RKT1_ + 52
+26  WxProbe                             0x0000000100971d24 _ZN13wxCFEventLoop5DoRunEv + 132
+27  WxProbe                             0x00000001008953b4 _ZN15wxEventLoopBase3RunEv + 260
+28  WxProbe                             0x000000010083d584 _ZN16wxAppConsoleBase8MainLoopEv + 168
+29  WxProbe                             0x000000010083d144 _ZN16wxAppConsoleBase5OnRunEv + 32
+30  WxProbe                             0x00000001009aa2d4 _ZN9wxAppBase5OnRunEv + 64
+31  WxProbe                             0x0000000100ba7e80 _ZN5wxApp5OnRunEv + 40
+32  WxProbe                             0x00000001008db1c4 _ZZ7wxEntryRiPPwENK3$_0clEv + 140
+33  WxProbe                             0x00000001008d96c8 _Z10wxSafeCallIiZ7wxEntryRiPPwE3$_0Z7wxEntryS0_S2_E3$_1ET_RKT0_RKT1_ + 56
+34  WxProbe                             0x00000001008d9520 _Z7wxEntryRiPPw + 332
+35  WxProbe                             0x00000001008d97b4 _Z7wxEntryRiPPc + 64
+36  WxProbe                             0x00000001008213c4 main + 40
+37  dyld                                0x00000001014e53d0 start_sim + 20
+38  ???                                 0x00000001015bab98 0x0 + 4317752216
+org.orca-ios.wxprobe: 13682

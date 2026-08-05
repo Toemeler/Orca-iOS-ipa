@@ -64,6 +64,14 @@ jobs:
           # and harmless for a compile-only run.
           cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
           test "$(ls resources/shaders/ES | wc -l)" -eq 38
+          # libslic3r and libslic3r_gui are the only two targets that build a
+          # precompiled header, and they are exactly the 563 objects that never
+          # hit the ccache: ccache hashes the .pch, and a .pch embeds the size
+          # and mtime of every header that went into it. Orca is re-cloned every
+          # run, so those mtimes are new every run and the .pch hash is new every
+          # run no matter what the sources say. Pin them to a fixed instant and
+          # the .pch becomes a function of content again.
+          find "$GITHUB_WORKSPACE/orca" -exec touch -h -t 202601010000.00 {} +
 
       - name: Compute cache keys from patch/overlay hashes
         run: |
@@ -97,6 +105,11 @@ jobs:
           # ship overlay headers into wx prefix (idempotent)
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+          # Same reason as the orca tree: the precompiled header consumes wx and
+          # the deps headers too, and this copy hands the overlay ones a fresh
+          # mtime every run. A cache restore preserves mtimes, so pinning these
+          # is belt and braces - but the copy above is not, and it is in the PCH.
+          find "$WXPREFIX" "$PREFIX" -exec touch -h -t 202601010000.00 {} + 2>/dev/null || true
 
       - name: Set up ccache
         run: |
@@ -155,6 +168,13 @@ jobs:
             -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
             -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/fast-configure.log
+          # configure_file writes libslic3r_version.h and the pch header itself
+          # with the current time. Both are inputs to the .pch, so pin them too -
+          # but only the generated *headers*, not the whole build tree: giving
+          # build.ninja an mtime older than the CMakeLists it came from would
+          # have ninja re-run cmake and undo this on the spot.
+          find . \( -name "*.h" -o -name "*.hxx" -o -name "*.hpp" \) -type f \
+            -exec touch -h -t 202601010000.00 {} +
 
       - name: Build target
         run: |

@@ -26,9 +26,25 @@ DEPSLIBS=""
 # and the delegate check below does not depend on it at all.
 BOOT_SRC="$HERE/probe_boot.mm"
 
+# -Wl,-ObjC is load-bearing, not hygiene.
+#
+# wx's UIApplication delegate is named only as a *string* - UIApplicationMain(1,
+# "app", @"UIApplication", @"wxAppDelegate") - so no undefined symbol points at
+# it and the linker never loads the archive member that defines it. Measured,
+# not assumed: without this flag `nm` finds no _OBJC_CLASS_$_wxAppDelegate in
+# the binary at all. UIApplicationMain then gets nil for its delegate class, no
+# launch callback is ever delivered, and since wxApp::CallOnInit is a no-op on
+# the iPhone port, OnInit is unreachable. The app brings up a UIKit scene and
+# dies in under a second, which is exactly what seven probe runs recorded.
+#
+# It must be -Wl,-ObjC and not -ObjC: to the clang driver -ObjC is the *language*
+# selector ("compile this source as Objective-C"), which errors out against
+# -std=c++17. Only ld wants the other one.
+OBJC_LINK="-Wl,-ObjC"
+
 build_it() {
   xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
-    "$MIN_FLAG" \
+    "$MIN_FLAG" $OBJC_LINK \
     -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 "$@" \
     -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
     "$HERE/main.cpp" $BOOT_SRC -o "$APP/WxProbe" \
@@ -84,13 +100,8 @@ delegate_present() {
 if delegate_present; then
   echo "PROBE_DELEGATE=linked (wxAppDelegate is in the binary)"
 else
-  echo "PROBE_DELEGATE=MISSING - wxAppDelegate was stripped; relinking with -ObjC"
-  build_it $EXTRA_FLAGS -ObjC
-  if delegate_present; then
-    echo "PROBE_DELEGATE=linked-via-ObjC (ROOT CAUSE: the app must link wx with -ObjC)"
-  else
-    echo "PROBE_DELEGATE=STILL-MISSING even with -ObjC"
-  fi
+  echo "::error::wxAppDelegate is not in the binary even with -Wl,-ObjC; the app cannot reach OnInit"
+  exit 1
 fi
 
 # A .dSYM inside the bundle makes ldid assert on filetype (MH_DSYM is not one of

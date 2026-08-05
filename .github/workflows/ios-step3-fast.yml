@@ -119,6 +119,12 @@ jobs:
           # runner image updates that only move the SDK. system_headers stops
           # the whole SDK being hashed into every single object.
           echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,system_headers,locale" >> "$GITHUB_ENV"
+          # Run 6 hit only 76 of 639, and 563 of those misses failed the
+          # preprocessed lookup too - meaning the preprocessed output itself
+          # differs between runs. Rather than keep guessing at which input is
+          # volatile, have ccache write down its own reason for a few objects.
+          echo "CCACHE_DEBUG=1" >> "$GITHUB_ENV"
+          echo "CCACHE_DEBUGDIR=/tmp/ccache-debug" >> "$GITHUB_ENV"
 
       - name: Restore ccache
         uses: actions/cache/restore@v4
@@ -254,6 +260,18 @@ jobs:
           wait "$LPID" 2>/dev/null
           mkdir -p artifact
           xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
+          # Orca writes its own log under the data dir. Now that the data dir is
+          # actually created, that log is the record of how far startup got -
+          # the system log only shows UIKit's side of the story.
+          DATA=$(xcrun simctl get_app_container "$UDID" org.orca-ios.orcaslicer data 2>/dev/null)
+          if [ -n "${DATA:-}" ]; then
+            echo "app container: $DATA"
+            find "$DATA" -maxdepth 4 -name "*.log" -o -maxdepth 4 -name "*.conf" -o -maxdepth 4 -name "*.ini" \
+              | head -40 | tee /tmp/app-container-listing.txt
+            find "$DATA" -name "*.log" -exec sh -c 'echo "--- {} ---"; tail -c 40000 "{}"' \; \
+              > /tmp/orca-app-log.txt 2>&1 || true
+            tail -60 /tmp/orca-app-log.txt || true
+          fi
           tail -80 /tmp/sim-launch.log || true
           {
             echo "process entries matching orca-ios.orcaslicer: $ALIVE"
@@ -281,7 +299,14 @@ jobs:
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
-          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt /tmp/bundle-check.log /tmp/ccache-stats.txt; do
+          # A couple of ccache debug logs are enough to name the volatile input;
+          # the whole directory would be thousands of files.
+          if [ -d /tmp/ccache-debug ]; then
+            find /tmp/ccache-debug -name "*.ccache-log" | head -3 | while read -r f; do
+              cp "$f" "$D/ccache-debug-$(basename "$f")" 2>/dev/null || true
+            done
+          fi
+          for l in /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt /tmp/bundle-check.log /tmp/ccache-stats.txt /tmp/orca-app-log.txt /tmp/app-container-listing.txt; do
             [ -f "$l" ] && tail -c 20000 "$l" > "$D/$(basename "$l")"
           done
           [ -f artifact/orca-on-ipad.png ] && cp artifact/orca-on-ipad.png "$D/"

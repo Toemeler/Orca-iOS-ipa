@@ -1728,3 +1728,52 @@ Run 26 restored `ccache-step4-` in 5 s and then spent 64 min compiling, same as
 the cold run 25. Every step-4 iteration therefore costs ~75 min end to end even
 with deps and wx cached. Worth one run with `ccache -s` published to find out
 whether the entry is empty or the hashes miss.
+
+## Why secondary windows do not appear (analysed, NOT yet fixed)
+
+The user's report — "every separate window should open as a dialog, printer
+setup for example" — has a concrete cause in `src/osx/iphone/nonownedwnd.mm`
+(read at the pinned wx ref, v3.3.2):
+
+    void wxNonOwnedWindowIPhoneImpl::Create(...)
+    {
+        m_macWindow = [UIWindow alloc];
+        UIWindowLevel level = UIWindowLevelNormal;
+        ...
+        else if ( ( style & wxCAPTION ) ) { }      // <- dialogs land here
+        ...
+        CGRect r = CGRectMake( 0, 0, size.x, size.y );
+        [m_macWindow initWithFrame:r];
+        [m_macWindow setHidden:YES];
+        [m_macWindow setWindowLevel:level];
+    }
+
+    bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+    {
+        [m_macWindow setHidden:(show ? NO : YES)];
+        ...
+        [m_macWindow makeKeyWindow];
+    }
+
+Every wxTopLevelWindow becomes **its own UIWindow**. A wxDialog carries
+`wxCAPTION`, so it keeps `UIWindowLevelNormal` — the same level as the main
+frame — and UIKit gives no defined z-order between windows at equal level.
+`makeKeyWindow` changes key status, not order, and is not `makeKeyAndVisible`.
+So a dialog raised over the main frame can simply never be seen. If it were
+seen it would still be wrong: `CGRectMake(0, 0, size.x, size.y)` puts it at the
+top-left corner at its desktop size, with no centring and no dimmed backdrop.
+
+The fix is a rework of this file — level above the main frame for dialogs,
+`makeKeyAndVisible`, centre or full-screen geometry — and possibly presenting
+secondary TLWs as view controllers over the root window instead of as separate
+UIWindows, which is what iOS actually wants. **Deliberately not attempted
+blind.** The main frame goes through this same code path and currently works;
+a wrong guess here costs a ~75 minute build plus a sideload and could leave the
+app showing nothing at all. Do it once the on-device log exists (patch 0337),
+so the change can be checked rather than hoped at.
+
+Note also: the app has no `UIApplicationSceneManifest`, so it runs in the
+legacy non-scene UIWindow mode. That is why a bare `[[UIWindow alloc]
+initWithFrame:]` displays at all — under a scene lifecycle it would need a
+`windowScene` and would show nothing. Do not add a scene manifest without
+rewriting this file first.

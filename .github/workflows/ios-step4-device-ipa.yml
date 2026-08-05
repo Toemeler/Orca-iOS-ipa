@@ -307,6 +307,9 @@ jobs:
             <key>CFBundleVersion</key><string>1</string>
             <key>CFBundleShortVersionString</key><string>1.0</string>
             <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+            <key>CFBundleDevelopmentRegion</key><string>en</string>
+            <key>CFBundleSignature</key><string>????</string>
             <key>CFBundleSupportedPlatforms</key><array><string>iPhoneOS</string></array>
             <key>DTPlatformName</key><string>iphoneos</string>
             <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
@@ -332,6 +335,16 @@ jobs:
             </array>
           </dict></plist>
           PLIST
+          # installd reads Info.plist through CFBundle and wants it in BINARY
+          # plist format. A hand-written XML one parses fine with every other
+          # tool -- plutil, plistlib, CFPropertyList -- and is then rejected at
+          # install time with "Failed to get bundle ID ... Missing bundle ID",
+          # which reads like the key is absent rather than the encoding wrong.
+          # Xcode always emits binary, so a normal app never hits this.
+          # Reproduced in the simulator (step-3 run 61) installing straight from
+          # a directory, which ruled out zip ordering, payload size and AFC.
+          plutil -convert binary1 "$APP/Info.plist"
+          plutil -lint "$APP/Info.plist"
           mkdir -p artifact
           OUT="$PWD/artifact/OrcaSlicer-iPad.ipa"
           # Info.plist and the executable go in FIRST, ahead of the ~15k files
@@ -373,6 +386,24 @@ jobs:
           VERIFY
           unzip -l "$OUT" | head -6
 
+          # A second, minimal IPA for bisection. The full bundle is ~331 MB
+          # across 15,557 files, and SideStore has rejected two structurally
+          # valid IPAs with "Missing bundle ID" -- an error raised after
+          # extraction, which points at the payload rather than the metadata.
+          # This one is the executable and Info.plist only, ~120 MB and 3
+          # entries. If it installs, the resources payload is the problem and
+          # the fix is trimming it; if it fails identically, the payload is
+          # innocent and the problem is the binary or the bundle shape.
+          # It will NOT run correctly -- Orca needs resources/ at startup --
+          # but it answers the install question.
+          MINAPP=stage-min/Payload/OrcaSlicer.app
+          rm -rf stage-min && mkdir -p "$MINAPP"
+          cp "$APP/OrcaSlicer" "$MINAPP/OrcaSlicer"
+          cp "$APP/Info.plist" "$MINAPP/Info.plist"
+          MINOUT="$PWD/artifact/OrcaSlicer-iPad-minimal.ipa"
+          (cd stage-min && zip -qr "$MINOUT" Payload)
+          ls -lh artifact/
+
       - name: "[9/9] Upload + publish release"
         if: success()
         env:
@@ -392,7 +423,8 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "OrcaSlicer for iPad (run ${GITHUB_RUN_NUMBER})" \
             --notes "Unsigned arm64 iphoneos build of OrcaSlicer, min iOS ${IOS_MIN}. See docs/SIDELOADING.md." \
-            artifact/OrcaSlicer-iPad.ipa; then
+            artifact/OrcaSlicer-iPad.ipa \
+            artifact/OrcaSlicer-iPad-minimal.ipa; then
             echo "published release $TAG"
           else
             echo "::warning::could not create release $TAG; download the OrcaSlicer-iPad.ipa workflow artifact instead"

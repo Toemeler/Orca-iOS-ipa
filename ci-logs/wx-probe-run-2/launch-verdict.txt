@@ -1,0 +1,5 @@
+first seen alive after: never s
+still alive at t=none s (last checkpoint 67s)
+screenshots taken while alive: 0
+process entries matching org.orca-ios.wxprobe: 0
+crash reports: 0

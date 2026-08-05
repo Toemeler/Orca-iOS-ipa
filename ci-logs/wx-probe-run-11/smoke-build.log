@@ -1,0 +1,51 @@
+pa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxjpeg-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore -framework CoreGraphics -framework CoreText -framework CoreFoundation -framework Foundation -framework Security -framework AudioToolbox -framework CFNetwork -framework MobileCoreServices -lz -liconv -lexpat -llzma
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/smoke-app/main.cpp:24:9: warning: 'glClearColor' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   24 |         glClearColor(0.10f, 0.55f, 0.30f, 1.0f); // green = GL context alive
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:639:25: note: 'glClearColor' has been explicitly marked deprecated here
+  639 | GL_API void GL_APIENTRY glClearColor (GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+      |                         ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/smoke-app/main.cpp:25:9: warning: 'glClear' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   25 |         glClear(GL_COLOR_BUFFER_BIT);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:685:25: note: 'glClear' has been explicitly marked deprecated here
+  685 | GL_API void GL_APIENTRY glClear (GLbitfield mask) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+      |                         ^
+2 warnings generated.
+ld: warning: ignoring duplicate libraries: '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxjpeg-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a'
+Undefined symbols for architecture arm64:
+  "_OBJC_CLASS_$_WKUserScript", referenced from:
+       in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_OBJC_CLASS_$_WKWebView", referenced from:
+      _OBJC_CLASS_$_WXWKWebView in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_OBJC_CLASS_$_WKWebViewConfiguration", referenced from:
+       in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_OBJC_CLASS_$_WKWebsiteDataStore", referenced from:
+       in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_OBJC_METACLASS_$_WKWebView", referenced from:
+      _OBJC_METACLASS_$_WXWKWebView in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_UTTypeFolder", referenced from:
+      wxDirDialog::ShowModal() in libwx_osx_iphoneu_core-3.3-iOS.a[324](dirdlg.mm.o)
+  "_UTTypeItem", referenced from:
+      wxFileDialog::ShowModal() in libwx_osx_iphoneu_core-3.3-iOS.a[323](filedlg.mm.o)
+  "_WKWebsiteDataTypeCookies", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeDiskCache", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeIndexedDBDatabases", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeLocalStorage", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeMemoryCache", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeOfflineWebApplicationCache", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeSessionStorage", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_WKWebsiteDataTypeWebSQLDatabases", referenced from:
+      wxWebViewWebKit::ClearBrowsingData(int, wxDateTime) in libwx_osx_iphoneu_core-3.3-iOS.a[328](webview_webkit.mm.o)
+  "_probe_note_oninit", referenced from:
+      SmokeApp::OnInit() in main-812496.o
+      SmokeApp::OnInit() in main-812496.o
+ld: symbol(s) not found for architecture arm64
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)

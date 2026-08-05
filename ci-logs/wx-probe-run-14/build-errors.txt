@@ -1,0 +1,6 @@
+153:+ echo PROBE_BUILD=with-webview
+154:PROBE_BUILD=with-webview
+159:+ echo 'PROBE_DELEGATE=MISSING - interrogating the wx archives'
+160:PROBE_DELEGATE=MISSING - interrogating the wx archives
+392:+ echo '::error::wxAppDelegate is not in the binary; see the archive dump above'
+393:::error::wxAppDelegate is not in the binary; see the archive dump above

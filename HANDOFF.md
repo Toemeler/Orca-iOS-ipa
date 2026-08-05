@@ -34,6 +34,13 @@ pattern of the user's other repos: `Toemeler/blender-iOS-ipa` and `Toemeler/Rayf
 - wxWidgets: `SoftFever/Orca-deps-wxWidgets` @ `v3.3.2`
 - Runner: `macos-15`, Xcode 16.4, iPhoneSimulator 18.5 SDK, arm64, `IOS_MIN=17.0`
 
+> **NOTE (2026-08-05): the table immediately below is stale.** It was written
+> when step 3 was at run 46 and has not tracked the work since. The current
+> state is at the bottom of this file, under
+> "SESSION 2026-08-05: the startup SIGSEGV, and everything consolidated onto
+> main". Read that first; the rest of this document is still accurate as
+> background but not as status.
+
 ## Status: 2 of 5 stages COMPLETE
 
 | Stage | Workflow | Status |
@@ -1381,3 +1388,215 @@ That is fixed - `smoke-sim-launch.log`, `smoke-sim-oslog.txt`,
 next run on. "pid none" in run 6's control verdict means `simctl launch`
 printed no pid at all, which is a *different* failure from the probe's (which
 gets a pid and then dies); the control's launch log will say which.
+
+---
+
+# SESSION 2026-08-05: the startup SIGSEGV, and everything consolidated onto main
+
+Read this section before anything above it. It supersedes the status table at
+the top of the file and corrects two conclusions the previous handoff drew.
+
+## Headline
+
+**The app now starts and renders.** The wx probe (run 17) reaches `OnInit`,
+builds every widget class Orca depends on, draws through OpenGL ES, and stays
+alive for the whole observation window:
+
+    WXPROBE OnInit                 entered
+    WXPROBE wxNotebook             constructed
+    WXPROBE basic controls         constructed
+    WXPROBE wxDataViewListCtrl     constructed + 6 rows
+    WXPROBE wxGLCanvas             constructed
+    WXPROBE wxWebView              created + SetPage
+    WXPROBE frame Show()           returned
+    WXPROBE OnInit                 returning true
+    WXPROBE gl version             OpenGL ES 3.0 APPLE-23.0.2
+    WXPROBE gl default fbo         1
+    WXPROBE gl program link        ok
+    WXPROBE gl draw                ok
+    WXPROBE gl SwapBuffers         returned
+    WXPROBE wxPaintDC              painted
+
+    first seen alive after: 1 s
+    still alive at t=14 s (last checkpoint 14s)
+    screenshots taken while alive: 3
+
+That is notebook + dataview + custom wxDC painting + GL-through-shaders +
+WKWebView, all on iOS 26.2. The open question was never whether those widgets
+work; it was whether any wx app could start at all.
+
+## The bug: wxApp::OSXOnBuildMenu dereferences a null menu bar
+
+`patches/step2/0213-guard-null-menubar-on-build-menu.patch`
+
+wx, in `src/osx/carbon/app.cpp`:
+
+    void wxApp::OSXOnBuildMenu(WX_NSObject builder)
+    {
+        wxMenuBar::MacGetInstalledMenuBar()->OSXOnBuildMenu(builder);
+    }
+
+`MacGetInstalledMenuBar()` returns `s_macInstalledMenuBar`, which is `nullptr`
+until some `wxMenuBar` is installed. `wxMenuBar::OSXOnBuildMenu` then walks
+`m_rootMenu->GetMenuItems()` through a null `this`.
+
+UIKit rebuilds the main menu from an after-CA-commit block on the **first turn
+of the run loop**, to populate the key-command table, and it does so whether or
+not the app has any menus - before `OnInit` has run. So every wx iOS app was
+segfaulting during startup: one that installs its menu bar in `OnInit` gets
+there too late, and one with no menus never installs a bar at all.
+
+The backtrace that settled it (probe run 16):
+
+    2  wxMenuBar::OSXOnBuildMenu(NSObject*) + 376      <- fault
+    3  wxApp::OSXOnBuildMenu(NSObject*)
+    4  -[wxAppDelegate buildMenuWithBuilder:]
+    5  -[UIMenuSystem _buildMenuWithBuilder:fromResponderChain:...]
+    8  -[UIMainMenuSystem _automaticallyRebuildIfNeeded]
+   11  -[UIApplication _immediatelyUpdateSerializableKeyCommands]
+   12  -[_UIAfterCACommitBlock run]
+   22  UIApplicationMain
+   23  wxGUIEventLoop::OSXDoRun()
+
+It became reachable when **patch 0202 enabled `wxUSE_MENUBAR`** for the iPhone
+build - that flag is what compiles the `buildMenuWithBuilder:` delegate method
+into existence. The flag has to stay: Orca's MainFrame needs the class.
+Patch 0208's deferral of `OnInit` widens the window but does not cause it.
+
+## Two corrections to the previous handoff
+
+1. **"The wx prefix is what regressed - bisect `patches/step2` and
+   `wx-overlay`" was wrong.** Nothing in the prefix regressed and the step-2
+   smoke app's source never changed. It was one enabled feature flag meeting an
+   unguarded pointer. The smoke app crashes identically to the probe, which is
+   exactly what places the bug in wx rather than in Orca or in any widget
+   choice. Do not spend runs bisecting step-2 patches.
+
+2. **"crash reports: 0" was never a real measurement.**
+   `sim-launch-verify.sh` counted crash reports matching `OrcaSlicer*`, so for
+   `WxProbe`/`WxSmoke` it printed zero no matter what happened. Every earlier
+   conclusion of the form "it dies without crashing" was read off a search that
+   could only ever find nothing. Now fixed to match the executable under test.
+
+## Unproven, and worth knowing
+
+- **`-Wl,-u,_OBJC_CLASS_$_wxAppDelegate`** was added to the probe, the smoke app
+  and OrcaSlicer's link (patch 0318) on the theory that ld drops the archive
+  member defining wx's delegate, since `UIApplicationMain` names it only as a
+  string. The class is definitely present now - but the `nm` check that
+  originally reported it MISSING proved unreliable, so the flag's *necessity* is
+  not established. It is harmless and defensible; do not treat it as a
+  confirmed fix, and if something about it ever gets in the way, retest rather
+  than assume.
+- **The simulator runtime is iOS 26.2, while the SDK is 18.5.** The runner image
+  moved without this repo changing a line, and `sim-launch-verify.sh` selects
+  the newest installed runtime. The verdict file now records it. This is
+  probably closer to a modern iPad than 18.5 would be, so it was deliberately
+  not pinned backwards - but it is a variable that can change under you.
+- **The rendered screenshot is 91% white** with 137 distinct colours
+  (`ui-t14s.png`). Something real is drawn - a blank window would not have 137
+  colours - but nobody has *looked* at it. Worth eyeballing
+  `ci-logs/wx-probe-run-17/orca-on-ipad.png` before assuming the UI is correct.
+
+## Everything is on main now
+
+All three feature branches were merged; `main` contains every commit from
+`claude/basic-ipad-app-plan-pb0b4p`, `claude/lan-backend-implementation-gxu2jr`
+and `claude/step-4-ipa-parity-bkdym6`, verified by ancestry, per-file diff,
+and no-op re-merge. Work continues on `main` (and the mirror branch
+`claude/merge-branches-to-main-78ua1g`).
+
+One merge conflict was resolved by hand, in `ios-step4-device-ipa.yml`: the LAN
+branch had made `gh release create` non-fatal (a 403 was marking good builds as
+failed) while the step-4 branch had added `OrcaSlicer-iPad-minimal.ipa` as a
+second release asset. Both are kept - the minimal IPA is published inside the
+403-tolerant wrapper.
+
+## CI infrastructure changed this session
+
+- **Caches now live on `main`.** Actions caches are readable only from the
+  branch that wrote them and from the default branch, so everything built on a
+  feature branch was invisible to `main`. The simulator deps (~31 min) and wx
+  (~5-7 min) prefixes are now saved on `main`, which makes them readable from
+  every branch. The **device** deps cache (`ios-deps-device-v1-*`) has *not*
+  been rebuilt on main yet - the first step-4 run there pays for it.
+- **`ios-wx-probe.yml` builds its own wx prefix when the cache misses**, instead
+  of hard-failing. It used to be pinned to whichever branch last ran step 3.
+- **Build failures publish immediately.** Job log downloads are blocked in this
+  environment, so `ci-logs` is the only channel; routing it through the end of
+  the job meant a cancelled run published nothing and a healthy one delayed the
+  log behind the control step. There is now an `if: failure()` publish right
+  after the build, with the **full** log (the interesting errors are from the
+  first link attempt, at the top, which a `tail` cuts off) plus a grepped
+  `build-errors.txt`.
+- **Simulator steps have 14-minute timeouts.** One run wedged in `simctl` for 35
+  minutes and had to be killed, which lost the log it would have published.
+- **`sim-launch-verify.sh`** records the simulator runtime in the verdict,
+  collects crash reports under the right name, and writes `crash-reports.txt`.
+- **`wx-probe/probe_boot.mm`** is startup instrumentation linked into both the
+  probe and the smoke app: it traces both launch callbacks through swizzled
+  IMPs, logs whether `wxAppDelegate` is in the binary, installs
+  exception/signal/atexit handlers, dumps a backtrace via
+  `backtrace_symbols_fd` and re-raises so the OS still writes a `.ips`. It is
+  optional in both builds (`probe_note_oninit` is declared `weak_import`) so a
+  compile error in the diagnostic cannot take down the run it exists to
+  explain. That mistake cost two rounds - do not re-couple them.
+
+Gotchas paid for in this session, worth not rediscovering:
+
+- The runner's `/bin/bash` is **3.2**, where expanding an empty array under
+  `set -u` is a fatal "unbound variable".
+- **`-ObjC` is not `-Wl,-ObjC`.** Bare `-ObjC` is the clang *driver's* language
+  selector and fails outright next to `-std=c++17`.
+- `-Wl,-ObjC` works but is far too broad: it force-loads every ObjC-bearing
+  object in every wx archive, which drags in `webview_webkit.mm.o` and a wall of
+  undefined WebKit symbols. `-u` names one symbol and loads one member.
+- On Mach-O, `__attribute__((weak))` on a *declaration* is still an undefined
+  symbol at link time. `weak_import` is the one that permits an absent
+  definition.
+- wx headers must be included **before** UIKit in a `.mm`: UIKit drags in
+  `<AssertMacros.h>`, whose `check()`/`verify()` macros collide with wx, and wx
+  suppresses them from `wxprec.h` - which only helps if wx comes first.
+
+## Where step 3 and step 4 stand
+
+- **Orca compiles and links clean** (step 3 run 62: 0 failed targets, 0
+  undefined symbols). That predates this session and is unchanged.
+- A step-3 simulator run was in flight during this session **without** patch
+  0213. Expect it to link fine and then die at launch with the menu-bar
+  SIGSEGV. That is not a new bug; re-run step 3 on current `main` to get a real
+  Orca screenshot.
+- **Step 4 (device IPA) is the live task.** Verified before dispatch that it
+  applies `patches/step2/*` (so 0213 reaches the device wx build, line 154) and
+  `patches/step1 + step3` (so 0318's link flag reaches the device Orca link,
+  line 87). Adding 0213 changes `WX_KEY`, so the device wx prefix rebuilds once.
+- Both known "Missing bundle ID" causes are merged and in the step-4 path: the
+  `plutil -convert binary1` conversion, and the `orca-resources` rename (a
+  top-level `resources` directory reads as `Resources` on a case-insensitive
+  filesystem, and CFBundle then treats the flat bundle as an old-style one).
+  **Neither has ever been verified together on a device build** - that is what
+  the running step-4 job is for.
+
+## Next steps
+
+1. Read the step-4 result. If the IPA builds, the artifact is
+   `orcaslicer-device-ipa`; `OrcaSlicer-iPad-minimal.ipa` is published alongside
+   it as an install bisection tool (executable + Info.plist only, no resources).
+2. Re-run `ios-step3-gui.yml` on current `main` for an Orca simulator
+   screenshot now that 0213 is in. First launch runs the ConfigWizard
+   (`config_wizard_startup()` fires when `!m_app_conf_exists ||
+   only_default_printers()`); a wizard screenshot still proves the GUI renders.
+   Pre-seed `OrcaSlicer.conf` in the data container between install and launch
+   if a plater screenshot is wanted.
+3. Sideload onto the device. This cannot be verified from CI - the simulator is
+   as far as automation reaches.
+4. Then parity work: the native Bambu LAN backend (MQTT + FTPS) is implemented
+   and was confirmed against a real A1; camera/export remain stage 5.
+
+## How to iterate quickly
+
+`ios-wx-probe.yml` is the fast loop: ~3 minutes to build a wx app against the
+cached prefix, ~13 minutes end to end including two simulator launches, and it
+answers widget and startup questions without a 50-minute Orca build. It runs on
+`main` now and builds its own prefix if the cache misses. Use it before
+committing anything to a full Orca cycle.

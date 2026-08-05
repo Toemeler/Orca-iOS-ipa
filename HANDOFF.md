@@ -1326,3 +1326,58 @@ Note on first launch: with no config, Orca runs the ConfigWizard
 only_default_printers()`). A screenshot of the wizard is still proof the GUI
 renders; for a plater screenshot, pre-seed `OrcaSlicer.conf` in the data
 container between install and launch.
+
+### ▲ RESULT (wx probe run 6): the wx prefix is what regressed
+
+Two facts, both from `ci-logs/wx-probe-run-6/`:
+
+**1. The probe reaches the wxApp object and no further.**
+
+    WXPROBE static init            ran
+    WXPROBE wxApp ctor             ran
+
+No `OnInit`, no `wx ASSERT`, no exception, no `OnExit`. So the process dies
+between the `wxApp` object being constructed and `OnInit` being called -
+inside wx's own app initialisation (`wxEntry` / `wxApp::Initialize` /
+`CallOnInit`, or the UIApplicationMain delegate path), and it dies *without*
+tripping wx's assert or exception machinery.
+
+**2. The step-2 smoke app does not run either.** `smoke-app/` compiles clean
+against the cached prefix (`smoke-build.log`: warnings only, "built:
+.../WxSmoke.app") and then fails to start - `smoke-launch-verdict.txt` says
+"first seen alive after: never", and `simctl launch` did not even print a
+pid line.
+
+That is the same `smoke-app/` whose screenshot - frame, button, green GL
+canvas - is this document's step-2 proof. **So the regression is in the wx
+prefix, not in Orca, not in the probe's widget choices, and not in patch
+0336.**
+
+#### Where to start
+
+The prefix under test is `ios-wxprefix-v3-<hash of wx-overlay +
+patches/step2>`. Something in `patches/step2/*` or `wx-overlay/` between the
+green step-2 run and now stops a wx app starting. Prime suspects, in order:
+
+* `wx-overlay/include/wx/osx/iphone/evtloop.h` and whatever
+  `src/osx/iphone/evtloop.mm` does around line 87 - this document already
+  notes that as "the same path the step-2 smoke app launched on", and an
+  event loop that returns immediately is exactly a process that exits
+  between `wxApp` construction and `OnInit` with no assert and no exception.
+* `wx-overlay/src/osx/iphone/extra_peers.mm` / `extra_stubs.mm` - a stubbed
+  peer that returns null during app init.
+* `patches/step2/*` - diff against whatever produced the green step-2
+  screenshot and bisect; each cycle is ~4 minutes through
+  `ios-wx-probe.yml`, and the control is built into it.
+
+`git log --oneline -- wx-overlay patches/step2` is the shortest path to the
+candidate set.
+
+#### One gap in the harness
+
+The control's own launch log was not published in run 6 (only its verdict).
+That is fixed - `smoke-sim-launch.log`, `smoke-sim-oslog.txt`,
+`smoke-alive-methods.txt` and `smoke-orca-app-log.txt` are published from the
+next run on. "pid none" in run 6's control verdict means `simctl launch`
+printed no pid at all, which is a *different* failure from the probe's (which
+gets a pid and then dies); the control's launch log will say which.

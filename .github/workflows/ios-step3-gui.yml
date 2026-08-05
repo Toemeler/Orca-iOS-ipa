@@ -349,36 +349,9 @@ jobs:
           VERIFY
           test -x "$APP/OrcaSlicer" || { echo "::error::$APP/OrcaSlicer missing or not executable"; exit 1; }
 
-          RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
-          UDID=$(xcrun simctl create "orca-ipad" \
-            "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" "$RT")
-          echo "UDID=$UDID" >> "$GITHUB_ENV"
-          xcrun simctl boot "$UDID"
-          sleep 10
-          xcrun simctl install "$UDID" "$APP" 2>&1 | tee /tmp/sim-install.log
-          # --console-pty surfaces stdout/stderr, which is where Orca's boost log
-          # and any wx assert goes. Backgrounded and killed rather than wrapped
-          # in `timeout`, which macOS does not ship: a healthy app would stream
-          # until the job timed out, and a crashed one exits on its own.
-          xcrun simctl launch --console-pty "$UDID" org.orca-ios.orcaslicer \
-            > /tmp/sim-launch.log 2>&1 &
-          LPID=$!
-          sleep 60
-          # A live app still has a process in the simulator; a crashed one does
-          # not. This is the verdict the step reports, because simctl launch
-          # returns 0 the moment the process is spawned and says nothing about
-          # whether it survived.
-          xcrun simctl spawn "$UDID" launchctl list > /tmp/sim-launchctl.txt 2>&1 || true
-          ALIVE=$(grep -c "orca-ios.orcaslicer" /tmp/sim-launchctl.txt || true)
-          kill "$LPID" 2>/dev/null || true
-          wait "$LPID" 2>/dev/null
           mkdir -p artifact
-          xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
-          tail -60 /tmp/sim-launch.log || true
-          {
-            echo "process entries matching orca-ios.orcaslicer: $ALIVE"
-            echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name 'OrcaSlicer*' 2>/dev/null | wc -l | tr -d ' ')"
-          } | tee /tmp/launch-verdict.txt
+          bash "$GITHUB_WORKSPACE/tools/ci/sim-launch-verify.sh" \
+            "$APP" org.orca-ios.orcaslicer "$PWD/artifact"
 
       - name: "Collect simulator crash reports"
         if: always()
@@ -392,7 +365,6 @@ jobs:
             xcrun simctl spawn "$UDID" log show --last 5m \
               --predicate 'process == "OrcaSlicer"' > artifact/sim-oslog.txt 2>&1 || true
           fi
-          cp /tmp/sim-launch.log /tmp/sim-install.log artifact/ 2>/dev/null || true
           ls -la artifact/ || true
 
       - name: "Upload launch artifacts"
@@ -429,10 +401,13 @@ jobs:
           for f in /tmp/step3-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
-          for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/sim-launch.log /tmp/sim-install.log /tmp/launch-verdict.txt /tmp/bundle-check.log /tmp/ccache-stats.txt; do
+          for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/bundle-check.log /tmp/ccache-stats.txt \
+                   artifact/sim-launch.log artifact/sim-install.log \
+                   artifact/launch-verdict.txt artifact/screenshot-stats.txt \
+                   artifact/orca-app-log.txt; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
-          [ -f artifact/orca-on-ipad.png ] && cp artifact/orca-on-ipad.png "$D/"
+          cp artifact/*.png "$D/" 2>/dev/null || true
           [ -f artifact/sim-oslog.txt ] && tail -c 60000 artifact/sim-oslog.txt > "$D/sim-oslog.txt"
           # simulator crash reports name the failing frame, which is the fastest
           # route from "it aborted" to the offending call

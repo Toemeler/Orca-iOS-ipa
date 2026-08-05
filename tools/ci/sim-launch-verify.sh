@@ -76,14 +76,36 @@ done
 echo "launch reported pid: ${APP_PID:-none}"
 
 alive() {
-  if [ -n "$APP_PID" ]; then
-    kill -0 "$APP_PID" 2>/dev/null && return 0
-    return 1
-  fi
-  # No pid line (older simctl, or the launch failed outright): fall back to
-  # matching the executable inside the simulator's bundle container.
-  pgrep -f "\.app/${EXE}\$" >/dev/null 2>&1 || pgrep -x "$EXE" >/dev/null 2>&1
+  # OR of every method that can work, so this can only ever be more sighted
+  # than the last version. pgrep first: it needs no assumption about whose pid
+  # namespace simctl printed.
+  pgrep -f "\.app/${EXE}" >/dev/null 2>&1 && return 0
+  pgrep -x "$EXE" >/dev/null 2>&1 && return 0
+  [ -n "$APP_PID" ] && kill -0 "$APP_PID" 2>/dev/null && return 0
+  xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "$BUNDLE_ID" && return 0
+  return 1
 }
+
+# Which of them actually sees a just-launched app, recorded once. Two probe runs
+# have now disagreed with the system log about whether the app was running, and
+# guessing at the answer costs a run each time; this settles it with evidence in
+# the log rather than another hypothesis.
+{
+  echo "=== immediately after launch (pid line: ${APP_PID:-none}) ==="
+  echo "--- host: ps -p \$APP_PID"
+  [ -n "$APP_PID" ] && ps -p "$APP_PID" -o pid,stat,etime,comm 2>&1 || echo "(no pid)"
+  echo "--- host: pgrep -fl \$EXE"
+  pgrep -fl "$EXE" 2>&1 || echo "(no match)"
+  echo "--- host: ps -Ao pid,comm | grep EXE"
+  ps -Ao pid,comm 2>/dev/null | grep -i "$EXE" || echo "(no match)"
+  echo "--- sim: launchctl list | grep bundle id"
+  xcrun simctl spawn "$UDID" launchctl list 2>&1 | grep -i "$BUNDLE_ID" || echo "(no match)"
+  echo "--- sim: launchctl list line count"
+  xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | wc -l
+  echo "--- sim: launchctl list, first 15 lines"
+  xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | head -15
+} > "$OUT/alive-methods.txt" 2>&1
+cat "$OUT/alive-methods.txt"
 
 FIRST_ALIVE=""
 for i in $(seq 1 "$STARTUP_TIMEOUT"); do

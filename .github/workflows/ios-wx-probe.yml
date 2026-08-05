@@ -111,7 +111,9 @@ jobs:
           mkdir -p "$D"
           cp artifact/*.png "$D/" 2>/dev/null || true
           for f in artifact/launch-verdict.txt artifact/screenshot-stats.txt \
-                   artifact/sim-launch.log artifact/sim-oslog.txt /tmp/wx-probe-build.log; do
+                   artifact/sim-launch.log artifact/sim-oslog.txt \
+                   artifact/orca-app-log.txt artifact/alive-methods.txt \
+                   /tmp/wx-probe-build.log; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"

@@ -1,0 +1,27 @@
+=== immediately after launch (pid line: none) ===
+--- host: ps -p $APP_PID
+(no pid)
+--- host: pgrep -fl $EXE
+(no match)
+--- host: ps -Ao pid,comm | grep EXE
+(no match)
+--- sim: launchctl list | grep bundle id
+(no match)
+--- sim: launchctl list line count
+     355
+--- sim: launchctl list, first 15 lines
+PID	Status	Label
+-	0	com.apple.progressd
+-	0	com.apple.CoreAuthentication.daemon
+-	0	com.apple.cloudphotod
+9195	0	com.apple.homed
+9213	0	com.apple.modelcatalogd
+9292	0	com.apple.dataaccess.dataaccessd
+-	0	com.apple.DragUI.druid
+9943	0	com.apple.bird
+9591	0	com.apple.fitnesscoachingd
+-	0	com.apple.knowledgeconstructiond
+9097	0	com.apple.biomed
+9149	0	com.apple.nsurlsessiond
+-	0	com.apple.devicecheckd
+-	0	com.apple.UIKit.KeyboardManagement

@@ -26,7 +26,7 @@ build_it() {
     "$MIN_FLAG" \
     -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 "$@" \
     -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
-    "$HERE/main.cpp" -o "$APP/WxProbe" \
+    "$HERE/main.cpp" "$HERE/probe_boot.mm" -o "$APP/WxProbe" \
     $DEPSLIBS \
     $WXLIBS $WXLIBS \
     -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
@@ -41,11 +41,38 @@ build_it() {
 # only compiled for the iPhone port by step-2 patch 0210, and if that is not in
 # this cached prefix the include is not there. Losing the whole probe to it
 # would waste the run, so try with it and fall back without - and say which.
+EXTRA_FLAGS=()
 if build_it -DPROBE_WEBVIEW -framework WebKit; then
   echo "PROBE_BUILD=with-webview"
+  EXTRA_FLAGS=(-DPROBE_WEBVIEW -framework WebKit)
 else
   echo "PROBE_BUILD=without-webview (the WebKit/wxWebView build failed above)"
   build_it
+fi
+
+# Is wx's UIApplication delegate actually in the linked binary?
+#
+# UIApplicationMain names it as a *string* -- @"wxAppDelegate" -- so there is no
+# undefined symbol pointing at it, and a static archive member that resolves
+# nothing is not loaded. An app that loses it runs with a nil delegate: UIKit
+# still builds a full scene stack (which is what the system log has been
+# showing), no launch callback is ever delivered, and OnInit is never reached.
+# That is exactly the observed failure, so check it at build time rather than
+# spending another simulator run on it.
+delegate_present() {
+  nm -a "$APP/WxProbe" 2>/dev/null | grep -q '_OBJC_CLASS_\$_wxAppDelegate'
+}
+
+if delegate_present; then
+  echo "PROBE_DELEGATE=linked (wxAppDelegate is in the binary)"
+else
+  echo "PROBE_DELEGATE=MISSING - wxAppDelegate was stripped; relinking with -ObjC"
+  build_it "${EXTRA_FLAGS[@]}" -ObjC
+  if delegate_present; then
+    echo "PROBE_DELEGATE=linked-via-ObjC (ROOT CAUSE: the app must link wx with -ObjC)"
+  else
+    echo "PROBE_DELEGATE=STILL-MISSING even with -ObjC"
+  fi
 fi
 
 # A .dSYM inside the bundle makes ldid assert on filetype (MH_DSYM is not one of

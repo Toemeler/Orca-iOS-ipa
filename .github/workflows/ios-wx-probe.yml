@@ -39,7 +39,7 @@ concurrency:
 jobs:
   probe:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 75
     env:
       IOS_MIN: "17.0"
       PREFIX: ${{ github.workspace }}/ios-prefix
@@ -72,14 +72,80 @@ jobs:
             ios-prefixonly-v1
             ios-deps-v1-
 
-      - name: Sanity - wx prefix present
+      # Build the prefix rather than demand one.
+      #
+      # This used to hard-fail when the cache missed, which tied the probe to
+      # whichever branch had last run step 3: Actions caches are readable from
+      # the branch that wrote them and from the default branch only, so a probe
+      # dispatched on main could never find a prefix a feature branch had built.
+      # The wx build is ~5 minutes against an already-cloned tree, and the
+      # result is saved under the same key step 3 uses, so paying it once on a
+      # branch makes every later run there a cache hit.
+      - name: Build wx prefix if the cache missed
         run: |
           set -euxo pipefail
-          test -d "$WXPREFIX/lib" || { echo "::error::wx prefix missing - run ios-step3-gui.yml (or step 2) on this branch first"; exit 1; }
-          ls "$WXPREFIX"/lib/libwx*.a | head
+          if [ -d "$WXPREFIX/lib" ]; then
+            echo "wx prefix restored from cache"
+            ls "$WXPREFIX"/lib/libwx*.a | head
+          else
+            echo "no wx prefix in the cache - building it"
+            brew install ninja >/dev/null 2>&1 || true
+            git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+            cd wx && git checkout v3.3.2 && git submodule update --init --recursive
+            shopt -s nullglob
+            for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+            cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
+            cp -r "$GITHUB_WORKSPACE"/wx-overlay/src/. src/
+            # Same feature flags as ios-step3-gui.yml so this prefix answers for
+            # the one Orca is linked against. The JPEG pinning is the exception:
+            # it exists to stop wx's builtin libjpeg colliding with the deps
+            # stack's on Orca's link line, and it is only applied when the deps
+            # prefix is actually present. A standalone probe links neither.
+            JPEG_ARGS=""
+            if [ -f "$PREFIX/usr/local/lib/libjpeg.a" ]; then
+              JPEG_ARGS="-DwxUSE_LIBJPEG=sys
+                         -DJPEG_LIBRARY=$PREFIX/usr/local/lib/libjpeg.a
+                         -DJPEG_LIBRARY_RELEASE=$PREFIX/usr/local/lib/libjpeg.a
+                         -DJPEG_INCLUDE_DIR=$PREFIX/usr/local/include"
+            fi
+            mkdir -p build-ios && cd build-ios
+            cmake .. -G Ninja \
+              -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+              -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+              -DIPHONE=ON -DwxBUILD_TOOLKIT=osx_iphone \
+              -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
+              -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=ON -DwxUSE_XRC=OFF \
+              -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
+              -DwxUSE_GRID=ON -DwxUSE_LISTCTRL=ON -DwxUSE_IMAGLIST=ON \
+              -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
+              -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
+              -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
+              -DwxUSE_NANOSVG=OFF -DwxUSE_LOGWINDOW=ON \
+              $JPEG_ARGS \
+              -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
+            ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -80 /tmp/wx-ninja.log && exit 1)
+            ninja install > /tmp/wx-install.log 2>&1 || (tail -60 /tmp/wx-install.log && exit 1)
+            cd "$GITHUB_WORKSPACE"
+            WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+            [ -n "$WXINC" ] || WXINC="$WXPREFIX/include"
+            mkdir -p "$WXINC/wx/generic/private" "$WXINC/wx/private" "$WXINC/wx/osx"
+            cp -R wx/include/wx/generic/private/. "$WXINC/wx/generic/private/" || true
+            cp -R wx/include/wx/private/. "$WXINC/wx/private/" || true
+            cp wx/include/wx/webview.h wx/include/wx/webviewarchivehandler.h \
+               wx/include/wx/webviewfshandler.h "$WXINC/wx/" || true
+            cp wx/include/wx/osx/webviewhistoryitem_webkit.h "$WXINC/wx/osx/" || true
+            echo "WX_BUILT_HERE=1" >> "$GITHUB_ENV"
+          fi
           # the overlay headers ship into the prefix the same way step 3 does
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           cp -r wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+
+      - name: Save wx prefix cache
+        if: env.WX_BUILT_HERE == '1'
+        uses: actions/cache/save@v4
+        with:
+          path: wx-prefix
+          key: ${{ env.WX_KEY }}
 
       - name: Build WxProbe.app
         run: |
@@ -135,13 +201,14 @@ jobs:
           for f in artifact-smoke/*.png; do
             [ -e "$f" ] && cp "$f" "$D/smoke-$(basename "$f")"
           done 2>/dev/null || true
-          for f in launch-verdict.txt sim-launch.log sim-oslog.txt alive-methods.txt orca-app-log.txt; do
+          for f in launch-verdict.txt sim-launch.log sim-oslog.txt alive-methods.txt orca-app-log.txt crash-reports.txt; do
             [ -f "artifact-smoke/$f" ] && tail -c 20000 "artifact-smoke/$f" > "$D/smoke-$f"
           done
           [ -f /tmp/smoke-build.log ] && tail -c 8000 /tmp/smoke-build.log > "$D/smoke-build.log"
           for f in artifact/launch-verdict.txt artifact/screenshot-stats.txt \
                    artifact/sim-launch.log artifact/sim-oslog.txt \
                    artifact/orca-app-log.txt artifact/alive-methods.txt \
+                   artifact/crash-reports.txt \
                    /tmp/wx-probe-build.log; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done

@@ -223,9 +223,20 @@ tail -80 "$OUT/sim-launch.log" || true
   echo "still alive at t=${LAST_ALIVE_AT:-none} s (last checkpoint ${LAST_CHECKPOINT}s)"
   echo "screenshots taken while alive: $SHOTS"
   echo "still running at the end: $ALIVE_ENTRIES (pid ${APP_PID:-none})"
-  echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name 'OrcaSlicer*' 2>/dev/null | wc -l | tr -d ' ')"
+  echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name "${EXE}*" 2>/dev/null | wc -l | tr -d ' ')"
 } | tee "$OUT/launch-verdict.txt"
-find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" -exec cp {} "$OUT/" \; 2>/dev/null || true
+# NB the pattern is $EXE, not a hardcoded "OrcaSlicer*". It was the latter until
+# now, so every wx-probe and smoke-app run printed "crash reports: 0" whatever
+# happened -- the question was never actually asked of those two apps, and "it
+# exits without crashing" was read off a search that could only ever find
+# nothing. The reports themselves are copied out too, so a crash is diagnosable
+# from the log commit instead of costing another run.
+find "$HOME/Library/Logs/DiagnosticReports" -name "${EXE}*" -exec cp {} "$OUT/" \; 2>/dev/null || true
+for f in "$OUT"/${EXE}*.ips "$OUT"/${EXE}*.crash; do
+  [ -e "$f" ] || continue
+  echo "=== crash report: $(basename "$f") ==="
+  head -c 8000 "$f"
+done > "$OUT/crash-reports.txt" 2>&1 || true
 cp /tmp/sim-install.log "$OUT/" 2>/dev/null || true
 
 if [ -z "$FIRST_ALIVE" ]; then

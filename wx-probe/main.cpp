@@ -30,6 +30,9 @@
 #include <cstdio>
 #include <cstdlib>
 
+// probe_boot.mm - startup instrumentation that runs before main().
+extern "C" void probe_note_oninit(void);
+
 // Written to stderr *and* to a file, and the file path comes from $HOME rather
 // than from wx. Run 4 published an empty app log, which is ambiguous in exactly
 // the way that costs runs: either the app died before OnInit, or
@@ -352,6 +355,7 @@ public:
 
     bool OnInit() override
     {
+        probe_note_oninit(); // stand the watchdog in probe_boot.mm down
         report("OnInit", "entered");
         new ProbeFrame();
         report("OnInit", "returning true");

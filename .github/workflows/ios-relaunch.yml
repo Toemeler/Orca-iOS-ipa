@@ -1,0 +1,124 @@
+name: Relaunch the last Orca build in the simulator
+
+# Why this exists
+# ---------------
+# Getting a screenshot of Orca's UI is a loop over launch behaviour, not over
+# compiled code: the same binary has to be installed, launched, watched and
+# photographed, with the harness changing between attempts. Doing that inside
+# ios-step3-fast.yml costs a 55-minute compile every time, for a step that takes
+# four minutes.
+#
+# ios-step3-fast.yml now publishes the linked executable as an artifact named
+# orca-binary. This downloads the newest one, rebuilds the bundle around it -
+# the resources come from a shallow Orca clone plus the overlay, which is 20
+# seconds - and runs the same launch verification. Four minutes per attempt.
+#
+# It always tests the newest available build, so after a step-3 run finishes,
+# every push here re-tests that build.
+
+on:
+  push:
+    branches:
+      - claude/lan-backend-implementation-gxu2jr
+    paths:
+      - '.github/workflows/ios-relaunch.yml'
+      - 'tools/ci/sim-launch-verify.sh'
+      - 'tools/ci/assemble-sim-bundle.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: relaunch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  relaunch:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      ORCA_REF: "395e070a0e675fd4723f93967cefede730c482d9"
+      IOS_MIN: "17.0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # actions/download-artifact cannot reach across workflows without a run id,
+      # and a run id cannot be passed to a push-triggered workflow. The REST API
+      # lists artifacts newest-first repo-wide, which is exactly the question.
+      - name: Fetch the newest orca-binary artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          API="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=orca-binary&per_page=1"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "$API" > /tmp/artifacts.json
+          python3 - <<'PY' > /tmp/artifact-url.txt
+          import json
+          d = json.load(open('/tmp/artifacts.json'))
+          arts = d.get('artifacts') or []
+          if not arts:
+              raise SystemExit('no orca-binary artifact exists yet - run ios-step3-fast.yml first')
+          a = arts[0]
+          print(a['archive_download_url'])
+          import sys
+          print('artifact from run %s, %.0f MB, created %s'
+                % (a['workflow_run']['id'], a['size_in_bytes'] / 1e6, a['created_at']),
+                file=sys.stderr)
+          PY
+          curl -sSL -H "Authorization: Bearer $GH_TOKEN" -o /tmp/orca-binary.zip \
+            "$(cat /tmp/artifact-url.txt)"
+          mkdir -p bin && cd bin && unzip -o -q /tmp/orca-binary.zip
+          ls -la
+          file OrcaSlicer
+
+      - name: Fetch Orca resources
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/SoftFever/OrcaSlicer.git orca
+          cd orca && git fetch --depth 1 origin "$ORCA_REF" && git checkout -q "$ORCA_REF"
+          # Only the resources matter here; the overlay carries the ES shader set
+          # upstream has never had, which the GL canvas needs at runtime.
+          cp -R "$GITHUB_WORKSPACE"/orca-overlay/resources/. resources/
+          test "$(ls resources/shaders/ES | wc -l)" -eq 38
+
+      - name: Assemble + launch + screenshot
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          bash tools/ci/assemble-sim-bundle.sh \
+            bin/OrcaSlicer orca/resources "$PWD/sim/OrcaSlicer.app" "$IOS_MIN"
+          bash tools/ci/sim-launch-verify.sh \
+            "$PWD/sim/OrcaSlicer.app" org.orca-ios.orcaslicer "$PWD/artifact"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-relaunch
+          path: artifact/
+          if-no-files-found: ignore
+
+      - name: Publish to ci-logs
+        if: always()
+        run: |
+          set -ux
+          D="ci-logs/relaunch-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          cp artifact/*.png "$D/" 2>/dev/null || true
+          for f in artifact/launch-verdict.txt artifact/screenshot-stats.txt \
+                   artifact/sim-launch.log artifact/sim-install.log \
+                   artifact/orca-app-log.txt artifact/sim-oslog.txt; do
+            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
+          done
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "relaunch run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

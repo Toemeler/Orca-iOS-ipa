@@ -207,76 +207,31 @@ jobs:
           key: ccache-step3-${{ github.run_id }}
 
 
+      # The binary, on its own, so the launch loop does not need the compile.
+      # ios-relaunch.yml downloads the newest one of these and re-tests it in
+      # four minutes instead of fifty-five.
+      - name: Upload the linked binary
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-binary
+          path: orca/build/src/OrcaSlicer.app/OrcaSlicer
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Launch in iPad simulator + screenshot
         if: success()
         run: |
           set -uxo pipefail
-          BIN=""
-          [ -f orca/build/src/OrcaSlicer.app/OrcaSlicer ] && BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
-          [ -n "$BIN" ] || { echo "no linked executable (target was $TARGET) - nothing to launch"; exit 0; }
-          APP=sim/OrcaSlicer.app
-          rm -rf sim && mkdir -p "$APP"
-          cp "$BIN" "$APP/OrcaSlicer"
-          # Info.plist first, resources second. simctl reads the plist to get the
-          # bundle id, and resources is the biggest thing on the disk - if space
-          # runs out mid-copy, a plist written afterwards ends up empty and the
-          # install fails with the useless "Missing bundle ID".
-          cat > "$APP/Info.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>CFBundleExecutable</key><string>OrcaSlicer</string>
-            <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
-            <key>CFBundleName</key><string>OrcaSlicer</string>
-            <key>CFBundleVersion</key><string>1</string>
-            <key>CFBundleShortVersionString</key><string>1.0</string>
-            <key>CFBundlePackageType</key><string>APPL</string>
-            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
-            <key>LSRequiresIPhoneOS</key><true/>
-            <key>UIDeviceFamily</key><array><integer>2</integer></array>
-            <key>UILaunchScreen</key><dict/>
-            <!-- iOS 14+ blocks every local-network connection until the user
-                 agrees. Without this key the native Bambu LAN backend cannot reach
-                 the printer at all, and the failure is silent. -->
-            <key>NSLocalNetworkUsageDescription</key>
-            <string>OrcaSlicer talks to 3D printers on your local network.</string>
-            <key>NSBonjourServices</key><array><string>_bambulab._tcp</string></array>
-            <key>NSAppTransportSecurity</key><dict>
-              <key>NSAllowsLocalNetworking</key><true/>
-            </dict>
-            <key>UIRequiresFullScreen</key><true/>
-          </dict></plist>
-          PLIST
-          cp -R orca/resources "$APP/orca-resources"
-          # A top-level "resources" directory is "Resources" on a case-insensitive
-          # filesystem, and CFBundle then reads the flat bundle as an old-style
-          # one whose Info.plist lives inside it - the installer reports the
-          # useless "Missing bundle ID". Proved by ios-sim-probe.yml round 3.
-          if [ -e "$APP/resources" ] || [ -e "$APP/Resources" ]; then
-            echo "::error::$APP has a top-level resources directory; installers will reject it"
-            exit 1
-          fi
-
-          # Prove the bundle is installable before handing it to simctl, so a
-          # failure names the actual cause instead of "Missing bundle ID".
-          { df -h /Users/runner 2>/dev/null || df -h .; echo; ls -la "$APP"; echo;
-            echo "--- Info.plist as written ---"; cat "$APP/Info.plist"; } | tee /tmp/bundle-check.log
-          python3 - "$APP/Info.plist" <<'VERIFY'
-          import plistlib, sys
-          path = sys.argv[1]
-          raw = open(path, 'rb').read()
-          if not raw:
-              sys.exit('Info.plist is EMPTY (disk full while writing?)')
-          d = plistlib.loads(raw)
-          missing = [k for k in ('CFBundleIdentifier', 'CFBundleExecutable') if not d.get(k)]
-          if missing:
-              sys.exit('Info.plist lacks %s' % missing)
-          print('Info.plist ok: %s / %s' % (d['CFBundleIdentifier'], d['CFBundleExecutable']))
-          VERIFY
-          test -x "$APP/OrcaSlicer" || { echo "::error::$APP/OrcaSlicer missing or not executable"; exit 1; }
-
+          BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          [ -f "$BIN" ] || { echo "no linked executable (target was $TARGET) - nothing to launch"; exit 0; }
+          mkdir -p artifact
+          bash "$GITHUB_WORKSPACE/tools/ci/assemble-sim-bundle.sh" \
+            "$BIN" orca/resources "$PWD/sim/OrcaSlicer.app" "$IOS_MIN" \
+            2>&1 | tee /tmp/bundle-check.log
           bash "$GITHUB_WORKSPACE/tools/ci/sim-launch-verify.sh" \
-            "$APP" org.orca-ios.orcaslicer "$PWD/artifact"
+            "$PWD/sim/OrcaSlicer.app" org.orca-ios.orcaslicer "$PWD/artifact"
+
 
       - name: Upload launch artifacts
         if: always()

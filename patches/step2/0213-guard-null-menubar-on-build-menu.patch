@@ -1,0 +1,59 @@
+Guard the null menu bar in wxApp::OSXOnBuildMenu (iPhone).
+
+This is the SIGSEGV that stopped every wx iOS app from reaching OnInit.
+Backtrace, from the wx probe (run 16):
+
+    2  wxMenuBar::OSXOnBuildMenu(NSObject*) + 376      <- fault
+    3  wxApp::OSXOnBuildMenu(NSObject*)
+    4  -[wxAppDelegate buildMenuWithBuilder:]
+    5  -[UIMenuSystem _buildMenuWithBuilder:fromResponderChain:...]
+    8  -[UIMainMenuSystem _automaticallyRebuildIfNeeded]
+   11  -[UIApplication _immediatelyUpdateSerializableKeyCommands]
+   12  -[_UIAfterCACommitBlock run]
+   22  UIApplicationMain
+
+wxApp::OSXOnBuildMenu dereferences MacGetInstalledMenuBar() unconditionally,
+and that returns s_macInstalledMenuBar, which is nullptr until some wxMenuBar
+has actually been installed. wxMenuBar::OSXOnBuildMenu then walks
+m_rootMenu->GetMenuItems() through a null this, and the process is gone.
+
+UIKit builds the main menu from an after-CA-commit block during the first turn
+of the run loop, to populate the key-command table. On iPadOS that happens
+whether or not the application has any menus, and it happens before OnInit has
+run - so an app that installs its menu bar in OnInit, and every app that never
+installs one at all, is dereferencing null.
+
+Two things in this port make it reachable. Patch 0202 turns wxUSE_MENUBAR on for
+the iPhone build, which is what compiles the buildMenuWithBuilder: delegate
+method into existence at all; Orca's MainFrame needs the class, so that flag has
+to stay. And patch 0208 hands OnInit to the next turn of the main queue, which
+puts UIKit's first menu build firmly ahead of it. The step-2 smoke app -- a
+frame, a button and a GL canvas, with no menus anywhere -- crashes identically,
+which is what makes this a wx bug rather than an Orca one.
+
+Doing nothing when no menu bar is installed is also the right behaviour on its
+own terms: there is nothing to contribute to the builder, and UIKit's defaults
+are what should remain.
+
+diff --git a/src/osx/carbon/app.cpp b/src/osx/carbon/app.cpp
+--- a/src/osx/carbon/app.cpp
++++ b/src/osx/carbon/app.cpp
+@@ -244,7 +244,17 @@
+
+ void wxApp::OSXOnBuildMenu(WX_NSObject builder)
+ {
+-    wxMenuBar::MacGetInstalledMenuBar()->OSXOnBuildMenu(builder);
++    // UIKit rebuilds the main menu from an after-CA-commit block on the first
++    // turn of the run loop, to fill in the key-command table, and it does so
++    // before the application's OnInit has had a chance to install anything.
++    // MacGetInstalledMenuBar() is null until a wxMenuBar is installed, and it
++    // stays null for the whole life of an app that never uses menus, so this
++    // dereference is a startup segfault rather than an edge case.
++    wxMenuBar* const menubar = wxMenuBar::MacGetInstalledMenuBar();
++    if ( menubar == nullptr )
++        return;
++
++    menubar->OSXOnBuildMenu(builder);
+ }
+
+ #endif

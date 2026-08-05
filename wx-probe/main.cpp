@@ -20,6 +20,9 @@
 #include <wx/scrolwin.h>
 #include <wx/glcanvas.h>
 #include <wx/dcbuffer.h>
+#ifdef PROBE_WEBVIEW
+#include <wx/webview.h>
+#endif
 
 #include <OpenGLES/ES2/gl.h>
 
@@ -203,6 +206,9 @@ public:
         book->AddPage(MakeDataView(book), "DataView");
         book->AddPage(new PaintedPanel(book), "Custom paint");
         book->AddPage(MakeGL(book), "OpenGL ES");
+#ifdef PROBE_WEBVIEW
+        book->AddPage(MakeWebView(book), "WebView");
+#endif
 
         report("pages added", "ok");
         Show();
@@ -259,6 +265,39 @@ private:
         panel->SetSizer(sizer);
         return panel;
     }
+
+#ifdef PROBE_WEBVIEW
+    // Orca's MainFrame builds web-view panels for the home page and the printer
+    // page, and step-2 patch 0210 compiled wx's WKWebView backend for the iPhone
+    // port - but no wxWebView has ever been constructed on iOS here, and one
+    // that throws during MainFrame construction is indistinguishable from any
+    // other startup exit.
+    wxWindow* MakeWebView(wxWindow* parent)
+    {
+        auto* panel = new wxPanel(parent);
+        auto* sizer = new wxBoxSizer(wxVERTICAL);
+        wxWebView* wv = wxWebView::New();
+        if (wv == nullptr) {
+            report("wxWebView::New", "returned null");
+            sizer->Add(new wxStaticText(panel, wxID_ANY, "wxWebView::New() returned null"),
+                       0, wxALL, 12);
+        } else if (!wv->Create(panel, wxID_ANY, "about:blank")) {
+            report("wxWebView::Create", "FAILED");
+            sizer->Add(new wxStaticText(panel, wxID_ANY, "wxWebView::Create() failed"),
+                       0, wxALL, 12);
+        } else {
+            // A data: page rather than a network fetch: this is about whether a
+            // WKWebView appears and paints, not about connectivity.
+            wv->SetPage("<html><body style='background:#12331f;color:#eaeaea;"
+                        "font:600 34px -apple-system'>"
+                        "<p>wxWebView renders on iOS</p></body></html>", "");
+            sizer->Add(wv, 1, wxEXPAND | wxALL, 6);
+            report("wxWebView", "created + SetPage");
+        }
+        panel->SetSizer(sizer);
+        return panel;
+    }
+#endif
 
     wxWindow* MakeGL(wxWindow* parent)
     {

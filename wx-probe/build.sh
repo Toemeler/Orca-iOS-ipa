@@ -21,19 +21,32 @@ WXLIBS=$(ls "$PREFIX"/lib/libwx*.a)
 DEPSLIBS=""
 [ -n "$DEPS" ] && [ -d "$DEPS/usr/local/lib" ] && DEPSLIBS="-L$DEPS/usr/local/lib"
 
-xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
-  "$MIN_FLAG" \
-  -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 \
-  -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
-  "$HERE/main.cpp" -o "$APP/WxProbe" \
-  $DEPSLIBS \
-  $WXLIBS $WXLIBS \
-  -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
-  -framework CoreGraphics -framework CoreText -framework CoreFoundation \
-  -framework Foundation -framework Security -framework AudioToolbox \
-  -framework CFNetwork -framework MobileCoreServices \
-  -framework UniformTypeIdentifiers \
-  -lz -liconv -lexpat -llzma
+build_it() {
+  xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
+    "$MIN_FLAG" \
+    -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 "$@" \
+    -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
+    "$HERE/main.cpp" -o "$APP/WxProbe" \
+    $DEPSLIBS \
+    $WXLIBS $WXLIBS \
+    -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
+    -framework CoreGraphics -framework CoreText -framework CoreFoundation \
+    -framework Foundation -framework Security -framework AudioToolbox \
+    -framework CFNetwork -framework MobileCoreServices \
+    -framework UniformTypeIdentifiers \
+    -lz -liconv -lexpat -llzma
+}
+
+# The WebView tab is the one that might not build: wx's WKWebView backend was
+# only compiled for the iPhone port by step-2 patch 0210, and if that is not in
+# this cached prefix the include is not there. Losing the whole probe to it
+# would waste the run, so try with it and fall back without - and say which.
+if build_it -DPROBE_WEBVIEW -framework WebKit; then
+  echo "PROBE_BUILD=with-webview"
+else
+  echo "PROBE_BUILD=without-webview (the WebKit/wxWebView build failed above)"
+  build_it
+fi
 
 # A .dSYM inside the bundle makes ldid assert on filetype (MH_DSYM is not one of
 # the four it accepts), and there is no reason for one here.

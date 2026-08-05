@@ -16,6 +16,7 @@ on:
     branches:
       - claude/basic-ipad-app-plan-pb0b4p
       - claude/step-4-ipa-parity-bkdym6
+      - claude/ipad-build-failure-dkutxc
     paths:
       - '.github/workflows/ios-step4-device-ipa.yml'
       - 'patches/**'
@@ -282,6 +283,22 @@ jobs:
                              find orca/build/src -maxdepth 2 -type f -perm -111 | head -40; exit 1; }
           echo "executable: $BIN"
           vtool -show-build "$BIN" | grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$"
+
+          # Did wx's UIApplication delegate actually make it into the binary?
+          # Patch 0318 forces it in with -u through a clang response file (a
+          # plain link flag loses the '$' to Ninja's own variable expansion, and
+          # ld then fails on a bare "_OBJC_CLASS_" - that is how run 25 died).
+          # Without the class the IPA still builds and then exits at launch with
+          # a nil delegate, so report it here. Not fatal: nm on this binary has
+          # given a wrong answer before (see HANDOFF), so a miss is a warning to
+          # go and check, not a reason to throw away a build.
+          if nm -a "$BIN" 2>/dev/null | grep -q '_OBJC_CLASS_\$_wxAppDelegate'; then
+            echo "wxAppDelegate: present (nm)"
+          elif otool -ov "$BIN" 2>/dev/null | grep -q 'wxAppDelegate'; then
+            echo "wxAppDelegate: present (otool -ov)"
+          else
+            echo "::warning::_OBJC_CLASS_\$_wxAppDelegate not found in $BIN - the app would launch with a nil delegate and exit"
+          fi
 
           APP=stage/Payload/OrcaSlicer.app
           rm -rf stage && mkdir -p "$APP"

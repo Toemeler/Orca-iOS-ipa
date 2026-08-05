@@ -2,7 +2,7 @@ diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index e3361ef..20b3e0e 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -141,7 +141,41 @@ endif ()
+@@ -141,7 +141,59 @@ endif ()
  
  target_link_libraries(OrcaSlicer libslic3r cereal::cereal)
  # target_include_directories(OrcaSlicer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/slic3r)
@@ -40,12 +40,30 @@ index e3361ef..20b3e0e 100644
 +    # probe pulled in webview_webkit.mm.o and a wall of undefined WKWebView
 +    # symbols. Bare -ObjC is wrong outright - that is the clang driver's
 +    # language selector, not an ld flag.
-+    target_link_libraries(OrcaSlicer "-Wl,-u,_OBJC_CLASS_$_wxAppDelegate")
++    #
++    # The symbol name contains a '$', and a '$' does not survive the trip to ld
++    # as an ordinary link flag. CMake writes the flag into build.ninja without
++    # escaping it, Ninja reads "$_wxAppDelegate" as one of its own variable
++    # references and expands it to nothing, and ld is handed "-u _OBJC_CLASS_"
++    # - an initial undefine that nothing in the link defines. That is exactly
++    # how step-4 run 25 failed:
++    #     Undefined symbols for architecture arm64:
++    #       "_OBJC_CLASS_", referenced from:
++    #           <initial-undefines>
++    # (and /bin/sh would eat the '$' too, if Ninja ever stopped doing so).
++    # So hand the flag to the clang driver in a response file: the driver reads
++    # the file itself, so its contents pass through neither Ninja nor the shell
++    # and the '$' arrives at ld intact.
++    set(ORCA_IOS_FORCE_DELEGATE_RSP
++        "${CMAKE_CURRENT_BINARY_DIR}/ios-force-app-delegate.rsp")
++    file(WRITE "${ORCA_IOS_FORCE_DELEGATE_RSP}"
++        "-Wl,-u,_OBJC_CLASS_$_wxAppDelegate\n")
++    target_link_options(OrcaSlicer PRIVATE "@${ORCA_IOS_FORCE_DELEGATE_RSP}")
 +elseif (APPLE)
  #    add_compile_options(-stdlib=libc++)
  #    add_definitions(-DBOOST_THREAD_DONT_USE_CHRONO -DBOOST_NO_CXX11_RVALUE_REFERENCES -DBOOST_THREAD_USES_MOVE)
      # -liconv: boost links to libiconv by default
-@@ -164,6 +198,9 @@ target_link_libraries(OrcaSlicer libslic3r_gui)
+@@ -164,6 +216,9 @@ target_link_libraries(OrcaSlicer libslic3r_gui)
          target_link_libraries(OrcaSlicer ws2_32.lib user32.lib Setupapi.lib)
      elseif (MINGW)
          target_link_libraries(OrcaSlicer ws2_32 uxtheme setupapi)

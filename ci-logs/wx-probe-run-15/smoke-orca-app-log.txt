@@ -1,0 +1,10 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/47913949-76AF-4207-B37F-126DEF9A4955/data/Containers/Data/Application/89CBB5B7-02E7-43D8-A0DB-CB4375232DDF/Documents/wxprobe.log ---
+WXPROBE image                  loaded (+load ran)
+WXPROBE wxAppDelegate class    present in the binary
+WXPROBE hook                   applicationDidFinishLaunching: installed
+WXPROBE hook                   willFinishLaunchingWithOptions: installed
+WXPROBE delegate               application:willFinishLaunchingWithOptions: ENTERED
+WXPROBE delegate               willFinishLaunching returned YES
+WXPROBE delegate               applicationDidFinishLaunching: ENTERED
+WXPROBE delegate               applicationDidFinishLaunching: returned
+WXPROBE FATAL signal           SIGSEGV

@@ -1,0 +1,3 @@
+[2026-08-05 00:18:49.994943] [0x000000010a440200] [error]   boost::filesystem::create_directory: No such file or directory [system:2]: "/Users/runner/Library/Developer/CoreSimulator/Devices/8DE585D5-DDBE-4A74-93B6-3867039CE046/data/Containers/Data/Application/D6DC0FE9-0CF1-468F-B20B-06D7E1C07E6F/Library/Application Support/OrcaSlicer"
+
+org.orca-ios.orcaslicer: 87751

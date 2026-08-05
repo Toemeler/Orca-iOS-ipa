@@ -1,0 +1,113 @@
+name: wx widget probe (simulator)
+
+# Why this exists
+# ---------------
+# Orca's MainFrame is built from a narrow set of wx classes - a book control, a
+# wxDataViewCtrl, custom wxDC-painted windows, and a GL canvas driven by shaders.
+# Whether the wxOSX/iPhone port renders those is the open question between "the
+# app stays alive" and "the screenshot shows the UI", and answering it inside the
+# Orca build costs 55 minutes per attempt.
+#
+# The wx prefix is already cached on this branch, so building a probe against it
+# takes about a minute. This restores that cache, compiles wx-probe/, and runs it
+# through the same launch verification the step-3 workflows use: alive-polled,
+# screenshotted while running, and red if it dies.
+#
+# Runs in its own concurrency group, so it can go while a step-3 build is busy.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wx-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      IOS_MIN: "17.0"
+      PREFIX: ${{ github.workspace }}/ios-prefix
+      WXPREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: iphonesimulator
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same key derivation as ios-step3-fast.yml, so this restores the very wx
+      # build Orca is linked against rather than some other one.
+      - name: Compute wx cache key
+        run: |
+          set -euxo pipefail
+          WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
+          echo "WX_KEY=ios-wxprefix-v3-$WXH" >> "$GITHUB_ENV"
+
+      - name: Restore wx cache (required)
+        uses: actions/cache/restore@v4
+        with:
+          path: wx-prefix
+          key: ${{ env.WX_KEY }}
+
+      - name: Restore deps cache (optional)
+        uses: actions/cache/restore@v4
+        with:
+          path: ios-prefix
+          key: ios-prefixonly-v1
+          restore-keys: |
+            ios-prefixonly-v1
+            ios-deps-v1-
+
+      - name: Sanity - wx prefix present
+        run: |
+          set -euxo pipefail
+          test -d "$WXPREFIX/lib" || { echo "::error::wx prefix missing - run ios-step3-gui.yml (or step 2) on this branch first"; exit 1; }
+          ls "$WXPREFIX"/lib/libwx*.a | head
+          # the overlay headers ship into the prefix the same way step 3 does
+          WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+          cp -r wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+
+      - name: Build WxProbe.app
+        run: |
+          set -euxo pipefail
+          chmod +x wx-probe/build.sh
+          ./wx-probe/build.sh "$WXPREFIX" "$SDK" "$IOS_MIN" "$PREFIX" 2>&1 | tee /tmp/wx-probe-build.log
+          file wx-probe/build/WxProbe.app/WxProbe
+
+      - name: Launch in iPad simulator + screenshot
+        run: |
+          set -euxo pipefail
+          mkdir -p artifact
+          bash tools/ci/sim-launch-verify.sh \
+            wx-probe/build/WxProbe.app org.orca-ios.wxprobe "$PWD/artifact"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wx-probe
+          path: artifact/
+          if-no-files-found: ignore
+
+      - name: Publish to ci-logs
+        if: always()
+        run: |
+          set -ux
+          D="ci-logs/wx-probe-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          cp artifact/*.png "$D/" 2>/dev/null || true
+          for f in artifact/launch-verdict.txt artifact/screenshot-stats.txt \
+                   artifact/sim-launch.log artifact/sim-oslog.txt /tmp/wx-probe-build.log; do
+            [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
+          done
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "wx probe run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

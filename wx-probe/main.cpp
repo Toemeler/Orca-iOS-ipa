@@ -20,6 +20,7 @@
 #include <wx/scrolwin.h>
 #include <wx/glcanvas.h>
 #include <wx/dcbuffer.h>
+#include <wx/stdpaths.h>
 #ifdef PROBE_WEBVIEW
 #include <wx/webview.h>
 #endif
@@ -28,10 +29,26 @@
 
 #include <cstdio>
 
+// Written to stderr *and* to a file the launch script will find. Run 1 came back
+// with an empty sim-launch.log: --console-pty is not a reliable way to get an
+// iOS app's stderr, and plain fprintf never reaches the system log either, so
+// the interesting half of the probe would have been lost. The launch script
+// pulls every *.log out of the app's data container, so writing one there is
+// the path that cannot silently produce nothing.
 static void report(const char* what, const char* how)
 {
     std::fprintf(stderr, "WXPROBE %-22s %s\n", what, how);
     std::fflush(stderr);
+
+    static FILE* f = nullptr;
+    if (f == nullptr) {
+        const wxString dir = wxStandardPaths::Get().GetDocumentsDir();
+        f = std::fopen((dir + "/wxprobe.log").utf8_str().data(), "w");
+    }
+    if (f != nullptr) {
+        std::fprintf(f, "WXPROBE %-22s %s\n", what, how);
+        std::fflush(f);
+    }
 }
 
 // ---------------------------------------------------------------- GL canvas
@@ -77,15 +94,14 @@ private:
         if (!m_reported) {
             const GLubyte* ver = glGetString(GL_VERSION);
             const GLubyte* ren = glGetString(GL_RENDERER);
-            std::fprintf(stderr, "WXPROBE gl version            %s / %s\n",
-                         ver ? (const char*) ver : "?", ren ? (const char*) ren : "?");
+            report("gl version", ver ? (const char*) ver : "?");
+            report("gl renderer", ren ? (const char*) ren : "?");
             // Which object the drawable framebuffer actually is. On iOS it is
             // whatever GLKit bound, not 0 - the number here is the thing patch
             // 0329 has to hand to Orca.
             GLint fbo = -1;
             glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo);
-            std::fprintf(stderr, "WXPROBE gl default fbo        %d\n", fbo);
-            std::fflush(stderr);
+            report("gl default fbo", wxString::Format("%d", fbo).utf8_str().data());
         }
 
         const wxSize sz = GetClientSize();

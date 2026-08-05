@@ -89,6 +89,10 @@ jobs:
           file wx-probe/build/WxProbe.app/WxProbe
 
       - name: Launch in iPad simulator + screenshot
+        env:
+          # The probe either renders in the first seconds or dies; a 67-second
+          # window buys nothing here and the loop is the point.
+          SIM_CHECKPOINTS: "2 6 14"
         run: |
           set -euxo pipefail
           mkdir -p artifact

@@ -28,13 +28,14 @@
 #include <OpenGLES/ES2/gl.h>
 
 #include <cstdio>
+#include <cstdlib>
 
-// Written to stderr *and* to a file the launch script will find. Run 1 came back
-// with an empty sim-launch.log: --console-pty is not a reliable way to get an
-// iOS app's stderr, and plain fprintf never reaches the system log either, so
-// the interesting half of the probe would have been lost. The launch script
-// pulls every *.log out of the app's data container, so writing one there is
-// the path that cannot silently produce nothing.
+// Written to stderr *and* to a file, and the file path comes from $HOME rather
+// than from wx. Run 4 published an empty app log, which is ambiguous in exactly
+// the way that costs runs: either the app died before OnInit, or
+// wxStandardPaths::GetDocumentsDir() returned something un-openable and the log
+// never existed. $HOME is the app's data container on iOS, set by the system
+// before any of our code runs, so a missing file now means the code did not run.
 static void report(const char* what, const char* how)
 {
     std::fprintf(stderr, "WXPROBE %-22s %s\n", what, how);
@@ -42,14 +43,27 @@ static void report(const char* what, const char* how)
 
     static FILE* f = nullptr;
     if (f == nullptr) {
-        const wxString dir = wxStandardPaths::Get().GetDocumentsDir();
-        f = std::fopen((dir + "/wxprobe.log").utf8_str().data(), "w");
+        const char* home = std::getenv("HOME");
+        char path[1024];
+        std::snprintf(path, sizeof(path), "%s/Documents/wxprobe.log", home ? home : "/tmp");
+        f = std::fopen(path, "a");
+        if (f == nullptr) { // Documents may not exist yet
+            std::snprintf(path, sizeof(path), "%s/wxprobe.log", home ? home : "/tmp");
+            f = std::fopen(path, "a");
+        }
     }
     if (f != nullptr) {
         std::fprintf(f, "WXPROBE %-22s %s\n", what, how);
         std::fflush(f);
     }
 }
+
+// Runs before main(). Three outcomes, and they mean different things:
+//   no log file at all   -> the process dies before static initialisation
+//   "static init" only   -> it dies inside wx/UIKit startup, before OnInit
+//   "OnInit entered" ... -> it dies in the widget construction that follows
+struct EarlyMarker { EarlyMarker() { report("static init", "ran"); } };
+static EarlyMarker g_early_marker;
 
 // ---------------------------------------------------------------- GL canvas
 // Orca does not clear-and-present; it compiles shaders, uploads buffers and

@@ -1,0 +1,38 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 66d7d878..996412e1 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -1,5 +1,9 @@
+ #include "MainFrame.hpp"
+ 
++#ifdef __WXOSX_IPHONE__
++#include <wx/display.h>
++#endif
++
+ #include <wx/panel.h>
+ #include <wx/notebook.h>
+ #include <wx/listbook.h>
+@@ -563,8 +567,23 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+ 
+     const wxSize min_size = wxGetApp().get_min_size(); //wxSize(76*wxGetApp().em_unit(), 49*wxGetApp().em_unit());
+ 
++#ifdef __WXOSX_IPHONE__
++    // A top-level window is a UIWindow, and a UIWindow is the whole screen:
++    // anything smaller leaves dead space at the right and bottom that no
++    // gesture can reach, and anything larger is silently clipped, taking the
++    // right-hand sidebar and the bottom status bar off-screen with it. Take the
++    // display's size instead of the desktop default, and do not let the desktop
++    // minimum (76x49 em) push it back over the edge on a smaller iPad.
++    {
++        const wxSize display_size = wxDisplay(this).GetClientArea().GetSize();
++        SetMinSize(wxSize(std::min(min_size.x, display_size.x),
++                          std::min(min_size.y, display_size.y)));
++        SetSize(display_size);
++    }
++#else
+     SetMinSize(min_size/*wxSize(760, 490)*/);
+     SetSize(wxSize(FromDIP(1200), FromDIP(800)));
++#endif
+ 
+     Layout();
+ 

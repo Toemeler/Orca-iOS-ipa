@@ -13,10 +13,24 @@ on:
       target:
         description: "ninja target to build"
         required: false
-        default: "libslic3r_gui"
+        default: "OrcaSlicer"
 
 permissions:
   contents: write
+
+# Only the newest run per branch is useful: an older one is building code that
+# has already been superseded, and while the wx loop iterates it would otherwise
+# keep a device build busy for forty minutes on a fix that is already in.
+#
+# Safe to cancel now in a way it was not before: the deps caches are keyed on
+# hashFiles(patches/step1) rather than the run number, and actions/cache skips
+# the save when the key already exists -- so a cancelled run part-way through
+# its deps step can no longer write the partial entry that cost run 11 twenty
+# five minutes.
+concurrency:
+  group: step3-fast-${{ github.ref }}
+  cancel-in-progress: true
+
 
 jobs:
   gui-fast:
@@ -28,7 +42,7 @@ jobs:
       PREFIX: ${{ github.workspace }}/ios-prefix
       WXPREFIX: ${{ github.workspace }}/wx-prefix
       SDK: iphonesimulator
-      TARGET: ${{ github.event.inputs.target || 'libslic3r_gui' }}
+      TARGET: ${{ github.event.inputs.target || 'OrcaSlicer' }}
 
     steps:
       - name: Checkout
@@ -46,13 +60,25 @@ jobs:
           done
           mkdir -p deps_src/hidapi/ios
           cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
+          # The ES/ shader set upstream has never had. Required for the launch,
+          # and harmless for a compile-only run.
+          cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
+          test "$(ls resources/shaders/ES | wc -l)" -eq 38
+          # libslic3r and libslic3r_gui are the only two targets that build a
+          # precompiled header, and they are exactly the 563 objects that never
+          # hit the ccache: ccache hashes the .pch, and a .pch embeds the size
+          # and mtime of every header that went into it. Orca is re-cloned every
+          # run, so those mtimes are new every run and the .pch hash is new every
+          # run no matter what the sources say. Pin them to a fixed instant and
+          # the .pch becomes a function of content again.
+          find "$GITHUB_WORKSPACE/orca" -exec touch -h -t 202601010000.00 {} +
 
       - name: Compute cache keys from patch/overlay hashes
         run: |
           set -euxo pipefail
           WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
-          echo "WX_KEY=ios-wxprefix-v2-$WXH" >> "$GITHUB_ENV"
-          echo "wx cache key: ios-wxprefix-$WXH"
+          echo "WX_KEY=ios-wxprefix-v3-$WXH" >> "$GITHUB_ENV"
+          echo "wx cache key: ios-wxprefix-v3-$WXH"
 
       - name: Restore deps cache (required)
         uses: actions/cache/restore@v4
@@ -79,16 +105,39 @@ jobs:
           # ship overlay headers into wx prefix (idempotent)
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+          # Same reason as the orca tree: the precompiled header consumes wx and
+          # the deps headers too, and this copy hands the overlay ones a fresh
+          # mtime every run. A cache restore preserves mtimes, so pinning these
+          # is belt and braces - but the copy above is not, and it is in the PCH.
+          find "$WXPREFIX" "$PREFIX" -exec touch -h -t 202601010000.00 {} + 2>/dev/null || true
 
       - name: Set up ccache
         run: |
           brew install ccache || true
+          ccache --version | head -1
           echo "CCACHE_DIR=$HOME/.ccache-step3" >> "$GITHUB_ENV"
           echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
-          echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
+          # Cheap compression: the runner has 3 cores and they are all wanted
+          # for compiling, not for zstd.
+          echo "CCACHE_COMPRESSLEVEL=1" >> "$GITHUB_ENV"
+          # 650 Orca translation units do not fit in 1.5G, and an undersized
+          # cache evicts the objects it is about to be asked for again.
+          echo "CCACHE_MAXSIZE=3G" >> "$GITHUB_ENV"
+          # The build tree path is stable on the runner, but BASEDIR rewrites
+          # absolute paths anyway and NOHASHDIR keeps the object's own directory
+          # out of the hash - both are what make a hit survive across runs.
+          echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "CCACHE_NOHASHDIR=1" >> "$GITHUB_ENV"
           # iOS cross-compiles embed the SDK path; slop keeps cache hits across
-          # runner image updates that only move the SDK
-          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+          # runner image updates that only move the SDK. system_headers stops
+          # the whole SDK being hashed into every single object.
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,system_headers,locale" >> "$GITHUB_ENV"
+          # Run 6 hit only 76 of 639, and 563 of those misses failed the
+          # preprocessed lookup too - meaning the preprocessed output itself
+          # differs between runs. Rather than keep guessing at which input is
+          # volatile, have ccache write down its own reason for a few objects.
+          echo "CCACHE_DEBUG=1" >> "$GITHUB_ENV"
+          echo "CCACHE_DEBUGDIR=/tmp/ccache-debug" >> "$GITHUB_ENV"
 
       - name: Restore ccache
         uses: actions/cache/restore@v4
@@ -119,12 +168,36 @@ jobs:
             -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
             -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/fast-configure.log
+          # configure_file writes libslic3r_version.h and the pch header itself
+          # with the current time. Both are inputs to the .pch, so pin them too -
+          # but only the generated *headers*, not the whole build tree: giving
+          # build.ninja an mtime older than the CMakeLists it came from would
+          # have ninja re-run cmake and undo this on the spot.
+          find . \( -name "*.h" -o -name "*.hxx" -o -name "*.hpp" \) -type f \
+            -exec touch -h -t 202601010000.00 {} +
 
       - name: Build target
         run: |
           set -euxo pipefail
           cd orca/build
+          ccache -z >/dev/null 2>&1 || true
           ninja -k 0 "$TARGET" 2>&1 | tee /tmp/fast-ninja.log
+          # Nobody has ever looked at whether ccache is earning its keep here;
+          # the hit rate is the difference between a 50-minute round trip and a
+          # 5-minute one, so make it visible in ci-logs every run.
+          { ccache -s -v 2>/dev/null || ccache -s; } | tee /tmp/ccache-stats.txt
+          # Run 6 hit 76 of 639, and the 76 line up with the targets that do not
+          # use a precompiled header: deps_src, imgui, libvgcode. libslic3r and
+          # libslic3r_gui both build a cmake_pch.hxx.pch, every one of their
+          # objects is compiled with -include-pch, and ccache hashes that file's
+          # content. A .pch embeds the size and mtime of every header it consumed
+          # - and Orca is re-cloned every run, so those mtimes are new every run.
+          # If that is the story, these digests differ from run to run while the
+          # sources do not. Compare them across two runs before changing anything.
+          find . -name "cmake_pch.hxx*" -type f -exec shasum -a 256 {} + \
+            | sed "s#\./##" | sort -k2 | tee /tmp/pch-fingerprint.txt
+          find . -name "cmake_pch.hxx*" -type f -exec stat -f "%m %z %N" {} + \
+            | sort -k3 | tee -a /tmp/pch-fingerprint.txt
 
       - name: Save ccache
         if: always()
@@ -133,13 +206,75 @@ jobs:
           path: ~/.ccache-step3
           key: ccache-step3-${{ github.run_id }}
 
-      - name: Publish failure logs
-        if: failure()
+
+      # The binary, on its own, so the launch loop does not need the compile.
+      # ios-relaunch.yml downloads the newest one of these and re-tests it in
+      # four minutes instead of fifty-five.
+      - name: Upload the linked binary
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-binary
+          path: orca/build/src/OrcaSlicer.app/OrcaSlicer
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Launch in iPad simulator + screenshot
+        if: success()
+        run: |
+          set -uxo pipefail
+          BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          [ -f "$BIN" ] || { echo "no linked executable (target was $TARGET) - nothing to launch"; exit 0; }
+          mkdir -p artifact
+          bash "$GITHUB_WORKSPACE/tools/ci/assemble-sim-bundle.sh" \
+            "$BIN" orca/resources "$PWD/sim/OrcaSlicer.app" "$IOS_MIN" \
+            2>&1 | tee /tmp/bundle-check.log
+          bash "$GITHUB_WORKSPACE/tools/ci/sim-launch-verify.sh" \
+            "$PWD/sim/OrcaSlicer.app" org.orca-ios.orcaslicer "$PWD/artifact"
+
+
+      - name: Upload launch artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-fast-launch
+          path: artifact/
+          if-no-files-found: ignore
+
+      # always(), not failure(): once the link is green the interesting failure
+      # is a runtime one, and a crashed app still leaves the job green.
+      - name: Publish logs
+        if: always()
         run: |
           set -ux
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
+          # A couple of ccache debug logs are enough to name the volatile input,
+          # but only if they are logs of a MISS: run 7 published the first three
+          # files in the directory and all three were hits from deps_src, which
+          # says nothing about why the other 563 missed. Select on the outcome.
+          if [ -d /tmp/ccache-debug ]; then
+            grep -rl "Result: cache_miss" /tmp/ccache-debug --include="*.ccache-log" \
+              | grep -E "libslic3r|slic3r" | head -3 | while read -r f; do
+              cp "$f" "$D/ccache-miss-$(basename "$f")" 2>/dev/null || true
+            done
+            grep -rl "Result: direct_cache_hit" /tmp/ccache-debug --include="*.ccache-log" \
+              | head -1 | while read -r f; do
+              cp "$f" "$D/ccache-hit-$(basename "$f")" 2>/dev/null || true
+            done
+          fi
+          for l in /tmp/bundle-check.log /tmp/ccache-stats.txt /tmp/pch-fingerprint.txt \
+                   artifact/sim-launch.log artifact/sim-install.log \
+                   artifact/launch-verdict.txt artifact/screenshot-stats.txt \
+                   artifact/orca-app-log.txt; do
+            [ -f "$l" ] && tail -c 20000 "$l" > "$D/$(basename "$l")"
+          done
+          # Every screenshot, not just the last: the sequence is the evidence
+          # that the UI came up rather than flashed and went away.
+          cp artifact/*.png "$D/" 2>/dev/null || true
+          [ -f artifact/sim-oslog.txt ] && tail -c 60000 artifact/sim-oslog.txt > "$D/sim-oslog.txt"
+          find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" -exec cp {} "$D/" \; 2>/dev/null || true
           [ -f /tmp/fast-ninja.log ] && grep -n -B3 -A35 -E "FAILED:|error:|Error [0-9]" /tmp/fast-ninja.log | head -c 400000 > "$D/errors.log"
           # -k0 summary: full map of remaining errors
           if [ -f /tmp/fast-ninja.log ]; then
@@ -152,5 +287,10 @@ jobs:
             } > "$D/SUMMARY.txt"
           fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
-          git pull --rebase || true
-          git add ci-logs && git commit -m "fast-run ${GITHUB_RUN_NUMBER} logs" && git push
+          git add -A ci-logs || true
+          git commit -m "fast ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

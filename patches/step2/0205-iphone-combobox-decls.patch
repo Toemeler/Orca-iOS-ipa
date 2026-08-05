@@ -1,0 +1,26 @@
+diff --git a/include/wx/osx/combobox.h b/include/wx/osx/combobox.h
+index 32008b2..471bbb7 100644
+--- a/include/wx/osx/combobox.h
++++ b/include/wx/osx/combobox.h
+@@ -95,10 +95,10 @@ class WXDLLIMPEXP_CORE wxComboBox :
+     virtual void SetValue(const wxString& value) override;
+ // these methods are provided by wxTextEntry for the native impl.
+ 
+-#if wxOSX_USE_COCOA
++#if wxOSX_USE_COCOA || wxOSX_USE_IPHONE
+     virtual void Popup() override;
+     virtual void Dismiss() override;
+-#endif // wxOSX_USE_COCOA
++#endif // wxOSX_USE_COCOA || wxOSX_USE_IPHONE
+ 
+ 
+     virtual const wxTextEntry* WXGetTextEntry() const override { return this; }
+@@ -107,7 +107,7 @@ class WXDLLIMPEXP_CORE wxComboBox :
+ 
+     virtual bool OSXHandleClicked(double timestampsec) override;
+ 
+-#if wxOSX_USE_COCOA
++#if wxOSX_USE_COCOA || wxOSX_USE_IPHONE
+     wxComboWidgetImpl* GetComboPeer() const;
+ #endif
+ protected:

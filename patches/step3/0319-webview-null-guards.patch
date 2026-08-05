@@ -1,0 +1,145 @@
+diff --git a/src/slic3r/GUI/MarkdownTip.cpp b/src/slic3r/GUI/MarkdownTip.cpp
+index 7ffeae9e3..999cfafeb 100644
+--- a/src/slic3r/GUI/MarkdownTip.cpp
++++ b/src/slic3r/GUI/MarkdownTip.cpp
+@@ -74,7 +74,8 @@ MarkdownTip::MarkdownTip()
+     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
+ 
+     _tipView = CreateTipView(this);
+-    topsizer->Add(_tipView, wxSizerFlags().Expand().Proportion(1));
++    if (_tipView)
++        topsizer->Add(_tipView, wxSizerFlags().Expand().Proportion(1));
+ 
+     SetSizer(topsizer);
+     SetSize({400, 300});
+diff --git a/src/slic3r/GUI/ReleaseNote.cpp b/src/slic3r/GUI/ReleaseNote.cpp
+index 56720ba63..a61748c4b 100644
+--- a/src/slic3r/GUI/ReleaseNote.cpp
++++ b/src/slic3r/GUI/ReleaseNote.cpp
+@@ -271,6 +271,10 @@ UpdateVersionDialog::UpdateVersionDialog(wxWindow *parent)
+ 
+     //webview
+     m_vebview_release_note = CreateTipView(m_simplebook_release_note);
++    if (m_vebview_release_note == nullptr) {
++        BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << ": no webview backend, skipping release-note view";
++        return;
++    }
+     m_vebview_release_note->SetBackgroundColour(wxColour(0xF8, 0xF8, 0xF8));
+     //m_vebview_release_note->SetSize(wxSize(FromDIP(560), FromDIP(430)));
+     //m_vebview_release_note->SetMinSize(wxSize(FromDIP(560), FromDIP(430)));
+@@ -375,9 +379,11 @@ UpdateVersionDialog::~UpdateVersionDialog() {}
+ wxWebView* UpdateVersionDialog::CreateTipView(wxWindow* parent)
+ {
+ 	wxWebView* tipView = WebView::CreateWebView(parent, "");
+-	tipView->Bind(wxEVT_WEBVIEW_LOADED, &UpdateVersionDialog::OnLoaded, this);
+-	tipView->Bind(wxEVT_WEBVIEW_NAVIGATED, &UpdateVersionDialog::OnTitleChanged, this);
+-	tipView->Bind(wxEVT_WEBVIEW_ERROR, &UpdateVersionDialog::OnError, this);
++	if (tipView) {
++		tipView->Bind(wxEVT_WEBVIEW_LOADED, &UpdateVersionDialog::OnLoaded, this);
++		tipView->Bind(wxEVT_WEBVIEW_NAVIGATED, &UpdateVersionDialog::OnTitleChanged, this);
++		tipView->Bind(wxEVT_WEBVIEW_ERROR, &UpdateVersionDialog::OnError, this);
++	}
+ 	return tipView;
+ }
+ 
+diff --git a/src/slic3r/GUI/StatusPanel.cpp b/src/slic3r/GUI/StatusPanel.cpp
+index 5cbf3e2a8..0e172502e 100644
+--- a/src/slic3r/GUI/StatusPanel.cpp
++++ b/src/slic3r/GUI/StatusPanel.cpp
+@@ -1498,7 +1498,8 @@ wxBoxSizer *StatusBasePanel::create_monitoring_page()
+         const std::string js_request_pip = R"(
+             document.querySelector('video').requestPictureInPicture();
+         )";
+-        m_custom_camera_view->RunScript(js_request_pip);
++        if (m_custom_camera_view)
++            m_custom_camera_view->RunScript(js_request_pip);
+     });
+     m_camera_switch_button->Hide();
+ 
+@@ -1529,25 +1530,34 @@ wxBoxSizer *StatusBasePanel::create_monitoring_page()
+     m_media_ctrl = new wxMediaCtrl2(this);
+     m_media_ctrl->SetMinSize(wxSize(PAGE_MIN_WIDTH, FromDIP(288)));
+ 
++    // WebView::CreateWebView returns null when wx has no webview backend,
++    // which is the case on iOS until the WKWebView backend lands (step 5).
++    // The custom-camera view is optional chrome, so the monitor panel has to
++    // build without it rather than dereference null during MainFrame startup.
+     m_custom_camera_view = WebView::CreateWebView(this, wxEmptyString);
+-    m_custom_camera_view->EnableContextMenu(false);
+-    Bind(wxEVT_WEBVIEW_NAVIGATING, &StatusBasePanel::on_webview_navigating, this, m_custom_camera_view->GetId());
++    if (m_custom_camera_view) {
++        m_custom_camera_view->EnableContextMenu(false);
++        Bind(wxEVT_WEBVIEW_NAVIGATING, &StatusBasePanel::on_webview_navigating, this, m_custom_camera_view->GetId());
++    }
+ 
+     m_media_play_ctrl = new MediaPlayCtrl(this, m_media_ctrl, wxDefaultPosition, wxSize(-1, FromDIP(40)));
+-    m_custom_camera_view->Hide();
+-    m_custom_camera_view->Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, [this](wxWebViewEvent& evt) {
+-        if (evt.GetString() == "leavepictureinpicture") {
+-            // When leaving PiP, video gets paused in some cases and toggling play
+-            // programmatically does not work.
+-            m_custom_camera_view->Reload();
+-        }
+-        else if (evt.GetString() == "enterpictureinpicture") {
+-            toggle_builtin_camera();
+-        }
+-    });
++    if (m_custom_camera_view) {
++        m_custom_camera_view->Hide();
++        m_custom_camera_view->Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, [this](wxWebViewEvent& evt) {
++            if (evt.GetString() == "leavepictureinpicture") {
++                // When leaving PiP, video gets paused in some cases and toggling play
++                // programmatically does not work.
++                m_custom_camera_view->Reload();
++            }
++            else if (evt.GetString() == "enterpictureinpicture") {
++                toggle_builtin_camera();
++            }
++        });
++    }
+ 
+     sizer->Add(m_media_ctrl, 1, wxEXPAND | wxALL, 0);
+-    sizer->Add(m_custom_camera_view, 1, wxEXPAND | wxALL, 0);
++    if (m_custom_camera_view)
++        sizer->Add(m_custom_camera_view, 1, wxEXPAND | wxALL, 0);
+     sizer->Add(m_media_play_ctrl, 0, wxEXPAND | wxALL, 0);
+ //    media_ctrl_panel->SetSizer(bSizer_monitoring);
+ //    media_ctrl_panel->Layout();
+@@ -4858,7 +4868,7 @@ void StatusBasePanel::handle_camera_source_change()
+     const auto new_cam_url = wxGetApp().app_config->get("camera", "custom_source");
+     const auto enabled = wxGetApp().app_config->get("camera", "enable_custom_source") == "true";
+ 
+-    if (enabled && !new_cam_url.empty()) {
++    if (enabled && !new_cam_url.empty() && m_custom_camera_view) {
+         m_custom_camera_view->LoadURL(new_cam_url);
+         toggle_custom_camera();
+         m_camera_switch_button->Show();
+@@ -4870,7 +4880,8 @@ void StatusBasePanel::handle_camera_source_change()
+ 
+ void StatusBasePanel::toggle_builtin_camera()
+ {
+-    m_custom_camera_view->Hide();
++    if (m_custom_camera_view)
++        m_custom_camera_view->Hide();
+     m_media_ctrl->Show();
+     m_media_play_ctrl->Show();
+ }
+@@ -4879,7 +4890,7 @@ void StatusBasePanel::toggle_custom_camera()
+ {
+     const auto enabled = wxGetApp().app_config->get("camera", "enable_custom_source") == "true";
+ 
+-    if (enabled) {
++    if (enabled && m_custom_camera_view) {
+         m_custom_camera_view->Show();
+         m_media_ctrl->Hide();
+         m_media_play_ctrl->Hide();
+@@ -4910,7 +4921,8 @@ void StatusBasePanel::remove_controls()
+             window.wx.postMessage('enterpictureinpicture');
+         });
+     )";
+-    m_custom_camera_view->RunScript(js_cleanup_video_element);
++    if (m_custom_camera_view)
++        m_custom_camera_view->RunScript(js_cleanup_video_element);
+ }
+ 
+ void StatusPanel::on_camera_leave(wxMouseEvent& event)

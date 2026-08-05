@@ -1,0 +1,38 @@
+diff --git a/src/osx/iphone/glcanvas.mm b/src/osx/iphone/glcanvas.mm
+index 1b263a3..b27fa21 100644
+--- a/src/osx/iphone/glcanvas.mm
++++ b/src/osx/iphone/glcanvas.mm
+@@ -64,10 +64,18 @@
+ 
+ WXGLContext WXGLCreateContext( WXGLPixelFormat pixelFormat, WXGLContext shareContext )
+ {
+-    WXGLContext context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES1];
++    // The port pinned this to ES1, which cannot compile shaders at all. Anything
++    // rendering through GLES2/3 (OrcaSlicer's SLIC3R_OPENGL_ES path, glad) needs
++    // a modern context, so prefer ES3 and fall back rather than force
++    // fixed-function on every wx GL canvas.
++    WXGLContext context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
++    if ( !context )
++        context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
++    if ( !context )
++        context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES1];
+ 
+     if ( !context )
+-        wxFAIL_MSG("NSOpenGLContext creation failed");
++        wxFAIL_MSG("EAGLContext creation failed");
+     return context ;
+ }
+ 
+@@ -139,6 +147,12 @@ bool wxGLCanvas::DoCreate(wxWindow *parent,
+ 
+     wxUICustomOpenGLView* v = [[wxUICustomOpenGLView alloc] initWithFrame:r context: context ];
+ 
++    // GLKView defaults to GLKViewDrawableDepthFormatNone, so a 3D scene would
++    // draw its triangles in submission order with no occlusion. Request depth
++    // and stencil up front; changing these later forces a drawable recreate.
++    v.drawableDepthFormat   = GLKViewDrawableDepthFormat24;
++    v.drawableStencilFormat = GLKViewDrawableStencilFormat8;
++
+     WXGLDestroyContext(context);
+     WXGLDestroyPixelFormat(pf);
+ 

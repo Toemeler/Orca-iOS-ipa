@@ -1,0 +1,447 @@
+4481-      |                                                                        ^
+4482-11 warnings generated.
+4483-[663/996] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o
+4484:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o 
+4485-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webview.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp
+4486-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp:10:
+4487-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4488-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4489-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4490-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4491-      |             ^
+4492-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp:22:
+4493:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:110:5: error: unknown type name 'OSXWebViewPtr'
+4494-  110 |     OSXWebViewPtr m_webView;
+4495-      |     ^
+4496:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:125:97: error: cannot initialize return object of type 'wxWebView *' with an rvalue of type 'wxWebViewWebKit *'
+4497-  125 |     virtual wxWebView* CreateWithConfig(const wxWebViewConfiguration& config) override { return new wxWebViewWebKit(config); }
+4498-      |                                                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+4499-1 warning and 2 errors generated.
+4500-[664/996] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/filedlg.mm.o
+4501-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:12:
+4502-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4503-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4504-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4505-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4506-      |             ^
+4507-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:46:42: warning: unused parameter 'pos' [-Wunused-parameter]
+4508-   46 |                           const wxPoint& pos, const wxSize& size, const wxString& name)
+4509-      |                                          ^
+4510-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:46:61: warning: unused parameter 'size' [-Wunused-parameter]
+4511-   46 |                           const wxPoint& pos, const wxSize& size, const wxString& name)
+4512-      |                                                             ^
+4513-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:46:83: warning: unused parameter 'name' [-Wunused-parameter]
+4514-   46 |                           const wxPoint& pos, const wxSize& size, const wxString& name)
+4515-      |                                                                                   ^
+4516-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:86:63: warning: 'windows' is deprecated: first deprecated in iOS 15.0 - Use UIWindowScene.windows on a relevant window scene instead [-Wdeprecated-declarations]
+4517-   86 |         for (UIWindow *w in [UIApplication sharedApplication].windows) {
+4518-      |                                                               ^
+4519-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIApplication.h:109:62: note: 'windows' has been explicitly marked deprecated here
+4520-  109 | @property(nonatomic,readonly) NSArray<__kindof UIWindow *>  *windows API_DEPRECATED("Use UIWindowScene.windows on a relevant window scene instead", ios(2.0, 15.0), visionos(1.0, 1.0)) API_UNAVAILABLE(watchos);
+4521-      |                                                              ^
+4522-5 warnings generated.
+4523-[665/996] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/dirdlg.mm.o
+4524-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/dirdlg.mm:12:
+4525-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4526-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4527-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4528-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4529-      |             ^
+4530-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/dirdlg.mm:69:63: warning: 'windows' is deprecated: first deprecated in iOS 15.0 - Use UIWindowScene.windows on a relevant window scene instead [-Wdeprecated-declarations]
+4531-   69 |         for (UIWindow *w in [UIApplication sharedApplication].windows) {
+4532-      |                                                               ^
+4533-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIApplication.h:109:62: note: 'windows' has been explicitly marked deprecated here
+4534-  109 | @property(nonatomic,readonly) NSArray<__kindof UIWindow *>  *windows API_DEPRECATED("Use UIWindowScene.windows on a relevant window scene instead", ios(2.0, 15.0), visionos(1.0, 1.0)) API_UNAVAILABLE(watchos);
+4535-      |                                                              ^
+4536-2 warnings generated.
+4537-[666/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/chm.cpp.o
+4538-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/chm.cpp:9:
+4539-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4540-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4541-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4542-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4543-      |             ^
+4544-1 warning generated.
+4545-[667/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/helpctrl.cpp.o
+4546-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/helpctrl.cpp:12:
+4547-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4548-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4549-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4550-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4551-      |             ^
+4552-1 warning generated.
+4553-[668/996] Building CXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o
+4554-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewarchivehandler.cpp:10:
+4555-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4556-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+--
+4607-      |             ^
+4608-1 warning generated.
+4609-[675/996] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o
+4610:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o 
+4611-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm
+4612-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:13:
+4613-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:14:
+4614-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4615-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4616-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4617-      |             ^
+4618-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:13:
+4619:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:110:5: error: unknown type name 'OSXWebViewPtr'
+4620-  110 |     OSXWebViewPtr m_webView;
+4621-      |     ^
+4622:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:125:97: error: cannot initialize return object of type 'wxWebView *' with an rvalue of type 'wxWebViewWebKit *'
+4623-  125 |     virtual wxWebView* CreateWithConfig(const wxWebViewConfiguration& config) override { return new wxWebViewWebKit(config); }
+4624-      |                                                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+4625-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:78:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4626-   78 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+4627-      |     ^
+4628:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:251:5: error: cannot initialize object parameter of type 'wxWindow' with an expression of type 'wxWebViewWebKit'
+4629-  251 |     DontCreatePeer();
+4630-      |     ^~~~~~~~~~~~~~
+4631:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:252:16: error: cannot initialize object parameter of type 'wxControl' with an expression of type 'wxWebViewWebKit'
+4632-  252 |     wxControl::Create(parent, winID, pos, size, style, wxDefaultValidator, name);
+4633-      |                ^~~~~~
+4634:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:256:5: error: unknown type name 'NSRect'
+4635-  256 |     NSRect r = wxOSXGetFrameForControl( this, pos , size ) ;
+4636-      |     ^
+4637:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:256:16: error: no matching function for call to 'wxOSXGetFrameForControl'
+4638-  256 |     NSRect r = wxOSXGetFrameForControl( this, pos , size ) ;
+4639-      |                ^~~~~~~~~~~~~~~~~~~~~~~
+4640-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:241:29: note: candidate function not viable: no known conversion from 'wxWebViewWebKit *' to 'wxWindow *' for 1st argument
+4641-  241 |     CGRect WXDLLIMPEXP_CORE wxOSXGetFrameForControl( wxWindowMac* window , const wxPoint& pos , const wxSize &size ,
+4642-      |                             ^                        ~~~~~~~~~~~~~~~~~~~
+4643-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:261:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4644-  261 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+4645-      |     ^
+4646:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:286:5: error: cannot initialize object parameter of type 'wxWindow' with an expression of type 'wxWebViewWebKit'
+4647-  286 |     MacPostControlCreate(pos, size);
+4648-      |     ^~~~~~~~~~~~~~~~~~~~
+4649:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:349:5: error: cannot initialize object parameter of type 'wxWebView' with an expression of type 'wxWebViewWebKit'
+4650-  349 |     NotifyWebViewCreated();
+4651-      |     ^~~~~~~~~~~~~~~~~~~~
+4652-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:543:27: warning: variable 'clearDataTypes' set but not used [-Wunused-but-set-variable]
+4653-  543 |         NSSet<NSString*>* clearDataTypes = nil;
+4654-      |                           ^
+4655-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:533:63: warning: unused parameter 'since' [-Wunused-parameter]
+4656-  533 | bool wxWebViewWebKit::ClearBrowsingData(int types, wxDateTime since)
+4657-      |                                                               ^
+4658-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:614:72: warning: unused parameter 'clientData' [-Wunused-parameter]
+4659-  614 | void wxWebViewWebKit::RunScriptAsync(const wxString& javascript, void* clientData) const
+4660-      |                                                                        ^
+4661:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:646:5: error: cannot initialize object parameter of type 'const wxWebView' with an expression of type 'wxWebViewWebKit'
+4662-  646 |     RunScript(js);
+4663-      |     ^~~~~~~~~
+4664-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:650:66: warning: unused parameter 'name' [-Wunused-parameter]
+4665-  650 | bool wxWebViewWebKit::RemoveScriptMessageHandler(const wxString& name)
+4666-      |                                                                  ^
+4667-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:674:47: warning: unused parameter 'url' [-Wunused-parameter]
+4668-  674 | void wxWebViewWebKit::LoadURL(const wxString& url)
+4669-      |                                               ^
+4670-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:700:49: warning: unused parameter 'src' [-Wunused-parameter]
+4671-  700 | void wxWebViewWebKit::DoSetPage(const wxString& src, const wxString& baseUrl)
+4672-      |                                                 ^
+4673-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:700:70: warning: unused parameter 'baseUrl' [-Wunused-parameter]
+4674-  700 | void wxWebViewWebKit::DoSetPage(const wxString& src, const wxString& baseUrl)
+4675-      |                                                                      ^
+4676-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:759:73: warning: unused parameter 'item' [-Wunused-parameter]
+4677-  759 | void wxWebViewWebKit::LoadHistoryItem(wxSharedPtr<wxWebViewHistoryItem> item)
+4678-      |                                                                         ^
+4679:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:767:16: error: cannot initialize object parameter of type 'wxWebView' with an expression of type 'wxWebViewWebKit'
+4680-  767 |     wxWebView::Paste();
+4681-      |                ^~~~~
+4682-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:810:17: warning: method definition for 'doCommandBySelector:' not found [-Wincomplete-implementation]
+4683-  810 | @implementation WXWKWebView
+4684-      |                 ^
+4685-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:56:1: note: method 'doCommandBySelector:' declared here
+4686-   56 | - (void)doCommandBySelector:(SEL)aSelector;
+4687-      | ^
+4688-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1072:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4689- 1072 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+4690-      |     ^
+4691:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:889:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4692-  889 |                              webKitWindow->GetId(),
+4693-      |                              ^~~~~~~~~~~~
+4694:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:895:9: error: cannot initialize object parameter of type 'wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4695-  895 |         webKitWindow->ProcessWindowEvent(event);
+4696-      |         ^~~~~~~~~~~~
+4697:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:906:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4698-  906 |                              webKitWindow->GetId(),
+4699-      |                              ^~~~~~~~~~~~
+4700:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:910:29: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4701-  910 |         if (webKitWindow && webKitWindow->GetEventHandler())
+4702-      |                             ^~~~~~~~~~~~
+4703:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:911:13: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4704-  911 |             webKitWindow->GetEventHandler()->ProcessEvent(event);
+4705-      |             ^~~~~~~~~~~~
+4706:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:921:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4707-  921 |                              webKitWindow->GetId(),
+4708-      |                              ^~~~~~~~~~~~
+4709:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:925:29: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4710-  925 |         if (webKitWindow && webKitWindow->GetEventHandler())
+4711-      |                             ^~~~~~~~~~~~
+4712:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:926:13: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4713-  926 |             webKitWindow->GetEventHandler()->ProcessEvent(event);
+4714-      |             ^~~~~~~~~~~~
+4715:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1014:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+4716- 1014 |                              webKitWindow->GetId(),
+4717-      |                              ^~~~~~~~~~~~
+4718:fatal error: too many errors emitted, stopping now [-ferror-limit=]
+4719-13 warnings and 20 errors generated.
+4720-[676/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlfilt.cpp.o
+4721-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlfilt.cpp:9:
+4722-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4723-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4724-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4725-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4726-      |             ^
+4727-1 warning generated.
+4728-[677/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmprint.cpp.o
+4729-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmprint.cpp:11:
+4730-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4731-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4732-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4733-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4734-      |             ^
+4735-1 warning generated.
+4736-[678/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlcell.cpp.o
+4737-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlcell.cpp:9:
+4738-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4739-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4740-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4741-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4742-      |             ^
+4743-1 warning generated.
+4744-[679/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmltag.cpp.o
+4745-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmltag.cpp:9:
+4746-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4747-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4748-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4749-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4750-      |             ^
+4751-1 warning generated.
+4752-[680/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlpars.cpp.o
+4753-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlpars.cpp:9:
+4754-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4755-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4756-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4757-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4758-      |             ^
+4759-1 warning generated.
+4760-[681/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/m_dflist.cpp.o
+4761-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/m_dflist.cpp:9:
+4762-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4763-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4764-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4765-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4766-      |             ^
+4767-1 warning generated.
+4768-[682/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/m_fonts.cpp.o
+4769-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/m_fonts.cpp:9:
+4770-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4771-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4772-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4773-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4774-      |             ^
+4775-1 warning generated.
+4776-[683/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlwin.cpp.o
+4777-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlwin.cpp:9:
+4778-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+--
+5619-      |             ^
+5620-1 warning generated.
+5621-[931/996] Building CXX object libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/common/webview.cpp.o
+5622:FAILED: [code=1] libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/common/webview.cpp.o 
+5623-/usr/bin/c++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -Wno-ctor-dtor-privacy -Woverloaded-virtual -MD -MT libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/common/webview.cpp.o -MF libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/common/webview.cpp.o.d -o libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/common/webview.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp
+5624-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp:10:
+5625-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+5626-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5627-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5628-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5629-      |             ^
+5630-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webview.cpp:22:
+5631:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:110:5: error: unknown type name 'OSXWebViewPtr'
+5632-  110 |     OSXWebViewPtr m_webView;
+5633-      |     ^
+5634:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:125:97: error: cannot initialize return object of type 'wxWebView *' with an rvalue of type 'wxWebViewWebKit *'
+5635-  125 |     virtual wxWebView* CreateWithConfig(const wxWebViewConfiguration& config) override { return new wxWebViewWebKit(config); }
+5636-      |                                                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+5637-1 warning and 2 errors generated.
+5638-[932/996] Building CXX object libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/common/webviewarchivehandler.cpp.o
+5639-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/webviewarchivehandler.cpp:10:
+5640-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+5641-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5642-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5643-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5644-      |             ^
+5645-1 warning generated.
+5646-[933/996] Building OBJCXX object libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o
+5647:FAILED: [code=1] libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o 
+5648-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o -MF libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o.d -o libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm
+5649-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:13:
+5650-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:14:
+5651-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5652-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5653-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5654-      |             ^
+5655-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:13:
+5656:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:110:5: error: unknown type name 'OSXWebViewPtr'
+5657-  110 |     OSXWebViewPtr m_webView;
+5658-      |     ^
+5659:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:125:97: error: cannot initialize return object of type 'wxWebView *' with an rvalue of type 'wxWebViewWebKit *'
+5660-  125 |     virtual wxWebView* CreateWithConfig(const wxWebViewConfiguration& config) override { return new wxWebViewWebKit(config); }
+5661-      |                                                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+5662-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:78:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5663-   78 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+5664-      |     ^
+5665:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:251:5: error: cannot initialize object parameter of type 'wxWindow' with an expression of type 'wxWebViewWebKit'
+5666-  251 |     DontCreatePeer();
+5667-      |     ^~~~~~~~~~~~~~
+5668:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:252:16: error: cannot initialize object parameter of type 'wxControl' with an expression of type 'wxWebViewWebKit'
+5669-  252 |     wxControl::Create(parent, winID, pos, size, style, wxDefaultValidator, name);
+5670-      |                ^~~~~~
+5671:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:256:5: error: unknown type name 'NSRect'
+5672-  256 |     NSRect r = wxOSXGetFrameForControl( this, pos , size ) ;
+5673-      |     ^
+5674:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:256:16: error: no matching function for call to 'wxOSXGetFrameForControl'
+5675-  256 |     NSRect r = wxOSXGetFrameForControl( this, pos , size ) ;
+5676-      |                ^~~~~~~~~~~~~~~~~~~~~~~
+5677-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:241:29: note: candidate function not viable: no known conversion from 'wxWebViewWebKit *' to 'wxWindow *' for 1st argument
+5678-  241 |     CGRect WXDLLIMPEXP_CORE wxOSXGetFrameForControl( wxWindowMac* window , const wxPoint& pos , const wxSize &size ,
+5679-      |                             ^                        ~~~~~~~~~~~~~~~~~~~
+5680-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:261:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5681-  261 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+5682-      |     ^
+5683:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:286:5: error: cannot initialize object parameter of type 'wxWindow' with an expression of type 'wxWebViewWebKit'
+5684-  286 |     MacPostControlCreate(pos, size);
+5685-      |     ^~~~~~~~~~~~~~~~~~~~
+5686:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:349:5: error: cannot initialize object parameter of type 'wxWebView' with an expression of type 'wxWebViewWebKit'
+5687-  349 |     NotifyWebViewCreated();
+5688-      |     ^~~~~~~~~~~~~~~~~~~~
+5689-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:543:27: warning: variable 'clearDataTypes' set but not used [-Wunused-but-set-variable]
+5690-  543 |         NSSet<NSString*>* clearDataTypes = nil;
+5691-      |                           ^
+5692-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:533:63: warning: unused parameter 'since' [-Wunused-parameter]
+5693-  533 | bool wxWebViewWebKit::ClearBrowsingData(int types, wxDateTime since)
+5694-      |                                                               ^
+5695-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:614:72: warning: unused parameter 'clientData' [-Wunused-parameter]
+5696-  614 | void wxWebViewWebKit::RunScriptAsync(const wxString& javascript, void* clientData) const
+5697-      |                                                                        ^
+5698:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:646:5: error: cannot initialize object parameter of type 'const wxWebView' with an expression of type 'wxWebViewWebKit'
+5699-  646 |     RunScript(js);
+5700-      |     ^~~~~~~~~
+5701-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:650:66: warning: unused parameter 'name' [-Wunused-parameter]
+5702-  650 | bool wxWebViewWebKit::RemoveScriptMessageHandler(const wxString& name)
+5703-      |                                                                  ^
+5704-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:674:47: warning: unused parameter 'url' [-Wunused-parameter]
+5705-  674 | void wxWebViewWebKit::LoadURL(const wxString& url)
+5706-      |                                               ^
+5707-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:700:49: warning: unused parameter 'src' [-Wunused-parameter]
+5708-  700 | void wxWebViewWebKit::DoSetPage(const wxString& src, const wxString& baseUrl)
+5709-      |                                                 ^
+5710-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:700:70: warning: unused parameter 'baseUrl' [-Wunused-parameter]
+5711-  700 | void wxWebViewWebKit::DoSetPage(const wxString& src, const wxString& baseUrl)
+5712-      |                                                                      ^
+5713-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:759:73: warning: unused parameter 'item' [-Wunused-parameter]
+5714-  759 | void wxWebViewWebKit::LoadHistoryItem(wxSharedPtr<wxWebViewHistoryItem> item)
+5715-      |                                                                         ^
+5716:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:767:16: error: cannot initialize object parameter of type 'wxWebView' with an expression of type 'wxWebViewWebKit'
+5717-  767 |     wxWebView::Paste();
+5718-      |                ^~~~~
+5719-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:810:17: warning: method definition for 'doCommandBySelector:' not found [-Wincomplete-implementation]
+5720-  810 | @implementation WXWKWebView
+5721-      |                 ^
+5722-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:56:1: note: method 'doCommandBySelector:' declared here
+5723-   56 | - (void)doCommandBySelector:(SEL)aSelector;
+5724-      | ^
+5725-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1072:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5726- 1072 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+5727-      |     ^
+5728:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:889:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5729-  889 |                              webKitWindow->GetId(),
+5730-      |                              ^~~~~~~~~~~~
+5731:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:895:9: error: cannot initialize object parameter of type 'wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5732-  895 |         webKitWindow->ProcessWindowEvent(event);
+5733-      |         ^~~~~~~~~~~~
+5734:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:906:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5735-  906 |                              webKitWindow->GetId(),
+5736-      |                              ^~~~~~~~~~~~
+5737:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:910:29: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5738-  910 |         if (webKitWindow && webKitWindow->GetEventHandler())
+5739-      |                             ^~~~~~~~~~~~
+5740:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:911:13: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5741-  911 |             webKitWindow->GetEventHandler()->ProcessEvent(event);
+5742-      |             ^~~~~~~~~~~~
+5743:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:921:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5744-  921 |                              webKitWindow->GetId(),
+5745-      |                              ^~~~~~~~~~~~
+5746:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:925:29: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5747-  925 |         if (webKitWindow && webKitWindow->GetEventHandler())
+5748-      |                             ^~~~~~~~~~~~
+5749:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:926:13: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5750-  926 |             webKitWindow->GetEventHandler()->ProcessEvent(event);
+5751-      |             ^~~~~~~~~~~~
+5752:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1014:30: error: cannot initialize object parameter of type 'const wxWindowBase' with an expression of type 'wxWebViewWebKit'
+5753- 1014 |                              webKitWindow->GetId(),
+5754-      |                              ^~~~~~~~~~~~
+5755:fatal error: too many errors emitted, stopping now [-ferror-limit=]
+5756-13 warnings and 20 errors generated.
+5757-[934/996] Building CXX object libs/qa/CMakeFiles/wxqa.dir/__/__/__/__/src/generic/dbgrptg.cpp.o
+5758-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/generic/dbgrptg.cpp:18:
+5759-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+5760-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5761-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5762-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5763-      |             ^
+5764-1 warning generated.
+5765-[935/996] Generating af.gmo
+5766-[936/996] Generating an.gmo
+5767-[937/996] Generating ar.gmo
+5768-[938/996] Generating ca.gmo
+5769-[939/996] Generating ca@valencia.gmo
+5770-[940/996] Generating co.gmo
+5771-[941/996] Generating cs.gmo
+5772-[942/996] Building CXX object libs/qa/CMakeFiles/wxqa.dir/__/__/__/__/src/common/debugrpt.cpp.o
+5773-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/debugrpt.cpp:18:
+5774-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+5775-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5776-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5777-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5778-      |             ^
+5779-1 warning generated.
+5780-[943/996] Generating da.gmo
+5781-[944/996] Generating de.gmo
+5782-[945/996] Building CXX object libs/gl/CMakeFiles/wxgl.dir/__/__/__/__/src/common/glcmn.cpp.o
+5783-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/glcmn.cpp:19:
+5784-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+5785-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5786-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5787-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5788-      |             ^
+5789-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/glcmn.cpp:379:19: warning: 'glIsEnabled' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+5790-  379 |     bool former = glIsEnabled( flag );
+5791-      |                   ^
+5792-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:735:30: note: 'glIsEnabled' has been explicitly marked deprecated here
+5793-  735 | GL_API GLboolean GL_APIENTRY glIsEnabled (GLenum cap) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+5794-      |                              ^
+5795-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/glcmn.cpp:383:13: warning: 'glEnableClientState' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+5796-  383 |             glEnableClientState(flag);
+5797-      |             ^
+5798-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:710:25: note: 'glEnableClientState' has been explicitly marked deprecated here
+5799-  710 | GL_API void GL_APIENTRY glEnableClientState (GLenum array) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+5800-      |                         ^
+5801-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/glcmn.cpp:385:13: warning: 'glDisableClientState' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+5802-  385 |             glDisableClientState(flag);
+5803-      |             ^
+5804-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:706:25: note: 'glDisableClientState' has been explicitly marked deprecated here
+5805-  706 | GL_API void GL_APIENTRY glDisableClientState (GLenum array) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+5806-      |                         ^
+5807-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/glcmn.cpp:393:9: warning: 'glEnableClientState' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+5808-  393 |         glEnableClientState(flag);
+5809-      |         ^
+5810-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES1/gl.h:710:25: note: 'glEnableClientState' has been explicitly marked deprecated here
+5811-  710 | GL_API void GL_APIENTRY glEnableClientState (GLenum array) OPENGLES_DEPRECATED(ios(2.0, 12.0), tvos(9.0, 12.0));
+5812-      |                         ^
+5813-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/glcmn.cpp:395:9: warning: 'glDisableClientState' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+5814-  395 |         glDisableClientState(flag);
+5815-      |         ^

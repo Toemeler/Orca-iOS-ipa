@@ -1,0 +1,79 @@
+diff --git a/build/cmake/files.cmake b/build/cmake/files.cmake
+index 20d1691..22ae5ea 100644
+--- a/build/cmake/files.cmake
++++ b/build/cmake/files.cmake
+@@ -2249,6 +2249,7 @@ set(OSX_IPHONE_SRC
+     src/common/webview.cpp
+     src/common/webviewarchivehandler.cpp
+     src/common/webviewfshandler.cpp
++    src/osx/webview_webkit.mm
+     src/osx/iphone/mediactrl_stub.cpp
+ )
+ 
+diff --git a/include/wx/osx/iphone/chkconf.h b/include/wx/osx/iphone/chkconf.h
+index 95c0912..ddebf39 100644
+--- a/include/wx/osx/iphone/chkconf.h
++++ b/include/wx/osx/iphone/chkconf.h
+@@ -378,7 +378,9 @@
+    backend exists on iPhone yet (step 5 = WKWebView). Force all backends off
+    so webview.cpp registers no factories and wxWebView::New returns NULL. */
+ #undef wxUSE_WEBVIEW_WEBKIT
+-#define wxUSE_WEBVIEW_WEBKIT 0
++// WKWebView is the same class on iOS as on macOS, and src/osx/webview_webkit.mm
++// needs only a different widget peer to run here, so the real backend is on.
++#define wxUSE_WEBVIEW_WEBKIT 1
+ #undef wxUSE_WEBVIEW_WEBKIT2
+ #define wxUSE_WEBVIEW_WEBKIT2 0
+ #undef wxUSE_WEBVIEW_IE
+diff --git a/src/osx/webview_webkit.mm b/src/osx/webview_webkit.mm
+index 31df5c1..8b038a2 100644
+--- a/src/osx/webview_webkit.mm
++++ b/src/osx/webview_webkit.mm
+@@ -274,7 +274,14 @@ bool wxWebViewWebKit::Create(wxWindow *parent,
+ 
+     m_webView = [[WXWKWebView alloc] initWithFrame:r configuration:webViewConfig];
+     [(WXWKWebView*)m_webView setWebView:this];
++#if defined(__WXOSX_IPHONE__)
++    // WKWebView is a UIView here, so it needs the iPhone widget peer. This is
++    // the only structural difference between the two ports in this file --
++    // everything else WKWebView exposes is identical on both.
++    SetPeer(new wxWidgetIPhoneImpl( this, m_webView ));
++#else
+     SetPeer(new wxWidgetCocoaImpl( this, m_webView ));
++#endif
+ 
+     MacPostControlCreate(pos, size);
+ 
+@@ -435,6 +442,7 @@ void wxWebViewWebKit::Print()
+     // Try if the undocumented printOperationWithPrintInfo: is available and use it
+     // to create a printing operation
+     // https://bugs.webkit.org/show_bug.cgi?id=151276
++#if !defined(__WXOSX_IPHONE__)
+     SEL printSelector = @selector(printOperationWithPrintInfo:);
+     if (![m_webView respondsToSelector:printSelector])
+         printSelector = nil;
+@@ -444,7 +452,16 @@ void wxWebViewWebKit::Print()
+         wxLogError(_("Printing is not supported by the system web control"));
+         return;
+     }
++#endif
+ 
++#if defined(__WXOSX_IPHONE__)
++    // NSPrintOperation is AppKit. iOS prints through
++    // UIPrintInteractionController with a UIViewPrintFormatter, which is a
++    // different shape entirely; nothing in Orca prints from a web view, so
++    // this reports unsupported rather than carrying a second implementation.
++    wxUnusedVar(showPrompt);
++    wxLogError(_("Printing is not supported by the system web control"));
++#else
+     NSPrintOperation* op = (NSPrintOperation*)[m_webView
+                                                performSelector:printSelector
+                                                withObject:[NSPrintInfo sharedPrintInfo]];
+@@ -466,6 +483,7 @@ void wxWebViewWebKit::Print()
+     // Print it.
+     [op runOperationModalForWindow:m_webView.window
+                           delegate:nil didRunSelector:nil contextInfo:nil];
++#endif
+ }
+ 
+ void wxWebViewWebKit::SetEditable(bool WXUNUSED(enable))

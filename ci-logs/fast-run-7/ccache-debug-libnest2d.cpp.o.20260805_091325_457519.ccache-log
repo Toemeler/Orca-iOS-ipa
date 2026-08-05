@@ -1,0 +1,88 @@
+[2026-08-05T09:13:25.457586 2574 ] === CCACHE 4.13.6 STARTED =========================================
+[2026-08-05T09:13:25.457586 2574 ] Configuration file: /Users/runner/.ccache-step3/ccache.conf
+[2026-08-05T09:13:25.457586 2574 ] Directory configuration file: 
+[2026-08-05T09:13:25.457586 2574 ] System configuration file: /opt/homebrew/etc/ccache.conf
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) absolute_paths_in_stderr = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) base_dir = /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) cache_dir = /Users/runner/.ccache-step3
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) ceiling_dirs = /Users/runner
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) ceiling_markers = .git
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) compiler = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) compiler_check = mtime
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) compiler_type = auto
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) compression = true
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) compression_level = 1
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) cpp_extension = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) debug = true
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) debug_dir = /tmp/ccache-debug
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) debug_level = 2
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) depend_mode = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) direct_mode = true
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) disable = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) extra_files_to_hash = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) file_clone = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) hard_link = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) hash_dir = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) ignore_headers_in_manifest = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) ignore_options = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) inode_cache = true
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) keep_comments_cpp = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) libexec_dirs = /opt/homebrew/Cellar/ccache/4.13.6_1/libexec
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) log_file = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) max_files = 0
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) max_size = 3.0 GB
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) msvc_dep_prefix = Note: including file:
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) msvc_utf8 = true
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) namespace = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) path = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) pch_external_checksum = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) prefix_command = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) prefix_command_cpp = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) read_only = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) read_only_direct = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) recache = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) remote_only = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) remote_storage = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) reshare = false
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) response_file_format = auto
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) safe_dirs = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) stats = true
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) stats_log = 
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) temporary_dir = /Users/runner/.ccache-step3/tmp
+[2026-08-05T09:13:25.457586 2574 ] Config: (default) umask = 
+[2026-08-05T09:13:25.457586 2574 ] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o -MF deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o.d -o deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/src/libnest2d.cpp
+[2026-08-05T09:13:25.457586 2574 ] Hostname: sat12-bq150-8932af23-7ab7-4d17-ac21-08c07ed2f7da-BABC03702936.local
+[2026-08-05T09:13:25.457586 2574 ] Working directory: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build
+[2026-08-05T09:13:25.457690 2574 ] Detected that /usr/bin/c++ is equivalent to /usr/bin/clang when guessing compiler type
+[2026-08-05T09:13:25.457692 2574 ] Compiler: /usr/bin/c++
+[2026-08-05T09:13:25.457693 2574 ] Compiler type: clang
+[2026-08-05T09:13:25.457941 2574 ] Detected input file: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/src/libnest2d.cpp
+[2026-08-05T09:13:25.457964 2574 ] Source file: ../deps_src/libnest2d/src/libnest2d.cpp
+[2026-08-05T09:13:25.457966 2574 ] Dependency file: deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o.d
+[2026-08-05T09:13:25.457967 2574 ] Object file: deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o
+[2026-08-05T09:13:25.458487 2574 ] Trying direct lookup
+[2026-08-05T09:13:25.458601 2574 ] Inode cache file loaded: /Users/runner/.ccache-step3/tmp/inode-cache-64.v2
+[2026-08-05T09:13:25.458612 2574 ] Inode cache miss: ../deps_src/libnest2d/src/libnest2d.cpp
+[2026-08-05T09:13:25.458630 2574 ] Inode cache insert: ../deps_src/libnest2d/src/libnest2d.cpp
+[2026-08-05T09:13:25.458634 2574 ] Manifest key: 7e0b847a9ef3e85c3227eced57530b271fb1abd2
+[2026-08-05T09:13:25.458770 2574 ] Retrieved 7e0b847a9ef3e85c3227eced57530b271fb1abd2 from local storage (/Users/runner/.ccache-step3/7/e/0b847a9ef3e85c3227eced57530b271fb1abd2)
+[2026-08-05T09:13:25.458826 2574 ] Considering result entry 0 (ed758bb6a702ea98fa5b54efdb845aed3d9c56b8)
+[2026-08-05T09:13:25.458828 2574 ] Result entry 0 matched in manifest
+[2026-08-05T09:13:25.458829 2574 ] Got result key from manifest
+[2026-08-05T09:13:25.458831 2574 ] Result key: ed758bb6a702ea98fa5b54efdb845aed3d9c56b8
+[2026-08-05T09:13:25.459087 2574 ] Retrieved ed758bb6a702ea98fa5b54efdb845aed3d9c56b8 from local storage (/Users/runner/.ccache-step3/e/d/758bb6a702ea98fa5b54efdb845aed3d9c56b8)
+[2026-08-05T09:13:25.459773 2574 ] Reading embedded entry #0 .o (600856 bytes)
+[2026-08-05T09:13:25.459777 2574 ] Writing to deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o
+[2026-08-05T09:13:25.460175 2574 ] Reading embedded entry #1 .d (319054 bytes)
+[2026-08-05T09:13:25.460179 2574 ] Writing to deps_src/libnest2d/CMakeFiles/libnest2d.dir/src/libnest2d.cpp.o.d
+[2026-08-05T09:13:25.460290 2574 ] Succeeded getting cached result
+[2026-08-05T09:13:25.460304 2574 ] Result: direct_cache_hit
+[2026-08-05T09:13:25.460305 2574 ] Result: local_storage_hit
+[2026-08-05T09:13:25.460306 2574 ] Result: local_storage_read_hit
+[2026-08-05T09:13:25.460307 2574 ] Result: local_storage_read_hit
+[2026-08-05T09:13:25.460310 2574 ] Acquiring /Users/runner/.ccache-step3/0/e/stats.lock
+[2026-08-05T09:13:25.460376 2574 ] Acquired /Users/runner/.ccache-step3/0/e/stats.lock
+[2026-08-05T09:13:25.460377 2574 ] Creating /Users/runner/.ccache-step3/0/e/stats.alive
+[2026-08-05T09:13:25.460714 2574 ] Releasing /Users/runner/.ccache-step3/0/e/stats.lock
+[2026-08-05T09:13:25.460828 2574 ] Released /Users/runner/.ccache-step3/0/e/stats.lock

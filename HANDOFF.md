@@ -445,3 +445,939 @@ C. STEP 5: real WKWebView backend (class exists on iOS, revival sites marked
 - Log excerpt cap 400KB; SUMMARY "error signatures" grep fixed (both were
   silently broken before). ci-logs newest-dir still via
   GET /commits?path=ci-logs&per_page=1.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION UPDATE (2026-08-03) — wx regression fixed, runtime bugs
+## pre-empted, device deps built, sideloadable IPA track added
+═══════════════════════════════════════════════════════════════════════
+
+### Where runs 49-51 actually were
+Runs 49, 50 and 51 all died in the **wx build phase** — no link was ever
+attempted after run 48. Commit 2f45ea2 (the fix for run 48's 351 undefined
+symbols) un-guarded `src/osx/combobox_osx.cpp` for the iPhone port but left the
+matching declarations in `include/wx/osx/combobox.h` behind `#if wxOSX_USE_COCOA`,
+so `GetComboPeer`/`Popup`/`Dismiss` matched no declaration: 13 errors, one file,
+and `-k 0` proves it was the *only* failing file.
+
+**Run 48 remains the reference for the link stage**: 351 undefined symbols, ONE
+failing target (the final executable), everything else compiling. Grouped by
+class those 351 are 8 families, not 351 problems:
+  wxGrid ~175 | wxGenericListCtrl 57 | wxComboBox 42 | wxAui 27 |
+  dataobject/DnD/clipboard ~23 | wxWidgetImpl peers 7 | wxToolTip 6 |
+  wxLogWindow 2
+2f45ea2's cmake feature flags cover seven of the eight. The eighth,
+`wxUSE_LOGWINDOW`, was missing from that flag list and is now passed.
+
+### KEY INSIGHT for whoever continues this
+`wxUSE_*` values come from the **cmake-option-driven generated setup.h**, not
+from the checked-in `chkconf.h` edits in patch 0202 — that is why 0202 alone
+left grid/listctrl/aui/combobox compiling to empty objects. Any wx feature Orca
+needs must ALSO be passed as `-DwxUSE_<FEATURE>=ON` in the workflow's wx
+configure step. Check `build/cmake/options.cmake` for whether a flag is a real
+cmake option before assuming a chkconf edit is enough.
+
+### Patches added this session
+- step2/**0205** iphone-combobox-decls — extends the two `#if wxOSX_USE_COCOA`
+  guards in `include/wx/osx/combobox.h` to include `wxOSX_USE_IPHONE`.
+  `wxComboBoxBase` declares Popup/Dismiss as unconditional virtuals, so the
+  `override` resolves. ALSO fixes a latent null-deref: `combobox_osx.cpp` reaches
+  its peer via `dynamic_cast<wxComboWidgetImpl*>(GetPeer())` and dereferences it
+  unchecked, but `extra_peers.mm`'s `CreateComboBox` returned a plain
+  `wxWidgetIPhoneImpl`, which is not a `wxComboWidgetImpl` — every populated
+  combobox would have crashed. `extra_peers.mm` now defines
+  `wxIPhoneComboBoxPeer` deriving from both (mirroring the Cocoa
+  `wxNSComboBoxControl`) and stores items in a `wxArrayString`. NOTE the port's
+  own iphone `wxNSComboBoxControl` is dead code inside `#if 0` (it wraps
+  NSComboBox, which does not exist on iOS) — do not try to revive it.
+- step2/**0206** glcanvas-es3-depth — TWO runtime-only defects:
+  (a) `WXGLCreateContext` pinned every canvas to `kEAGLRenderingAPIOpenGLES1`.
+      ES1 has no shader entry points, but Orca renders GLES2/3 GLSL under
+      SLIC3R_OPENGL_ES. This LINKS FINE (the OpenGLES framework exports ES1/2/3
+      and 0305 removed glad's runtime loader on Apple) and fails only at runtime.
+      Now ES3 with ES2/ES1 fallback.
+  (b) GLKView defaults to `GLKViewDrawableDepthFormatNone` — a 3D scene would
+      draw with no occlusion. Depth24 + Stencil8 requested at view creation.
+- step3/**0319** webview-null-guards — wx is backendless on iOS so
+  `WebView::CreateWebView` returns NULL. 10 of its 14 call sites check; 4 did
+  not. The critical one is a **guaranteed startup crash**:
+  `MainFrame::init_tabpanel` unconditionally builds MonitorPanel -> StatusPanel,
+  whose ctor dereferences the null view immediately. Also guarded
+  UpdateVersionDialog::CreateTipView and MarkdownTip's `topsizer->Add` (wxSizer
+  asserts on a null window). MarkdownTip/PrivacyUpdateDialog's own CreateTipView
+  bodies bind on `this`, not the view, so they were already safe.
+- step3/**0320** ios-resources-dir — `CLI::setup`'s `__APPLE__` branch walks
+  `parent_path().parent_path()/"Resources"`, right for `.app/Contents/MacOS/` but
+  an iOS bundle is FLAT (`OrcaSlicer.app/OrcaSlicer`), so it resolved outside the
+  bundle. Uses `parent_path()/"resources"` under ORCA_IOS (macro from 0317).
+  Must sort after 0317; both patch OrcaSlicer.cpp.
+- step3/**0321** ios-create-data-dir-parents — an iOS sandbox provisions only
+  Documents, Library/Caches, Library/Preferences and tmp, so the
+  `Library/Application Support` parent of the data dir is missing and boost's
+  single-level `create_directory` throws at startup. Now `create_directories`.
+
+All 21 in-scope patches verified applying in order to a pristine checkout.
+(6 more apply in CI only — they touch deps/, libvgcode and glad paths outside a
+GUI sparse checkout.)
+
+### Verified NOT broken (checked, do not re-investigate)
+- Entry path is sound: `main()` -> CLI::run -> `GUI_Run` -> `wxEntry` ->
+  `wxGUIEventLoop::OSXDoRun` -> `UIApplicationMain(@"wxAppDelegate")`
+  (`src/osx/iphone/evtloop.mm:87`). Same path the step-2 smoke app launched on.
+- 0318's link block uses `CMAKE_SYSTEM_NAME STREQUAL "iOS"`, not a bare `iOS`
+  variable, so it does not silently fall through to the macOS framework list.
+- The portable-mode `data_dir` probe next to the executable fails harmlessly on
+  iOS rather than crashing.
+
+### Milestone 3 added to ios-step3-gui.yml
+After the link, the workflow now assembles OrcaSlicer.app (binary + resources +
+Info.plist), boots an iPad Pro 13-inch simulator, installs, launches and
+screenshots. The DIAGNOSTICS are the point, not the screenshot:
+`simctl launch --console-pty` captures stdout/stderr (Orca's boost log, wx
+asserts), DiagnosticReports crash reports name the failing frame, and
+`log show` gives the process log — all uploaded and copied to ci-logs/ on
+failure. Launch is backgrounded and killed rather than wrapped in `timeout`,
+which macOS does not ship.
+
+### NEW: ios-step4-device-ipa.yml — the device (iphoneos) build
+Device counterpart of step 3, ending in an unsigned sideloadable
+`OrcaSlicer-iPad.ipa` published to a GitHub Release. **The whole dependency
+stack built successfully for iphoneos on its first run** and is cached under
+`ios-deps-device-v1-` — that was the multi-hour long pole and it is now done, so
+later device runs restore it. The step-1 patches already branched device vs
+simulator (OpenSSL `ios64-xcrun`, GMP/MPFR `-miphoneos-version-min`), which is
+why this needed no new porting work. Packaging locates the executable by Mach-O
+type rather than name, asserts `LC_BUILD_VERSION platform == IOS` (not
+IOSSIMULATOR — the classic silent "installs nowhere" bug) and ships resources/
+inside the bundle.
+
+### NEW: ios-device-ipa.yml — a working sideloadable iPad app, today
+Independent of the step-3 patch stack: builds **stock unpatched wx** and ships
+two IPAs. `ipad-app/` is a native STL viewer (loads .stl from the Files-app
+folder, renders with lighting, reports triangle count and bounding box in mm);
+`smoke-app/` is the minimal wx proof. Both verified as arm64 Mach-O with
+`platform = IOS`, unsigned, correct Payload/ layout.
+Released at tag `ipad-app-run2`. Because it uses stock wx it keeps its ES1
+fixed-function context — 0206 only affects patched (step 3/4) builds.
+NOTE these two workflows trigger on **push** with path filters, because
+`workflow_dispatch` only registers for workflows already on the default branch
+and these are not on main yet.
+
+### Where to pick up
+1. Read the newest `ci-logs/step3-run-N/SUMMARY.txt` — "undefined symbol count"
+   is the number that matters. Families, not individual symbols.
+2. When the link is green, milestone 3 runs automatically; read
+   `sim-launch.log` + the crash report before guessing at runtime causes.
+3. Then dispatch step 4 (deps + wx now cached) for the device IPA.
+4. Still deferred to step 5: the real WKWebView backend (revival sites are
+   marked `!defined(__WXOSX_IPHONE__)`), AVPlayer camera, UIDocumentPicker export.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION UPDATE (2026-08-04) — link closed out, and why the GUI would
+## not have rendered even once the link went green
+═══════════════════════════════════════════════════════════════════════
+
+Branch note: work continues on `claude/step-4-ipa-parity-bkdym6`, branched
+from `claude/basic-ipad-app-plan-pb0b4p` at faaa588 so nothing is lost.
+`ios-step4-device-ipa.yml` now triggers on pushes to both branches (it has
+no usable `workflow_dispatch` — the file is not on the default branch yet).
+`ios-step3-gui.yml` IS on main, so `workflow_dispatch` with `ref=<branch>`
+works and runs the branch's copy of the file.
+
+### The link: 2 symbols, closed (patch 0325)
+Run 55 (simulator) and run 7 (device) both stopped at the same place:
+`_gladLoaderLoadGLES2` / `_gladLoaderUnloadGLES2`, referenced from
+libvgcode's `OpenGLWrapper`. 0323 had removed `glad/src/gles2.c` from
+libvgcode because it defines the same `glad_gl*` entry points as the shared
+`src/glad` target (263 duplicate symbols), which left the two loader
+functions undefined. There is nothing for them to do on iOS anyway —
+OpenGLES.framework is linked directly and 0324 already resolves every entry
+point out of the process image — so 0325 skips them there. Branch selection
+verified with a preprocessor trace; the macOS and non-Apple ES
+configurations are byte-identical to upstream.
+
+### ▲ THE BIG ONE: `SLIC3R_OPENGL_ES` was never a preprocessor macro (0327)
+`SLIC3R_OPENGL_ES` exists **only as a CMake variable**, read by exactly one
+file — `src/libvgcode/CMakeLists.txt`, which turns it into
+`ENABLE_OPENGL_ES` for libvgcode's own sources. Nothing ever defined it for
+the GUI. Confirmed against a real CI compile line for `libslic3r_gui`
+(ci-logs/step3-run-11): the define is simply not there.
+
+But `src/slic3r/GUI` writes its ES branches as `#if SLIC3R_OPENGL_ES`,
+which with the macro undefined is `#if 0`. So **every iOS build so far
+compiled the desktop OpenGL path**. What that costs:
+
+- `GLShadersManager::init()` picks `"110/"` or `"140/"` instead of `"ES/"`.
+  An ES 3.0 context reports version 3.0, so it lands on `110/` — desktop
+  GLSL that no GLES driver will compile. Every shader fails, the 3D scene
+  never draws, and the 38-file `orca-overlay/resources/shaders/ES/` set this
+  repo ships would never have been opened.
+- All the `#if !SLIC3R_OPENGL_ES` desktop-only fallbacks stay live.
+
+0327 defines it on `libslic3r_gui` when the option is on. Audited what that
+newly compiles: 15 regions, every one a single
+`get_shader("dashed_lines")` / `get_shader("wireframe")` line plus the
+prefix block. No new symbols, no compile risk.
+
+The ES shader set was checked against the `140/` reference: all 38 are
+`#version 300 es`, and every uniform and attribute present in `140/` is
+present in the ES rewrite. `dashed_lines`/`wireframe` have no `140/`
+counterpart because they are ES-only (desktop uses geometry shaders).
+
+### ▲ 140 calls into entry points OpenGL ES does not have (0328)
+Method: extract every `gl*(` call in `src/slic3r`, extract the entry points
+glad's GLES2 header declares, diff, then evaluate each site's `#if` nesting
+for `SLIC3R_OPENGL_ES=1`. Result: **140 live calls the ES driver has no
+symbol for** — and glad leaves each slot null on iOS, so a call through one
+jumps to address zero.
+
+  PartPlate 67 | SkipPartCanvas 58 | 3DScene 5 | GLCanvas3D 3 | gizmos 6 |
+  GLTexture 1
+
+The one that matters most: `glClearDepth` in `GLCanvas3D::init()`. That runs
+before the first frame is ever drawn, so this was a **certain crash on the
+way to the first render**, independent of everything else. Turning on 0327
+does not help — it fences off only 12 of the 140.
+
+`src/slic3r/GUI/ios_gl_compat.cpp` (new, added to the iOS block 0316
+created) fills the null slots right after the loader runs, called from
+`OpenGLManager::init_gl`:
+- ES equivalents where they exist: `glClearDepth` → `glClearDepthf`, the
+  `*EXT` framebuffer names → the core entry points ES 3.0 promoted them to.
+- No-ops otherwise: the fixed-function matrix stack, immediate mode,
+  `glPushAttrib`/`glPopAttrib`, `glLineStipple`, `glPolygonMode`,
+  `glTexEnvi`, client-state leftovers. None of that means anything against
+  the shader pipeline Orca actually renders with; losing the drawing is the
+  right outcome, crashing is not.
+- Everything resolves via `dlsym(RTLD_DEFAULT, …)`, **not** glad's slots:
+  glad only loads entry points up to the version the context reports, and an
+  ES 3.0 context reports 3.0 — `glClearDepthf` is GL 4.1 in the desktop
+  header and is never loaded.
+- Verified the 29 installed functions are exactly the live-and-missing set:
+  no gaps, no dead entries. Compiles clean in both configurations.
+
+0328 also forces `s_framebuffers_type = Arb` on iOS. FBOs are core in ES
+3.0, but no ES driver advertises `ARB_framebuffer_object` or
+`EXT_framebuffer_object`, so detection landed on `Unknown` — and 3DScene's
+outline pass treats anything that is not `Arb` as "use the EXT entry
+points".
+
+### Two more runtime fixes prepared the same way
+- **0326** — MainFrame's hardcoded `SetSize(FromDIP(1200), FromDIP(800))`.
+  A wx top-level window is a UIWindow and a UIWindow is the whole display,
+  so that leaves dead space on a 13-inch iPad (1376x1032 pt) and would clip
+  the sidebar off a smaller one. `FromDIP` is the identity here
+  (`wxHAS_DPI_INDEPENDENT_PIXELS` is set for `__WXOSX__`), so the number is
+  literal points. Now takes `wxDisplay`'s client area — which resolves on
+  the iPhone port via `wxDisplayFactorySingleiOS` in `src/osx/iphone/utils.mm`
+  — and clamps the desktop 76x49 em minimum to it.
+- **step2/0208** — `wxAppDelegate` ran `OSXOnDidFinishLaunching()`, and so
+  the app's `OnInit()`, **synchronously inside
+  `applicationDidFinishLaunching:`**. iOS watchdogs that at roughly twenty
+  seconds (0x8badf00d) and Orca's `on_init_inner` loads the whole preset
+  bundle and builds MainFrame before returning. **The simulator does not run
+  the watchdog at all**, so this is invisible in step 3 and only bites the
+  device IPA. Now dispatched to the next main-runloop turn. Nothing on the
+  iPhone port depended on the old ordering: `m_inited`/`m_onInitResult` are
+  written only by the Cocoa `CallOnInit` and read only by Cocoa call sites,
+  and the iPhone `wxApp::CallOnInit` is a no-op returning true.
+
+### Startup path verified sound (do not re-investigate)
+- `wxApp::CallOnInit` on the iPhone port is a no-op; `OnInit()` is reached
+  through `OSXOnDidFinishLaunching()` (`src/osx/carbon/app.cpp:216`,
+  `#if wxOSX_USE_IPHONE`). It IS called — just late, hence 0208.
+- `instance_check()` is safe on iOS: `get_lock()` returns false on a fresh
+  lock file, and `*cla.should_send` is only evaluated when it returns true.
+- `set_miniaturizable` / `set_title_colour_after_set_title` /
+  `set_tag_when_enter_full_screen` are all stubbed by 0316 (they are behind
+  `#ifdef __WXOSX__`, which is defined for the iPhone port too).
+- libvgcode's `glTexBuffer`/`glMapBuffer` sites are in the `#else` of
+  `ENABLE_OPENGL_ES` — dead on iOS.
+- `ENABLE_OPENGL_ES` appears in no libvgcode *public* header, and 0304's
+  `Vec4` addition to `Types.hpp` is unguarded, so there is no ODR hazard
+  from `src/slic3r` including `libvgcode/include/Types.hpp` without it.
+- `resources/` is 242 MB; that is what ships inside the .app.
+
+### CI changes
+Step 3 now publishes `ci-logs/` on `always()`, not just on failure — once
+the link is green a crashed app still leaves the job green, and Actions
+artifact downloads are not reachable from the dev environment. The launch
+console, crash report, os_log excerpt and the **simulator screenshot PNG**
+now land in the repo where they can actually be read. The step also reports
+a launch verdict (process still present in the simulator + crash-report
+count) instead of trusting `simctl launch`'s exit code, which only says the
+process was spawned. Both workflows take the executable from the link rule's
+known output path before falling back to the Mach-O scan.
+
+### ⚠ Two corrections to long-standing assumptions in this document
+
+**1. Actions job logs are PARTIALLY readable — not a live tail.** The top of
+this file says log downloads are blocked. The GitHub MCP server's
+`get_job_logs` (`return_content: true`, plus `tail_lines`) does return log text,
+so that is too absolute. But measured against two in-progress jobs it is not a
+substitute for `ci-logs/`:
+
+- step-3 run 57's job returned ~23 KB and then returned **byte-identical
+  content on a later call** — a snapshot taken when the log was first flushed,
+  not a tail that advances.
+- step-4 run 10's job returned **HTTP 404** for the same call at the same time.
+
+So: useful for a one-shot look at a job that has been running a while, useless
+for watching progress, and not guaranteed to answer at all. It is worth trying
+once when a run is stuck, and worth nothing as a polling mechanism. `ci-logs/`
+remains the mechanism to rely on — it also survives log expiry and is greppable.
+
+(The cache-miss finding below still holds: that snapshot showed Boost
+*configuring and installing from source* seven minutes into the deps step, which
+cannot happen on a cache hit. The diagnosis was sound; the claim that the
+endpoint gives live progress was not.)
+
+**2. The deps cache is being evicted between runs, and that is the long pole.**
+`[3/8] Restore deps cache` completing in about a second, followed by Boost
+configuring and installing from source, means a miss — the full dependency stack
+is rebuilding, which is the multi-hour part of every run.
+
+Cause: both step-3 and step-4 save a **new cache entry on every run**
+(`ios-deps-v1-step3-${{ github.run_number }}`,
+`ios-deps-device-v1-${{ github.run_number }}`). Each is multiple GB, covering
+`orca/deps/build` + `ios-prefix` + `~/dep-dl`. A repository's total cache quota
+is 10 GB, so two runs of each workflow are enough to push everything else out by
+LRU — including the entry the next run needs. The `restore-keys` prefix then
+finds nothing and the stack rebuilds from scratch.
+
+Fix to make before the next round (NOT pushed yet, deliberately — editing
+`ios-step4-device-ipa.yml` is itself a push trigger, and doing it mid-run would
+start a redundant build): key the deps cache on a hash of the inputs that
+actually change it (`patches/step1/*` plus the dep list in the workflow) instead
+of `github.run_number`. Repeated runs then reuse one entry rather than minting a
+new multi-GB one each time; when the key already exists GitHub skips the save
+with a warning rather than failing. If that is not enough, the next lever is to
+stop caching `orca/deps/build` (object files for OCCT/OpenCV/OpenVDB dominate
+it) and rely on `ios-prefix` plus the ExternalProject `*-install` stamps.
+
+**Do not run more than one step-3 and one step-4 job at a time.** Five
+concurrent jobs were in flight this session; each rebuilt the whole dependency
+stack and each would have raced to save a multi-GB cache at the end, guaranteeing
+eviction. Three were cancelled for exactly that reason.
+
+### Cancelling a run mid-deps poisons the next run's cache
+Run 11 restored a device deps cache in 45 s and then still spent **25 minutes**
+building deps, where run 10 had spent 5 seconds. Cause: `if: always()` is true
+for a **cancelled** job as well as a failed one, so the three runs cancelled
+earlier in this session (56, 8, 9) each ran their "Save deps cache" step partway
+through their dependency build and wrote a **partial** entry. A `restore-keys`
+prefix lookup returns the *most recently created* match, and those partial
+entries were newer than run 10's complete one — so run 11 restored a half-built
+stack and had to finish it.
+
+Two consequences worth keeping:
+- Do not cancel a run that is inside its deps step. Let it fail on its own, or
+  accept that the next run pays for the difference.
+- The stable-key change helps here beyond the quota problem: an exact key hit is
+  preferred over the prefix fallback, so once a complete entry exists under
+  `ios-deps{,-device}-v1-<hash of patches/step1>` the partial ones stop being
+  reachable. They still occupy quota until they age out.
+
+═══════════════════════════════════════════════════════════════════════
+## SESSION (2026-08-04, cont.) — compile closed out, parity tracks opened
+═══════════════════════════════════════════════════════════════════════
+
+### The compile burn-down is DONE
+Step-3 run 57 and step-4 run 10 each built **652 of 653 targets** with
+`ninja -k 0`, failing on the same single file. That is the whole compile
+surface, on both the simulator and the device slice. 0330 fixed it.
+
+### Patches added (0325-0333 step3, 0209-0211 step2)
+- **0325** last two link symbols (GLES2 glad loader, not compiled on iOS).
+- **0326** MainFrame sized to the display. A wx top-level window is a UIWindow
+  and a UIWindow is the whole screen; the hardcoded 1200x800 left dead space.
+- **0327 ▲** `SLIC3R_OPENGL_ES` was **never a preprocessor macro** — only a
+  CMake variable read by src/libvgcode. So every iOS build compiled the desktop
+  GL path, and GLShadersManager loaded the `110/` desktop GLSL set, which no
+  GLES driver compiles. The ES/ shader overlay in this repo was dead weight.
+- **0328 ▲** 140 live calls into entry points OpenGL ES does not have. Orca's
+  GUI is written against the desktop `<glad/gl.h>`, so they compile and then
+  resolve to null on iOS. `glClearDepth` in `GLCanvas3D::init()` runs before
+  the first frame — a certain crash. `ios_gl_compat.cpp` fills the null slots
+  with ES equivalents or no-ops. Re-derive with `tools/gl-es-gap-scan.py`.
+- **0329** iOS has no window-system framebuffer at object 0: wxGLCanvas is a
+  GLKView and GLKit's drawable has a non-zero name. Orca's offscreen passes
+  restore with `glBindFramebuffer(..., 0)`, which unbinds the drawable for
+  good — the scene stops appearing from the first selection onward.
+- **0330** `viewport` redefinition GLGizmoMeasure; the `if (is_core_profile())`
+  braces that scoped the first one are themselves inside `#if !SLIC3R_OPENGL_ES`.
+- **0331** duplicate `wxMediaCtrl2::DoSetSize` (0316's stub vs MediaPlayCtrl.cpp).
+- **0332/0333** WebKit.framework on the iOS link lines; Orca's webview call
+  sites un-guarded; `ios_webview_support.mm` implements the two WKWebView
+  helpers for real (evaluateJavaScript matters — Orca drives the embedded pages
+  through it almost entirely).
+- **step2/0209 ▲** desktop pointer input. `SetupMouseEvent` assigned every
+  modifier `= 0` and hardcoded the button to left, so shift-drag, cmd-click and
+  alt-drag were all dead, and there was no right/middle button, no scroll wheel
+  and no hover. Keyboard was already correct.
+- **step2/0210+0211** real WKWebView backend. The backend is only lightly
+  AppKit-coupled (7 sites in 1365 lines, most already `#if !__WXOSX_IPHONE__`);
+  it needed a wxWidgetIPhoneImpl peer, the print path guarded, and
+  `OSXWebViewPtr`/`WKWebView` added to defs.h's **iPhone** branch — that
+  typedef exists only in the Cocoa branch, and its absence made four targets
+  fail with six error signatures that all traced back to one line.
+- **clipboard** wxClipboard backed by UIPasteboard.
+
+### CI infrastructure — this is the important part for velocity
+- **`ios-wx-only.yml` (NEW)**: builds just the patched wx port, simulator and
+  device in a parallel matrix, in **~5 minutes** (run 1: 4m51s). Every
+  remaining parity track is wx-side. Iterate here, not in the 40-minute Orca
+  build. Triggers on pushes touching `patches/step2/**` or `wx-overlay/**`.
+  It caught the 0210 webview breakage 40 minutes before step-4 run 14 hit the
+  identical error.
+- **`ios-step3-fast.yml`**: already existed and was unused. Restores the deps
+  and wx prefixes instead of rebuilding them. Now also ships orca-overlay,
+  defaults to the OrcaSlicer target, and does the full simulator launch +
+  screenshot, publishing to ci-logs on `always()`.
+- **deps cache keys are now stable** (`hashFiles('patches/step1/*.patch')`
+  rather than `github.run_number`). The old per-run keys minted a multi-GB
+  entry every run against a 10 GB quota, evicting the entry the next run
+  needed — every round paid for a full dependency rebuild. Step-3 run 58
+  restored in 50s and topped up in 4s, versus 37 minutes cold.
+- **Do not cancel a run inside its deps step.** `if: always()` is true for
+  cancelled jobs too, so it saves a *partial* cache, and a restore-keys prefix
+  lookup prefers the newest match. That cost run 11 25 minutes.
+- WX_KEY salted to **v3**: the `wxUSE_LIBJPEG=sys` change lives in the
+  workflows, not in a patch, so it does not move the key on its own.
+
+### Still open
+Control peers (radio/toggle/spin return inert UIView wrappers), document-picker
+export, AVPlayer camera, and the immediate-mode drawing 0328 turned into no-ops
+(PartPlate 67 calls, SkipPartCanvas 58 — likely visible build-plate geometry).
+
+**And the big one: the app has still never launched.** Everything above is
+compile-validated only. The step-3 fast workflow now carries the launch; that
+is the next thing to get evidence from. Two items in 0209 cannot be settled
+without real hardware: the sign of the wheel rotation, and whether the pan
+recognizer ever steals a drag.
+
+═══════════════════════════════════════════════════════════════════════
+## SCOPE DECIDED WITH THE USER (2026-08-04)
+═══════════════════════════════════════════════════════════════════════
+
+Target hardware: **Bambu A1 in LAN-only mode.** That single fact reshapes the
+remaining work.
+
+### ⚠ THE BLOCKER NOBODY HAD NOTICED
+Bambu LAN mode in Orca does **not** talk to the printer directly. Both paths go
+through prebuilt closed-source binaries that Orca downloads per platform:
+- printing: `NetworkAgent::connect_printer(dev_id, dev_ip, ...)` ->
+  `BBLNetworkPlugin` (BambuNetworkEngine)
+- camera: `BambuSource` (`src/slic3r/Utils/BBLNetworkPlugin.cpp`)
+
+`GUI_App.cpp` picks between windows/windows_arm/macOS/Linux builds of these.
+**There is no iOS build, and iOS cannot load a runtime-downloaded dylib** — it
+would have to be bundled and signed, and we do not have the binaries.
+
+So the app as it stands would slice, render and load profiles perfectly and be
+**unable to reach the printer at all**. That is not a porting bug; it is a
+dependency that does not exist for this platform.
+
+The way through is a native LAN backend speaking the documented protocols
+directly, bypassing the plugin:
+- **MQTT over TLS, port 8883**, authenticated with device serial + LAN access
+  code — status and print control
+- **FTPS, port 990** — upload the sliced 3mf
+Orca already links CURL and OpenSSL, so the pieces are in the tree. This is
+substantial but legitimate work, not reverse-engineering a closed binary.
+
+### Agreed scope
+IN:
+1. Get it launching (in flight)
+2. **Native Bambu LAN backend** (MQTT + FTPS) — the big one
+3. **Live control peers** — radio / toggle / spin / statbox / searchctrl render
+   blank and do not respond; Preferences and several dialogs need them
+4. PartPlate drawing dropped by 0328 — **decide after the first screenshot**;
+   if the plate renders correctly those were dead paths and this is free
+
+OUT (explicitly declined):
+- Printer camera (would need the port-6000 stream reimplemented; dropped once
+  the plugin dependency was understood)
+- Files-app / document-picker export (wireless to printer only)
+- Tooltips, dark-mode detection, drag-and-drop of files
+
+═══════════════════════════════════════════════════════════════════════
+## DESIGN: native Bambu LAN backend (task #13) — scoped, not yet built
+═══════════════════════════════════════════════════════════════════════
+
+### The surface to satisfy is only six functions
+`src/slic3r/Utils/NetworkAgent.hpp` is 120 methods wide, but LAN-only operation
+touches just these (verified against the call sites in DeviceManager.cpp):
+
+    set_on_local_connect_fn(OnLocalConnectedFn)   // connect result callback
+    set_on_local_message_fn(OnMessageFn)          // inbound MQTT payloads
+    connect_printer(dev_id, dev_ip, username, password, use_ssl)
+    disconnect_printer()
+    send_message_to_printer(dev_id, json_str, qos, flag)
+    start_local_print(PrintParams, update_fn, cancel_fn)
+
+DeviceManager.cpp:2412 is the live call: `m_agent->connect_printer(get_dev_id(),
+get_dev_ip(), username, password, use_openssl)`. Everything else in the LAN flow
+is Orca's own JSON on top of those.
+
+### What has to be written
+**No MQTT library exists in the tree.** deps_src/ has no mosquitto and no paho,
+because the protocol lived inside Bambu's closed plugin. So:
+
+1. **MQTT 3.1.1 client over TLS** (~500-600 lines). Connect to
+   `mqtts://<dev_ip>:8883`, username `bblp`, password = the LAN access code from
+   the printer's screen. Self-signed cert, so verification must be off. Needs:
+   CONNECT/CONNACK, SUBSCRIBE to `device/<serial>/report`, PUBLISH to
+   `device/<serial>/request`, PINGREQ/PINGRESP keepalive, DISCONNECT, the
+   variable-length-integer packet framing, and a receive thread that feeds
+   `set_on_local_message_fn`. OpenSSL is already linked (dep_OpenSSL) so a BIO
+   over a socket is the natural transport.
+2. **FTPS upload** (~80 lines). CURL is already linked. `ftps://<dev_ip>:990/`,
+   implicit TLS, `CURLOPT_USE_SSL=CURLUSESSL_ALL`, verifypeer off, user `bblp`
+   + access code. Upload the sliced 3mf to the printer's cache directory, then
+   publish the print command over MQTT.
+3. **Wiring** (~150 lines). On iOS, route those six NetworkAgent entry points to
+   the native agent instead of the plugin, and stop
+   `GUI_App::show_network_plugin_download_dialog` from prompting for a plugin
+   that will never exist on this platform.
+
+Roughly 800-1000 lines of new C++ plus several CI rounds to compile-validate.
+This is the single largest remaining item and it is a real implementation job,
+not a shim.
+
+### Notes for whoever writes it
+- The camera (TCP 6000) is explicitly OUT of scope — do not let it pull the
+  BambuSource dependency back in.
+- Printer discovery already works without the plugin: deps_src/mdns is compiled
+  and Bambu printers advertise over mDNS, so `dev_ip` arrives without help.
+- Keep it in `src/slic3r/Utils/` as plain C++ (no Objective-C) so it compiles for
+  both slices and could later serve desktop builds that want a plugin-free path.
+- Validate the MQTT framing against a real A1 early; the protocol is documented
+  by community projects but the payload schema is Orca's own.
+
+═══════════════════════════════════════════════════════════════════════
+## ✅ BUILT: native Bambu LAN backend (task #13) — 2026-08-04
+═══════════════════════════════════════════════════════════════════════
+
+The design above is implemented. Sources live in
+`orca-overlay/src/slic3r/Utils/` (shipped into the Orca tree by every
+step-3/4 workflow's `cp -R orca-overlay/. .`), wiring is
+`patches/step3/0335-ios-bambu-lan-agent.patch`.
+
+### What it is
+| File | What it does |
+|---|---|
+| `BambuLanMqtt.{hpp,cpp}` | MQTT 3.1.1 over TLS (OpenSSL). Codec + client: CONNECT/CONNACK, SUBSCRIBE/SUBACK, PUBLISH both ways, PUBACK for inbound QoS 1, PINGREQ keepalive, DISCONNECT, receive thread, dead-link detection. No Orca/wx/boost dependency. |
+| `BambuLanFtps.{hpp,cpp}` | Implicit-TLS FTPS upload on 990 through libcurl, progress + cancel. |
+| `BambuLanDiscovery.{hpp,cpp}` | SSDP listener on 1990/2021, emits exactly the JSON `DeviceManager::on_machine_alive()` parses. |
+| `BambuLanPrintCommand.{hpp,cpp}` | The `project_file` command and its `file:///sdcard/<name>` URL. |
+| `BambuLanPrinterAgent.{hpp,cpp}` | `IPrinterAgent` implementation, registered under the **same `"bbl"` id** as the plugin wrapper. |
+
+Registering under `"bbl"` is the whole trick: `GUI_App::switch_printer_agent()`
+picks that id for every Bambu-vendor preset, so DeviceManager, PrintJob,
+Monitor and the Device tab are untouched. `switch_printer_agent()` runs at
+startup via `load_current_presets()` -> `Tab::load_current_preset()` ->
+`on_presets_changed()`, and `NetworkAgent::set_printer_agent()` re-applies
+the cached callbacks, so the agent is live before the first connect.
+
+### Decisions worth knowing
+- **connect_printer is asynchronous.** It returns `BAMBU_NETWORK_SUCCESS`
+  immediately and reports through `set_on_local_connect_fn`, exactly as the
+  plugin did — `DeviceManager::set_selected_machine()` ignores the return
+  value and calls it from the UI thread, so blocking would freeze the app for
+  the TLS handshake. CONNACK 5 is passed through as the string `"5"`, which is
+  the value `GUI_App` special-cases into "Incorrect password".
+- **TLS verification is off.** The printer's certificate is self-signed with
+  no name to match; the access code is the authenticator, as in Bambu's own
+  client. `SSL_CTX_set_security_level(0)` goes with it because the firmware's
+  cipher suites predate OpenSSL 3's defaults.
+- **Upload goes to the FTP root, print URL is `file:///sdcard/<name>`.** The
+  firmware exposes the SD card as the FTP root, and Orca's per-model config
+  carries `"ftp_folder": "sdcard/"` for C11/C12/N1/N2S (empty for X1, where
+  the same path works). Matches TFyre/bambu-farm, which is proven on X1/P1/A1.
+- **Both spellings of `bed_leveling`/`bed_levelling` are sent**; firmware
+  generations disagree and unknown keys are ignored.
+- **Cloud calls return errors on purpose** (bind, ping_bind, cloud print with
+  no LAN credentials). This is a LAN-only agent.
+- `GUI_App::on_init_network()` forces `should_load_networking_plugin = false`
+  on iOS, which switches off every plugin load attempt *and* every
+  "install the network plug-in" dialog.
+- **Discovery is a convenience, not a requirement.** Joining a multicast group
+  needs an entitlement a sideloaded build does not have, so joins are best
+  effort. The manual IP + access-code path (which `InputIpAddressDialog`
+  already forces on Apple platforms) needs none of it.
+- **`NSLocalNetworkUsageDescription` is mandatory** in the Info.plist or iOS
+  14+ blocks every connection to the printer. It is in `lan-test-app/build.sh`;
+  the step-4 IPA plist needs it too.
+
+### How it was validated
+`tools/bambu-lan/` holds a mock printer (`mock_printer.py`: TLS MQTT broker +
+implicit-FTPS server + SSDP announcer) and `selftest.cpp`, which links the
+shipping sources. `tools/bambu-lan/run-selftest.sh` builds and runs both:
+**111/111 checks pass**, covering the codec (varints, partial reads,
+malformed input, multi-packet TLS records), the print command JSON, SSDP
+parsing, and a live round trip — wrong access code -> CONNACK 5, connect,
+subscribe, pushed report, QoS-1 publish, keepalive, clean disconnect, then a
+byte-verified FTPS upload and an auth-failure case. Run it on any host with
+OpenSSL + libcurl headers; it needs no iOS.
+
+`BambuLanPrinterAgent.cpp` and the patched `NetworkAgentFactory.cpp` were also
+`-fsyntax-only` checked against the real Orca headers before pushing (needs
+boost, eigen3, tbb, cereal, and a generated `libslic3r_version.h`).
+
+### `lan-test-app/` — the fast device check
+`BambuLAN.app` is a UIKit app that links the same four backend sources and
+nothing else. `.github/workflows/ios-lan-test-ipa.yml` builds OpenSSL (68 s
+cold, cached after) and curl for `iphoneos`, compiles the app, and publishes
+an unsigned IPA to a Release — minutes, not the 40-minute Orca build. It
+covers connect, push-all, get_version, home, jog X/Y/Z, extrude/retract,
+unload, nozzle/bed temperature, part/aux fans, chamber light, print speed,
+pause/resume/stop, raw gcode, raw JSON, SSDP scan, and (with curl) upload a
+3mf and start it. Every payload was copied from `DeviceManager.cpp` /
+`DeviceCore/Dev*.cpp`, so a green result there is a green result in Orca.
+
+### ✅ CONFIRMED AGAINST A REAL PRINTER (2026-08-04)
+The user ran `BambuLAN.ipa` against their Bambu A1 in LAN-only mode: it
+connected and everything worked. So the parts that could only be argued from
+documentation before are now observed facts on real hardware:
+  - MQTT 3.1.1 over TLS on 8883 with `bblp` + the LAN access code
+  - the `device/<serial>/report` subscription and the status push
+  - the control commands (they are byte-for-byte what `DeviceManager.cpp`
+    sends, so Orca's own buttons drive the same JSON)
+  - iOS's local-network permission path with `NSLocalNetworkUsageDescription`
+Nothing about the protocol is speculative any more.
+
+### What is NOT done
+- The print path (FTPS upload + `project_file`) had not been exercised at the
+  time of that test. If a print ever refuses to start, the URL is the thing to
+  check: "List SD card" in the test app shows where the FTP root really maps.
+- Camera (TCP 6000) stays out of scope, as agreed.
+- `start_local_print_with_record` is the plain LAN print (no cloud record) and
+  does not call `wait_fn`, which would poll for a cloud job id that never
+  arrives.
+
+═══════════════════════════════════════════════════════════════════════
+## ✅ ROOT CAUSE: "Missing bundle ID" was the resources directory
+═══════════════════════════════════════════════════════════════════════
+
+Every attempt to install OrcaSlicer.app - simulator and, almost certainly,
+device - failed with
+
+    Failed to get bundle ID from .../OrcaSlicer.app - Missing bundle ID
+
+The bundle's `resources/` directory is the cause. macOS filesystems are
+case-insensitive, so a top-level `resources` is `Resources` to CFBundle,
+which is the marker of an **old-style bundle** whose `Info.plist` lives
+*inside* that directory. Not finding one there, the installer reports a
+missing bundle id - about a plist that is present, lints clean, and from
+which `defaults read CFBundleIdentifier` returns the right answer.
+
+**Proved, not guessed.** `.github/workflows/ios-sim-probe.yml` builds a
+30-line UIKit app and installs one bundle variant per hypothesis, so a round
+takes ~2 minutes instead of a 50-minute Orca build:
+
+| round | variant | result |
+|---|---|---|
+| 1 | plist exactly as step 3 writes it, 2 files | OK |
+| 1 | + CFBundleSupportedPlatforms/DTPlatformName | OK |
+| 1 | binary plist | OK |
+| 1 | same plist + 3000 resource files | **FAILED** |
+| 2 | 100 files / 2 MB · 1000 / 20 MB · 3000 / 59 MB | **all FAILED** |
+| 3 | directory named `resources` | **FAILED** |
+| 3 | directory named `Resources` | **FAILED** |
+| 3 | directory named `orca-resources` | OK |
+| 3 | directory named `data` | OK |
+| 3 | nested `share/resources` | OK |
+
+Size, file count and depth are all irrelevant; only the top-level name is.
+
+**Fix:** the directory is `orca-resources` everywhere - patch 0320
+(`resources_dir()` at runtime), patch 0334 (`BIN_RESOURCES_DIR` at build
+time) and the three workflows that assemble a bundle. Each of those
+workflows now refuses to package a bundle containing a top-level
+`resources`/`Resources`, so it cannot come back.
+
+The step-4 comment blaming this error on a truncated zip extraction was
+wrong; it has been corrected in place. Keep ios-sim-probe.yml - the next
+"why won't it install" question is two minutes away instead of an hour.
+
+### Build speed - where the time actually goes
+Measured on fast run 4 (18:45:49 -> 19:39:16):
+
+    checkout + patches + cache restores + configure    45 s
+    ninja                                          50 m 34 s
+
+so "fast" is entirely about ccache, and **nothing in either workflow has
+ever printed a ccache statistic**. The circumstantial evidence says it was
+not working: run 62 saved its ccache in 5 seconds and run 4 restored it in
+4 - empty-cache numbers after 650 translation units. Both workflows now run
+`ccache -z` before the build and publish `ccache -s -v` to ci-logs, and the
+cache is sized for the job (3G, was 1.5G), with CCACHE_BASEDIR/NOHASHDIR so
+an object's absolute path stays out of the hash and `system_headers` so the
+SDK does not get hashed into every object.
+
+**Caches are per-branch.** A run can only restore caches created on its own
+branch or on the repository's default branch. That is why run 62 spent
+21m52s "topping up" deps whose key had not changed: the entries existed, but
+on sibling branches. Anything long-lived (deps prefix, wx prefix) should be
+built once on `main` so every future branch inherits it - otherwise each new
+branch pays ~28 minutes before it compiles a line of Orca.
+
+═══════════════════════════════════════════════════════════════════════
+## The simulator check was lying, and what it says now
+═══════════════════════════════════════════════════════════════════════
+
+The step-3 launch step used to do this:
+
+    xcrun simctl launch --console-pty ... &
+    sleep 60
+    kill $LPID
+    xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
+
+Nothing in there asks whether the app is running. `simctl launch` returns 0
+the moment the process is spawned, and `simctl io screenshot` photographs
+whatever is on the screen - which, for a build that exits during startup, is
+SpringBoard. Runs 5 and 6 were reported as "installs, launches, screenshot
+attached" on that basis. The screenshot was of the home screen.
+
+`tools/ci/sim-launch-verify.sh` replaces it, and both step-3 workflows call
+it rather than carrying two copies:
+
+* polls `simctl spawn <udid> launchctl list` once a second until the bundle
+  id appears, up to 60 s, and records when it first did;
+* takes a screenshot at t+2, 7, 17, 37 and 67 s **after** it appeared,
+  re-checking aliveness before each one and stopping at the first checkpoint
+  the app has gone from;
+* photographs the home screen first (`00-home.png`) so a screenshot of
+  nothing is recognisable as one;
+* measures every PNG - resolution, distinct colours, dominant colour and its
+  share - by decoding it in Python after `sips` shrinks it to 240 px, so the
+  job can report whether anything was drawn without a human opening files;
+* extracts Orca's own log from the app's data container (`orca-app-log.txt`),
+  which is the only record of how far `on_init_inner()` got: the system log
+  shows UIKit's half of the story and stops;
+* **fails the step** when the app never appears, or appears and then exits.
+
+A green step-3 job now means the app was still running 67 s after launch,
+and `artifact/orca-on-ipad.png` is a picture taken while it was.
+
+═══════════════════════════════════════════════════════════════════════
+## ⛔ SESSION (2026-08-05) — THE ONE BUG THAT BLOCKS EVERYTHING
+═══════════════════════════════════════════════════════════════════════
+
+**Read this section first. It supersedes every earlier claim about why the
+app "exits during startup".**
+
+### What is actually wrong
+
+A wxWidgets iOS app built against the cached wx prefix **dies before
+`wxApp::OnInit()` is entered**. Not Orca specifically - any app.
+
+Proved with `wx-probe/`, a ~350-line wx app that builds in **5 seconds**
+against the cached prefix. It writes a marker from a static initialiser
+(before `main`) and another on entry to `OnInit`, into
+`$HOME/Documents/wxprobe.log`, which the launch script pulls out of the
+simulator's app container. Run 5's log, complete:
+
+    WXPROBE static init            ran
+
+Nothing else. So: the binary loads, dyld is fine, static initialisers run,
+and the process is gone about a second later - no crash report, no
+termination message in the system log, which is what a clean exit looks
+like.
+
+**OrcaSlicer does exactly the same thing.** step3-fast run 8 published an
+*empty* `orca-app-log.txt`: Orca never created its own log file, and
+`set_log_path_and_level()` runs early in `init_app_config()`. It is not
+getting far either.
+
+This one bug is the whole distance between where the port is and a
+screenshot of the UI. Everything else is built and working.
+
+### The 4-minute loop that will find it
+
+`.github/workflows/ios-wx-probe.yml` - restores the wx + deps caches,
+compiles `wx-probe/main.cpp` (5 s), installs, launches, screenshots,
+publishes to `ci-logs/wx-probe-run-N/`. **Do not debug this inside the Orca
+build**; that is 55 minutes per question.
+
+Triggered by pushing anything under `wx-probe/**`,
+`tools/ci/sim-launch-verify.sh`, or the workflow file. (A workflow that
+exists only on a feature branch cannot be dispatched through the API -
+GitHub resolves the name against the default branch and 404s. Hence the
+push trigger.)
+
+The probe now also carries, and the next run will report:
+* a marker in the `wxApp` constructor - was the object built at all;
+* `OnAssertFailure` - a wx assertion on iOS cannot show its dialog, and the
+  override deliberately does not call the base;
+* `OnExceptionInMainLoop` / `OnUnhandledException`;
+* `OnExit` - if this fires it is a clean shutdown, not a death;
+* **a control**: `smoke-app/` (the step-2 proof: frame, button, green GL
+  canvas) built from the *same* cached prefix. If the control dies too, the
+  prefix regressed and the answer is in `patches/step2` / `wx-overlay`. If
+  the control renders, the difference between the two apps is the answer.
+
+### Where to look if the control renders
+
+`wx-probe` differs from `smoke-app` in: `UIDeviceFamily [2]` vs `[1,2]`,
+`UIRequiresFullScreen`, and it links `-framework WebKit` +
+`UniformTypeIdentifiers` (`PROBE_BUILD=with-webview` - wxWebView **does**
+compile and link for iOS, which is worth knowing on its own: Orca's
+MainFrame builds web-view panels).
+
+### ⚠ Two corrections to things this document used to say
+
+1. **"The app exits during startup" was never established before today.**
+   Runs 5 and 6 concluded that from `simctl spawn <udid> launchctl list`
+   returning no match. That command **does not list app processes under
+   their bundle id at all** - it answered "not running" for every app,
+   always. wx probe run 4 proved it: host `ps` by pid, host `ps` by name,
+   `pgrep`, and the simulator's own `launchctl list` (357 entries) were all
+   asked at once and all agreed the app was gone, so the *conclusion*
+   happens to hold - but it was luck, not evidence.
+
+2. **The screenshots in runs 5 and 6 were of SpringBoard.** The old launch
+   step shot the screen after killing the console reader, with no check that
+   anything was running. `tools/ci/sim-launch-verify.sh` replaces it: polls
+   the host pid `simctl launch` prints, shoots at t+2/7/17/37/67 s **while
+   alive**, measures every PNG (size, distinct colours, dominant colour), and
+   fails the step if the app never appears or goes away.
+
+### Build speed: root cause found, fix in but unverified
+
+ccache hits 76 of 639 objects, run after run. The 76 are exactly the
+targets that do **not** use a precompiled header (deps_src, imgui,
+libvgcode, libslic3r_cgal, the ObjC shims, `OrcaSlicer.cpp`). The 563
+misses are exactly `libslic3r` + `libslic3r_gui`, the only two targets that
+call `add_precompiled_header` (upstream `src/libslic3r/CMakeLists.txt:636`,
+`src/slic3r/CMakeLists.txt:808`).
+
+ccache hashes the `.pch` it is told to `-include`, and clang serialises the
+**size and mtime of every header** that went into a `.pch`. Orca is
+re-cloned every run, the wx overlay headers are re-copied every run, and
+`configure_file` rewrites `libslic3r_version.h` every run - so the `.pch` is
+byte-different every run even when no source changed.
+
+`ios-step3-fast.yml` now pins those mtimes to a fixed instant (the orca
+tree after patching, the wx + deps prefixes after the overlay copy, and the
+generated headers in the build tree after configure - *only* the headers:
+an mtime older than the CMakeLists would make ninja re-run cmake and undo
+it). `pch-fingerprint.txt` is published each run; **compare two runs'
+digests to confirm**. If they still differ, the fallback is
+`-DSLIC3R_PCH=OFF`, which fixes the hashing by removing the input - at the
+risk of exposing translation units that relied on the FORCEINCLUDE.
+
+Expected payoff: ~55 min -> ~10 min per Orca iteration. Note the first run
+after the change still misses everything (different `.pch` hash); the
+*second* run is the fast one.
+
+### The screenshot loop no longer needs a compile
+
+`ios-step3-fast.yml` publishes the linked executable as artifact
+`orca-binary`. `ios-relaunch.yml` downloads the newest one via the REST API
+(newest-first, repo-wide), rebuilds the bundle around it - resources from a
+shallow Orca clone plus the overlay, ~20 s - and runs the same verification.
+**~4 minutes per launch experiment.** Bundle assembly lives in
+`tools/ci/assemble-sim-bundle.sh` so the build workflow and the relaunch
+workflow cannot drift into testing different bundles.
+
+### Step 4 (device IPA) is GREEN
+
+step4 run 24: device deps 21 min, wx 4 min, Orca build+link 31 min, **0
+failed targets, 0 undefined symbols**, unsigned `OrcaSlicer-iPad.ipa`
+assembled and uploaded as a workflow artifact. The job is marked failed only
+because `gh release create` returned `HTTP 403: Resource not accessible by
+integration` - the token a workflow_dispatch from an app integration gets
+cannot always create a release, even though the same token pushed ci-logs
+seconds earlier. That step is now non-fatal; **the IPA is the artifact**.
+
+It also warmed the device deps + wx + ccache caches on this branch, so the
+next device build is ~35 min rather than ~58.
+
+### Patch 0336 (new this session)
+
+`patches/step3/0336-ios-startup-no-modal-blockers.patch`:
+* `on_init_inner()` raises a **parentless modal dialog** from `OnInit`, before
+  UIApplication has an event loop, whenever `Http::tls_global_init()` cannot
+  find a certificate store - which on iOS is always, there is no OpenSSL cert
+  directory. `ShowModal` cannot run there; anything but `wxID_YES` makes
+  `OnInit` return false. Answered in the affirmative on iOS and logged
+  (`Http::priv` sets `CURLOPT_SSL_VERIFYPEER` to 0 on every request, so the
+  store is never consulted).
+* The splash screen is skipped on iOS - a second UIWindow driven by
+  `wxYield()` from inside `OnInit`.
+
+This is correct on its own merits but is **not** the bug above: the probe
+dies before `OnInit`, and it contains none of this code.
+
+### Order of work for the next session
+
+1. Read `ci-logs/wx-probe-run-6/` (or the newest). The control tells you
+   whether the wx prefix starts *any* app.
+2. Fix that. It is the only thing between here and a UI screenshot.
+3. Re-run `ios-step3-fast.yml`, confirm `pch-fingerprint.txt` matches the
+   previous run's, and confirm the ccache hit rate jumps on the run after.
+4. Use `ios-relaunch.yml` for every launch-behaviour question after that.
+5. When a screenshot shows the UI, run `ios-step4-device-ipa.yml` and take
+   the IPA from the workflow artifact.
+
+Note on first launch: with no config, Orca runs the ConfigWizard
+(`config_wizard_startup()` fires when `!m_app_conf_exists ||
+only_default_printers()`). A screenshot of the wizard is still proof the GUI
+renders; for a plater screenshot, pre-seed `OrcaSlicer.conf` in the data
+container between install and launch.
+
+### ▲ RESULT (wx probe run 6): the wx prefix is what regressed
+
+Two facts, both from `ci-logs/wx-probe-run-6/`:
+
+**1. The probe reaches the wxApp object and no further.**
+
+    WXPROBE static init            ran
+    WXPROBE wxApp ctor             ran
+
+No `OnInit`, no `wx ASSERT`, no exception, no `OnExit`. So the process dies
+between the `wxApp` object being constructed and `OnInit` being called -
+inside wx's own app initialisation (`wxEntry` / `wxApp::Initialize` /
+`CallOnInit`, or the UIApplicationMain delegate path), and it dies *without*
+tripping wx's assert or exception machinery.
+
+**2. The step-2 smoke app does not run either.** `smoke-app/` compiles clean
+against the cached prefix (`smoke-build.log`: warnings only, "built:
+.../WxSmoke.app") and then fails to start - `smoke-launch-verdict.txt` says
+"first seen alive after: never", and `simctl launch` did not even print a
+pid line.
+
+That is the same `smoke-app/` whose screenshot - frame, button, green GL
+canvas - is this document's step-2 proof. **So the regression is in the wx
+prefix, not in Orca, not in the probe's widget choices, and not in patch
+0336.**
+
+#### Where to start
+
+The prefix under test is `ios-wxprefix-v3-<hash of wx-overlay +
+patches/step2>`. Something in `patches/step2/*` or `wx-overlay/` between the
+green step-2 run and now stops a wx app starting. Prime suspects, in order:
+
+* `wx-overlay/include/wx/osx/iphone/evtloop.h` and whatever
+  `src/osx/iphone/evtloop.mm` does around line 87 - this document already
+  notes that as "the same path the step-2 smoke app launched on", and an
+  event loop that returns immediately is exactly a process that exits
+  between `wxApp` construction and `OnInit` with no assert and no exception.
+* `wx-overlay/src/osx/iphone/extra_peers.mm` / `extra_stubs.mm` - a stubbed
+  peer that returns null during app init.
+* `patches/step2/*` - diff against whatever produced the green step-2
+  screenshot and bisect; each cycle is ~4 minutes through
+  `ios-wx-probe.yml`, and the control is built into it.
+
+`git log --oneline -- wx-overlay patches/step2` is the shortest path to the
+candidate set.
+
+#### One gap in the harness
+
+The control's own launch log was not published in run 6 (only its verdict).
+That is fixed - `smoke-sim-launch.log`, `smoke-sim-oslog.txt`,
+`smoke-alive-methods.txt` and `smoke-orca-app-log.txt` are published from the
+next run on. "pid none" in run 6's control verdict means `simctl launch`
+printed no pid at all, which is a *different* failure from the probe's (which
+gets a pid and then dies); the control's launch log will say which.

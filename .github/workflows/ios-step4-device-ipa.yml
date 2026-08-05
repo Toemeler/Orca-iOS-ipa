@@ -1,0 +1,439 @@
+name: iOS Step 4 - OrcaSlicer device IPA
+
+# The device (iphoneos) counterpart of step 3, ending in a sideloadable
+# unsigned .ipa of the real OrcaSlicer.
+#
+# Same build as step 3 with SDK=iphoneos, so the whole dependency stack has to
+# be built again for the device slice — the step-1 patches already branch on
+# simulator vs device (OpenSSL ios64-xcrun, GMP/MPFR -miphoneos-version-min),
+# so this is a long build rather than a new porting problem. It is started
+# early and in parallel with the step-3 link iteration precisely because those
+# deps are the multi-hour long pole; every run warms the device deps cache
+# even when the link stage still fails.
+
+on:
+  push:
+    branches:
+      - claude/basic-ipad-app-plan-pb0b4p
+      - claude/step-4-ipa-parity-bkdym6
+    paths:
+      - '.github/workflows/ios-step4-device-ipa.yml'
+      - 'patches/**'
+      - 'wx-overlay/**'
+      - 'ios/**'
+  workflow_dispatch:
+    inputs:
+      orca_ref:
+        required: false
+        default: "395e070a0e675fd4723f93967cefede730c482d9"
+      wx_ref:
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+# Only the newest run per branch is useful: an older one is building code that
+# has already been superseded, and while the wx loop iterates it would otherwise
+# keep a device build busy for forty minutes on a fix that is already in.
+#
+# Safe to cancel now in a way it was not before: the deps caches are keyed on
+# hashFiles(patches/step1) rather than the run number, and actions/cache skips
+# the save when the key already exists -- so a cancelled run part-way through
+# its deps step can no longer write the partial entry that cost run 11 twenty
+# five minutes.
+concurrency:
+  group: step4-device-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  device:
+    name: OrcaSlicer for iPad (device)
+    runs-on: macos-15
+    timeout-minutes: 360
+
+    env:
+      ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/ios-prefix
+      WXPREFIX: ${{ github.workspace }}/wx-prefix
+      SDK: iphoneos
+
+    steps:
+      - name: "[1/9] Checkout + tools"
+        uses: actions/checkout@v4
+      - run: |
+          set -euxo pipefail
+          brew install cmake ninja automake autoconf libtool nasm texinfo
+          echo "$(brew --prefix texinfo)/bin" >> "$GITHUB_PATH"
+
+      - name: Compute cache keys from patch/overlay hashes
+        run: |
+          set -euxo pipefail
+          WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
+          echo "WX_KEY=ios-wxprefix-device-v1-$WXH" >> "$GITHUB_ENV"
+
+      - name: "[2/9] Fetch Orca + apply step1+step3 patches"
+        run: |
+          set -euxo pipefail
+          git clone https://github.com/SoftFever/OrcaSlicer.git orca
+          cd orca && git checkout "$ORCA_REF"
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step1/*.patch "$GITHUB_WORKSPACE"/patches/step3/*.patch; do
+            git apply --verbose "$p"
+          done
+          mkdir -p deps_src/hidapi/ios
+          cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
+          # Orca ships resources/shaders/{110,140} only; the SLIC3R_OPENGL_ES
+          # path asks for an "ES/" set that upstream has never had, so supply it.
+          cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
+          test "$(ls resources/shaders/ES | wc -l)" -eq 38
+
+      - name: "[3/9] Restore device deps cache"
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          # Keyed on what changes the dependency build, not on the run number:
+          # a per-run key mints a new multi-GB entry every time, and against a
+          # 10 GB repository quota that evicts the entry the next run needs.
+          # See the matching change in ios-step3-gui.yml.
+          key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
+          restore-keys: |
+            ios-deps-device-v1-
+
+      - name: "[4/9] Build deps for the device slice"
+        run: |
+          set -euxo pipefail
+          cd orca/deps
+          if [ -d build ]; then
+            for d in build/dep_*-prefix; do
+              [ -d "$d" ] || continue
+              ls "$d"/src/*-stamp/*-install >/dev/null 2>&1 || rm -rf "$d"
+            done
+          fi
+          mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 -DORCA_DEPS_GUI=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_JPEG=ON \
+            -DDESTDIR="$PREFIX" -DDEP_DOWNLOAD_DIR="$HOME/dep-dl" > /dev/null
+          WANT="dep_ZLIB dep_PNG dep_EXPAT dep_FREETYPE dep_Boost dep_TBB \
+                dep_OpenSSL dep_CURL dep_Cereal dep_Eigen dep_NLopt dep_Qhull \
+                dep_JPEG dep_GMP dep_MPFR dep_CGAL dep_Blosc dep_OpenEXR dep_OpenVDB \
+                dep_Draco dep_libnoise dep_OCCT dep_OpenCV"
+          ninja -t targets all > /tmp/t.txt
+          B=""; for t in $WANT; do grep -q "^${t}:" /tmp/t.txt && B="$B $t" || true; done
+          ninja $B 2>&1 | tee /tmp/deps-ninja.log
+
+      - name: Save device deps cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            orca/deps/build
+            ios-prefix
+            ~/dep-dl
+          # Same key as the restore: an existing key makes the save a skip.
+          key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
+
+      - name: "[5/9] Build wxWidgets iPhone port (device)"
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          shopt -s nullglob
+          for p in "$GITHUB_WORKSPACE"/patches/step2/*.patch; do git apply --verbose "$p"; done
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/. include/
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/src/. src/
+          mkdir -p build-ios && cd build-ios
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DIPHONE=ON -DwxBUILD_TOOLKIT=osx_iphone \
+            -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=ON -DwxUSE_XRC=OFF \
+            -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
+            -DwxUSE_GRID=ON -DwxUSE_LISTCTRL=ON -DwxUSE_IMAGLIST=ON \
+            -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
+            -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
+            -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
+            -DwxUSE_NANOSVG=OFF \
+            -DwxUSE_LOGWINDOW=ON \
+            -DwxUSE_LIBJPEG=sys \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_LIBRARY_RELEASE="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
+            -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
+          ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
+          ninja install > /tmp/wx-install.log 2>&1 || { tail -80 /tmp/wx-install.log; exit 1; }
+          # NB the JPEG_* values are pinned outright rather than found through
+          # CMAKE_PREFIX_PATH / CMAKE_FIND_ROOT_PATH_MODE_*=BOTH: opening those
+          # up lets Homebrew's macOS libjpeg into an iOS link, which is a trap
+          # this repo already fell into once (see the deps notes in HANDOFF.md).
+          # FindJPEG honours preset cache entries, and JPEG_LIBRARY_RELEASE is
+          # set too because select_library_configurations derives JPEG_LIBRARY
+          # from it in newer CMake.
+          #
+          # wx defaults its third-party libs to "builtin" on Apple, which builds
+          # libwxjpeg-3.3.a alongside the libjpeg.a the dependency stack already
+          # provides. Both end up on the OrcaSlicer link line, ld pulls
+          # jcomapi.c.o out of each, and the four jpeg_* symbols they share are
+          # duplicate-symbol errors (step-4 run 11). Point wx at the one libjpeg
+          # instead. build/cmake/lib/jpeg.cmake silently forces itself back to
+          # "builtin" when find_package(JPEG) misses, so assert rather than
+          # discover it 40 minutes later at the link.
+          test ! -f "$WXPREFIX/lib/libwxjpeg-3.3.a" || {
+            echo "wx fell back to its builtin libjpeg -- JPEG_LIBRARY/JPEG_INCLUDE_DIR did not take"
+            exit 1
+          }
+          WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
+          [ -n "$WXINC" ] || WXINC="$WXPREFIX/include"
+          cp -r "$GITHUB_WORKSPACE"/wx-overlay/include/wx "$WXINC/" 2>/dev/null || true
+          mkdir -p "$WXINC/wx/generic/private"
+          cp -R "$GITHUB_WORKSPACE"/wx/include/wx/generic/private/. "$WXINC/wx/generic/private/"
+          cp "$GITHUB_WORKSPACE"/wx/include/wx/webview.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewarchivehandler.h "$GITHUB_WORKSPACE"/wx/include/wx/webviewfshandler.h "$WXINC/wx/"
+          mkdir -p "$WXINC/wx/osx"
+          cp "$GITHUB_WORKSPACE"/wx/include/wx/osx/webviewhistoryitem_webkit.h "$WXINC/wx/osx/"
+          mkdir -p "$WXINC/wx/private"
+          cp -R "$GITHUB_WORKSPACE"/wx/include/wx/private/. "$WXINC/wx/private/"
+
+      - name: Save wx device prefix cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: wx-prefix
+          key: ${{ env.WX_KEY }}
+
+      - name: Set up ccache
+        run: |
+          brew install ccache || true
+          echo "CCACHE_DIR=$HOME/.ccache-step4" >> "$GITHUB_ENV"
+          echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
+          echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache-step4
+          key: ccache-step4-${{ github.run_id }}
+          restore-keys: |
+            ccache-step4-
+
+      - name: "[6/9] Configure Orca GUI build (device)"
+        run: |
+          set -euxo pipefail
+          cd orca && mkdir -p build && cd build
+          cmake .. -G Ninja \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_OBJCXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DSLIC3R_GUI=1 -DSLIC3R_OPENGL_ES=1 -DSLIC3R_STATIC=1 \
+            -DCMAKE_PREFIX_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH="$PREFIX/usr/local;$WXPREFIX" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
+            -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step4-configure.log
+
+      - name: "[7/9] Build + link OrcaSlicer (device)"
+        run: |
+          set -euxo pipefail
+          cd orca/build
+          ninja -k 0 libslic3r_gui 2>&1 | tee /tmp/step4-ninja.log
+          ninja -k 0 OrcaSlicer 2>&1 | tee -a /tmp/step4-ninja.log
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache-step4
+          key: ccache-step4-${{ github.run_id }}
+
+      - name: "[8/9] Assemble unsigned OrcaSlicer.ipa"
+        run: |
+          set -euxo pipefail
+          # The link rule writes src/OrcaSlicer.app/OrcaSlicer; fall back to a
+          # Mach-O scan because the executable's name has moved around upstream
+          # (OrcaSlicer vs orca-slicer).
+          BIN=""
+          [ -f orca/build/src/OrcaSlicer.app/OrcaSlicer ] && BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          if [ -z "$BIN" ]; then
+            while IFS= read -r f; do
+              file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
+            done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          fi
+          [ -n "$BIN" ] || { echo "no Mach-O executable found under orca/build/src"; \
+                             find orca/build/src -maxdepth 2 -type f -perm -111 | head -40; exit 1; }
+          echo "executable: $BIN"
+          vtool -show-build "$BIN" | grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$"
+
+          APP=stage/Payload/OrcaSlicer.app
+          rm -rf stage && mkdir -p "$APP"
+          cp "$BIN" "$APP/OrcaSlicer"
+          # Orca reads profiles/shaders/icons out of resources/ at runtime.
+          cp -R orca/resources "$APP/orca-resources"
+          # A top-level "resources" directory is "Resources" on a case-insensitive
+          # filesystem, and CFBundle then reads the flat bundle as an old-style
+          # one whose Info.plist lives inside it - the installer reports the
+          # useless "Missing bundle ID". Proved by ios-sim-probe.yml round 3.
+          if [ -e "$APP/resources" ] || [ -e "$APP/Resources" ]; then
+            echo "::error::$APP has a top-level resources directory; installers will reject it"
+            exit 1
+          fi
+          cat > "$APP/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>OrcaSlicer</string>
+            <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
+            <key>CFBundleName</key><string>OrcaSlicer</string>
+            <key>CFBundleDisplayName</key><string>OrcaSlicer</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleSupportedPlatforms</key><array><string>iPhoneOS</string></array>
+            <key>DTPlatformName</key><string>iphoneos</string>
+            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIDeviceFamily</key><array><integer>2</integer></array>
+            <key>UILaunchScreen</key><dict/>
+            <!-- iOS 14+ blocks every local-network connection until the user
+                 agrees. Without this key the native Bambu LAN backend cannot reach
+                 the printer at all, and the failure is silent. -->
+            <key>NSLocalNetworkUsageDescription</key>
+            <string>OrcaSlicer talks to 3D printers on your local network.</string>
+            <key>NSBonjourServices</key><array><string>_bambulab._tcp</string></array>
+            <key>NSAppTransportSecurity</key><dict>
+              <key>NSAllowsLocalNetworking</key><true/>
+            </dict>
+            <key>UIRequiresFullScreen</key><true/>
+            <key>UIFileSharingEnabled</key><true/>
+            <key>LSSupportsOpeningDocumentsInPlace</key><true/>
+            <key>UISupportedInterfaceOrientations</key><array>
+              <string>UIInterfaceOrientationLandscapeLeft</string>
+              <string>UIInterfaceOrientationLandscapeRight</string>
+              <string>UIInterfaceOrientationPortrait</string>
+            </array>
+          </dict></plist>
+          PLIST
+          mkdir -p artifact
+          OUT="$PWD/artifact/OrcaSlicer-iPad.ipa"
+          # Info.plist and the executable go in FIRST, ahead of the ~15k files
+          # under resources/. zip appends in the order given, so with resources
+          # first the plist lands as the very last entry in the archive -- and an
+          # installer whose extraction stops early (the bundle is ~370 MB
+          # expanded) then produces an App.app with everything except the plist,
+          # which reports as "Failed to get bundle ID / Missing bundle ID".
+          # Ordering it first makes a truncated extraction fail loudly somewhere
+          # else instead of in the one file the installer reads first.
+          #
+          # NOTE (2026-08-04): "Missing bundle ID" was in fact caused by the
+          # bundle's top-level "resources" directory, not by truncation - see
+          # ios-sim-probe.yml. The directory is now called orca-resources and
+          # the ordering below is kept only because it costs nothing.
+          (cd stage && zip -qr "$OUT" Payload/OrcaSlicer.app/Info.plist \
+                                      Payload/OrcaSlicer.app/OrcaSlicer)
+          (cd stage && zip -qr "$OUT" Payload)
+          # A .dSYM anywhere in the bundle makes ldid assert on filetype
+          # (MH_DSYM) and the sideload fails before the app is ever installed.
+          if unzip -l "$OUT" | grep -q '\.dSYM'; then
+            echo "::error::the IPA contains a .dSYM; ldid will refuse to sign it"
+            exit 1
+          fi
+          ls -lh artifact/
+
+          # Verify the artifact the way an installer reads it, rather than
+          # trusting that the zip did what was intended.
+          rm -rf verify && mkdir verify
+          unzip -q -o "$OUT" "Payload/OrcaSlicer.app/Info.plist" -d verify
+          python3 - <<'VERIFY'
+          import plistlib, sys
+          with open('verify/Payload/OrcaSlicer.app/Info.plist','rb') as fh:
+              d = plistlib.load(fh)
+          bid = d.get('CFBundleIdentifier')
+          exe = d.get('CFBundleExecutable')
+          assert bid and exe, 'Info.plist is missing CFBundleIdentifier/CFBundleExecutable'
+          print('IPA verified: bundle id %s, executable %s' % (bid, exe))
+          VERIFY
+          unzip -l "$OUT" | head -6
+
+      - name: "[9/9] Upload + publish release"
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uxo pipefail
+          TAG="orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
+          # Not fatal. Run 24 built, linked and packaged a clean device IPA and
+          # was then marked failed because this call returned
+          # "HTTP 403: Resource not accessible by integration" - the token a
+          # workflow_dispatch from an app integration gets cannot always create
+          # a release, even with contents: write, though the same token pushes
+          # ci-logs in the same job. The IPA is uploaded as a workflow artifact
+          # either way, and that is the deliverable; losing the release is a
+          # distribution inconvenience, not a broken build.
+          if gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "OrcaSlicer for iPad (run ${GITHUB_RUN_NUMBER})" \
+            --notes "Unsigned arm64 iphoneos build of OrcaSlicer, min iOS ${IOS_MIN}. See docs/SIDELOADING.md." \
+            artifact/OrcaSlicer-iPad.ipa; then
+            echo "published release $TAG"
+          else
+            echo "::warning::could not create release $TAG; download the OrcaSlicer-iPad.ipa workflow artifact instead"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: orcaslicer-device-ipa
+          path: artifact/
+          if-no-files-found: ignore
+
+      - name: "Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/step4-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/step4-configure.log; do
+            [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
+          done
+          for f in /tmp/step4-ninja.log /tmp/wx-ninja.log /tmp/deps-ninja.log; do
+            [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 400000 > "$D/$(basename "$f" .log)-errors.log"
+          done
+          # Verbatim tail as well as the grep excerpt. A failing link prints one
+          # enormous command line, which swallows the -A context before the
+          # actual ld diagnosis is reached -- step-4 run 17 failed with neither
+          # undefined nor duplicate symbols and the reason was simply not in
+          # the captured excerpt.
+          [ -f /tmp/step4-ninja.log ] && tail -n 200 /tmp/step4-ninja.log > "$D/step4-ninja-tail.log"
+          if [ -f /tmp/step4-ninja.log ]; then
+            {
+              echo "=== FAILED targets ==="
+              grep "FAILED:" /tmp/step4-ninja.log | sed -E "s#.*CMakeFiles/[^/]+\\.dir/##; s#\\.o .*##" | sort -u
+              echo; echo "=== undefined symbols (linker) ==="
+              grep -oE '"[^"]+", referenced from' /tmp/step4-ninja.log | sed -E 's/, referenced from//' | sort -u
+              echo; echo "total FAILED: $(grep -c FAILED: /tmp/step4-ninja.log)"
+              echo "undefined symbol count: $(grep -cE '"[^"]+", referenced from' /tmp/step4-ninja.log)"
+            } > "$D/SUMMARY.txt"
+          fi
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "step4 ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" || true; git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done

@@ -1,0 +1,24 @@
+=== FAILED targets ===
+GUI/3DScene.cpp
+GUI/Gizmos/GLGizmoMove.cpp
+GUI/Gizmos/GLGizmoPainterBase.cpp
+GUI/Gizmos/GLGizmoScale.cpp
+GUI/Gizmos/GLGizmosCommon.cpp
+GUI/Gizmos/GLGizmoSimplify.cpp
+GUI/Gizmos/GLGizmosManager.cpp
+GUI/GLCanvas3D.cpp
+GUI/GLSelectionRectangle.cpp
+GUI/GLShader.cpp
+GUI/GLTexture.cpp
+GUI/ImGuiWrapper.cpp
+GUI/IMToolbar.cpp
+GUI/OpenGLManager.cpp
+GUI/PartPlate.cpp
+GUI/Plater.cpp
+GUI/SkipPartCanvas.cpp
+Utils/EmbossStyleManager.cpp
+
+=== undefined symbols (linker) ===
+
+total FAILED: 18
+undefined symbol count: 0

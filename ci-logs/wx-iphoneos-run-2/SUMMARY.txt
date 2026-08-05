@@ -1,0 +1,9 @@
+=== FAILED targets ===
+webview_webkit.mm
+webview.cpp
+
+=== error signatures (deduped) ===
+   4 unknown type name 'OSXWebViewPtr'
+   2 unknown type name 'NSRect'
+
+total FAILED: 4

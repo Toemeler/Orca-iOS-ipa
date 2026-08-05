@@ -1,0 +1,49 @@
+diff --git a/src/libvgcode/src/OpenGLUtils.cpp b/src/libvgcode/src/OpenGLUtils.cpp
+index bc39b29a..23a93a0f 100644
+--- a/src/libvgcode/src/OpenGLUtils.cpp
++++ b/src/libvgcode/src/OpenGLUtils.cpp
+@@ -11,6 +11,22 @@
+ #include <stdio.h>
+ #include <cstring>
+ 
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++
++// Orca-iOS: glad/src/gles2.c is deliberately not compiled into libvgcode on
++// iOS. It defines the same glad_gl* entry points as the shared src/glad target
++// that the rest of Orca links against, so building both duplicates every one of
++// them at link time. The declarations still come from <glad/gles2.h>; the
++// definitions come from the shared target, and OpenGLManager::init_gl has
++// already populated them out of the process image (OpenGLES.framework is linked
++// directly, so there is no library for a loader to dlopen). That leaves the two
++// loader entry points below undefined, and nothing for them to do.
++#if defined(__APPLE__) && !TARGET_OS_OSX
++#define VGCODE_GLAD_LOADER_UNAVAILABLE 1
++#endif
++
+ namespace libvgcode {
+ 
+ #ifdef HAS_GLSAFE
+@@ -70,7 +86,11 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
+ 
+ #ifdef ENABLE_OPENGL_ES
+     s_valid_context = major > 3 || (major == 3 && minor >= 0);
++#ifdef VGCODE_GLAD_LOADER_UNAVAILABLE
++    const int glad_res = 1;
++#else
+     const int glad_res = gladLoaderLoadGLES2();
++#endif // VGCODE_GLAD_LOADER_UNAVAILABLE
+ #else
+     s_valid_context = major > 3 || (major == 3 && minor >= 2);
+     const int glad_res = gladLoaderLoadGL();
+@@ -89,7 +109,9 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
+ void OpenGLWrapper::unload_opengl()
+ {
+ #ifdef ENABLE_OPENGL_ES
++#ifndef VGCODE_GLAD_LOADER_UNAVAILABLE
+     gladLoaderUnloadGLES2();
++#endif // VGCODE_GLAD_LOADER_UNAVAILABLE
+ #else
+     gladLoaderUnloadGL();
+ #endif // ENABLE_OPENGL_ES

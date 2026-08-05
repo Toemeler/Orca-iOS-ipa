@@ -1,0 +1,163 @@
+4598-      |             ^
+4599-1 warning generated.
+4600-[675/996] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o
+4601:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o 
+4602-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/webview_webkit.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm
+4603-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:13:
+4604-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:14:
+4605-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4606-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4607-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4608-      |             ^
+4609-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:78:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4610-   78 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+4611-      |     ^
+4612-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:265:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4613-  265 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+4614-      |     ^
+4615:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:696:28: error: property 'magnification' not found on object of type 'WKWebView *'
+4616-  696 |     return float(m_webView.magnification);
+4617-      |                            ^
+4618:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:701:15: error: property 'magnification' not found on object of type 'WKWebView *'
+4619-  701 |     m_webView.magnification = double(zoom);
+4620-      |               ^
+4621-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:814:17: warning: method definition for 'doCommandBySelector:' not found [-Wincomplete-implementation]
+4622-  814 | @implementation WXWKWebView
+4623-      |                 ^
+4624-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:56:1: note: method 'doCommandBySelector:' declared here
+4625-   56 | - (void)doCommandBySelector:(SEL)aSelector;
+4626-      | ^
+4627-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1076:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4628- 1076 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+4629-      |     ^
+4630-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1297:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4631- 1297 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_12
+4632-      |     ^
+4633-6 warnings and 2 errors generated.
+4634-[676/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlcell.cpp.o
+4635-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlcell.cpp:9:
+4636-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4637-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4638-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4639-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4640-      |             ^
+4641-1 warning generated.
+4642-[677/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmprint.cpp.o
+4643-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmprint.cpp:11:
+4644-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4645-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4646-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4647-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4648-      |             ^
+4649-1 warning generated.
+4650-[678/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlfilt.cpp.o
+4651-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlfilt.cpp:9:
+4652-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4653-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4654-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4655-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4656-      |             ^
+4657-1 warning generated.
+4658-[679/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmlpars.cpp.o
+4659-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmlpars.cpp:9:
+4660-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4661-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4662-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4663-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4664-      |             ^
+4665-1 warning generated.
+4666-[680/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/htmltag.cpp.o
+4667-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/htmltag.cpp:9:
+4668-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4669-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4670-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+4671-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+4672-      |             ^
+4673-1 warning generated.
+4674-[681/996] Building CXX object libs/html/CMakeFiles/wxhtml.dir/__/__/__/__/src/html/m_dflist.cpp.o
+4675-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/html/m_dflist.cpp:9:
+4676-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+4677-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+4678-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+--
+5677-2 warnings generated.
+5678-[937/996] Generating an.gmo
+5679-[938/996] Building OBJCXX object libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o
+5680:FAILED: [code=1] libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o 
+5681-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -x objective-c++ -g -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o -MF libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o.d -o libs/webview/CMakeFiles/wxwebview.dir/__/__/__/__/src/osx/webview_webkit.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm
+5682-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:13:
+5683-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/webview_webkit.h:14:
+5684-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5685-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5686-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5687-      |             ^
+5688-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:78:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5689-   78 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+5690-      |     ^
+5691-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:265:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5692-  265 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+5693-      |     ^
+5694:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:696:28: error: property 'magnification' not found on object of type 'WKWebView *'
+5695-  696 |     return float(m_webView.magnification);
+5696-      |                            ^
+5697:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:701:15: error: property 'magnification' not found on object of type 'WKWebView *'
+5698-  701 |     m_webView.magnification = double(zoom);
+5699-      |               ^
+5700-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:814:17: warning: method definition for 'doCommandBySelector:' not found [-Wincomplete-implementation]
+5701-  814 | @implementation WXWKWebView
+5702-      |                 ^
+5703-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:56:1: note: method 'doCommandBySelector:' declared here
+5704-   56 | - (void)doCommandBySelector:(SEL)aSelector;
+5705-      | ^
+5706-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1076:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5707- 1076 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
+5708-      |     ^
+5709-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/webview_webkit.mm:1297:5: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5710- 1297 | #if __MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_12
+5711-      |     ^
+5712-6 warnings and 2 errors generated.
+5713-[939/996] Generating ar.gmo
+5714-[940/996] Generating ca.gmo
+5715-[941/996] Generating ca@valencia.gmo
+5716-[942/996] Generating co.gmo
+5717-[943/996] Generating cs.gmo
+5718-[944/996] Generating da.gmo
+5719-[945/996] Building CXX object libs/qa/CMakeFiles/wxqa.dir/__/__/__/__/src/common/debugrpt.cpp.o
+5720-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/debugrpt.cpp:18:
+5721-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+5722-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+5723-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+5724-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+5725-      |             ^
+5726-1 warning generated.
+5727-[946/996] Generating es.gmo
+5728-[947/996] Generating eu.gmo
+5729-[948/996] Generating de.gmo
+5730-[949/996] Generating el.gmo
+5731-[950/996] Generating fa_IR.gmo
+5732-[951/996] Generating fr.gmo
+5733-[952/996] Generating fi.gmo
+5734-[953/996] Generating gl_ES.gmo
+5735-[954/996] Generating hi.gmo
+5736-[955/996] Generating hr.gmo
+5737-[956/996] Generating id.gmo
+5738-[957/996] Generating hu.gmo
+5739-[958/996] Generating ja.gmo
+5740-[959/996] Generating it.gmo
+5741-[960/996] Generating ko_KR.gmo
+5742-[961/996] Generating ka.gmo
+5743-[962/996] Generating lv.gmo
+5744-[963/996] Generating lt.gmo
+5745-[964/996] Generating ms.gmo
+5746-[965/996] Generating nb.gmo
+5747-[966/996] Generating nl.gmo
+5748-[967/996] Generating ne.gmo
+5749-[968/996] Generating pt.gmo
+5750-[969/996] Generating pl.gmo
+5751-[970/996] Generating sk.gmo
+5752-[971/996] Generating ro.gmo
+5753-[972/996] Generating pt_BR.gmo
+5754-[973/996] Generating ru.gmo
+5755-[974/996] Generating sq.gmo
+5756-[975/996] Generating sr.gmo
+5757-[976/996] Generating sl.gmo

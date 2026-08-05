@@ -1,0 +1,6 @@
+=== FAILED targets ===
+
+=== undefined symbols (linker) ===
+
+total FAILED: 0
+undefined symbol count: 0

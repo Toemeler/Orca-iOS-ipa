@@ -1,0 +1,187 @@
+name: iOS Device IPA - sideloadable wx app
+
+# Produces an UNSIGNED, sideloadable .ipa for a real iPad.
+#
+# Deliberately independent of the step-3 patch stack: the smoke app only uses
+# wxFrame/wxPanel/wxButton/wxStaticText/wxGLCanvas, which the stock wx iPhone
+# port already provides. So wx is built from the pinned upstream ref with NO
+# patches and NO overlay — the configuration that was green in step 2 — which
+# keeps this track green regardless of what the Orca GUI work is doing.
+#
+# Difference from step 2: SDK is iphoneos (device) rather than iphonesimulator,
+# and the .app is wrapped in Payload/ and zipped into an .ipa attached to a
+# GitHub Release, so it can be downloaded and installed straight from the iPad.
+
+on:
+  # Runs on push to the development branch: workflow_dispatch is only
+  # registered for workflows already on the default branch, and this one is
+  # not there yet. Path-scoped so unrelated commits (and the ci-logs commit
+  # this workflow makes on failure) do not retrigger it.
+  push:
+    branches:
+      - claude/basic-ipad-app-plan-pb0b4p
+    paths:
+      - '.github/workflows/ios-device-ipa.yml'
+      - 'smoke-app/**'
+      - 'ipad-app/**'
+  workflow_dispatch:
+    inputs:
+      wx_ref:
+        description: "SoftFever/Orca-deps-wxWidgets ref"
+        required: false
+        default: "v3.3.2"
+      ios_min:
+        description: "Minimum iOS version"
+        required: false
+        default: "17.0"
+
+permissions:
+  contents: write
+
+jobs:
+  device-ipa:
+    name: Build unsigned IPA for iPad
+    runs-on: macos-15
+    timeout-minutes: 120
+
+    env:
+      WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
+      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      PREFIX: ${{ github.workspace }}/wx-prefix-device
+      SDK: iphoneos
+
+    steps:
+      - name: "[1/8] Environment"
+        run: |
+          set -x
+          xcodebuild -version
+          xcrun --sdk $SDK --show-sdk-path
+          xcrun --sdk $SDK --show-sdk-version
+
+      - name: "[2/8] Checkout this repo"
+        uses: actions/checkout@v4
+
+      - name: "[3/8] Restore cached wx device build"
+        id: wxcache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PREFIX }}
+          key: wx-device-v1-${{ env.WX_REF }}-${{ env.SDK }}-${{ env.IOS_MIN }}
+
+      - name: "[4/8] Fetch + build wxWidgets for iOS device (stock, unpatched)"
+        if: steps.wxcache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx
+          cd wx && git checkout "$WX_REF" && git submodule update --init --recursive
+          mkdir -p build-ios && cd build-ios
+          cmake .. -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=$SDK \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
+            -DIPHONE=ON \
+            -DwxBUILD_TOOLKIT=osx_iphone \
+            -DwxBUILD_SHARED=OFF \
+            -DwxBUILD_PRECOMP=OFF \
+            -DwxBUILD_SAMPLES=OFF \
+            -DwxUSE_OPENGL=ON \
+            -DwxUSE_WEBVIEW=OFF \
+            -DwxUSE_XRC=OFF \
+            -DwxUSE_MEDIACTRL=OFF \
+            -DwxUSE_SECRETSTORE=OFF \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" 2>&1 | tee /tmp/wx-configure.log
+          ninja 2>&1 | tee /tmp/wx-ninja.log
+          ninja install
+
+      - name: "[5/8] Build the apps for the device SDK"
+        run: |
+          set -euxo pipefail
+          chmod +x smoke-app/build.sh ipad-app/build.sh
+          ./smoke-app/build.sh "$PREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee /tmp/app-build.log
+          ./ipad-app/build.sh  "$PREFIX" "$SDK" "$IOS_MIN" 2>&1 | tee -a /tmp/app-build.log
+
+      - name: "[6/8] Verify the binaries really target iOS device arm64"
+        run: |
+          set -euxo pipefail
+          : > /tmp/vtool.log
+          for BIN in smoke-app/build/WxSmoke.app/WxSmoke \
+                     ipad-app/build/OrcaViewer.app/OrcaViewer; do
+            file "$BIN"
+            lipo -info "$BIN" | tee -a /tmp/vtool.log
+            # LC_BUILD_VERSION platform must be IOS. IOSSIMULATOR would install
+            # nowhere, so fail loudly here rather than on the iPad. The anchor
+            # matters: "platform IOSSIMULATOR" contains "platform IOS".
+            vtool -show-build "$BIN" | tee -a /tmp/vtool.log
+            vtool -show-build "$BIN" \
+              | grep -qE "platform[[:space:]]+(IOS|2)[[:space:]]*$"
+            lipo -info "$BIN" | grep -q arm64
+          done
+
+      - name: "[7/8] Assemble unsigned IPAs"
+        run: |
+          set -euxo pipefail
+          mkdir -p artifact
+          pack() { # pack <path-to-.app> <output-ipa-name>
+            local app="$1" out="$2" stage
+            stage=$(mktemp -d)
+            mkdir -p "$stage/Payload"
+            cp -R "$app" "$stage/Payload/"
+            # Unsigned on purpose: SideStore/AltStore re-sign on install.
+            rm -rf "$stage/Payload/$(basename "$app")/_CodeSignature"
+            (cd "$stage" && zip -qry "$out" Payload)
+            # ldid asserts on a dSYM's MH_DSYM filetype and the sideload fails.
+            if unzip -l "$out" | grep -q '\.dSYM'; then
+              echo "::error::$out contains a .dSYM; ldid will refuse to sign it"
+              exit 1
+            fi
+            unzip -l "$out"
+          }
+          pack smoke-app/build/WxSmoke.app     "$PWD/artifact/OrcaSmoke-iPad.ipa"
+          pack ipad-app/build/OrcaViewer.app   "$PWD/artifact/OrcaViewer-iPad.ipa"
+          ls -lh artifact/
+
+      - name: "[8/8] Upload artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-device-ipa
+          path: artifact/
+          if-no-files-found: error
+
+      - name: "Publish IPA to a GitHub Release (downloadable on the iPad)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          TAG="ipad-app-run${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "Sideloadable iPad build (run ${GITHUB_RUN_NUMBER})" \
+            --notes "Unsigned IPAs for iPad — arm64, iphoneos SDK, min iOS ${IOS_MIN}.
+
+          **OrcaViewer-iPad.ipa** — native STL viewer. Ships with a 20 mm cube; drop your own .stl files into the app's folder in the Files app and hit Reload. Drag to rotate, +/- to zoom. Shows triangle count and bounding-box size in mm.
+
+          **OrcaSmoke-iPad.ipa** — the minimal wx proof (window, button, GL canvas). Keep as a fallback.
+
+          Install with SideStore/AltStore (re-signs with your Apple ID) or TrollStore. See docs/SIDELOADING.md." \
+            artifact/OrcaViewer-iPad.ipa artifact/OrcaSmoke-iPad.ipa
+          gh release view "$TAG" --json assets --jq '.assets[].browser_download_url'
+
+      - name: "Publish failure logs to repo (ci-logs/)"
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/device-ipa-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          for f in /tmp/wx-configure.log /tmp/app-build.log /tmp/vtool.log; do
+            [ -f "$f" ] && tail -c 200000 "$f" > "$D/$(basename "$f")"
+          done
+          if [ -f /tmp/wx-ninja.log ]; then
+            grep -n -B3 -A30 -E "FAILED:|error:" /tmp/wx-ninja.log | head -c 300000 > "$D/wx-errors.log"
+          fi
+          git config user.name "ci-bot"
+          git config user.email "ci@users.noreply.github.com"
+          git add "$D"
+          git commit -m "device-ipa ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"

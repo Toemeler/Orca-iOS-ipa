@@ -47,7 +47,7 @@ jobs:
         run: |
           set -euxo pipefail
           WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
-          echo "WX_KEY=ios-wxprefix-v2-$WXH" >> "$GITHUB_ENV"
+          echo "WX_KEY=ios-wxprefix-v3-$WXH" >> "$GITHUB_ENV"
           echo "wx cache key: ios-wxprefix-$WXH"
 
       - name: "[2/8] Fetch Orca + apply step1+step3 patches"
@@ -61,6 +61,10 @@ jobs:
           done
           mkdir -p deps_src/hidapi/ios
           cp "$GITHUB_WORKSPACE"/ios/hid_ios_stub.c deps_src/hidapi/ios/hid.c
+          # Orca ships resources/shaders/{110,140} only; the SLIC3R_OPENGL_ES
+          # path asks for an "ES/" set that upstream has never had, so supply it.
+          cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
+          test "$(ls resources/shaders/ES | wc -l)" -eq 38
 
       - name: "[3/8] Restore deps cache (shared with step 1)"
         uses: actions/cache/restore@v4
@@ -69,7 +73,14 @@ jobs:
             orca/deps/build
             ios-prefix
             ~/dep-dl
-          key: ios-deps-v1-step3-${{ github.run_number }}
+          # Keyed on what actually changes the dependency build, not on the run
+          # number. A per-run key mints a new multi-GB entry every time, and the
+          # repository cache quota is 10 GB -- two runs of each workflow were
+          # enough to evict everything by LRU, so every round paid for a full
+          # rebuild of the stack. With a stable key the second run onward hits
+          # exactly; the prefix restore-key still picks up the older
+          # run-numbered entries.
+          key: ios-deps-v1-step3-${{ hashFiles('patches/step1/*.patch') }}
           restore-keys: |
             ios-deps-v1-
 
@@ -113,17 +124,43 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DIPHONE=ON -DwxBUILD_TOOLKIT=osx_iphone \
             -DwxBUILD_SHARED=OFF -DwxBUILD_PRECOMP=OFF -DwxBUILD_SAMPLES=OFF \
-            -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=OFF -DwxUSE_XRC=OFF \
+            -DwxUSE_OPENGL=ON -DwxUSE_WEBVIEW=ON -DwxUSE_XRC=OFF \
             -DwxUSE_MEDIACTRL=OFF -DwxUSE_SECRETSTORE=OFF \
             -DwxUSE_GRID=ON -DwxUSE_LISTCTRL=ON -DwxUSE_IMAGLIST=ON \
             -DwxUSE_AUI=ON -DwxUSE_COMBOBOX=ON \
             -DwxUSE_DATAOBJ=ON -DwxUSE_DRAG_AND_DROP=ON \
             -DwxUSE_CLIPBOARD=ON -DwxUSE_TOOLTIPS=ON \
+            -DwxUSE_NANOSVG=OFF \
+            -DwxUSE_LOGWINDOW=ON \
+            -DwxUSE_LIBJPEG=sys \
+            -DJPEG_LIBRARY="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_LIBRARY_RELEASE="$PREFIX/usr/local/lib/libjpeg.a" \
+            -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_INSTALL_PREFIX="$WXPREFIX" > /dev/null
           ninja -k 0 > /tmp/wx-ninja.log 2>&1 || (tail -120 /tmp/wx-ninja.log && exit 1)
           echo "MARK build-ok" | tee -a /tmp/wx-phase.log
           ninja install > /tmp/wx-install.log 2>&1 || { echo "MARK install-FAILED" | tee -a /tmp/wx-phase.log; tail -80 /tmp/wx-install.log; exit 1; }
           echo "MARK install-ok" | tee -a /tmp/wx-phase.log
+          # NB the JPEG_* values are pinned outright rather than found through
+          # CMAKE_PREFIX_PATH / CMAKE_FIND_ROOT_PATH_MODE_*=BOTH: opening those
+          # up lets Homebrew's macOS libjpeg into an iOS link, which is a trap
+          # this repo already fell into once (see the deps notes in HANDOFF.md).
+          # FindJPEG honours preset cache entries, and JPEG_LIBRARY_RELEASE is
+          # set too because select_library_configurations derives JPEG_LIBRARY
+          # from it in newer CMake.
+          #
+          # wx defaults its third-party libs to "builtin" on Apple, which builds
+          # libwxjpeg-3.3.a alongside the libjpeg.a the dependency stack already
+          # provides. Both end up on the OrcaSlicer link line, ld pulls
+          # jcomapi.c.o out of each, and the four jpeg_* symbols they share are
+          # duplicate-symbol errors (step-4 run 11). Point wx at the one libjpeg
+          # instead. build/cmake/lib/jpeg.cmake silently forces itself back to
+          # "builtin" when find_package(JPEG) misses, so assert rather than
+          # discover it 40 minutes later at the link.
+          test ! -f "$WXPREFIX/lib/libwxjpeg-3.3.a" || {
+            echo "wx fell back to its builtin libjpeg -- JPEG_LIBRARY/JPEG_INCLUDE_DIR did not take"
+            exit 1
+          }
           # overlay-after-install: ship non-installed iphone headers into the prefix
           WXINC=$(find "$WXPREFIX/include" -maxdepth 1 -name "wx-*" -type d | head -1)
           echo "MARK wxinc=[$WXINC]" | tee -a /tmp/wx-phase.log
@@ -166,12 +203,24 @@ jobs:
       - name: Set up ccache
         run: |
           brew install ccache || true
+          ccache --version | head -1
           echo "CCACHE_DIR=$HOME/.ccache-step3" >> "$GITHUB_ENV"
           echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
-          echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
+          # Cheap compression: the runner has 3 cores and they are all wanted
+          # for compiling, not for zstd.
+          echo "CCACHE_COMPRESSLEVEL=1" >> "$GITHUB_ENV"
+          # 650 Orca translation units do not fit in 1.5G, and an undersized
+          # cache evicts the objects it is about to be asked for again.
+          echo "CCACHE_MAXSIZE=3G" >> "$GITHUB_ENV"
+          # The build tree path is stable on the runner, but BASEDIR rewrites
+          # absolute paths anyway and NOHASHDIR keeps the object's own directory
+          # out of the hash - both are what make a hit survive across runs.
+          echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "CCACHE_NOHASHDIR=1" >> "$GITHUB_ENV"
           # iOS cross-compiles embed the SDK path; slop keeps cache hits across
-          # runner image updates that only move the SDK
-          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+          # runner image updates that only move the SDK. system_headers stops
+          # the whole SDK being hashed into every single object.
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,system_headers,locale" >> "$GITHUB_ENV"
 
       - name: Restore ccache
         uses: actions/cache/restore@v4
@@ -210,8 +259,12 @@ jobs:
           # Milestone 1 (compile): libslic3r_gui must stay green with the new
           # iOS platform stubs. Then milestone 2 (link): the OrcaSlicer
           # executable. Both logs land in step3-ninja.log for the summary.
+          ccache -z >/dev/null 2>&1 || true
           ninja -k 0 libslic3r_gui 2>&1 | tee /tmp/step3-ninja.log
           ninja -k 0 OrcaSlicer 2>&1 | tee -a /tmp/step3-ninja.log
+          # This run is what fills the cache the fast workflow lives on, so its
+          # stats are worth having on the record.
+          { ccache -s -v 2>/dev/null || ccache -s; } | tee /tmp/ccache-stats.txt
 
       - name: Save ccache
         if: always()
@@ -219,6 +272,108 @@ jobs:
         with:
           path: ~/.ccache-step3
           key: ccache-step3-${{ github.run_id }}
+
+      - name: "[7b/8] Launch in iPad simulator + screenshot (milestone 3)"
+        id: launch
+        run: |
+          set -uxo pipefail
+          BIN=""
+          [ -f orca/build/src/OrcaSlicer.app/OrcaSlicer ] && BIN=orca/build/src/OrcaSlicer.app/OrcaSlicer
+          if [ -z "$BIN" ]; then
+            while IFS= read -r f; do
+              file "$f" | grep -q "Mach-O 64-bit executable" && { BIN="$f"; break; }
+            done < <(find orca/build/src -maxdepth 2 -type f -perm -111 | sort)
+          fi
+          [ -n "$BIN" ] || { echo "no linked executable yet - skipping launch"; exit 0; }
+          echo "executable: $BIN"
+
+          APP=sim/OrcaSlicer.app
+          rm -rf sim && mkdir -p "$APP"
+          cp "$BIN" "$APP/OrcaSlicer"
+          # Info.plist first, resources second. simctl reads the plist to get the
+          # bundle id, and resources is the biggest thing on the disk - if space
+          # runs out mid-copy, a plist written afterwards ends up empty and the
+          # install fails with the useless "Missing bundle ID".
+          cat > "$APP/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>OrcaSlicer</string>
+            <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
+            <key>CFBundleName</key><string>OrcaSlicer</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIDeviceFamily</key><array><integer>2</integer></array>
+            <key>UILaunchScreen</key><dict/>
+            <!-- iOS 14+ blocks every local-network connection until the user
+                 agrees. Without this key the native Bambu LAN backend cannot reach
+                 the printer at all, and the failure is silent. -->
+            <key>NSLocalNetworkUsageDescription</key>
+            <string>OrcaSlicer talks to 3D printers on your local network.</string>
+            <key>NSBonjourServices</key><array><string>_bambulab._tcp</string></array>
+            <key>NSAppTransportSecurity</key><dict>
+              <key>NSAllowsLocalNetworking</key><true/>
+            </dict>
+            <key>UIRequiresFullScreen</key><true/>
+          </dict></plist>
+          PLIST
+
+          cp -R orca/resources "$APP/orca-resources"
+          # A top-level "resources" directory is "Resources" on a case-insensitive
+          # filesystem, and CFBundle then reads the flat bundle as an old-style
+          # one whose Info.plist lives inside it - the installer reports the
+          # useless "Missing bundle ID". Proved by ios-sim-probe.yml round 3.
+          if [ -e "$APP/resources" ] || [ -e "$APP/Resources" ]; then
+            echo "::error::$APP has a top-level resources directory; installers will reject it"
+            exit 1
+          fi
+
+          # Prove the bundle is installable before handing it to simctl, so a
+          # failure names the actual cause instead of "Missing bundle ID".
+          { df -h /Users/runner 2>/dev/null || df -h .; echo; ls -la "$APP"; echo;
+            echo "--- Info.plist as written ---"; cat "$APP/Info.plist"; } | tee /tmp/bundle-check.log
+          python3 - "$APP/Info.plist" <<'VERIFY'
+          import plistlib, sys
+          path = sys.argv[1]
+          raw = open(path, 'rb').read()
+          if not raw:
+              sys.exit('Info.plist is EMPTY (disk full while writing?)')
+          d = plistlib.loads(raw)
+          missing = [k for k in ('CFBundleIdentifier', 'CFBundleExecutable') if not d.get(k)]
+          if missing:
+              sys.exit('Info.plist lacks %s' % missing)
+          print('Info.plist ok: %s / %s' % (d['CFBundleIdentifier'], d['CFBundleExecutable']))
+          VERIFY
+          test -x "$APP/OrcaSlicer" || { echo "::error::$APP/OrcaSlicer missing or not executable"; exit 1; }
+
+          mkdir -p artifact
+          bash "$GITHUB_WORKSPACE/tools/ci/sim-launch-verify.sh" \
+            "$APP" org.orca-ios.orcaslicer "$PWD/artifact"
+
+      - name: "Collect simulator crash reports"
+        if: always()
+        run: |
+          set -ux
+          mkdir -p artifact
+          for d in "$HOME/Library/Logs/DiagnosticReports"; do
+            [ -d "$d" ] && find "$d" -name "OrcaSlicer*" -exec cp {} artifact/ \; 2>/dev/null
+          done
+          if [ -n "${UDID:-}" ]; then
+            xcrun simctl spawn "$UDID" log show --last 5m \
+              --predicate 'process == "OrcaSlicer"' > artifact/sim-oslog.txt 2>&1 || true
+          fi
+          ls -la artifact/ || true
+
+      - name: "Upload launch artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-ios-step3-launch
+          path: artifact/
+          if-no-files-found: ignore
 
       - name: "[8/8] Save caches + upload logs artifact"
         if: always()
@@ -228,10 +383,17 @@ jobs:
             orca/deps/build
             ios-prefix
             ~/dep-dl
-          key: ios-deps-v1-step3-${{ github.run_number }}
+          # Same key as the restore: when it already exists the save is skipped
+          # with a warning instead of adding another entry.
+          key: ios-deps-v1-step3-${{ hashFiles('patches/step1/*.patch') }}
 
-      - name: "Publish failure logs to repo (ci-logs/)"
-        if: failure()
+      # Runs on success too: once the link is green the interesting failure is a
+      # runtime one, and a crashed app still lets the job report success. Actions
+      # artifact downloads are not reachable from the dev environment, so the
+      # launch console, the crash report and the screenshot have to land in the
+      # repo to be readable at all.
+      - name: "Publish logs to repo (ci-logs/)"
+        if: always()
         run: |
           set -ux
           D="ci-logs/step3-run-${GITHUB_RUN_NUMBER}"
@@ -239,13 +401,28 @@ jobs:
           for f in /tmp/step3-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done
-          for f in /tmp/wx-phase.log /tmp/wx-install.log; do
+          for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/bundle-check.log /tmp/ccache-stats.txt \
+                   artifact/sim-launch.log artifact/sim-install.log \
+                   artifact/launch-verdict.txt artifact/screenshot-stats.txt \
+                   artifact/orca-app-log.txt; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
+          cp artifact/*.png "$D/" 2>/dev/null || true
+          [ -f artifact/sim-oslog.txt ] && tail -c 60000 artifact/sim-oslog.txt > "$D/sim-oslog.txt"
+          # simulator crash reports name the failing frame, which is the fastest
+          # route from "it aborted" to the offending call
+          find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" \
+            -exec cp {} "$D/" \; 2>/dev/null || true
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
             [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 500000 > "$D/$(basename "$f" .log)-errors.log"
           done
           # -k0 summary: full map of remaining compile + link errors
+          # Verbatim tail as well as the grep excerpt. A failing link prints one
+          # enormous command line, which swallows the -A context before the
+          # actual ld diagnosis is reached -- step-4 run 17 failed with neither
+          # undefined nor duplicate symbols and the reason was simply not in
+          # the captured excerpt.
+          [ -f /tmp/step3-ninja.log ] && tail -n 200 /tmp/step3-ninja.log > "$D/step3-ninja-tail.log"
           if [ -f /tmp/step3-ninja.log ]; then
             {
               echo "=== FAILED targets ==="
@@ -260,7 +437,10 @@ jobs:
             } > "$D/SUMMARY.txt"
           fi
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
-          git pull --rebase || true
           git add -A ci-logs || true
-          git commit -m "step3 ci logs run ${GITHUB_RUN_NUMBER}" || true
-          for i in 1 2 3; do git pull --rebase || true; git push && break; sleep 5; done
+          git commit -m "step3 ci logs run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

@@ -1,0 +1,27 @@
+diff --git a/src/slic3r/GUI/ios_platform_stubs.cpp b/src/slic3r/GUI/ios_platform_stubs.cpp
+index fc75c9ff..e1876971 100644
+--- a/src/slic3r/GUI/ios_platform_stubs.cpp
++++ b/src/slic3r/GUI/ios_platform_stubs.cpp
+@@ -58,15 +58,13 @@ void wxMediaCtrl2::SetIdleImage(wxString const & /*image*/) {}
+ wxMediaState wxMediaCtrl2::GetState() const { return wxMEDIASTATE_STOPPED; }
+ wxSize       wxMediaCtrl2::GetVideoSize() const { return m_video_size; }
+ 
+-// DoSetSize is the only virtual wxMediaCtrl2 declares (override), so it is the
+-// class key function: the vtable for wxMediaCtrl2 is emitted in whatever TU
+-// defines it. Without a definition here the constructor (which sets the vptr)
+-// fails to link with "undefined symbol: vtable for wxMediaCtrl2". Forward to
+-// wxWindow so the inert control still lays out.
+-void wxMediaCtrl2::DoSetSize(int x, int y, int width, int height, int sizeFlags)
+-{
+-    wxWindow::DoSetSize(x, y, width, height, sizeFlags);
+-}
++// DoSetSize is deliberately NOT defined here. It is wxMediaCtrl2's key
++// function, so whichever TU defines it emits the vtable -- but MediaPlayCtrl.cpp
++// already defines it at file scope, outside any platform guard, and that file is
++// compiled on iOS. Defining it here as well is a duplicate symbol at link time.
++// Its __WXMAC__ branch forwards to wxWindow::DoSetSize, which is exactly what an
++// inert control wants, so the vtable and the layout behaviour both come from
++// there.
+ 
+ // ---------------------------------------------------------------------------
+ namespace Slic3r {

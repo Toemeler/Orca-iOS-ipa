@@ -1,0 +1,64 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -2653,6 +2653,15 @@
+     return out.str();
+ }
+ 
++// iOS startup differs from every desktop platform in one way that matters here:
++// OnInit runs before UIApplication has an event loop, so anything that waits for
++// the user or pumps events during startup either does nothing or ends the app.
++#ifdef __WXOSX_IPHONE__
++static constexpr bool ORCA_IOS_STARTUP = true;
++#else
++static constexpr bool ORCA_IOS_STARTUP = false;
++#endif
++
+ bool GUI_App::on_init_inner()
+ {
+     wxLog::SetActiveTarget(new wxBoostLog());
+@@ -2781,6 +2790,21 @@
+         bool ssl_accept = app_config->get("tls_cert_store_accepted") == "yes" && ssl_cert_store == Slic3r::Http::tls_system_cert_store();
+ 
+         if (!msg.empty() && !ssl_accept) {
++#ifdef __WXOSX_IPHONE__
++            // iOS ships no OpenSSL certificate directory, so tls_global_init()
++            // always comes back with "Unable to get system certificate." - and
++            // this dialog is modal, parentless, and raised from OnInit before
++            // the event loop exists. That is a combination iOS cannot honour:
++            // ShowModal returns something other than wxID_YES straight away,
++            // OnInit returns false, and the app exits during startup with no
++            // crash report and nothing but UIKit's own lines in the log.
++            // Nothing is lost by not asking: Http::priv sets
++            // CURLOPT_SSL_VERIFYPEER to 0 on every request, so the certificate
++            // store this dialog is about is never consulted.
++            BOOST_LOG_TRIVIAL(warning) << "iOS: skipping the TLS certificate store dialog: " << msg;
++            app_config->set("tls_cert_store_accepted", "yes");
++            app_config->set("tls_accepted_cert_store_location", Slic3r::Http::tls_system_cert_store());
++#else
+             RichMessageDialog
+                 dlg(nullptr,
+                     wxString::Format(_L("%s\nDo you want to continue?"), msg),
+@@ -2792,6 +2816,7 @@
+                 dlg.IsCheckBoxChecked() ? "yes" : "no");
+             app_config->set("tls_accepted_cert_store_location",
+                 dlg.IsCheckBoxChecked() ? Slic3r::Http::tls_system_cert_store() : "");
++#endif // __WXOSX_IPHONE__
+         }
+     }
+ 
+@@ -2868,7 +2893,13 @@
+ 
+     // Orca: use wxWeakRef to provent wild pointer.
+     wxWeakRef<SplashScreen> scrn = nullptr;
+-    if (app_config->get("show_splash_screen") == "true") {
++    // The splash screen is a second top-level window shown before the main one,
++    // and it drives the startup sequence with wxYield() from inside OnInit. On
++    // iOS a UIWindow is the whole screen and there is no event loop yet, so it
++    // buys nothing and costs a startup path that cannot be debugged from a
++    // screenshot. The main frame appears instead, which is what a launch image
++    // is for on this platform.
++    if (app_config->get("show_splash_screen") == "true" && !ORCA_IOS_STARTUP) {
+         // Detect position (display) to show the splash screen
+         // Now this position is equal to the mainframe position
+         wxPoint splashscreen_pos = wxDefaultPosition;

@@ -1,0 +1,206 @@
+name: Simulator install probe
+
+# Why this exists
+# ---------------
+# `xcrun simctl install` rejects the hand-assembled OrcaSlicer.app with
+#
+#   Failed to get bundle ID from .../OrcaSlicer.app - Missing bundle ID
+#
+# even though the Info.plist parses and carries CFBundleIdentifier (the
+# step-3 launch step verifies that before installing, and gets past it).
+# Finding out which property of the bundle simctl actually objects to used
+# to cost a 50-minute Orca build per attempt.
+#
+# This builds a 30-line UIKit app instead and installs one bundle variant per
+# hypothesis, so a full answer takes about two minutes. Every variant reports
+# whether CoreFoundation itself can read the bundle id (`defaults read`, the
+# same parser family the installer uses) and what simctl said.
+#
+# Keep it around: the same harness answers the next "why won't it install"
+# question without touching the Orca build.
+
+on:
+  push:
+    branches:
+      - claude/lan-backend-implementation-gxu2jr
+    paths:
+      - '.github/workflows/ios-sim-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sim-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      IOS_MIN: "17.0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build a minimal simulator app
+        run: |
+          set -euxo pipefail
+          mkdir -p probe
+          cat > probe/main.m <<'OBJC'
+          #import <UIKit/UIKit.h>
+          @interface AD : UIResponder <UIApplicationDelegate>
+          @property(strong, nonatomic) UIWindow* window;
+          @end
+          @implementation AD
+          - (BOOL)application:(UIApplication*)a didFinishLaunchingWithOptions:(NSDictionary*)o {
+              self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+              self.window.rootViewController = [[UIViewController alloc] init];
+              self.window.rootViewController.view.backgroundColor = [UIColor systemGreenColor];
+              [self.window makeKeyAndVisible];
+              NSLog(@"probe app launched");
+              return YES;
+          }
+          @end
+          int main(int c, char* v[]) { @autoreleasepool { return UIApplicationMain(c, v, nil, @"AD"); } }
+          OBJC
+          xcrun --sdk iphonesimulator clang -x objective-c -fobjc-arc -O0 \
+            -isysroot "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+            -arch arm64 -mios-simulator-version-min=${IOS_MIN} \
+            probe/main.m -framework UIKit -framework Foundation -o probe/Probe
+          rm -rf probe/*.dSYM
+          file probe/Probe
+
+      - name: Boot an iPad simulator
+        run: |
+          set -euxo pipefail
+          RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
+          UDID=$(xcrun simctl create "probe-ipad" \
+            "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" "$RT")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Install each bundle variant
+        run: |
+          set -uo pipefail
+          REPORT=/tmp/probe-report.txt
+          : > "$REPORT"
+
+          # $1 variant name, $2 = extra plist keys, $3 = "binary" to convert,
+          # $4 = "resources" to include a big resource tree
+          try_variant() {
+            local name="$1" extra="$2" fmt="$3" res="$4"
+            local app="variants/$name.app"
+            rm -rf "$app" && mkdir -p "$app"
+            cp probe/Probe "$app/Probe"
+            cat > "$app/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>Probe</string>
+            <key>CFBundleIdentifier</key><string>org.orca-ios.probe.$name</string>
+            <key>CFBundleName</key><string>Probe</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIDeviceFamily</key><array><integer>2</integer></array>
+            <key>UILaunchScreen</key><dict/>
+            <key>UIRequiresFullScreen</key><true/>
+          $extra
+          </dict></plist>
+          PLIST
+            if [ "$fmt" = "binary" ]; then
+              plutil -convert binary1 "$app/Info.plist"
+            fi
+            case "$res" in
+              files:*)
+                # files:<dirs>:<files per dir>:<bytes each>
+                local dirs per bytes
+                dirs=$(echo "$res" | cut -d: -f2)
+                per=$(echo "$res" | cut -d: -f3)
+                bytes=$(echo "$res" | cut -d: -f4)
+                mkdir -p "$app/resources"
+                for d in $(seq 1 "$dirs"); do
+                  mkdir -p "$app/resources/dir$d"
+                  for f in $(seq 1 "$per"); do
+                    head -c "$bytes" /dev/zero > "$app/resources/dir$d/file$f.bin"
+                  done
+                done
+                ;;
+              named:*)
+                # named:<relative dir>:<file count>
+                local dir count
+                dir=$(echo "$res" | cut -d: -f2)
+                count=$(echo "$res" | cut -d: -f3)
+                mkdir -p "$app/$dir"
+                for f in $(seq 1 "$count"); do
+                  head -c 2000 /dev/zero > "$app/$dir/file$f.bin"
+                done
+                ;;
+              deep:*)
+                # deep:<levels>:<bytes> - one file at each level of nesting
+                local levels bytes path
+                levels=$(echo "$res" | cut -d: -f2)
+                bytes=$(echo "$res" | cut -d: -f3)
+                path="$app/resources"
+                for l in $(seq 1 "$levels"); do
+                  path="$path/level$l"
+                  mkdir -p "$path"
+                  head -c "$bytes" /dev/zero > "$path/file.bin"
+                done
+                ;;
+            esac
+
+            {
+              echo "=== $name ==="
+              echo -n "plutil -lint: ";  plutil -lint "$app/Info.plist" 2>&1 | tail -1
+              echo -n "defaults read CFBundleIdentifier: "
+              defaults read "$PWD/$app/Info.plist" CFBundleIdentifier 2>&1 | tail -1
+              echo -n "file count: "; find "$app" -type f | wc -l
+              echo -n "bundle size: "; du -sh "$app" | cut -f1
+              local t0 t1
+              t0=$(date +%s)
+              if xcrun simctl install "$UDID" "$app" 2>/tmp/err.txt; then
+                t1=$(date +%s); echo "INSTALL: OK (${t1}s-${t0}s = $((t1-t0))s)"
+              else
+                t1=$(date +%s)
+                echo "INSTALL: FAILED after $((t1-t0))s -> $(tr '\n' ' ' < /tmp/err.txt)"
+              fi
+            } >> "$REPORT" 2>&1
+          }
+
+          mkdir -p variants
+          # Round 2 showed even 100 files / 2 MB fails, so it is not size or
+          # count. What every failing variant had in common is a top-level
+          # directory called "resources" - and macOS filesystems are
+          # case-insensitive, so that is indistinguishable from "Resources",
+          # the marker of an old-style bundle layout whose Info.plist lives
+          # inside it. Round 3 varies nothing but the directory name.
+          try_variant "S1-dir-resources"  "" xml "named:resources:10"
+          try_variant "S2-dir-Resources"  "" xml "named:Resources:10"
+          try_variant "S3-dir-orcadata"   "" xml "named:orca-resources:10"
+          try_variant "S4-dir-data"       "" xml "named:data:10"
+          try_variant "S5-nested-res"     "" xml "named:share/resources:10"
+
+          echo "================ RESULT ================"
+          cat "$REPORT"
+
+      - name: Publish the report
+        if: always()
+        run: |
+          set -ux
+          D="ci-logs/sim-probe-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          cp /tmp/probe-report.txt "$D/" 2>/dev/null || true
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "sim probe run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done

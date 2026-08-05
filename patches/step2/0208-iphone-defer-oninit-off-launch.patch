@@ -1,0 +1,34 @@
+diff --git a/src/osx/iphone/utils.mm b/src/osx/iphone/utils.mm
+index 50b7834..b43017d 100644
+--- a/src/osx/iphone/utils.mm
++++ b/src/osx/iphone/utils.mm
+@@ -35,6 +35,7 @@
+ #if wxOSX_USE_IPHONE
+ 
+ #include <AudioToolbox/AudioServices.h>
++#include <dispatch/dispatch.h>
+ 
+ #if 1 // wxUSE_BASE
+ 
+@@ -59,7 +60,20 @@
+ 
+ - (void)applicationDidFinishLaunching:(UIApplication *)application
+ {
+-    wxTheApp->OSXOnDidFinishLaunching();
++    wxUnusedVar(application);
++    // OSXOnDidFinishLaunching() runs the application's OnInit(), and iOS kills
++    // an app whose launch callbacks do not return promptly -- roughly twenty
++    // seconds, reported as 0x8badf00d. A wx app of any size spends longer than
++    // that building its first window, and on a device that shows up as a
++    // launch that never completes rather than as a crash in the offending
++    // code. Hand it to the next turn of the main run loop instead: the launch
++    // callback returns at once, UIKit keeps showing the launch screen, and
++    // OnInit does its work with the event loop already running -- which also
++    // makes the wxYield() calls that applications make during startup behave
++    // the way they do on every other port.
++    dispatch_async(dispatch_get_main_queue(), ^{
++        wxTheApp->OSXOnDidFinishLaunching();
++    });
+ }
+ 
+ - (void)applicationWillTerminate:(UIApplication *)application

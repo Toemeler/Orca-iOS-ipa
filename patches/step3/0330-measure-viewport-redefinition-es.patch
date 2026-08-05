@@ -1,0 +1,20 @@
+diff --git a/src/slic3r/GUI/Gizmos/GLGizmoMeasure.cpp b/src/slic3r/GUI/Gizmos/GLGizmoMeasure.cpp
+index 6c6f9132..5f4b04a5 100644
+--- a/src/slic3r/GUI/Gizmos/GLGizmoMeasure.cpp
++++ b/src/slic3r/GUI/Gizmos/GLGizmoMeasure.cpp
+@@ -1464,8 +1464,13 @@ void GLGizmoMeasure::render_dimensioning()
+ 
+             shader->start_using();
+             shader->set_uniform("projection_matrix", Transform3d::Identity());
+-            const std::array<int, 4>& viewport = camera.get_viewport();
+-            shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
++            // Named apart from the `viewport` further down this same lambda.
++            // On the desktop path the two are in different scopes, because this
++            // one sits inside `if (is_core_profile()) { ... }`; under
++            // SLIC3R_OPENGL_ES that `if` and its braces are preprocessed away
++            // and both declarations land in the lambda body together.
++            const std::array<int, 4>& dashed_viewport = camera.get_viewport();
++            shader->set_uniform("viewport_size", Vec2d(double(dashed_viewport[2]), double(dashed_viewport[3])));
+             shader->set_uniform("width", 1.0f);
+             shader->set_uniform("gap_size", 0.0f);
+ #if !SLIC3R_OPENGL_ES

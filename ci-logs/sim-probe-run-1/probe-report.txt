@@ -1,0 +1,87 @@
++ echo '=== A-current ==='
+=== A-current ===
++ echo -n 'plutil -lint: '
+plutil -lint: + plutil -lint variants/A-current.app/Info.plist
++ tail -1
+variants/A-current.app/Info.plist: OK
++ echo -n 'defaults read CFBundleIdentifier: '
+defaults read CFBundleIdentifier: + defaults read /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/A-current.app/Info.plist CFBundleIdentifier
++ tail -1
+org.orca-ios.probe.A-current
++ echo -n 'file count: '
+file count: + find variants/A-current.app -type f
++ wc -l
+       2
++ xcrun simctl install B99ECB62-14A2-420B-BD68-E7E194C9997B variants/A-current.app
++ echo 'INSTALL: OK'
+INSTALL: OK
++ echo '=== B-platformkeys ==='
+=== B-platformkeys ===
++ echo -n 'plutil -lint: '
+plutil -lint: + plutil -lint variants/B-platformkeys.app/Info.plist
++ tail -1
+variants/B-platformkeys.app/Info.plist: OK
++ echo -n 'defaults read CFBundleIdentifier: '
+defaults read CFBundleIdentifier: + defaults read /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/B-platformkeys.app/Info.plist CFBundleIdentifier
++ tail -1
+org.orca-ios.probe.B-platformkeys
++ echo -n 'file count: '
+file count: + find variants/B-platformkeys.app -type f
++ wc -l
+       2
++ xcrun simctl install B99ECB62-14A2-420B-BD68-E7E194C9997B variants/B-platformkeys.app
++ echo 'INSTALL: OK'
+INSTALL: OK
++ echo '=== C-binaryplist ==='
+=== C-binaryplist ===
++ echo -n 'plutil -lint: '
+plutil -lint: + plutil -lint variants/C-binaryplist.app/Info.plist
++ tail -1
+variants/C-binaryplist.app/Info.plist: OK
++ echo -n 'defaults read CFBundleIdentifier: '
+defaults read CFBundleIdentifier: + defaults read /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/C-binaryplist.app/Info.plist CFBundleIdentifier
++ tail -1
+org.orca-ios.probe.C-binaryplist
++ echo -n 'file count: '
+file count: + find variants/C-binaryplist.app -type f
++ wc -l
+       2
++ xcrun simctl install B99ECB62-14A2-420B-BD68-E7E194C9997B variants/C-binaryplist.app
++ echo 'INSTALL: OK'
+INSTALL: OK
++ echo '=== D-resources ==='
+=== D-resources ===
++ echo -n 'plutil -lint: '
+plutil -lint: + plutil -lint variants/D-resources.app/Info.plist
++ tail -1
+variants/D-resources.app/Info.plist: OK
++ echo -n 'defaults read CFBundleIdentifier: '
+defaults read CFBundleIdentifier: + defaults read /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/D-resources.app/Info.plist CFBundleIdentifier
++ tail -1
+org.orca-ios.probe.D-resources
++ echo -n 'file count: '
+file count: + find variants/D-resources.app -type f
++ wc -l
+    3002
++ xcrun simctl install B99ECB62-14A2-420B-BD68-E7E194C9997B variants/D-resources.app
+++ tr '\n' ' '
++ echo 'INSTALL: FAILED -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/D-resources.app 	Missing bundle ID. '
+INSTALL: FAILED -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/D-resources.app 	Missing bundle ID. 
++ echo '=== E-combined ==='
+=== E-combined ===
++ echo -n 'plutil -lint: '
+plutil -lint: + plutil -lint variants/E-combined.app/Info.plist
++ tail -1
+variants/E-combined.app/Info.plist: OK
++ echo -n 'defaults read CFBundleIdentifier: '
+defaults read CFBundleIdentifier: + defaults read /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/E-combined.app/Info.plist CFBundleIdentifier
++ tail -1
+org.orca-ios.probe.E-combined
++ echo -n 'file count: '
+file count: + find variants/E-combined.app -type f
++ wc -l
+    3002
++ xcrun simctl install B99ECB62-14A2-420B-BD68-E7E194C9997B variants/E-combined.app
+++ tr '\n' ' '
++ echo 'INSTALL: FAILED -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/E-combined.app 	Missing bundle ID. '
+INSTALL: FAILED -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/E-combined.app 	Missing bundle ID. 

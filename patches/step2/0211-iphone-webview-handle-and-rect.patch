@@ -1,0 +1,40 @@
+diff --git a/include/wx/defs.h b/include/wx/defs.h
+index 41855ab..8824f20 100644
+--- a/include/wx/defs.h
++++ b/include/wx/defs.h
+@@ -2833,6 +2833,7 @@ typedef WX_WKWebView OSXWebViewPtr;
+ 
+ DECLARE_WXCOCOA_OBJC_CLASS(UIMenu);
+ DECLARE_WXCOCOA_OBJC_CLASS(UIMenuItem);
++DECLARE_WXCOCOA_OBJC_CLASS(WKWebView);
+ DECLARE_WXCOCOA_OBJC_CLASS(UIWindow);
+ DECLARE_WXCOCOA_OBJC_CLASS(UIView);
+ DECLARE_WXCOCOA_OBJC_CLASS(UIEvent);
+@@ -2845,6 +2846,11 @@ typedef WX_UIWindow WXWindow;
+ typedef WX_UIEvent WXEvent;
+ typedef WX_UIView WXWidget;
+ typedef WX_UIMenu WXHMENU;
++// WKWebView is the same class on iOS, and the iPhone port compiles
++// src/osx/webview_webkit.mm now, so it needs the same handle type the Cocoa
++// branch above declares. Without it webview_webkit.h fails to parse at
++// `OSXWebViewPtr m_webView;` and every use of the class cascades from there.
++typedef WX_WKWebView OSXWebViewPtr;
+ typedef WX_EAGLContext WXGLContext;
+ typedef WX_NSString WXGLPixelFormat;
+ typedef WX_UIPasteboard WXOSXPasteboard;
+diff --git a/src/osx/webview_webkit.mm b/src/osx/webview_webkit.mm
+index 8b038a2..99122f4 100644
+--- a/src/osx/webview_webkit.mm
++++ b/src/osx/webview_webkit.mm
+@@ -253,7 +253,11 @@ bool wxWebViewWebKit::Create(wxWindow *parent,
+ 
+     bool isChildWebView = m_request != nil;
+ 
++#if defined(__WXOSX_IPHONE__)
++    CGRect r = wxOSXGetFrameForControl( this, pos , size ) ;
++#else
+     NSRect r = wxOSXGetFrameForControl( this, pos , size ) ;
++#endif
+     WKWebViewConfiguration* webViewConfig = (WKWebViewConfiguration*) m_configuration.GetNativeConfiguration();
+ 
+     if (!m_handlers.empty() && !isChildWebView)

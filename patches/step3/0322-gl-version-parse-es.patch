@@ -1,0 +1,31 @@
+diff --git a/src/slic3r/GUI/OpenGLManager.cpp b/src/slic3r/GUI/OpenGLManager.cpp
+index 2b5ebcd08..801b061b1 100644
+--- a/src/slic3r/GUI/OpenGLManager.cpp
++++ b/src/slic3r/GUI/OpenGLManager.cpp
+@@ -139,8 +139,25 @@ static bool version_greater_or_equal_to(const std::string& version, unsigned int
+     if (tokens.empty())
+         return false;
+ 
++    // Desktop GL puts the number first ("4.6.0 NVIDIA ..."), but OpenGL ES
++    // reports "OpenGL ES 3.0 <vendor>" and its shading language reports
++    // "OpenGL ES GLSL ES 3.00 <vendor>". Taking tokens[0] there yields
++    // atoi("OpenGL") == 0, which would fail the >= 2.0 check and skip shader
++    // loading entirely. Use the first token that actually starts with a digit,
++    // which is correct for every one of those forms.
++    std::string version_token;
++    for (const std::string& token : tokens) {
++        if (!token.empty() && token[0] >= '0' && token[0] <= '9') {
++            version_token = token;
++            break;
++        }
++    }
++
++    if (version_token.empty())
++        return false;
++
+     std::vector<std::string> numbers;
+-    boost::split(numbers, tokens[0], boost::is_any_of("."), boost::token_compress_on);
++    boost::split(numbers, version_token, boost::is_any_of("."), boost::token_compress_on);
+ 
+     unsigned int gl_major = 0;
+     unsigned int gl_minor = 0;

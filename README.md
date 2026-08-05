@@ -17,11 +17,45 @@ most Orca chrome is custom-drawn and portable) and lays out the stage-by-stage b
 
 | Stage | Workflow | Proof artifact | Status |
 |---|---|---|---|
-| 1. Slicing core on iOS | `ios-step1-core-cli.yml` | G-code sliced inside an iPad simulator | scaffolded — run + iterate |
-| 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | Screenshot of wx GLES canvas on iPad | scaffolded — run + iterate |
-| 3. Full GUI link-up | (added after 1+2 are green) | Orca launch screenshot | planned |
-| 4. Device IPA | | unsigned `.ipa` release | planned |
+| 1. Slicing core on iOS | `ios-step1-core-cli.yml` | G-code sliced inside an iPad simulator | ✅ done |
+| 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | Screenshot of wx GLES canvas on iPad | ✅ done |
+| 3. Full GUI link-up | `ios-step3-gui.yml` | Orca launch screenshot | ▶️ in progress (linking) |
+| 4. Device IPA | `ios-device-ipa.yml` | unsigned `.ipa` release | ✅ pipeline proven |
 | 5. Feature parity | | webview/camera/export on device | planned |
+
+## Printer connection (Bambu LAN mode)
+
+Orca reaches Bambu printers through a closed-source network plugin it downloads
+per platform. There is no iOS build of it, and iOS will not load a
+runtime-downloaded dylib in any case — so the port would slice and render
+perfectly and never reach the printer.
+
+`orca-overlay/src/slic3r/Utils/BambuLan*` replaces it with the documented
+protocols: **MQTT 3.1.1 over TLS** on port 8883 for status and control, **FTPS**
+on 990 to send the sliced 3mf, and SSDP discovery. It registers as the same
+`"bbl"` printer agent the plugin used, so nothing above it changes.
+
+`tools/bambu-lan/` holds a mock printer and a self test that links the shipping
+sources — run `tools/bambu-lan/run-selftest.sh` on any host with OpenSSL and
+libcurl headers.
+
+**[`lan-test-app/`](lan-test-app/)** is a small iPad app that links the same
+backend and nothing else, so the protocol can be tried against a real printer in
+half a minute rather than a 40-minute Orca build: connect, jog, extrude, set
+temperatures, fans, light, job control, raw gcode/JSON, and upload-and-print a
+3mf. Built by `ios-lan-test-ipa.yml` and published to
+[Releases](../../releases) as `BambuLAN.ipa`.
+
+## Sideloadable builds
+
+`ios-device-ipa.yml` builds against the **iphoneos** SDK and publishes an
+unsigned, sideloadable `.ipa` to [Releases](../../releases) — downloadable
+straight from the iPad. See [`docs/SIDELOADING.md`](docs/SIDELOADING.md).
+
+It runs against **stock, unpatched wxWidgets** on purpose: the app it ships only
+needs widgets the iPhone port already provides, so this track stays green no
+matter what state the step-3 patch stack is in. That keeps a working install
+path on the iPad available at all times while the full GUI is still being linked.
 
 Each stage's build breakages are fixed via ordered patches in `patches/stepN/` — never by
 forking upstream. `analysis/` contains the generated wx symbol usage data and the gap

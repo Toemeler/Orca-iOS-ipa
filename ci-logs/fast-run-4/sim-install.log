@@ -1,0 +1,6 @@
+An error was encountered processing the command (domain=IXErrorDomain, code=13):
+Simulator device failed to install the application.
+Missing bundle ID.
+Underlying error (domain=IXErrorDomain, code=13):
+	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/sim/OrcaSlicer.app
+	Missing bundle ID.

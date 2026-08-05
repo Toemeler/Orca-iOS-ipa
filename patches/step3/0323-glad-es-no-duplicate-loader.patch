@@ -1,0 +1,40 @@
+diff --git a/src/libvgcode/CMakeLists.txt b/src/libvgcode/CMakeLists.txt
+index b17fff360..2228167b4 100644
+--- a/src/libvgcode/CMakeLists.txt
++++ b/src/libvgcode/CMakeLists.txt
+@@ -2,12 +2,20 @@ cmake_minimum_required(VERSION 3.13)
+ project(libvgcode)
+ 
+ # glad library
+-if (EMSCRIPTEN OR SLIC3R_OPENGL_ES)
++if (EMSCRIPTEN)
+     set(GLAD_SOURCES
+         glad/include/glad/gles2.h
+         glad/include/KHR/khrplatform.h
+         glad/src/gles2.c
+     )
++elseif (SLIC3R_OPENGL_ES)
++    # Orca-iOS: src/glad already compiles glad and defines every glad_gl*
++    # symbol, and Orca's ~50 GUI sources include <glad/gl.h> and genuinely use
++    # desktop-only GL entry points, so that target cannot be dropped. Compiling
++    # glad/src/gles2.c here as well defines the same symbols a second time --
++    # 260 duplicate symbols at link. Keep the GLES2 declarations for libvgcode's
++    # own sources but take the definitions from the shared target.
++    set(GLAD_SOURCES "")
+ else ()
+     # Use shared GLAD library for GL; no local sources needed
+     set(GLAD_SOURCES "")
+@@ -74,8 +82,12 @@ if (WIN32)
+ endif ()
+ 
+ # glad includes
+-if (EMSCRIPTEN OR SLIC3R_OPENGL_ES)
++if (EMSCRIPTEN)
+     target_include_directories(libvgcode PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
++elseif (SLIC3R_OPENGL_ES)
++    # Declarations from the local GLES2 header, definitions from shared glad.
++    target_include_directories(libvgcode PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
++    target_link_libraries(libvgcode PUBLIC glad)
+ else ()
+     target_link_libraries(libvgcode PUBLIC glad)
+ endif ()

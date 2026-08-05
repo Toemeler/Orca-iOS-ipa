@@ -1,0 +1,19 @@
+diff --git a/src/generic/statusbr.cpp b/src/generic/statusbr.cpp
+index 18ef03c..1a300a7 100644
+--- a/src/generic/statusbr.cpp
++++ b/src/generic/statusbr.cpp
+@@ -31,7 +31,13 @@
+ // standard wxStatusBar class, if wxStatusBarGeneric is the same as
+ // wxStatusBar, then the corresponding wxIMPLEMENT_DYNAMIC_CLASS is already in
+ // common/statbar.cpp
+-#if defined(__WXMAC__) || \
++// Orca-iOS: the iphone port has no native status bar, so wx/statusbr.h aliases
++// wxStatusBarGeneric to wxStatusBar just as the other non-native ports do --
++// which is exactly the case the comment above says is already handled by
++// common/statbar.cpp. __WXMAC__ is still defined on iphone though, so without
++// excluding it this implements wxStatusBar a second time and collides with the
++// unconditional wxIMPLEMENT_DYNAMIC_CLASS at common/statbar.cpp:102.
++#if (defined(__WXMAC__) && !defined(__WXOSX_IPHONE__)) || \
+     (defined(wxUSE_NATIVE_STATUSBAR) && wxUSE_NATIVE_STATUSBAR)
+     #include "wx/generic/statusbr.h"
+ 

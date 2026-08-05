@@ -1,0 +1,7 @@
+=== FAILED targets ===
+webview_webkit.mm
+
+=== error signatures (deduped) ===
+   4 property 'magnification' not found
+
+total FAILED: 2

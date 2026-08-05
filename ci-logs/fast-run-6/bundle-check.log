@@ -1,0 +1,35 @@
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s5   320Gi   260Gi    41Gi    87%    2.2M  431M    1%   /System/Volumes/Data
+
+total 242496
+drwxr-xr-x   5 runner  staff        160 Aug  5 01:21 .
+drwxr-xr-x   3 runner  staff         96 Aug  5 01:21 ..
+-rw-r--r--   1 runner  staff       1253 Aug  5 01:21 Info.plist
+drwxr-xr-x  21 runner  staff        672 Aug  5 01:21 orca-resources
+-rwxr-xr-x   1 runner  staff  124150232 Aug  5 01:21 OrcaSlicer
+
+--- Info.plist as written ---
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleExecutable</key><string>OrcaSlicer</string>
+  <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
+  <key>CFBundleName</key><string>OrcaSlicer</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>MinimumOSVersion</key><string>17.0</string>
+  <key>LSRequiresIPhoneOS</key><true/>
+  <key>UIDeviceFamily</key><array><integer>2</integer></array>
+  <key>UILaunchScreen</key><dict/>
+  <!-- iOS 14+ blocks every local-network connection until the user
+       agrees. Without this key the native Bambu LAN backend cannot reach
+       the printer at all, and the failure is silent. -->
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>OrcaSlicer talks to 3D printers on your local network.</string>
+  <key>NSBonjourServices</key><array><string>_bambulab._tcp</string></array>
+  <key>NSAppTransportSecurity</key><dict>
+    <key>NSAllowsLocalNetworking</key><true/>
+  </dict>
+  <key>UIRequiresFullScreen</key><true/>
+</dict></plist>

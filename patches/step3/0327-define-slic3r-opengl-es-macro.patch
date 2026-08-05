@@ -1,0 +1,23 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 64a2edf7..7d70bcac 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -820,6 +820,18 @@ if (SLIC3R_STATIC)
+     target_compile_definitions(libslic3r_gui PUBLIC -DwxDEBUG_LEVEL=0)
+ endif()
+ 
++if (SLIC3R_OPENGL_ES)
++    # SLIC3R_OPENGL_ES has only ever been a CMake variable: src/libvgcode reads it
++    # to define ENABLE_OPENGL_ES for its own sources, and nothing ever turned it
++    # into a preprocessor macro for the GUI. But src/slic3r/GUI spells its ES
++    # branches `#if SLIC3R_OPENGL_ES`, so with the option on they still evaluated
++    # to 0 and the desktop path was compiled -- most visibly in GLShadersManager,
++    # which then loads the 110/ or 140/ shader set. Those are desktop GLSL and no
++    # GLES driver will compile them, so every shader fails and the 3D scene never
++    # renders. Define it so the option means what its name says.
++    target_compile_definitions(libslic3r_gui PUBLIC SLIC3R_OPENGL_ES=1)
++endif()
++
+ if (SPNAV_LIB)
+     target_link_libraries(libslic3r_gui ${SPNAV_LIB})
+ endif()

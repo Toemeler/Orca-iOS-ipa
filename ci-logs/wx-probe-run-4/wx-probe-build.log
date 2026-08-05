@@ -1,0 +1,115 @@
+t-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore -framework CoreGraphics -framework CoreText -framework CoreFoundation -framework Foundation -framework Security -framework AudioToolbox -framework CFNetwork -framework MobileCoreServices -framework UniformTypeIdentifiers -lz -liconv -lexpat -llzma
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:73:20: warning: 'glCreateShader' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   73 |         GLuint s = glCreateShader(type);
+      |                    ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:508:35: note: 'glCreateShader' has been explicitly marked deprecated here
+  508 | GL_API GLuint         GL_APIENTRY glCreateShader (GLenum type)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:74:9: warning: 'glShaderSource' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   74 |         glShaderSource(s, 1, &src, nullptr);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:580:35: note: 'glShaderSource' has been explicitly marked deprecated here
+  580 | GL_API void           GL_APIENTRY glShaderSource (GLuint shader, GLsizei count, const GLchar* const *string, const GLint* length)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:75:9: warning: 'glCompileShader' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   75 |         glCompileShader(s);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:502:35: note: 'glCompileShader' has been explicitly marked deprecated here
+  502 | GL_API void           GL_APIENTRY glCompileShader (GLuint shader)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:77:9: warning: 'glGetShaderiv' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   77 |         glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:549:35: note: 'glGetShaderiv' has been explicitly marked deprecated here
+  549 | GL_API void           GL_APIENTRY glGetShaderiv (GLuint shader, GLenum pname, GLint* params)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:80:13: warning: 'glGetShaderInfoLog' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+   80 |             glGetShaderInfoLog(s, sizeof(log) - 1, nullptr, log);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:550:35: note: 'glGetShaderInfoLog' has been explicitly marked deprecated here
+  550 | GL_API void           GL_APIENTRY glGetShaderInfoLog (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* infolog)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:123:26: warning: 'glCreateProgram' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  123 |                 m_prog = glCreateProgram();
+      |                          ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:507:35: note: 'glCreateProgram' has been explicitly marked deprecated here
+  507 | GL_API GLuint         GL_APIENTRY glCreateProgram (void)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:124:17: warning: 'glAttachShader' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  124 |                 glAttachShader(m_prog, vs);
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:483:35: note: 'glAttachShader' has been explicitly marked deprecated here
+  483 | GL_API void           GL_APIENTRY glAttachShader (GLuint program, GLuint shader)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:125:17: warning: 'glAttachShader' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  125 |                 glAttachShader(m_prog, fs);
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:483:35: note: 'glAttachShader' has been explicitly marked deprecated here
+  483 | GL_API void           GL_APIENTRY glAttachShader (GLuint program, GLuint shader)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:126:17: warning: 'glBindAttribLocation' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  126 |                 glBindAttribLocation(m_prog, 0, "pos");
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:484:35: note: 'glBindAttribLocation' has been explicitly marked deprecated here
+  484 | GL_API void           GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar* name)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:127:17: warning: 'glBindAttribLocation' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  127 |                 glBindAttribLocation(m_prog, 1, "col");
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:484:35: note: 'glBindAttribLocation' has been explicitly marked deprecated here
+  484 | GL_API void           GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar* name)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:128:17: warning: 'glLinkProgram' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  128 |                 glLinkProgram(m_prog);
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:571:35: note: 'glLinkProgram' has been explicitly marked deprecated here
+  571 | GL_API void           GL_APIENTRY glLinkProgram (GLuint program)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:130:17: warning: 'glGetProgramiv' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  130 |                 glGetProgramiv(m_prog, GL_LINK_STATUS, &ok);
+      |                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:546:35: note: 'glGetProgramiv' has been explicitly marked deprecated here
+  546 | GL_API void           GL_APIENTRY glGetProgramiv (GLuint program, GLenum pname, GLint* params)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:142:13: warning: 'glUseProgram' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  142 |             glUseProgram(m_prog);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:612:35: note: 'glUseProgram' has been explicitly marked deprecated here
+  612 | GL_API void           GL_APIENTRY glUseProgram (GLuint program)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:143:13: warning: 'glVertexAttribPointer' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  143 |             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:622:35: note: 'glVertexAttribPointer' has been explicitly marked deprecated here
+  622 | GL_API void           GL_APIENTRY glVertexAttribPointer (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:144:13: warning: 'glVertexAttribPointer' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  144 |             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, cols);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:622:35: note: 'glVertexAttribPointer' has been explicitly marked deprecated here
+  622 | GL_API void           GL_APIENTRY glVertexAttribPointer (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:145:13: warning: 'glEnableVertexAttribArray' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  145 |             glEnableVertexAttribArray(0);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:525:35: note: 'glEnableVertexAttribArray' has been explicitly marked deprecated here
+  525 | GL_API void           GL_APIENTRY glEnableVertexAttribArray (GLuint index)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/main.cpp:146:13: warning: 'glEnableVertexAttribArray' is deprecated: first deprecated in iOS 12.0 - OpenGLES API deprecated. (Define GLES_SILENCE_DEPRECATION to silence these warnings) [-Wdeprecated-declarations]
+  146 |             glEnableVertexAttribArray(1);
+      |             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks/OpenGLES.framework/Headers/ES2/gl.h:525:35: note: 'glEnableVertexAttribArray' has been explicitly marked deprecated here
+  525 | GL_API void           GL_APIENTRY glEnableVertexAttribArray (GLuint index)   OPENGLES_DEPRECATED(ios(3.0, 12.0), tvos(9.0, 12.0));
+      |                                   ^
+17 warnings generated.
+ld: warning: ignoring duplicate libraries: '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_baseu_net-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_adv-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_aui-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_core-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_gl-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_html-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_propgrid-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_qa-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_ribbon-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_richtext-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_stc-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwx_osx_iphoneu_webview-3.3-iOS.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxlexilla-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxpng-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxregexu-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxscintilla-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxsharpyuv-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxtiff-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebp-3.3.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/libwxwebpdemux-3.3.a'
++ echo PROBE_BUILD=with-webview
+PROBE_BUILD=with-webview
++ rm -rf '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/*.dSYM'
++ cat
++ find /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app -mindepth 1 -maxdepth 1
++ sort
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/Info.plist
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app/WxProbe
++ echo 'built: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app'
+built: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-probe/build/WxProbe.app

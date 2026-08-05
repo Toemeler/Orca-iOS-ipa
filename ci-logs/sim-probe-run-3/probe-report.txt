@@ -1,0 +1,30 @@
+=== S1-dir-resources ===
+plutil -lint: variants/S1-dir-resources.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.S1-dir-resources
+file count:       12
+bundle size:  96K
+INSTALL: FAILED after 11s -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/S1-dir-resources.app 	Missing bundle ID. 
+=== S2-dir-Resources ===
+plutil -lint: variants/S2-dir-Resources.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.S2-dir-Resources
+file count:       12
+bundle size:  96K
+INSTALL: FAILED after 20s -> An error was encountered processing the command (domain=IXErrorDomain, code=13): Simulator device failed to install the application. Missing bundle ID. Underlying error (domain=IXErrorDomain, code=13): 	Failed to get bundle ID from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/variants/S2-dir-Resources.app 	Missing bundle ID. 
+=== S3-dir-orcadata ===
+plutil -lint: variants/S3-dir-orcadata.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.S3-dir-orcadata
+file count:       12
+bundle size:  96K
+INSTALL: OK (1785884698s-1785884647s = 51s)
+=== S4-dir-data ===
+plutil -lint: variants/S4-dir-data.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.S4-dir-data
+file count:       12
+bundle size:  96K
+INSTALL: OK (1785884705s-1785884700s = 5s)
+=== S5-nested-res ===
+plutil -lint: variants/S5-nested-res.app/Info.plist: OK
+defaults read CFBundleIdentifier: org.orca-ios.probe.S5-nested-res
+file count:       12
+bundle size:  96K
+INSTALL: OK (1785884708s-1785884706s = 2s)

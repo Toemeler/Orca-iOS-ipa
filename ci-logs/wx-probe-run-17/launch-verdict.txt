@@ -1,0 +1,6 @@
+simulator runtime: com.apple.CoreSimulator.SimRuntime.iOS-26-2
+first seen alive after: 1 s
+still alive at t=14 s (last checkpoint 14s)
+screenshots taken while alive: 3
+still running at the end: 1 (pid none)
+crash reports: 0

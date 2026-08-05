@@ -1,0 +1,27 @@
+=== immediately after launch (pid line: none) ===
+--- host: ps -p $APP_PID
+(no pid)
+--- host: pgrep -fl $EXE
+12866 /Users/runner/Library/Developer/CoreSimulator/Devices/6641988E-CB8C-4772-B657-B1E76E342C61/data/Containers/Bundle/Application/21B43793-03E9-4C9C-96AA-D08203A779CE/WxProbe.app/WxProbe
+--- host: ps -Ao pid,comm | grep EXE
+12866 /Users/runner/Library/Developer/CoreSimulator/Devices/6641988E-CB8C-4772-B657-B1E76E342C61/data/Containers/Bundle/Application/21B43793-03E9-4C9C-96AA-D08203A779CE/WxProbe.app/WxProbe
+--- sim: launchctl list | grep bundle id
+12866	0	UIKitApplication:org.orca-ios.wxprobe[b50f][rb-legacy]
+--- sim: launchctl list line count
+     358
+--- sim: launchctl list, first 15 lines
+PID	Status	Label
+-	0	com.apple.progressd
+-	0	com.apple.CoreAuthentication.daemon
+-	0	com.apple.cloudphotod
+10710	0	com.apple.homed
+10733	0	com.apple.modelcatalogd
+10741	0	com.apple.dataaccess.dataaccessd
+-	0	com.apple.DragUI.druid
+12031	0	com.apple.bird
+10905	0	com.apple.fitnesscoachingd
+-	0	com.apple.knowledgeconstructiond
+10638	0	com.apple.biomed
+11921	0	UIKitApplication:com.apple.Spotlight[4f18][rb-legacy]
+10686	0	com.apple.nsurlsessiond
+-	0	com.apple.devicecheckd

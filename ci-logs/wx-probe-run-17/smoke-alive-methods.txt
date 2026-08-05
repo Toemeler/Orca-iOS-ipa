@@ -1,0 +1,27 @@
+=== immediately after launch (pid line: none) ===
+--- host: ps -p $APP_PID
+(no pid)
+--- host: pgrep -fl $EXE
+21422 /Users/runner/Library/Developer/CoreSimulator/Devices/C737239E-4E35-44FF-808D-8C929B2F2763/data/Containers/Bundle/Application/BED6FD37-286A-4004-8367-40B5EB725E26/WxSmoke.app/WxSmoke
+--- host: ps -Ao pid,comm | grep EXE
+21422 /Users/runner/Library/Developer/CoreSimulator/Devices/C737239E-4E35-44FF-808D-8C929B2F2763/data/Containers/Bundle/Application/BED6FD37-286A-4004-8367-40B5EB725E26/WxSmoke.app/WxSmoke
+--- sim: launchctl list | grep bundle id
+21422	0	UIKitApplication:org.orca-ios.wxsmoke[d654][rb-legacy]
+--- sim: launchctl list line count
+     358
+--- sim: launchctl list, first 15 lines
+PID	Status	Label
+-	0	com.apple.progressd
+-	0	com.apple.CoreAuthentication.daemon
+-	0	com.apple.cloudphotod
+16932	0	com.apple.homed
+16966	0	com.apple.modelcatalogd
+16957	0	com.apple.dataaccess.dataaccessd
+-	0	com.apple.DragUI.druid
+18425	0	com.apple.bird
+17603	0	com.apple.fitnesscoachingd
+-	0	com.apple.knowledgeconstructiond
+18010	0	UIKitApplication:com.apple.DocumentManager.DockFolderViewService[8318][rb-legacy]
+16816	0	com.apple.biomed
+16888	0	com.apple.nsurlsessiond
+-	0	com.apple.devicecheckd

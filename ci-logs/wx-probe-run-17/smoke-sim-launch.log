@@ -1,0 +1,11 @@
+WXPROBE image                  loaded (+load ran)
+WXPROBE wxAppDelegate class    present in the binary
+WXPROBE hook                   applicationDidFinishLaunching: installed
+WXPROBE hook                   willFinishLaunchingWithOptions: installed
+WXPROBE delegate               application:willFinishLaunchingWithOptions: ENTERED
+WXPROBE delegate               willFinishLaunching returned YES
+WXPROBE delegate               applicationDidFinishLaunching: ENTERED
+WXPROBE delegate               applicationDidFinishLaunching: returned
+WXPROBE main queue             drained - and OnInit had already run
+WXPROBE watchdog t=4s          OnInit_seen=1 sharedApplication=yes delegate=wxAppDelegate
+org.orca-ios.wxsmoke: 21422

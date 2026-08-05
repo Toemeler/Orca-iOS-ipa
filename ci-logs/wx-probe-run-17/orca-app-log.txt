@@ -1,0 +1,29 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/6641988E-CB8C-4772-B657-B1E76E342C61/data/Containers/Data/Application/36016A93-A011-43F3-B24A-52EDCD29069C/Documents/wxprobe.log ---
+WXPROBE image                  loaded (+load ran)
+WXPROBE wxAppDelegate class    present in the binary
+WXPROBE hook                   applicationDidFinishLaunching: installed
+WXPROBE hook                   willFinishLaunchingWithOptions: installed
+WXPROBE static init            ran
+WXPROBE wxApp ctor             ran
+WXPROBE delegate               application:willFinishLaunchingWithOptions: ENTERED
+WXPROBE delegate               willFinishLaunching returned YES
+WXPROBE delegate               applicationDidFinishLaunching: ENTERED
+WXPROBE delegate               applicationDidFinishLaunching: returned
+WXPROBE OnInit                 entered
+WXPROBE wxNotebook             constructed
+WXPROBE basic controls         constructed
+WXPROBE wxDataViewListCtrl     constructed + 6 rows
+WXPROBE wxGLCanvas             constructed
+WXPROBE wxWebView              created + SetPage
+WXPROBE pages added            ok
+WXPROBE frame Show()           returned
+WXPROBE OnInit                 returning true
+WXPROBE main queue             drained - and OnInit had already run
+WXPROBE gl version             OpenGL ES 3.0 APPLE-23.0.2
+WXPROBE gl renderer            Apple Software Renderer
+WXPROBE gl default fbo         1
+WXPROBE gl program link        ok
+WXPROBE gl draw                ok
+WXPROBE gl SwapBuffers         returned
+WXPROBE wxPaintDC              painted
+WXPROBE watchdog t=4s          OnInit_seen=1 sharedApplication=yes delegate=wxAppDelegate

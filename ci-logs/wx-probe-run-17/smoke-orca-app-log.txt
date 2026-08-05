@@ -1,0 +1,11 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/C737239E-4E35-44FF-808D-8C929B2F2763/data/Containers/Data/Application/B6A16EF1-2F87-4A72-A2BD-2E288E13B892/Documents/wxprobe.log ---
+WXPROBE image                  loaded (+load ran)
+WXPROBE wxAppDelegate class    present in the binary
+WXPROBE hook                   applicationDidFinishLaunching: installed
+WXPROBE hook                   willFinishLaunchingWithOptions: installed
+WXPROBE delegate               application:willFinishLaunchingWithOptions: ENTERED
+WXPROBE delegate               willFinishLaunching returned YES
+WXPROBE delegate               applicationDidFinishLaunching: ENTERED
+WXPROBE delegate               applicationDidFinishLaunching: returned
+WXPROBE main queue             drained - and OnInit had already run
+WXPROBE watchdog t=4s          OnInit_seen=1 sharedApplication=yes delegate=wxAppDelegate

@@ -42,6 +42,15 @@ RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iO
 UDID=$(xcrun simctl create "orca-ipad" \
   "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" "$RT")
 echo "simulator: $UDID ($RT)"
+# Which runtime this ran against, published rather than left in the job log.
+# The selection is "newest installed", so a runner image update can move it
+# without a single line of this repo changing - and an app that stops launching
+# after such a move looks exactly like a code regression. iOS 26 makes UIScene
+# adoption mandatory, which a wx app built on the legacy
+# applicationDidFinishLaunching: path does not do, so the runtime version is
+# load-bearing evidence and belongs next to the verdict.
+SIM_RUNTIME="$RT"
+xcrun simctl list runtimes > "$OUT/sim-runtimes.txt" 2>&1 || true
 [ -n "${GITHUB_ENV:-}" ] && echo "UDID=$UDID" >> "$GITHUB_ENV"
 xcrun simctl boot "$UDID"
 xcrun simctl bootstatus "$UDID" -b
@@ -219,6 +228,7 @@ xcrun simctl spawn "$UDID" log show --last 5m \
 tail -80 "$OUT/sim-launch.log" || true
 
 {
+  echo "simulator runtime: ${SIM_RUNTIME}"
   echo "first seen alive after: ${FIRST_ALIVE:-never} s"
   echo "still alive at t=${LAST_ALIVE_AT:-none} s (last checkpoint ${LAST_CHECKPOINT}s)"
   echo "screenshots taken while alive: $SHOTS"

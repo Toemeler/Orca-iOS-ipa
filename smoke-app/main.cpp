@@ -45,11 +45,20 @@ public:
     }
 };
 
+// probe_boot.mm - shared startup instrumentation, linked into this app too.
+// The control has been the least informative part of the probe runs: it dies
+// like the real thing and writes no log at all, so "the smoke app does not
+// start either" was as much as could ever be said about it. It is also the
+// smallest wx app there is - a frame, a button and a GL canvas - so whatever it
+// says about the launch handshake is uncontaminated by widget choice.
+extern "C" void probe_note_oninit(void);
+
 class SmokeApp : public wxApp
 {
 public:
     bool OnInit() override
     {
+        probe_note_oninit();
         new SmokeFrame();
         return true;
     }

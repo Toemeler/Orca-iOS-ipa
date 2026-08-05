@@ -22,13 +22,22 @@ xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
   "$MIN_FLAG" \
   -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 \
   -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
-  "$HERE/main.cpp" -o "$APP/WxSmoke" \
+  "$HERE/main.cpp" "$HERE/../wx-probe/probe_boot.mm" -o "$APP/WxSmoke" \
   $WXLIBS $WXLIBS \
   -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
   -framework CoreGraphics -framework CoreText -framework CoreFoundation \
   -framework Foundation -framework Security -framework AudioToolbox \
   -framework CFNetwork -framework MobileCoreServices \
   -lz -liconv -lexpat -llzma
+
+# UIApplicationMain names wx's delegate as the string @"wxAppDelegate", so no
+# undefined symbol points at it. Report whether the linker kept it: an app that
+# lost it runs with a nil delegate and can never reach OnInit.
+if nm -a "$APP/WxSmoke" 2>/dev/null | grep -q '_OBJC_CLASS_\$_wxAppDelegate'; then
+  echo "SMOKE_DELEGATE=linked"
+else
+  echo "SMOKE_DELEGATE=MISSING - wxAppDelegate is not in the binary"
+fi
 
 # MinimumOSVersion / CFBundleSupportedPlatforms are what installd checks on a
 # real device; without them the IPA installs nowhere. Harmless in the simulator.

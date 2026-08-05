@@ -18,17 +18,34 @@ esac
 SETUP_DIR=$(ls -d "$PREFIX"/lib/wx/include/*/)
 WXLIBS=$(ls "$PREFIX"/lib/libwx*.a)
 
-xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
-  "$MIN_FLAG" \
-  -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 \
-  -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
-  "$HERE/main.cpp" "$HERE/../wx-probe/probe_boot.mm" -o "$APP/WxSmoke" \
-  $WXLIBS $WXLIBS \
-  -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
-  -framework CoreGraphics -framework CoreText -framework CoreFoundation \
-  -framework Foundation -framework Security -framework AudioToolbox \
-  -framework CFNetwork -framework MobileCoreServices \
-  -lz -liconv -lexpat -llzma
+# The shared instrumentation is optional here for the same reason it is optional
+# in the probe: main.cpp declares probe_note_oninit weak, so losing this file
+# costs the extra logging and nothing else. The control is the minimal wx app
+# and its launch result is the point -- it must not be held hostage to a
+# compile error in a diagnostic.
+BOOT_SRC="$HERE/../wx-probe/probe_boot.mm"
+
+build_it() {
+  xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
+    "$MIN_FLAG" \
+    -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 \
+    -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
+    "$HERE/main.cpp" $BOOT_SRC -o "$APP/WxSmoke" \
+    $WXLIBS $WXLIBS \
+    -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
+    -framework CoreGraphics -framework CoreText -framework CoreFoundation \
+    -framework Foundation -framework Security -framework AudioToolbox \
+    -framework CFNetwork -framework MobileCoreServices \
+    -lz -liconv -lexpat -llzma
+}
+
+if build_it; then
+  echo "SMOKE_BUILD=with-instrumentation"
+else
+  echo "SMOKE_BUILD=instrumentation failed to compile; building without it"
+  BOOT_SRC=""
+  build_it
+fi
 
 # UIApplicationMain names wx's delegate as the string @"wxAppDelegate", so no
 # undefined symbol points at it. Report whether the linker kept it: an app that

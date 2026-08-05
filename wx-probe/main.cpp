@@ -30,8 +30,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-// probe_boot.mm - startup instrumentation that runs before main().
-extern "C" void probe_note_oninit(void);
+// probe_boot.mm - startup instrumentation that runs before main(). Declared
+// weak so the probe still links when that file is left out of the build: the
+// instrumentation is there to explain a failure, and must never be able to
+// prevent the run that would have shown it.
+extern "C" void probe_note_oninit(void) __attribute__((weak));
 
 // Written to stderr *and* to a file, and the file path comes from $HOME rather
 // than from wx. Run 4 published an empty app log, which is ambiguous in exactly
@@ -355,7 +358,8 @@ public:
 
     bool OnInit() override
     {
-        probe_note_oninit(); // stand the watchdog in probe_boot.mm down
+        if (probe_note_oninit) // stand the watchdog in probe_boot.mm down
+            probe_note_oninit();
         report("OnInit", "entered");
         new ProbeFrame();
         report("OnInit", "returning true");

@@ -21,12 +21,17 @@ WXLIBS=$(ls "$PREFIX"/lib/libwx*.a)
 DEPSLIBS=""
 [ -n "$DEPS" ] && [ -d "$DEPS/usr/local/lib" ] && DEPSLIBS="-L$DEPS/usr/local/lib"
 
+# probe_boot.mm is instrumentation, not the experiment. If it fails to compile
+# it must not take the launch run down with it -- that already cost two rounds,
+# and the delegate check below does not depend on it at all.
+BOOT_SRC="$HERE/probe_boot.mm"
+
 build_it() {
   xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
     "$MIN_FLAG" \
     -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 "$@" \
     -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
-    "$HERE/main.cpp" "$HERE/probe_boot.mm" -o "$APP/WxProbe" \
+    "$HERE/main.cpp" $BOOT_SRC -o "$APP/WxProbe" \
     $DEPSLIBS \
     $WXLIBS $WXLIBS \
     -framework UIKit -framework OpenGLES -framework GLKit -framework QuartzCore \
@@ -47,9 +52,20 @@ EXTRA_FLAGS=""
 if build_it -DPROBE_WEBVIEW -framework WebKit; then
   echo "PROBE_BUILD=with-webview"
   EXTRA_FLAGS="-DPROBE_WEBVIEW -framework WebKit"
-else
+elif build_it; then
   echo "PROBE_BUILD=without-webview (the WebKit/wxWebView build failed above)"
-  build_it
+else
+  # Drop the instrumentation and try once more. main.cpp declares
+  # probe_note_oninit weak, so it links and no-ops without this file.
+  echo "PROBE_BUILD=instrumentation FAILED TO COMPILE - see the errors above"
+  BOOT_SRC=""
+  if build_it -DPROBE_WEBVIEW -framework WebKit; then
+    echo "PROBE_BUILD=with-webview, no instrumentation"
+    EXTRA_FLAGS="-DPROBE_WEBVIEW -framework WebKit"
+  else
+    build_it
+    echo "PROBE_BUILD=without-webview, no instrumentation"
+  fi
 fi
 
 # Is wx's UIApplication delegate actually in the linked binary?

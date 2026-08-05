@@ -1159,3 +1159,170 @@ it rather than carrying two copies:
 
 A green step-3 job now means the app was still running 67 s after launch,
 and `artifact/orca-on-ipad.png` is a picture taken while it was.
+
+═══════════════════════════════════════════════════════════════════════
+## ⛔ SESSION (2026-08-05) — THE ONE BUG THAT BLOCKS EVERYTHING
+═══════════════════════════════════════════════════════════════════════
+
+**Read this section first. It supersedes every earlier claim about why the
+app "exits during startup".**
+
+### What is actually wrong
+
+A wxWidgets iOS app built against the cached wx prefix **dies before
+`wxApp::OnInit()` is entered**. Not Orca specifically - any app.
+
+Proved with `wx-probe/`, a ~350-line wx app that builds in **5 seconds**
+against the cached prefix. It writes a marker from a static initialiser
+(before `main`) and another on entry to `OnInit`, into
+`$HOME/Documents/wxprobe.log`, which the launch script pulls out of the
+simulator's app container. Run 5's log, complete:
+
+    WXPROBE static init            ran
+
+Nothing else. So: the binary loads, dyld is fine, static initialisers run,
+and the process is gone about a second later - no crash report, no
+termination message in the system log, which is what a clean exit looks
+like.
+
+**OrcaSlicer does exactly the same thing.** step3-fast run 8 published an
+*empty* `orca-app-log.txt`: Orca never created its own log file, and
+`set_log_path_and_level()` runs early in `init_app_config()`. It is not
+getting far either.
+
+This one bug is the whole distance between where the port is and a
+screenshot of the UI. Everything else is built and working.
+
+### The 4-minute loop that will find it
+
+`.github/workflows/ios-wx-probe.yml` - restores the wx + deps caches,
+compiles `wx-probe/main.cpp` (5 s), installs, launches, screenshots,
+publishes to `ci-logs/wx-probe-run-N/`. **Do not debug this inside the Orca
+build**; that is 55 minutes per question.
+
+Triggered by pushing anything under `wx-probe/**`,
+`tools/ci/sim-launch-verify.sh`, or the workflow file. (A workflow that
+exists only on a feature branch cannot be dispatched through the API -
+GitHub resolves the name against the default branch and 404s. Hence the
+push trigger.)
+
+The probe now also carries, and the next run will report:
+* a marker in the `wxApp` constructor - was the object built at all;
+* `OnAssertFailure` - a wx assertion on iOS cannot show its dialog, and the
+  override deliberately does not call the base;
+* `OnExceptionInMainLoop` / `OnUnhandledException`;
+* `OnExit` - if this fires it is a clean shutdown, not a death;
+* **a control**: `smoke-app/` (the step-2 proof: frame, button, green GL
+  canvas) built from the *same* cached prefix. If the control dies too, the
+  prefix regressed and the answer is in `patches/step2` / `wx-overlay`. If
+  the control renders, the difference between the two apps is the answer.
+
+### Where to look if the control renders
+
+`wx-probe` differs from `smoke-app` in: `UIDeviceFamily [2]` vs `[1,2]`,
+`UIRequiresFullScreen`, and it links `-framework WebKit` +
+`UniformTypeIdentifiers` (`PROBE_BUILD=with-webview` - wxWebView **does**
+compile and link for iOS, which is worth knowing on its own: Orca's
+MainFrame builds web-view panels).
+
+### ⚠ Two corrections to things this document used to say
+
+1. **"The app exits during startup" was never established before today.**
+   Runs 5 and 6 concluded that from `simctl spawn <udid> launchctl list`
+   returning no match. That command **does not list app processes under
+   their bundle id at all** - it answered "not running" for every app,
+   always. wx probe run 4 proved it: host `ps` by pid, host `ps` by name,
+   `pgrep`, and the simulator's own `launchctl list` (357 entries) were all
+   asked at once and all agreed the app was gone, so the *conclusion*
+   happens to hold - but it was luck, not evidence.
+
+2. **The screenshots in runs 5 and 6 were of SpringBoard.** The old launch
+   step shot the screen after killing the console reader, with no check that
+   anything was running. `tools/ci/sim-launch-verify.sh` replaces it: polls
+   the host pid `simctl launch` prints, shoots at t+2/7/17/37/67 s **while
+   alive**, measures every PNG (size, distinct colours, dominant colour), and
+   fails the step if the app never appears or goes away.
+
+### Build speed: root cause found, fix in but unverified
+
+ccache hits 76 of 639 objects, run after run. The 76 are exactly the
+targets that do **not** use a precompiled header (deps_src, imgui,
+libvgcode, libslic3r_cgal, the ObjC shims, `OrcaSlicer.cpp`). The 563
+misses are exactly `libslic3r` + `libslic3r_gui`, the only two targets that
+call `add_precompiled_header` (upstream `src/libslic3r/CMakeLists.txt:636`,
+`src/slic3r/CMakeLists.txt:808`).
+
+ccache hashes the `.pch` it is told to `-include`, and clang serialises the
+**size and mtime of every header** that went into a `.pch`. Orca is
+re-cloned every run, the wx overlay headers are re-copied every run, and
+`configure_file` rewrites `libslic3r_version.h` every run - so the `.pch` is
+byte-different every run even when no source changed.
+
+`ios-step3-fast.yml` now pins those mtimes to a fixed instant (the orca
+tree after patching, the wx + deps prefixes after the overlay copy, and the
+generated headers in the build tree after configure - *only* the headers:
+an mtime older than the CMakeLists would make ninja re-run cmake and undo
+it). `pch-fingerprint.txt` is published each run; **compare two runs'
+digests to confirm**. If they still differ, the fallback is
+`-DSLIC3R_PCH=OFF`, which fixes the hashing by removing the input - at the
+risk of exposing translation units that relied on the FORCEINCLUDE.
+
+Expected payoff: ~55 min -> ~10 min per Orca iteration. Note the first run
+after the change still misses everything (different `.pch` hash); the
+*second* run is the fast one.
+
+### The screenshot loop no longer needs a compile
+
+`ios-step3-fast.yml` publishes the linked executable as artifact
+`orca-binary`. `ios-relaunch.yml` downloads the newest one via the REST API
+(newest-first, repo-wide), rebuilds the bundle around it - resources from a
+shallow Orca clone plus the overlay, ~20 s - and runs the same verification.
+**~4 minutes per launch experiment.** Bundle assembly lives in
+`tools/ci/assemble-sim-bundle.sh` so the build workflow and the relaunch
+workflow cannot drift into testing different bundles.
+
+### Step 4 (device IPA) is GREEN
+
+step4 run 24: device deps 21 min, wx 4 min, Orca build+link 31 min, **0
+failed targets, 0 undefined symbols**, unsigned `OrcaSlicer-iPad.ipa`
+assembled and uploaded as a workflow artifact. The job is marked failed only
+because `gh release create` returned `HTTP 403: Resource not accessible by
+integration` - the token a workflow_dispatch from an app integration gets
+cannot always create a release, even though the same token pushed ci-logs
+seconds earlier. That step is now non-fatal; **the IPA is the artifact**.
+
+It also warmed the device deps + wx + ccache caches on this branch, so the
+next device build is ~35 min rather than ~58.
+
+### Patch 0336 (new this session)
+
+`patches/step3/0336-ios-startup-no-modal-blockers.patch`:
+* `on_init_inner()` raises a **parentless modal dialog** from `OnInit`, before
+  UIApplication has an event loop, whenever `Http::tls_global_init()` cannot
+  find a certificate store - which on iOS is always, there is no OpenSSL cert
+  directory. `ShowModal` cannot run there; anything but `wxID_YES` makes
+  `OnInit` return false. Answered in the affirmative on iOS and logged
+  (`Http::priv` sets `CURLOPT_SSL_VERIFYPEER` to 0 on every request, so the
+  store is never consulted).
+* The splash screen is skipped on iOS - a second UIWindow driven by
+  `wxYield()` from inside `OnInit`.
+
+This is correct on its own merits but is **not** the bug above: the probe
+dies before `OnInit`, and it contains none of this code.
+
+### Order of work for the next session
+
+1. Read `ci-logs/wx-probe-run-6/` (or the newest). The control tells you
+   whether the wx prefix starts *any* app.
+2. Fix that. It is the only thing between here and a UI screenshot.
+3. Re-run `ios-step3-fast.yml`, confirm `pch-fingerprint.txt` matches the
+   previous run's, and confirm the ccache hit rate jumps on the run after.
+4. Use `ios-relaunch.yml` for every launch-behaviour question after that.
+5. When a screenshot shows the UI, run `ios-step4-device-ipa.yml` and take
+   the IPA from the workflow artifact.
+
+Note on first launch: with no config, Orca runs the ConfigWizard
+(`config_wizard_startup()` fires when `!m_app_conf_exists ||
+only_default_printers()`). A screenshot of the wizard is still proof the GUI
+renders; for a plater screenshot, pre-seed `OrcaSlicer.conf` in the data
+container between install and launch.

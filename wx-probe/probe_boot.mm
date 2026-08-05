@@ -40,6 +40,13 @@
 //
 // License: AGPL-3.0.
 
+// wx first, UIKit second - the order wx's own .mm files use. UIKit drags in
+// <AssertMacros.h>, whose check()/verify()/require() macros collide with
+// ordinary identifiers in the wx headers; wx suppresses them by defining
+// __ASSERTMACROS__ from wxprec.h, which only helps if wx is included first.
+#include <wx/wx.h>
+#include <wx/app.h>
+
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
@@ -49,8 +56,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
-#include <wx/app.h>
 
 // Same destination as main.cpp's report(): stderr, plus a file under $HOME that
 // the harness copies out of the data container. Opened per-call and closed
@@ -201,12 +206,14 @@ static BOOL probe_will_finish(id self, SEL _cmd, UIApplication* app, NSDictionar
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         UIApplication* app = [UIApplication sharedApplication];
+        // NB: no UIApplication.windows here - it is deprecated, and the point
+        // of this line is the delegate, which is the whole question.
         probe_log("watchdog t=4s",
                   [[NSString stringWithFormat:
-                        @"OnInit_seen=%d sharedApplication=%@ delegate=%@ windows=%lu",
+                        @"OnInit_seen=%d sharedApplication=%@ delegate=%@",
                         (int) g_on_init_seen, app ? @"yes" : @"nil",
-                        app.delegate ? NSStringFromClass([app.delegate class]) : @"(nil)",
-                        (unsigned long)(app ? app.windows.count : 0)] UTF8String]);
+                        app.delegate ? NSStringFromClass([app.delegate class]) : @"(nil)"]
+                      UTF8String]);
 
         if (!g_on_init_seen) {
             probe_log("rescue", "OnInit never ran - calling OSXOnDidFinishLaunching directly");

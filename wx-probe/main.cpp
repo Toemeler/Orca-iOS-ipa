@@ -343,12 +343,53 @@ private:
 class ProbeApp : public wxApp
 {
 public:
+    // Run 5 got exactly one line into the log - "static init ran" - and then the
+    // process was gone. So the binary loads and runs static initialisers, and
+    // dies before OnInit. These hooks cover the ground in between: the wxApp
+    // object being constructed at all, a wx assertion (which on iOS cannot show
+    // the dialog it wants to), an exception escaping, and a normal exit.
+    ProbeApp() { report("wxApp ctor", "ran"); }
+
     bool OnInit() override
     {
         report("OnInit", "entered");
         new ProbeFrame();
         report("OnInit", "returning true");
         return true;
+    }
+
+    int OnExit() override
+    {
+        report("OnExit", "called - this was a clean shutdown");
+        return wxApp::OnExit();
+    }
+
+#if wxDEBUG_LEVEL
+    void OnAssertFailure(const wxChar* file, int line, const wxChar* func,
+                         const wxChar* cond, const wxChar* msg) override
+    {
+        report("wx ASSERT",
+               wxString::Format("%s:%d in %s: %s %s",
+                                file ? wxString(file) : "?", line,
+                                func ? wxString(func) : "?",
+                                cond ? wxString(cond) : "",
+                                msg ? wxString(msg) : "").utf8_str().data());
+        // Deliberately not calling the base: the default behaviour is to try to
+        // show a dialog, which is what an app with no event loop yet cannot do.
+    }
+#endif
+
+    bool OnExceptionInMainLoop() override
+    {
+        report("exception", "escaped into the main loop");
+        return false;
+    }
+
+    void OnUnhandledException() override
+    {
+        try { throw; }
+        catch (const std::exception& e) { report("unhandled exception", e.what()); }
+        catch (...) { report("unhandled exception", "(not a std::exception)"); }
     }
 };
 

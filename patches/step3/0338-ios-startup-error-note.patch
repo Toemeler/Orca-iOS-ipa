@@ -1,0 +1,43 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 11019fa..6164403 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -2,6 +2,12 @@
+ #include "OrcaCloudServiceAgent.hpp"
+ #include "libslic3r/Technologies.hpp"
+ #include "GUI_App.hpp"
++
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#include <cstdio>      // the iOS startup-error note in generic_exception_handle
++#include <cstdlib>
++#endif
+ #include "GUI_Init.hpp"
+ #include "GUI_ObjectList.hpp"
+ #include "slic3r/GUI/UserManager.hpp"
+@@ -724,6 +730,25 @@ static void generic_exception_handle()
+         std::terminate();
+         //throw;
+     } catch (const std::exception& ex) {
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++        // The BOOST_LOG line below is the only record of why the app died, and
++        // on iOS it is written to a sink that set_log_path_and_level() creates
++        // during startup - so for an exception thrown *before* that point, or
++        // by that code itself, it goes nowhere and the app just vanishes with a
++        // SIGABRT and no explanation. Drop a plain note in Documents/ first,
++        // which UIFileSharingEnabled exposes to the Files app.
++        //
++        // stdio only, no boost, no wx, no allocation that matters: this runs on
++        // a path that is already failing, and it must not be able to fail too.
++        if (const char* const ios_home = ::getenv("HOME")) {
++            char note_path[1024];
++            std::snprintf(note_path, sizeof(note_path), "%s/Documents/orca-startup-error.txt", ios_home);
++            if (FILE* const note = std::fopen(note_path, "a")) {
++                std::fprintf(note, "unhandled exception: %s\n", ex.what());
++                std::fclose(note);
++            }
++        }
++#endif
+         BOOST_LOG_TRIVIAL(error) << boost::format("Uncaught exception: %1%") % ex.what();
+         flush_logs();
+         wxLogError(format_wxstr(_L("OrcaSlicer got an unhandled exception: %1%"), ex.what()));

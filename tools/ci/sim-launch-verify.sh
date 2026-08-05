@@ -66,6 +66,24 @@ LPID=$!
 
 EXE=$(basename "$APP" .app)
 
+# Where a *simulated* app's crash report lands is not one directory. Depending
+# on the Xcode version it is written to the host's DiagnosticReports, to the
+# per-device CoreSimulator log directory, or inside the simulated filesystem
+# under the device's own data root - and the previous version of this script
+# looked only in the first. Step-3 run 64 duly reported "crash reports: 0" for
+# an app that never survived startup, which read as "it exits cleanly" when in
+# fact nobody had looked where the evidence was. Search all three.
+crash_report_paths() {
+  local d
+  for d in "$HOME/Library/Logs/DiagnosticReports" \
+           "$HOME/Library/Logs/CoreSimulator/$UDID" \
+           "$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Logs/CrashReporter" \
+           "$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Logs/DiagnosticReports"; do
+    [ -d "$d" ] || continue
+    find "$d" \( -name "${EXE}*.ips" -o -name "${EXE}*.crash" -o -name "${EXE}*.ips.synced" \) 2>/dev/null
+  done
+}
+
 # How NOT to ask whether a simulator app is running: `simctl spawn <udid>
 # launchctl list`. It does not list app processes under their bundle id, so it
 # answers "no" for an app that is plainly up - wx probe run 2 reported "never
@@ -219,9 +237,22 @@ cat "$OUT/screenshot-stats.txt"
 DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data 2>/dev/null)
 if [ -n "${DATA:-}" ]; then
   echo "app container: $DATA"
-  find "$DATA" -name "*.log" -exec sh -c 'echo "--- $1 ---"; tail -c 40000 "$1"' _ {} \; \
+  find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
+    | while IFS= read -r f; do echo "--- $f ---"; tail -c 40000 "$f"; done \
     > "$OUT/orca-app-log.txt" 2>&1 || true
   tail -80 "$OUT/orca-app-log.txt" || true
+
+  # patches/step3/0338 writes the startup exception here with plain stdio, for
+  # exactly the case where the app dies before its log sink exists. It is the
+  # first thing to read when the app does not come up.
+  if [ -f "$DATA/Documents/orca-startup-error.txt" ]; then
+    cp "$DATA/Documents/orca-startup-error.txt" "$OUT/" 2>/dev/null || true
+    echo "=== STARTUP ERROR NOTE ==="
+    cat "$DATA/Documents/orca-startup-error.txt"
+  fi
+  # A listing of the container, so "the log is empty" can be told apart from
+  # "the log was never created".
+  find "$DATA" -type f | head -200 > "$OUT/app-container-listing.txt" 2>&1 || true
 fi
 xcrun simctl spawn "$UDID" log show --last 5m \
   --predicate "process == \"$(basename "$APP" .app)\"" > "$OUT/sim-oslog.txt" 2>&1 || true
@@ -233,7 +264,7 @@ tail -80 "$OUT/sim-launch.log" || true
   echo "still alive at t=${LAST_ALIVE_AT:-none} s (last checkpoint ${LAST_CHECKPOINT}s)"
   echo "screenshots taken while alive: $SHOTS"
   echo "still running at the end: $ALIVE_ENTRIES (pid ${APP_PID:-none})"
-  echo "crash reports: $(find "$HOME/Library/Logs/DiagnosticReports" -name "${EXE}*" 2>/dev/null | wc -l | tr -d ' ')"
+  echo "crash reports: $(crash_report_paths | wc -l | tr -d ' ')"
 } | tee "$OUT/launch-verdict.txt"
 # NB the pattern is $EXE, not a hardcoded "OrcaSlicer*". It was the latter until
 # now, so every wx-probe and smoke-app run printed "crash reports: 0" whatever
@@ -241,12 +272,25 @@ tail -80 "$OUT/sim-launch.log" || true
 # exits without crashing" was read off a search that could only ever find
 # nothing. The reports themselves are copied out too, so a crash is diagnosable
 # from the log commit instead of costing another run.
-find "$HOME/Library/Logs/DiagnosticReports" -name "${EXE}*" -exec cp {} "$OUT/" \; 2>/dev/null || true
-for f in "$OUT"/${EXE}*.ips "$OUT"/${EXE}*.crash; do
-  [ -e "$f" ] || continue
-  echo "=== crash report: $(basename "$f") ==="
-  head -c 8000 "$f"
-done > "$OUT/crash-reports.txt" 2>&1 || true
+crash_report_paths | while IFS= read -r f; do cp "$f" "$OUT/" 2>/dev/null || true; done
+{
+  for f in "$OUT"/${EXE}*.ips "$OUT"/${EXE}*.crash "$OUT"/${EXE}*.ips.synced; do
+    [ -e "$f" ] || continue
+    echo "=== crash report: $(basename "$f") ==="
+    # The interesting part of an .ips is the exception reason and the faulting
+    # thread, both near the top; 8000 bytes cut the backtrace off mid-frame.
+    head -c 24000 "$f"
+    echo
+  done
+  # The reason a C++ exception killed the app is not in the .ips at all - it is
+  # in the note 0338 writes and in the app's own log. Repeat it here so one file
+  # answers "why did it not start".
+  if [ -f "$OUT/orca-startup-error.txt" ]; then
+    echo "=== orca-startup-error.txt ==="
+    cat "$OUT/orca-startup-error.txt"
+  fi
+  grep -h "Uncaught exception" "$OUT/orca-app-log.txt" 2>/dev/null | tail -5
+} > "$OUT/crash-reports.txt" 2>&1 || true
 cp /tmp/sim-install.log "$OUT/" 2>/dev/null || true
 
 if [ -z "$FIRST_ALIVE" ]; then

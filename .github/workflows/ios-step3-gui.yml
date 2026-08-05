@@ -364,6 +364,18 @@ jobs:
           bash "$GITHUB_WORKSPACE/tools/ci/sim-launch-verify.sh" \
             "$APP" org.orca-ios.orcaslicer "$PWD/artifact"
 
+      # The built simulator bundle, so the launch/drive loop does not have to pay
+      # for a 65-minute Orca compile every time the harness itself changes.
+      # ios-sim-drive.yml takes this artifact and does nothing but run the app.
+      - name: "Upload the simulator app bundle"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-sim-app
+          path: sim/
+          if-no-files-found: ignore
+          retention-days: 5
+
       - name: "Collect simulator crash reports"
         if: always()
         run: |
@@ -415,15 +427,18 @@ jobs:
           for f in /tmp/wx-phase.log /tmp/wx-install.log /tmp/bundle-check.log /tmp/ccache-stats.txt \
                    artifact/sim-launch.log artifact/sim-install.log \
                    artifact/launch-verdict.txt artifact/screenshot-stats.txt \
-                   artifact/orca-app-log.txt; do
+                   artifact/orca-app-log.txt artifact/crash-reports.txt \
+                   artifact/orca-startup-error.txt artifact/app-container-listing.txt \
+                   artifact/alive-methods.txt artifact/drive-log.txt; do
             [ -f "$f" ] && tail -c 20000 "$f" > "$D/$(basename "$f")"
           done
           cp artifact/*.png "$D/" 2>/dev/null || true
           [ -f artifact/sim-oslog.txt ] && tail -c 60000 artifact/sim-oslog.txt > "$D/sim-oslog.txt"
           # simulator crash reports name the failing frame, which is the fastest
-          # route from "it aborted" to the offending call
-          find "$HOME/Library/Logs/DiagnosticReports" -name "OrcaSlicer*" \
-            -exec cp {} "$D/" \; 2>/dev/null || true
+          # route from "it aborted" to the offending call. sim-launch-verify.sh
+          # already collected them from every directory a simulated crash can
+          # land in and copied them next to the verdict; take them from there.
+          cp artifact/OrcaSlicer*.ips artifact/OrcaSlicer*.crash "$D/" 2>/dev/null || true
           for f in /tmp/step3-ninja.log /tmp/wx-ninja.log; do
             [ -f "$f" ] && grep -n -B3 -A60 -E "FAILED:|error:|Error [0-9]|Undefined symbols|ld: |symbol\(s\) not found|clang: error" "$f" | head -c 500000 > "$D/$(basename "$f" .log)-errors.log"
           done

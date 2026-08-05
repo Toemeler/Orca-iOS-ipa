@@ -1,5 +1,25 @@
+diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
+index 3b130cb6..c2a46fc4 100644
+--- a/src/libslic3r/utils.cpp
++++ b/src/libslic3r/utils.cpp
+@@ -300,7 +300,14 @@ void set_data_dir(const std::string &dir)
+ {
+     g_data_dir = dir;
+     if (!g_data_dir.empty() && !boost::filesystem::exists(g_data_dir)) {
+-       boost::filesystem::create_directory(g_data_dir);
++       // create_directories, not create_directory. A fresh iOS container has
++       // only Documents, Library/Caches, Library/Preferences and tmp, so the
++       // "Application Support" parent does not exist yet and the single-level
++       // call fails at startup with "No such file or directory" - which is
++       // where OrcaSlicer died on its first launch in the simulator.
++       // GUI_App::init_app_config() calls this before its own (already
++       // corrected) create_directories, so this is the one that runs first.
++       boost::filesystem::create_directories(g_data_dir);
+     }
+ }
+ 
 diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
-index 11019fa08..9a115b516 100644
+index 11019fa0..9a115b51 100644
 --- a/src/slic3r/GUI/GUI_App.cpp
 +++ b/src/slic3r/GUI/GUI_App.cpp
 @@ -2419,7 +2419,11 @@ void GUI_App::init_app_config()

@@ -1,0 +1,3 @@
+WXPROBE static init            ran
+WXPROBE wxApp ctor             ran
+org.orca-ios.wxprobe: 4376

@@ -1,0 +1,3 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/F00E38B6-EC47-41F3-AEB0-54D6E7A55CF7/data/Containers/Data/Application/3C0468EE-92AF-4878-A709-E40572230A56/Documents/wxprobe.log ---
+WXPROBE static init            ran
+WXPROBE wxApp ctor             ran

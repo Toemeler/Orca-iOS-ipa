@@ -16,6 +16,17 @@ name: wx widget probe (simulator)
 # Runs in its own concurrency group, so it can go while a step-3 build is busy.
 
 on:
+  # A workflow file that exists only on a feature branch cannot be dispatched by
+  # the API - GitHub resolves the name against the default branch and returns
+  # 404. The push trigger is how this one gets started until it lands on main;
+  # the paths keep ci-log commits from re-running it.
+  push:
+    branches:
+      - claude/lan-backend-implementation-gxu2jr
+    paths:
+      - '.github/workflows/ios-wx-probe.yml'
+      - 'wx-probe/**'
+      - 'tools/ci/sim-launch-verify.sh'
   workflow_dispatch:
 
 permissions:

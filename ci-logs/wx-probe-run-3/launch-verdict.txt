@@ -1,0 +1,5 @@
+first seen alive after: never s
+still alive at t=none s (last checkpoint 67s)
+screenshots taken while alive: 0
+still running at the end: 0 (pid 4990)
+crash reports: 0

@@ -1,0 +1,45 @@
+diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
+index 42dcc14..3723068 100644
+--- a/src/libslic3r/utils.cpp
++++ b/src/libslic3r/utils.cpp
+@@ -15,6 +15,8 @@
+ 
+ #ifdef __APPLE__
+ #include "MacUtils.hpp"
++#include <TargetConditionals.h>
++#include <cstdlib>     // getenv, for the iOS log path in set_log_path_and_level
+ #endif
+ 
+ #ifdef WIN32
+@@ -348,7 +350,7 @@ namespace keywords = boost::log::keywords;
+ namespace attrs = boost::log::attributes;
+ void set_log_path_and_level(const std::string& file, unsigned int level)
+ {
+-#ifdef __APPLE__
++#if defined(__APPLE__) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+ 	//currently on old macos, the boost::log::add_file_log will crash
+ 	//TODO: need to be fixed
+ 	if (!is_macos_support_boost_add_file_log()) {
+@@ -358,8 +360,21 @@ void set_log_path_and_level(const std::string& file, unsigned int level)
+ 
+ 	//BBS log file at C:\\Users\\[yourname]\\AppData\\Roaming\\OrcaSlicer\\log\\[log_filename].log
+ 	auto log_folder = boost::filesystem::path(g_data_dir) / "log";
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++	// A sideloaded iOS build has no console anyone can read, so this file is
++	// the only way to find out what the app did. data_dir is
++	// Library/Application Support/OrcaSlicer inside the sandbox, and
++	// UIFileSharingEnabled exposes Documents/ and nothing else - a log written
++	// next to the config cannot be retrieved from the device at all. Write it
++	// where the Files app can see it. $HOME is the container root on iOS.
++	const char* const ios_home = ::getenv("HOME");
++	if (ios_home != nullptr && *ios_home != '\0')
++		log_folder = boost::filesystem::path(ios_home) / "Documents" / "log";
++#endif
+ 	if (!boost::filesystem::exists(log_folder)) {
+-		boost::filesystem::create_directory(log_folder);
++		// create_directories, not create_directory: on iOS the Documents
++		// parent exists but nothing below it does.
++		boost::filesystem::create_directories(log_folder);
+ 	}
+ 	auto full_path = (log_folder / file).make_preferred();
+ 

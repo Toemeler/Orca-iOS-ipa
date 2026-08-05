@@ -37,10 +37,13 @@ BOOT_SRC="$HERE/probe_boot.mm"
 # the iPhone port, OnInit is unreachable. The app brings up a UIKit scene and
 # dies in under a second, which is exactly what seven probe runs recorded.
 #
-# It must be -Wl,-ObjC and not -ObjC: to the clang driver -ObjC is the *language*
-# selector ("compile this source as Objective-C"), which errors out against
-# -std=c++17. Only ld wants the other one.
-OBJC_LINK="-Wl,-ObjC"
+# -u names the one symbol to resolve, which loads exactly the archive member
+# that defines it. -Wl,-ObjC was the first attempt and is far too broad: it
+# force-loads every ObjC-bearing object in every wx archive, which dragged in
+# webview_webkit.mm.o and left a wall of undefined WKWebView symbols. Note this
+# is a linker flag either way - bare -ObjC is the clang *driver's* language
+# selector and errors out against -std=c++17.
+OBJC_LINK="-Wl,-u,_OBJC_CLASS_\$_wxAppDelegate"
 
 build_it() {
   xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
@@ -72,7 +75,7 @@ elif build_it; then
   echo "PROBE_BUILD=without-webview (the WebKit/wxWebView build failed above)"
 else
   # Drop the instrumentation and try once more. main.cpp declares
-  # probe_note_oninit weak, so it links and no-ops without this file.
+  # probe_note_oninit weak_import, so it links and no-ops without this file.
   echo "PROBE_BUILD=instrumentation FAILED TO COMPILE - see the errors above"
   BOOT_SRC=""
   if build_it -DPROBE_WEBVIEW -framework WebKit; then
@@ -100,7 +103,7 @@ delegate_present() {
 if delegate_present; then
   echo "PROBE_DELEGATE=linked (wxAppDelegate is in the binary)"
 else
-  echo "::error::wxAppDelegate is not in the binary even with -Wl,-ObjC; the app cannot reach OnInit"
+  echo "::error::wxAppDelegate is not in the binary even with -u; the app cannot reach OnInit"
   exit 1
 fi
 

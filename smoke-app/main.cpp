@@ -51,7 +51,7 @@ public:
 // start either" was as much as could ever be said about it. It is also the
 // smallest wx app there is - a frame, a button and a GL canvas - so whatever it
 // says about the launch handshake is uncontaminated by widget choice.
-extern "C" void probe_note_oninit(void) __attribute__((weak));
+extern "C" void probe_note_oninit(void) __attribute__((weak_import));
 
 class SmokeApp : public wxApp
 {

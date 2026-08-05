@@ -34,7 +34,7 @@
 // weak so the probe still links when that file is left out of the build: the
 // instrumentation is there to explain a failure, and must never be able to
 // prevent the run that would have shown it.
-extern "C" void probe_note_oninit(void) __attribute__((weak));
+extern "C" void probe_note_oninit(void) __attribute__((weak_import));
 
 // Written to stderr *and* to a file, and the file path comes from $HOME rather
 // than from wx. Run 4 published an empty app log, which is ambiguous in exactly

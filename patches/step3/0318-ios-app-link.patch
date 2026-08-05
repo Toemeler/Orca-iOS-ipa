@@ -2,7 +2,7 @@ diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index e3361ef..20b3e0e 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -141,7 +141,37 @@ endif ()
+@@ -141,7 +141,41 @@ endif ()
  
  target_link_libraries(OrcaSlicer libslic3r cereal::cereal)
  # target_include_directories(OrcaSlicer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/slic3r)
@@ -34,14 +34,18 @@ index e3361ef..20b3e0e 100644
 +    # unreachable by any other route. The app brings up a UIKit scene and exits
 +    # in well under a second.
 +    #
-+    # Bare -ObjC would be wrong here: to the clang driver that is the language
-+    # selector, not the ld flag.
-+    target_link_libraries(OrcaSlicer "-Wl,-ObjC")
++    # -u names the single symbol to resolve, so ld loads exactly the archive
++    # member defining it. -Wl,-ObjC also works but is far too broad: it
++    # force-loads every ObjC-bearing object in every wx archive, which on the
++    # probe pulled in webview_webkit.mm.o and a wall of undefined WKWebView
++    # symbols. Bare -ObjC is wrong outright - that is the clang driver's
++    # language selector, not an ld flag.
++    target_link_libraries(OrcaSlicer "-Wl,-u,_OBJC_CLASS_$_wxAppDelegate")
 +elseif (APPLE)
  #    add_compile_options(-stdlib=libc++)
  #    add_definitions(-DBOOST_THREAD_DONT_USE_CHRONO -DBOOST_NO_CXX11_RVALUE_REFERENCES -DBOOST_THREAD_USES_MOVE)
      # -liconv: boost links to libiconv by default
-@@ -164,6 +194,9 @@ target_link_libraries(OrcaSlicer libslic3r_gui)
+@@ -164,6 +198,9 @@ target_link_libraries(OrcaSlicer libslic3r_gui)
          target_link_libraries(OrcaSlicer ws2_32.lib user32.lib Setupapi.lib)
      elseif (MINGW)
          target_link_libraries(OrcaSlicer ws2_32 uxtheme setupapi)

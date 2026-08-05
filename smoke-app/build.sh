@@ -25,12 +25,12 @@ WXLIBS=$(ls "$PREFIX"/lib/libwx*.a)
 # compile error in a diagnostic.
 BOOT_SRC="$HERE/../wx-probe/probe_boot.mm"
 
-# See wx-probe/build.sh: without -Wl,-ObjC the linker drops the archive member
-# defining wxAppDelegate, because UIApplicationMain only ever names it as a
-# string. -Wl,- and not bare -ObjC, which the driver reads as a language mode.
+# See wx-probe/build.sh: the linker drops the archive member defining
+# wxAppDelegate because UIApplicationMain only ever names it as a string.
+# -u forces exactly that member in, without -ObjC's collateral damage.
 build_it() {
   xcrun -sdk "$SDK" clang++ -std=c++17 -arch arm64 \
-    "$MIN_FLAG" -Wl,-ObjC \
+    "$MIN_FLAG" "-Wl,-u,_OBJC_CLASS_\$_wxAppDelegate" \
     -D__WXOSX_IPHONE__ -D_FILE_OFFSET_BITS=64 \
     -I"$PREFIX/include/wx-3.3" -I"$SETUP_DIR" \
     "$HERE/main.cpp" $BOOT_SRC -o "$APP/WxSmoke" \

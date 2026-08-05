@@ -1,0 +1,8 @@
+=== FAILED targets ===
+
+=== undefined symbols (linker) ===
+
+=== compile error signatures (deduped) ===
+
+total FAILED: 0
+undefined symbol count: 0

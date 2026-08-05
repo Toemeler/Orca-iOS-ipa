@@ -154,6 +154,32 @@ jobs:
           ./wx-probe/build.sh "$WXPREFIX" "$SDK" "$IOS_MIN" "$PREFIX" 2>&1 | tee /tmp/wx-probe-build.log
           file wx-probe/build/WxProbe.app/WxProbe
 
+      # Publish the build log the moment the build fails, rather than after the
+      # simulator steps. Job log downloads are blocked in this environment, so
+      # ci-logs is the only channel -- and routing it through the end of the job
+      # has now cost three rounds: a cancelled run skips it entirely, and a
+      # healthy one delays it by the control step's fourteen minutes.
+      - name: Publish the build log immediately if the build failed
+        if: failure()
+        run: |
+          set -ux
+          D="ci-logs/wx-probe-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          # In full: the interesting errors are from the *first* link attempt,
+          # at the top of the file, and a tail cuts exactly those off.
+          cp /tmp/wx-probe-build.log "$D/wx-probe-build.log" 2>/dev/null || true
+          grep -nE "error:|Undefined symbols|symbol\(s\) not found|PROBE_BUILD=|PROBE_DELEGATE=" \
+            /tmp/wx-probe-build.log > "$D/build-errors.txt" 2>&1 || true
+          cat "$D/build-errors.txt" || true
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "wx probe run ${GITHUB_RUN_NUMBER} - build failure logs" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done
+
       - name: Launch in iPad simulator + screenshot
         # A stuck simctl must not eat the job. The launch itself is bounded by
         # sim-launch-verify's own checkpoints (~2 minutes); everything past that

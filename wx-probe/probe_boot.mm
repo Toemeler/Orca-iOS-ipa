@@ -217,12 +217,16 @@ static BOOL probe_will_finish(id self, SEL _cmd, UIApplication* app, NSDictionar
 
         if (!g_on_init_seen) {
             probe_log("rescue", "OnInit never ran - calling OSXOnDidFinishLaunching directly");
-            if (wxTheApp != nullptr) {
-                wxTheApp->OSXOnDidFinishLaunching();
+            // GetInstance() rather than the wxTheApp macro: what that macro
+            // expands to varies between wx versions, and this file cannot
+            // afford another round lost to a compile error.
+            wxApp* app_obj = static_cast<wxApp*>(wxApp::GetInstance());
+            if (app_obj != nullptr) {
+                app_obj->OSXOnDidFinishLaunching();
                 probe_log("rescue", g_on_init_seen ? "OnInit ran under the rescue"
                                                    : "rescue returned, OnInit still not seen");
             } else {
-                probe_log("rescue", "wxTheApp is NULL");
+                probe_log("rescue", "wxApp::GetInstance() is NULL");
             }
         }
     });

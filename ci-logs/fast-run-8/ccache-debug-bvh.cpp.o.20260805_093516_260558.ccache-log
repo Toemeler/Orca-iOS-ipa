@@ -1,0 +1,88 @@
+[2026-08-05T09:35:16.260638 3332 ] === CCACHE 4.13.6 STARTED =========================================
+[2026-08-05T09:35:16.260638 3332 ] Configuration file: /Users/runner/.ccache-step3/ccache.conf
+[2026-08-05T09:35:16.260638 3332 ] Directory configuration file: 
+[2026-08-05T09:35:16.260638 3332 ] System configuration file: /opt/homebrew/etc/ccache.conf
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) absolute_paths_in_stderr = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) base_dir = /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) cache_dir = /Users/runner/.ccache-step3
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) ceiling_dirs = /Users/runner
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) ceiling_markers = .git
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) compiler = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) compiler_check = mtime
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) compiler_type = auto
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) compression = true
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) compression_level = 1
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) cpp_extension = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) debug = true
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) debug_dir = /tmp/ccache-debug
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) debug_level = 2
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) depend_mode = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) direct_mode = true
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) disable = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) extra_files_to_hash = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) file_clone = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) hard_link = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) hash_dir = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) ignore_headers_in_manifest = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) ignore_options = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) inode_cache = true
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) keep_comments_cpp = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) libexec_dirs = /opt/homebrew/Cellar/ccache/4.13.6_1/libexec
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) log_file = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) max_files = 0
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) max_size = 3.0 GB
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) msvc_dep_prefix = Note: including file:
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) msvc_utf8 = true
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) namespace = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) path = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) pch_external_checksum = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) prefix_command = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) prefix_command_cpp = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) read_only = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) read_only_direct = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) recache = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) remote_only = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) remote_storage = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) reshare = false
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) response_file_format = auto
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) safe_dirs = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) stats = true
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) stats_log = 
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) temporary_dir = /Users/runner/.ccache-step3/tmp
+[2026-08-05T09:35:16.260638 3332 ] Config: (default) umask = 
+[2026-08-05T09:35:16.260638 3332 ] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a\" -DMCUT_WITH_COMPUTE_HELPER_THREADPOOL=1 -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mcut/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++11 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o -MF deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o.d -o deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mcut/source/bvh.cpp
+[2026-08-05T09:35:16.260638 3332 ] Hostname: sjc22-bm207-337bccc8-79c7-40f9-823a-59ba756fb018-D2E4778F1C9F.local
+[2026-08-05T09:35:16.260638 3332 ] Working directory: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build
+[2026-08-05T09:35:16.260725 3332 ] Detected that /usr/bin/c++ is equivalent to /usr/bin/clang when guessing compiler type
+[2026-08-05T09:35:16.260727 3332 ] Compiler: /usr/bin/c++
+[2026-08-05T09:35:16.260728 3332 ] Compiler type: clang
+[2026-08-05T09:35:16.260877 3332 ] Detected input file: /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mcut/source/bvh.cpp
+[2026-08-05T09:35:16.260976 3332 ] Source file: ../deps_src/mcut/source/bvh.cpp
+[2026-08-05T09:35:16.260978 3332 ] Dependency file: deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o.d
+[2026-08-05T09:35:16.260979 3332 ] Object file: deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o
+[2026-08-05T09:35:16.263550 3332 ] Trying direct lookup
+[2026-08-05T09:35:16.263661 3332 ] Inode cache file loaded: /Users/runner/.ccache-step3/tmp/inode-cache-64.v2
+[2026-08-05T09:35:16.263793 3332 ] Inode cache miss: ../deps_src/mcut/source/bvh.cpp
+[2026-08-05T09:35:16.264290 3332 ] Inode cache insert: ../deps_src/mcut/source/bvh.cpp
+[2026-08-05T09:35:16.264298 3332 ] Manifest key: deb90a81993dfd85810a1b99ffa2d322c31cd298
+[2026-08-05T09:35:16.264657 3332 ] Retrieved deb90a81993dfd85810a1b99ffa2d322c31cd298 from local storage (/Users/runner/.ccache-step3/d/e/b90a81993dfd85810a1b99ffa2d322c31cd298)
+[2026-08-05T09:35:16.264725 3332 ] Considering result entry 0 (35dbfb8ba7824c24732931bd8a849d9fdf4cb101)
+[2026-08-05T09:35:16.264727 3332 ] Result entry 0 matched in manifest
+[2026-08-05T09:35:16.264729 3332 ] Got result key from manifest
+[2026-08-05T09:35:16.264730 3332 ] Result key: 35dbfb8ba7824c24732931bd8a849d9fdf4cb101
+[2026-08-05T09:35:16.265195 3332 ] Retrieved 35dbfb8ba7824c24732931bd8a849d9fdf4cb101 from local storage (/Users/runner/.ccache-step3/3/5/dbfb8ba7824c24732931bd8a849d9fdf4cb101)
+[2026-08-05T09:35:16.265364 3332 ] Reading embedded entry #0 .o (67000 bytes)
+[2026-08-05T09:35:16.265367 3332 ] Writing to deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o
+[2026-08-05T09:35:16.265518 3332 ] Reading embedded entry #1 .d (133358 bytes)
+[2026-08-05T09:35:16.265520 3332 ] Writing to deps_src/mcut/CMakeFiles/mcut.dir/source/bvh.cpp.o.d
+[2026-08-05T09:35:16.265627 3332 ] Succeeded getting cached result
+[2026-08-05T09:35:16.265639 3332 ] Result: direct_cache_hit
+[2026-08-05T09:35:16.265640 3332 ] Result: local_storage_hit
+[2026-08-05T09:35:16.265641 3332 ] Result: local_storage_read_hit
+[2026-08-05T09:35:16.265642 3332 ] Result: local_storage_read_hit
+[2026-08-05T09:35:16.265645 3332 ] Acquiring /Users/runner/.ccache-step3/0/4/stats.lock
+[2026-08-05T09:35:16.265730 3332 ] Acquired /Users/runner/.ccache-step3/0/4/stats.lock
+[2026-08-05T09:35:16.265733 3332 ] Creating /Users/runner/.ccache-step3/0/4/stats.alive
+[2026-08-05T09:35:16.266124 3332 ] Releasing /Users/runner/.ccache-step3/0/4/stats.lock
+[2026-08-05T09:35:16.266172 3332 ] Released /Users/runner/.ccache-step3/0/4/stats.lock

@@ -1600,3 +1600,131 @@ cached prefix, ~13 minutes end to end including two simulator launches, and it
 answers widget and startup questions without a 50-minute Orca build. It runs on
 `main` now and builds its own prefix if the cache misses. Use it before
 committing anything to a full Orca cycle.
+
+# SESSION 2026-08-05 (later): the link fix, the first real IPA, and what the
+# device actually does with it
+
+This section supersedes the "Where step 3 and step 4 stand" list above.
+
+## Step 4 is green. There is a real IPA.
+
+`orcaslicer-ipa-run26` — `OrcaSlicer-iPad.ipa` (141 MB, `Payload/OrcaSlicer.app`
+with a 123 MB arm64 iphoneos binary + `orca-resources`) and
+`OrcaSlicer-iPad-minimal.ipa` (38 MB, executable + Info.plist only).
+Verified in-job: bundle id `org.orca-ios.orcaslicer`, executable `OrcaSlicer`,
+`vtool` platform IOS.
+
+## Why run 25 failed: Ninja ate the '$' in the -u delegate symbol
+
+    Undefined symbols for architecture arm64:
+      "_OBJC_CLASS_", referenced from:
+          <initial-undefines>
+
+Patch 0318 passed `-Wl,-u,_OBJC_CLASS_$_wxAppDelegate` as an ordinary link
+flag. CMake writes it into `build.ninja` **without escaping the `$`**, Ninja
+reads `$_wxAppDelegate` as one of its own variable references and expands it to
+nothing, and ld is handed `-u _OBJC_CLASS_`. Reproduced locally with cmake 3.28
++ ninja 1.11: `build.ninja` carries the literal `$` and `ninja -t commands`
+prints `-Wl,-u,_OBJC_CLASS_`. `/bin/sh` would eat it too if Ninja ever stopped.
+
+Fixed by passing the flag in a **clang response file** (`file(WRITE ...)` +
+`target_link_options(... "@file")`): the driver reads the file itself, so the
+contents pass through neither Ninja nor the shell. Verified with
+`clang++ @rsp -###`.
+
+Run 25 was the first Orca build ever to carry the `-u` form — step-3 run 63 was
+still at `b169472` with `-Wl,-ObjC`, which is why it linked and step 4 did not.
+**Never write a `$` into a link flag from CMake.** Same rule for the two
+`build.sh` scripts, which already escape it because they go through `sh`.
+
+## nm is settled-unreliable for the delegate; otool -ov is the right probe
+
+The post-link check added this session took its second branch:
+
+    + nm -a .../OrcaSlicer | grep -q '_OBJC_CLASS_\$_wxAppDelegate'   -> no match
+    + otool -ov .../OrcaSlicer | grep -q wxAppDelegate                -> match
+    wxAppDelegate: present (otool -ov)
+
+`otool -ov` reads the Objective-C metadata — the class list the runtime itself
+consults, which is what `UIApplicationMain` resolves the delegate name against.
+That is the authoritative answer. Do not re-litigate this with `nm`.
+
+## THE APP RUNS ON A REAL iPad
+
+Confirmed by the user on an iPad16,5 running iPadOS 27.0 beta, sideloaded and
+re-signed (`org.orca-ios.orcaslicer.9YHLT3UZJ6`): OrcaSlicer renders its actual
+home screen — the Prepare / Preview / Device / Project tab bar, the Orca Cloud
+Account sidebar with Login/Register, Recent, and the "Create new project" and
+"3mf" tiles. Not a wizard, not a blank window. The GUI port works.
+
+Two bugs stand between that and a usable app, both diagnosed from the crash
+reports (`.ips`) off the device:
+
+### 1. Any touch kills the process (fixed, unverified)
+
+    NSInvalidArgumentException: unrecognized selector sent to instance 0x...
+      -[UIResponder doesNotRecognizeSelector:]
+      -[UIGestureRecognizerTarget _sendActionWithGestureRecognizer:]
+      _UIGestureRecognizerSendTargetActions
+      -[UIGestureEnvironment _updateForEvent:window:]
+      -[UIWindow sendEvent:]
+
+Three of the four crash reports are this, and the app had been alive for 46 s
+before the first one — it dies on interaction, not on startup.
+
+Patch 0209 attaches a `UIPanGestureRecognizer` and a `UIHoverGestureRecognizer`
+to **every** `UIView` wx wraps, with the view itself as target and
+`WX_scrollGesture:` / `WX_hoverGesture:` as actions. Those two methods are
+installed only by `wxOSXIPhoneClassAddWXMethods()`, i.e. only on the classes wx
+builds for its own controls. The GL canvas, a `WKWebView`, any plain `UIView`
+container — none of them implement the selector, and the first scroll or
+pointer move over one aborts the process.
+
+Fixed by `class_addMethod`-ing the two IMPs onto the view's own class when
+`respondsToSelector:` says they are missing, rather than skipping the
+recognizers — the 3D canvas is precisely where scroll-to-zoom has to work. The
+names are `WX_`-prefixed so adding them to a UIKit class collides with nothing.
+
+### 2. wx was built with asserts live (fixed, unverified)
+
+A modal **wxWidgets Debug Alert** appears over the UI:
+
+    src/common/sizer.cpp(2324): assert "CheckSizerFlags(!((flags) &
+    (wxALIGN_RIGHT)))" failed in DoInsert(): wxALIGN_RIGHT will be ignored in
+    this sizer: only vertical alignment flags can be used in horizontal sizers
+
+No wx cmake invocation in this repo ever passed `CMAKE_BUILD_TYPE`, so wx built
+in the empty config: no `NDEBUG`, so `wxDEBUG_LEVEL` stayed 1 and every
+`wxASSERT` in wx's own sources shipped. Orca is built `Release`. Two
+consequences, and the second is the nastier one:
+
+- the alert, and probably the fourth crash report too — the one where an
+  exception escapes `GUI_App::OnInit()` through `generic_exception_handle()` and
+  `__cxa_rethrow`s into `terminate` less than a second after launch. An assert
+  firing before any window exists cannot show a dialog.
+- **a debug/release mismatch between wx and the app that links it.**
+  `wxDEBUG_LEVEL` changes struct layout in parts of wx; the library and Orca
+  disagreed about it in every build so far.
+
+Fixed by adding `-DCMAKE_BUILD_TYPE=Release` to all six wx cmake invocations
+(step2, step3-gui, step4, wx-probe, wx-only, device-ipa). The wx cache keys do
+**not** hash the cmake flags, only `wx-overlay` + `patches/step2`, so the keys
+were bumped (`ios-wxprefix-v3` -> `v4`, `ios-wxprefix-device-v1` -> `v2`) to
+stop a cached assert-enabled prefix from being served to the fix.
+
+## The simulator harness is lying again (open)
+
+Step-3 run 64 linked clean (0 failed targets, 0 undefined symbols) and then
+reported `first seen alive: never`, `crash reports: 0`, with **empty**
+`sim-install.log`, `sim-launch.log` and `orca-app-log.txt`, and a 180x240
+screenshot that is not the app. The device runs the same commit fine, so this
+is the harness, not the app. Do not read a step-3 launch verdict as evidence
+about the app until `sim-install.log` is non-empty. The device is the ground
+truth now; the simulator is the thing that needs fixing.
+
+## ccache is missing on step 4 (open, costs ~65 min a run)
+
+Run 26 restored `ccache-step4-` in 5 s and then spent 64 min compiling, same as
+the cold run 25. Every step-4 iteration therefore costs ~75 min end to end even
+with deps and wx cached. Worth one run with `ccache -s` published to find out
+whether the entry is empty or the hashes miss.

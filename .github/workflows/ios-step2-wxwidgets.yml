@@ -61,6 +61,7 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DIPHONE=ON \
             -DwxBUILD_TOOLKIT=osx_iphone \
+            -DCMAKE_BUILD_TYPE=Release \
             -DwxBUILD_SHARED=OFF \
             -DwxBUILD_PRECOMP=OFF \
             -DwxBUILD_SAMPLES=OFF \

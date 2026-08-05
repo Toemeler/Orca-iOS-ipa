@@ -235,7 +235,7 @@ index 81e9fd0..7108399 100644
      class_addMethod(c, @selector(touchesBegan:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
      class_addMethod(c, @selector(touchesMoved:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
      class_addMethod(c, @selector(touchesEnded:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
-@@ -804,6 +951,29 @@ void wxWidgetIPhoneImpl::InstallEventHandler( WXWidget control )
+@@ -804,6 +951,55 @@ void wxWidgetIPhoneImpl::InstallEventHandler( WXWidget control )
          [cc addTarget:cc action:@selector(WX_touchUpInsideAction:event:) forControlEvents:UIControlEventTouchUpInside];
          [cc addTarget:cc action:@selector(WX_valueChangedAction:event:) forControlEvents:UIControlEventValueChanged];
      }
@@ -246,6 +246,32 @@ index 81e9fd0..7108399 100644
 +    if ( [c isKindOfClass:[UIView class]] )
 +    {
 +        UIView* view = (UIView*) c;
++
++        // Both recognizers below send their action to the view itself, and the
++        // two actions exist only where wxOSXIPhoneClassAddWXMethods() put them
++        // - that is, only on the classes wx builds for its own controls. Every
++        // other view wx wraps (the GL canvas, a WKWebView, a plain UIView used
++        // as a container) does not implement them, so the first scroll or
++        // pointer move over one goes straight to
++        // -[UIResponder doesNotRecognizeSelector:] and aborts the process:
++        //
++        //   NSInvalidArgumentException: unrecognized selector sent to instance
++        //     -[UIGestureRecognizerTarget _sendActionWithGestureRecognizer:]
++        //     -[UIWindow sendEvent:]
++        //
++        // Measured on an iPad running the sideloaded IPA: OrcaSlicer renders
++        // its whole home screen and then dies on the first touch. Install the
++        // methods on the view's own class when they are missing rather than
++        // skipping the recognizers, so scroll and hover keep working on the
++        // views that need them most - the 3D canvas above all. The names are
++        // WX_-prefixed, so adding them to a UIKit class collides with nothing.
++        Class viewClass = object_getClass(view);
++        if ( ![view respondsToSelector:@selector(WX_scrollGesture:)] )
++            class_addMethod(viewClass, @selector(WX_scrollGesture:),
++                            (IMP) wxOSX_scrollGesture, "v@:@");
++        if ( ![view respondsToSelector:@selector(WX_hoverGesture:)] )
++            class_addMethod(viewClass, @selector(WX_hoverGesture:),
++                            (IMP) wxOSX_hoverGesture, "v@:@");
 +
 +        UIPanGestureRecognizer* scroll =
 +            [[UIPanGestureRecognizer alloc] initWithTarget:view action:@selector(WX_scrollGesture:)];

@@ -155,6 +155,12 @@ jobs:
           file wx-probe/build/WxProbe.app/WxProbe
 
       - name: Launch in iPad simulator + screenshot
+        # A stuck simctl must not eat the job. The launch itself is bounded by
+        # sim-launch-verify's own checkpoints (~2 minutes); everything past that
+        # is simulator create/boot, and when that wedges it wedges for good --
+        # one run sat in the control step for 35 minutes and had to be killed,
+        # losing the build log it would have published on a normal failure.
+        timeout-minutes: 14
         env:
           # The probe either renders in the first seconds or dies; a 67-second
           # window buys nothing here and the loop is the point.
@@ -173,6 +179,7 @@ jobs:
       # not a gate.
       - name: Control - the step-2 smoke app
         if: always()
+        timeout-minutes: 14
         env:
           SIM_CHECKPOINTS: "2 6"
         run: |

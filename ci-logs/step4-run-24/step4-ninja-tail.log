@@ -1,0 +1,200 @@
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 1)
+   74 |     virtual void Update() override;
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:48:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+   48 |     void Update(int humidiy_level, int humidity_percent, int left_dry_time, float current_temperature);
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 4)
+   74 |     virtual void Update() override;
+      |                  ^
+4 warnings generated.
+[654/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanMqtt.cpp.o
+[655/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanFtps.cpp.o
+[656/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanDiscovery.cpp.o
+[657/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrintCommand.cpp.o
+[658/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrinterAgent.cpp.o
+[659/659] Linking CXX static library src/slic3r/liblibslic3r_gui.a
+[1/2] Building CXX object src/CMakeFiles/OrcaSlicer.dir/OrcaSlicer.cpp.o
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:18:10: warning: 'ScrolledWindow::Refresh' hides overloaded virtual function [-Woverloaded-virtual]
+   18 |     void Refresh();
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:79:18: note: hidden overloaded virtual function 'wxWindow::Refresh' declared here: different number of parameters (2 vs 0)
+   79 |     virtual void Refresh( bool eraseBackground = true,
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:22:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/ScrolledWindow.hpp:19:10: warning: 'ScrolledWindow::SetBackgroundColour' hides overloaded virtual function [-Woverloaded-virtual]
+   19 |     void SetBackgroundColour(wxColour color);
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:86:18: note: hidden overloaded virtual function 'wxWindow::SetBackgroundColour' declared here: type mismatch at 1st parameter ('const wxColour &' vs 'wxColour')
+   86 |     virtual bool SetBackgroundColour( const wxColour &colour ) override;
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:46:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   46 |     void SetLabel(const wxString& label);
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+   56 |     virtual void SetLabel( const wxString& label ) override;
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:72:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   72 |     virtual void DoSetSize(
+      |                  ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+  379 |     virtual void DoSetSize(int x, int y,
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:23:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Widgets/TextInput.hpp:75:10: warning: 'DoSetToolTipText' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   75 |     void DoSetToolTipText(wxString const &tip);
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/window.h:2005:18: note: overridden virtual function is here
+ 2005 |     virtual void DoSetToolTipText( const wxString &tip );
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:220:10: warning: 'Slic3r::Search::SearchDialog::Popup' hides overloaded virtual function [-Woverloaded-virtual]
+  220 |     void Popup(wxPoint position = wxDefaultPosition);
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/popupwin.h:167:18: note: hidden overloaded virtual function 'wxPopupTransientWindow::Popup' declared here: type mismatch at 1st parameter ('wxWindow *' vs 'wxPoint')
+  167 |     virtual void Popup(wxWindow *focus = nullptr) override;
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:15:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Plater.hpp:20:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/Search.hpp:264:10: warning: 'Slic3r::Search::SearchObjectDialog::Popup' hides overloaded virtual function [-Woverloaded-virtual]
+  264 |     void Popup(wxPoint position = wxDefaultPosition);
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3/wx/popupwin.h:167:18: note: hidden overloaded virtual function 'wxPopupTransientWindow::Popup' declared here: type mismatch at 1st parameter ('wxWindow *' vs 'wxPoint')
+  167 |     virtual void Popup(wxWindow *focus = nullptr) override;
+      |                  ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:82:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/PartPlate.hpp:19:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/GLCanvas3D.hpp:1153:50: warning: all paths through this function will call itself [-Winfinite-recursion]
+ 1153 |     ArrangeSettings get_arrange_settings() const {
+      |                                                  ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:1919:36: warning: address of function 'construct_assemble_list' will always evaluate to 'true' [-Wpointer-bool-conversion]
+ 1919 |             boost::nowide::cerr << construct_assemble_list << ": " << e.what() << std::endl;
+      |                                 ~~ ^~~~~~~~~~~~~~~~~~~~~~~
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:1919:36: note: prefix with the address-of operator to silence this warning
+ 1919 |             boost::nowide::cerr << construct_assemble_list << ": " << e.what() << std::endl;
+      |                                    ^
+      |                                    &
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:1968:30: warning: lambda capture 'config_substitution_rule' is not required to be captured for this use [-Wunused-lambda-capture]
+ 1968 |     auto load_config_file = [config_substitution_rule](const std::string& file, DynamicPrintConfig& config, std::string& config_type,
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:4721:47: warning: '&&' within '||' [-Wlogical-op-parentheses]
+ 4721 |                 if (!arrange_cfg.is_seq_print && (assemble_plate.filaments_count > 1)||(enable_wrapping_detect && !current_wrapping_exclude_area.empty()))
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:4721:47: note: place parentheses around the '&&' expression to silence this warning
+ 4721 |                 if (!arrange_cfg.is_seq_print && (assemble_plate.filaments_count > 1)||(enable_wrapping_detect && !current_wrapping_exclude_area.empty()))
+      |                                               ^                                      
+      |                     (                                                                )
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:6977:14: warning: '/*' within block comment [-Wcomment]
+ 6977 |             //*plate_bboxes[index] = p->generate_first_layer_bbox();
+      |              ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:22:
+In file included from /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:608:
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator.h:168:81: warning: destructor called on non-final 'Slic3r::Polyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+  168 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+      |                                                                                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator_traits.h:334:9: note: in instantiation of member function 'std::allocator<Slic3r::Polyline>::destroy' requested here
+  334 |     __a.destroy(__p);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:985:23: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::Polyline>>::destroy<Slic3r::Polyline, 0>' requested here
+  985 |       __alloc_traits::destroy(__alloc(), std::__to_address(--__soon_to_be_end));
+      |                       ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:979:5: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::__base_destruct_at_end' requested here
+  979 |     __base_destruct_at_end(this->__begin_);
+      |     ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:530:16: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::__clear' requested here
+  530 |         __vec_.__clear();
+      |                ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:541:67: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::__destroy_vector::operator()' requested here
+  541 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+      |                                                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Polyline.hpp:198:15: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::~vector' requested here
+  198 |     Polylines out;
+      |               ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator.h:168:87: note: qualify call to silence this warning
+  168 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+      |                                                                                       ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator.h:168:81: warning: destructor called on non-final 'Slic3r::ThickPolyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+  168 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+      |                                                                                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator_traits.h:334:9: note: in instantiation of member function 'std::allocator<Slic3r::ThickPolyline>::destroy' requested here
+  334 |     __a.destroy(__p);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:985:23: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::ThickPolyline>>::destroy<Slic3r::ThickPolyline, 0>' requested here
+  985 |       __alloc_traits::destroy(__alloc(), std::__to_address(--__soon_to_be_end));
+      |                       ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:979:5: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__base_destruct_at_end' requested here
+  979 |     __base_destruct_at_end(this->__begin_);
+      |     ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:530:16: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__clear' requested here
+  530 |         __vec_.__clear();
+      |                ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:541:67: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__destroy_vector::operator()' requested here
+  541 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+      |                                                                   ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Polyline.hpp:281:20: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::~vector' requested here
+  281 |     ThickPolylines out;
+      |                    ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator.h:168:87: note: qualify call to silence this warning
+  168 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+      |                                                                                       ^
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/OrcaSlicer.cpp:51:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Config.hpp:18:
+In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Point.hpp:12:
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/oneapi/tbb/scalable_allocator.h:254:31: warning: destructor called on non-final 'Slic3r::Polygon' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+  254 |     void destroy(pointer p) { p->~value_type(); }
+      |                               ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/allocator_traits.h:334:9: note: in instantiation of member function 'tbb::detail::d1::scalable_allocator<Slic3r::Polygon>::destroy' requested here
+  334 |     __a.destroy(__p);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:521:31: note: in instantiation of function template specialization 'std::allocator_traits<tbb::detail::d1::scalable_allocator<Slic3r::Polygon>>::destroy<Slic3r::Polygon, 0>' requested here
+  521 |     allocator_traits<_Alloc>::destroy(__alloc, std::__to_address(__first));
+      |                               ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:532:10: note: in instantiation of function template specialization 'std::__allocator_destroy<tbb::detail::d1::scalable_allocator<Slic3r::Polygon>, std::reverse_iterator<Slic3r::Polygon *>, std::reverse_iterator<Slic3r::Polygon *>>' requested here
+  532 |     std::__allocator_destroy(__alloc_, std::reverse_iterator<_Iter>(__last_), std::reverse_iterator<_Iter>(__first_));
+      |          ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__utility/exception_guard.h:137:10: note: in instantiation of member function 'std::__exception_guard_exceptions<std::_AllocatorDestroyRangeReverse<tbb::detail::d1::scalable_allocator<Slic3r::Polygon>, Slic3r::Polygon *>>::~__exception_guard_exceptions' requested here
+  137 |   return __exception_guard<_Rollback>(std::move(__rollback));
+      |          ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:595:33: note: in instantiation of function template specialization 'std::__uninitialized_allocator_copy_impl<tbb::detail::d1::scalable_allocator<Slic3r::Polygon>, const Slic3r::Polygon *, const Slic3r::Polygon *, Slic3r::Polygon *>' requested here
+  595 |   auto __result          = std::__uninitialized_allocator_copy_impl(
+      |                                 ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:1158:22: note: in instantiation of function template specialization 'std::__uninitialized_allocator_copy<tbb::detail::d1::scalable_allocator<Slic3r::Polygon>, std::__wrap_iter<const Slic3r::Polygon *>, std::__wrap_iter<const Slic3r::Polygon *>, Slic3r::Polygon *>' requested here
+ 1158 |   __tx.__pos_ = std::__uninitialized_allocator_copy(__alloc(), __first, __last, __tx.__pos_);
+      |                      ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:1775:9: note: in instantiation of function template specialization 'std::vector<Slic3r::Polygon, tbb::detail::d1::scalable_allocator<Slic3r::Polygon>>::__construct_at_end<std::__wrap_iter<const Slic3r::Polygon *>, std::__wrap_iter<const Slic3r::Polygon *>>' requested here
+ 1775 |         __construct_at_end(__m, __last, __n - __diff);
+      |         ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/vector:1755:10: note: in instantiation of function template specialization 'std::vector<Slic3r::Polygon, tbb::detail::d1::scalable_allocator<Slic3r::Polygon>>::__insert_with_size<std::__wrap_iter<const Slic3r::Polygon *>, std::__wrap_iter<const Slic3r::Polygon *>>' requested here
+ 1755 |   return __insert_with_size(__position, __first, __last, std::distance(__first, __last));
+      |          ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/Polygon.hpp:148:71: note: in instantiation of function template specialization 'std::vector<Slic3r::Polygon, tbb::detail::d1::scalable_allocator<Slic3r::Polygon>>::insert<std::__wrap_iter<const Slic3r::Polygon *>, 0>' requested here
+  148 | inline void polygons_append(Polygons &dst, const Polygons &src) { dst.insert(dst.end(), src.begin(), src.end()); }
+      |                                                                       ^
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/oneapi/tbb/scalable_allocator.h:254:35: note: qualify call to silence this warning
+  254 |     void destroy(pointer p) { p->~value_type(); }
+      |                                   ^
+15 warnings generated.
+[2/2] Linking CXX executable src/OrcaSlicer.app/OrcaSlicer; Symlinking the resources directory into the build tree
+ld: warning: ignoring duplicate libraries: '-lc++', '-lm', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libjpeg.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libpng.a', 'deps_src/libnest2d/liblibnest2d.a', 'src/libslic3r/liblibslic3r.a'

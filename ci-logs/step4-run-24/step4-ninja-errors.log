@@ -1,0 +1,4 @@
+20818-      |                                   ^
+20819-15 warnings generated.
+20820-[2/2] Linking CXX executable src/OrcaSlicer.app/OrcaSlicer; Symlinking the resources directory into the build tree
+20821:ld: warning: ignoring duplicate libraries: '-lc++', '-lm', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libjpeg.a', '/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/lib/libpng.a', 'deps_src/libnest2d/liblibnest2d.a', 'src/libslic3r/liblibslic3r.a'

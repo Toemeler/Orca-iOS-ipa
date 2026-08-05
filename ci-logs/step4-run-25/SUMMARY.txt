@@ -1,0 +1,8 @@
+=== FAILED targets ===
+FAILED: [code=1] src/OrcaSlicer.app/OrcaSlicer 
+
+=== undefined symbols (linker) ===
+"_OBJC_CLASS_"
+
+total FAILED: 1
+undefined symbol count: 1

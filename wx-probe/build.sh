@@ -41,10 +41,12 @@ build_it() {
 # only compiled for the iPhone port by step-2 patch 0210, and if that is not in
 # this cached prefix the include is not there. Losing the whole probe to it
 # would waste the run, so try with it and fall back without - and say which.
-EXTRA_FLAGS=()
+# Plain string, not an array: the runner's /bin/bash is 3.2, where expanding an
+# empty array under `set -u` is itself a fatal "unbound variable" error.
+EXTRA_FLAGS=""
 if build_it -DPROBE_WEBVIEW -framework WebKit; then
   echo "PROBE_BUILD=with-webview"
-  EXTRA_FLAGS=(-DPROBE_WEBVIEW -framework WebKit)
+  EXTRA_FLAGS="-DPROBE_WEBVIEW -framework WebKit"
 else
   echo "PROBE_BUILD=without-webview (the WebKit/wxWebView build failed above)"
   build_it
@@ -67,7 +69,7 @@ if delegate_present; then
   echo "PROBE_DELEGATE=linked (wxAppDelegate is in the binary)"
 else
   echo "PROBE_DELEGATE=MISSING - wxAppDelegate was stripped; relinking with -ObjC"
-  build_it "${EXTRA_FLAGS[@]}" -ObjC
+  build_it $EXTRA_FLAGS -ObjC
   if delegate_present; then
     echo "PROBE_DELEGATE=linked-via-ObjC (ROOT CAUSE: the app must link wx with -ObjC)"
   else

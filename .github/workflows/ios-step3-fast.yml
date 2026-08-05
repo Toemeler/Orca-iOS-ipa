@@ -263,11 +263,18 @@ jobs:
           D="ci-logs/fast-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/fast-configure.log ] && tail -c 40000 /tmp/fast-configure.log > "$D/configure.log"
-          # A couple of ccache debug logs are enough to name the volatile input;
-          # the whole directory would be thousands of files.
+          # A couple of ccache debug logs are enough to name the volatile input,
+          # but only if they are logs of a MISS: run 7 published the first three
+          # files in the directory and all three were hits from deps_src, which
+          # says nothing about why the other 563 missed. Select on the outcome.
           if [ -d /tmp/ccache-debug ]; then
-            find /tmp/ccache-debug -name "*.ccache-log" | head -3 | while read -r f; do
-              cp "$f" "$D/ccache-debug-$(basename "$f")" 2>/dev/null || true
+            grep -rl "Result: cache_miss" /tmp/ccache-debug --include="*.ccache-log" \
+              | grep -E "libslic3r|slic3r" | head -3 | while read -r f; do
+              cp "$f" "$D/ccache-miss-$(basename "$f")" 2>/dev/null || true
+            done
+            grep -rl "Result: direct_cache_hit" /tmp/ccache-debug --include="*.ccache-log" \
+              | head -1 | while read -r f; do
+              cp "$f" "$D/ccache-hit-$(basename "$f")" 2>/dev/null || true
             done
           fi
           for l in /tmp/bundle-check.log /tmp/ccache-stats.txt \

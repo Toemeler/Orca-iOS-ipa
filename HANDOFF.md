@@ -1121,3 +1121,41 @@ branch or on the repository's default branch. That is why run 62 spent
 on sibling branches. Anything long-lived (deps prefix, wx prefix) should be
 built once on `main` so every future branch inherits it - otherwise each new
 branch pays ~28 minutes before it compiles a line of Orca.
+
+═══════════════════════════════════════════════════════════════════════
+## The simulator check was lying, and what it says now
+═══════════════════════════════════════════════════════════════════════
+
+The step-3 launch step used to do this:
+
+    xcrun simctl launch --console-pty ... &
+    sleep 60
+    kill $LPID
+    xcrun simctl io "$UDID" screenshot artifact/orca-on-ipad.png
+
+Nothing in there asks whether the app is running. `simctl launch` returns 0
+the moment the process is spawned, and `simctl io screenshot` photographs
+whatever is on the screen - which, for a build that exits during startup, is
+SpringBoard. Runs 5 and 6 were reported as "installs, launches, screenshot
+attached" on that basis. The screenshot was of the home screen.
+
+`tools/ci/sim-launch-verify.sh` replaces it, and both step-3 workflows call
+it rather than carrying two copies:
+
+* polls `simctl spawn <udid> launchctl list` once a second until the bundle
+  id appears, up to 60 s, and records when it first did;
+* takes a screenshot at t+2, 7, 17, 37 and 67 s **after** it appeared,
+  re-checking aliveness before each one and stopping at the first checkpoint
+  the app has gone from;
+* photographs the home screen first (`00-home.png`) so a screenshot of
+  nothing is recognisable as one;
+* measures every PNG - resolution, distinct colours, dominant colour and its
+  share - by decoding it in Python after `sips` shrinks it to 240 px, so the
+  job can report whether anything was drawn without a human opening files;
+* extracts Orca's own log from the app's data container (`orca-app-log.txt`),
+  which is the only record of how far `on_init_inner()` got: the system log
+  shows UIKit's half of the story and stops;
+* **fails the step** when the app never appears, or appears and then exits.
+
+A green step-3 job now means the app was still running 67 s after launch,
+and `artifact/orca-on-ipad.png` is a picture taken while it was.

@@ -1,5 +1,5 @@
 diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
-index 42dcc14..a0aac7f 100644
+index 42dcc14..73c43c4 100644
 --- a/src/libslic3r/utils.cpp
 +++ b/src/libslic3r/utils.cpp
 @@ -15,6 +15,8 @@
@@ -20,7 +20,7 @@ index 42dcc14..a0aac7f 100644
  	//currently on old macos, the boost::log::add_file_log will crash
  	//TODO: need to be fixed
  	if (!is_macos_support_boost_add_file_log()) {
-@@ -358,8 +360,37 @@ void set_log_path_and_level(const std::string& file, unsigned int level)
+@@ -358,8 +360,42 @@ void set_log_path_and_level(const std::string& file, unsigned int level)
  
  	//BBS log file at C:\\Users\\[yourname]\\AppData\\Roaming\\OrcaSlicer\\log\\[log_filename].log
  	auto log_folder = boost::filesystem::path(g_data_dir) / "log";
@@ -34,18 +34,23 @@ index 42dcc14..a0aac7f 100644
 +	// next to the config cannot be retrieved from the device at all. Write it
 +	// where the Files app can see it. $HOME is the container root on iOS.
 +	//
-+	// Everything here is best effort. This function runs from
-+	// GUI_App::on_init_inner(), whose caller rethrows anything that escapes and
-+	// terminates the process - so a logging problem must never be able to stop
-+	// the app from starting. boost::filesystem throws on failure; swallow it and
-+	// keep the data_dir path, which is what every other platform uses.
++	// data_dir()/log is still created, even though nothing is written into it.
++	// GUI_App::on_init_inner chdir()s there during startup, and if that fails
++	// the process is left on a working directory it cannot read - which on iOS
++	// makes every boost::filesystem::absolute() call throw, because absolute(p)
++	// evaluates current_path() unconditionally. Redirecting the log without
++	// creating the directory turned a first-launch-only crash into one on every
++	// launch.
++	//
++	// Everything here is best effort. This runs from GUI_App::on_init_inner,
++	// whose caller rethrows anything that escapes and terminates the process, so
++	// a logging problem must never stop the app from starting.
 +	try {
++		boost::filesystem::create_directories(log_folder);
 +		const char* const ios_home = ::getenv("HOME");
 +		if (ios_home != nullptr && *ios_home != '\0') {
 +			const boost::filesystem::path documents_log =
 +				boost::filesystem::path(ios_home) / "Documents" / "log";
-+			// create_directories, not create_directory: nothing below Documents
-+			// exists yet on a fresh install.
 +			boost::filesystem::create_directories(documents_log);
 +			log_folder = documents_log;
 +		}

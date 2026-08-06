@@ -1,0 +1,62 @@
+diff --git a/src/libslic3r/Preset.cpp b/src/libslic3r/Preset.cpp
+index bc728f6..e030f88 100644
+--- a/src/libslic3r/Preset.cpp
++++ b/src/libslic3r/Preset.cpp
+@@ -1577,7 +1577,7 @@ void PresetCollection::load_presets(
+ {
+     // Don't use boost::filesystem::canonical() on Windows, it is broken in regard to reparse points,
+     // see https://github.com/prusa3d/PrusaSlicer/issues/732
+-    boost::filesystem::path dir = boost::filesystem::absolute(boost::filesystem::path(dir_path) / subdir).make_preferred();
++    boost::filesystem::path dir = orca_absolute_no_cwd(boost::filesystem::path(dir_path) / subdir).make_preferred();
+     const PresetOrigin resolved_origin = detect_origin_from_path(dir, load_origin);
+ 
+     // Load custom roots first
+@@ -2083,9 +2083,29 @@ int PresetCollection::get_user_presets(PresetBundle *preset_bundle, std::vector<
+ }
+ 
+ //BBS: update user presets directory
++// boost::filesystem::absolute(p) is absolute(p, current_path()) - the default
++// second argument is evaluated unconditionally, even when p is already
++// absolute. current_path() is getcwd(), and an iOS app is not permitted to
++// call it: it fails with EPERM and boost throws
++//
++//   boost::filesystem::current_path: Operation not permitted [system:1]
++//
++// which escapes GUI_App::on_init_inner and aborts the process during startup.
++// Every dir_path reaching the four call sites below is already absolute
++// (data_dir() + ...), so the cwd is never actually needed. Ask for it only
++// when it is.
++//
++// This is why the app died on a *first* launch and ran on the second: Orca
++// chdir()s to data_dir()/log during startup, which fails while that directory
++// does not exist yet, leaving the process on a cwd it cannot read.
++static boost::filesystem::path orca_absolute_no_cwd(const boost::filesystem::path &p)
++{
++    return p.is_absolute() ? p : boost::filesystem::absolute(p);
++}
++
+ void PresetCollection::update_user_presets_directory(const std::string& dir_path, const std::string& type)
+ {
+-    boost::filesystem::path dir = boost::filesystem::absolute(boost::filesystem::path(dir_path) / type).make_preferred();
++    boost::filesystem::path dir = orca_absolute_no_cwd(boost::filesystem::path(dir_path) / type).make_preferred();
+ 
+     if (!fs::exists(dir))
+         fs::create_directory(dir);
+@@ -2096,7 +2116,7 @@ void PresetCollection::update_user_presets_directory(const std::string& dir_path
+ //BBS: save user presets to local
+ void PresetCollection::save_user_presets(const std::string& dir_path, const std::string& type, std::map<std::string, std::string>& need_to_delete_list)
+ {
+-    boost::filesystem::path dir = boost::filesystem::absolute(boost::filesystem::path(dir_path) / type).make_preferred();
++    boost::filesystem::path dir = orca_absolute_no_cwd(boost::filesystem::path(dir_path) / type).make_preferred();
+ 
+     if (!fs::exists(dir))
+         fs::create_directory(dir);
+@@ -4089,7 +4109,7 @@ void PhysicalPrinterCollection::load_printers(
+ {
+     // Don't use boost::filesystem::canonical() on Windows, it is broken in regard to reparse points,
+     // see https://github.com/prusa3d/PrusaSlicer/issues/732
+-    boost::filesystem::path dir = boost::filesystem::absolute(boost::filesystem::path(dir_path) / subdir).make_preferred();
++    boost::filesystem::path dir = orca_absolute_no_cwd(boost::filesystem::path(dir_path) / subdir).make_preferred();
+     m_dir_path = dir.string();
+     if(!boost::filesystem::exists(dir))
+         return;

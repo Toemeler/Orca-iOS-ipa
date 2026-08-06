@@ -1,0 +1,81 @@
+diff --git a/src/osx/iphone/nonownedwnd.mm b/src/osx/iphone/nonownedwnd.mm
+index 9bc7aa9..b708fa3 100644
+--- a/src/osx/iphone/nonownedwnd.mm
++++ b/src/osx/iphone/nonownedwnd.mm
+@@ -166,9 +166,55 @@ void wxNonOwnedWindowIPhoneImpl::Lower()
+ {
+ }
+ 
++// The first top level window to be shown is the application's main frame.
++// Every one after it is a dialog, a preferences panel, a wizard - something the
++// user is meant to see *over* the main frame - and on this port none of them
++// were visible at all.
++//
++// Each wxTopLevelWindow becomes its own UIWindow here. A wxDialog carries
++// wxCAPTION, which lands in an empty branch in Create() below and leaves the
++// level at UIWindowLevelNormal - the same level as the main frame. UIKit gives
++// no defined z-order between windows at equal level, and -makeKeyWindow changes
++// key status, not order, so a dialog was created, told to show, and then simply
++// never appeared. Its geometry was wrong too: CGRectMake(0, 0, size.x, size.y)
++// puts it in the top-left corner at whatever size the desktop layout asked for.
++static UIWindow* gs_mainWindow = nil;
++
+ bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+ {
++    if ( show )
++    {
++        if ( gs_mainWindow == nil )
++        {
++            // The main frame. Left exactly as it was.
++            gs_mainWindow = m_macWindow;
++        }
++        else if ( m_macWindow != gs_mainWindow )
++        {
++            // A secondary window: put it above the main frame and centre it, so
++            // it reads as a dialog rather than a panel wedged into the corner.
++            const CGRect screen = [[UIScreen mainScreen] bounds];
++            CGRect r = [m_macWindow frame];
++
++            // A window that was never given a sensible size, or one carrying a
++            // desktop layout larger than an iPad, fills the screen instead.
++            if ( r.size.width <= 1 || r.size.width > screen.size.width )
++                r.size.width = screen.size.width;
++            if ( r.size.height <= 1 || r.size.height > screen.size.height )
++                r.size.height = screen.size.height;
++
++            r.origin.x = (screen.size.width - r.size.width) / 2;
++            r.origin.y = (screen.size.height - r.size.height) / 2;
++            [m_macWindow setFrame:r];
++
++            // Above the main frame, and above anything the main frame itself
++            // raised to alert level.
++            [m_macWindow setWindowLevel:UIWindowLevelAlert + 1];
++        }
++    }
++
+     [m_macWindow setHidden:(show ? NO : YES)];
++
+     if ( show )
+     {
+         if ( !m_initialShowSent )
+@@ -181,9 +227,18 @@ bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+ 
+             m_initialShowSent = true;
+         }
+-        //[m_macWindow orderFront: self];
+-        [m_macWindow makeKeyWindow];
++        // -makeKeyAndVisible, not -makeKeyWindow: the latter only moves key
++        // status and leaves a window that has never been made visible exactly
++        // where it was.
++        [m_macWindow makeKeyAndVisible];
+     }
++    else if ( m_macWindow != gs_mainWindow && gs_mainWindow != nil )
++    {
++        // Hand key status back when a dialog closes, otherwise the main frame
++        // stays unable to receive keyboard input for the rest of the session.
++        [gs_mainWindow makeKeyWindow];
++    }
++
+     return true;
+ }
+ 

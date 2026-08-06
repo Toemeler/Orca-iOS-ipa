@@ -11,17 +11,12 @@ name: iOS Step 4 - OrcaSlicer device IPA
 # deps are the multi-hour long pole; every run warms the device deps cache
 # even when the link stage still fails.
 
+# Dispatch only. This used to build on every push touching patches/**,
+# wx-overlay/** or this file, which combined with cancel-in-progress below meant
+# any commit killed the device build that was already running - including
+# commits that only changed something unrelated to it. A 70-minute build is too
+# expensive to start by accident and far too expensive to cancel by accident.
 on:
-  push:
-    branches:
-      - claude/basic-ipad-app-plan-pb0b4p
-      - claude/step-4-ipa-parity-bkdym6
-      - claude/ipad-build-failure-dkutxc
-    paths:
-      - '.github/workflows/ios-step4-device-ipa.yml'
-      - 'patches/**'
-      - 'wx-overlay/**'
-      - 'ios/**'
   workflow_dispatch:
     inputs:
       orca_ref:

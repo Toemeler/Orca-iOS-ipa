@@ -21,6 +21,13 @@ on:
 permissions:
   contents: write
 
+# Step 4 has had this from the start; step 3 did not, so dispatching it twice
+# left two simulator builds queued against a scarce macOS runner pool, the older
+# one on a stale commit. Newest wins, same as step 4.
+concurrency:
+  group: step3-gui-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   gui:
     name: Orca GUI on iOS (simulator)

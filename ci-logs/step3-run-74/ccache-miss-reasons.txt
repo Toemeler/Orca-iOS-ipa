@@ -1,0 +1,84 @@
++ grep -oE 'Result: .*' /Users/runner/ccache-step3.log
++ sort
++ uniq -c
++ sort -rn
++ head -20
+1126 Result: local_storage_write
+ 714 Result: local_storage_read_hit
+ 563 Result: preprocessed_cache_miss
+ 563 Result: local_storage_miss
+ 563 Result: direct_cache_miss
+ 563 Result: cache_miss
+ 562 Result: local_storage_read_miss
+  76 Result: local_storage_hit
+  76 Result: direct_cache_hit
++ echo '--- sample miss context ---'
+--- sample miss context ---
++ grep -B6 'Result: cache_miss' /Users/runner/ccache-step3.log
++ head -60
+[2026-08-06T13:36:09.998205 16194] Acquired /Users/runner/.ccache-step3/6/stats.lock
+[2026-08-06T13:36:09.998213 16194] Creating /Users/runner/.ccache-step3/6/stats.alive
+[2026-08-06T13:36:09.998811 16194] Releasing /Users/runner/.ccache-step3/6/stats.lock
+[2026-08-06T13:36:09.998866 16194] Released /Users/runner/.ccache-step3/6/stats.lock
+[2026-08-06T13:36:09.998874 16194] Releasing /Users/runner/.ccache-step3/lock/subdir_63.lock
+[2026-08-06T13:36:09.998922 16194] Released /Users/runner/.ccache-step3/lock/subdir_63.lock
+[2026-08-06T13:36:09.998965 16194] Result: cache_miss
+--
+[2026-08-06T13:36:12.176959 16302] Acquired /Users/runner/.ccache-step3/b/stats.lock
+[2026-08-06T13:36:12.176968 16302] Creating /Users/runner/.ccache-step3/b/stats.alive
+[2026-08-06T13:36:12.177268 16302] Releasing /Users/runner/.ccache-step3/b/stats.lock
+[2026-08-06T13:36:12.177328 16302] Released /Users/runner/.ccache-step3/b/stats.lock
+[2026-08-06T13:36:12.177337 16302] Releasing /Users/runner/.ccache-step3/lock/subdir_be.lock
+[2026-08-06T13:36:12.177386 16302] Released /Users/runner/.ccache-step3/lock/subdir_be.lock
+[2026-08-06T13:36:12.177441 16302] Result: cache_miss
+--
+[2026-08-06T13:36:18.631217 16709] Acquired /Users/runner/.ccache-step3/b/stats.lock
+[2026-08-06T13:36:18.631223 16709] Creating /Users/runner/.ccache-step3/b/stats.alive
+[2026-08-06T13:36:18.631403 16709] Releasing /Users/runner/.ccache-step3/b/stats.lock
+[2026-08-06T13:36:18.631441 16709] Released /Users/runner/.ccache-step3/b/stats.lock
+[2026-08-06T13:36:18.631446 16709] Releasing /Users/runner/.ccache-step3/lock/subdir_bc.lock
+[2026-08-06T13:36:18.631485 16709] Released /Users/runner/.ccache-step3/lock/subdir_bc.lock
+[2026-08-06T13:36:18.631555 16709] Result: cache_miss
+--
+[2026-08-06T13:36:18.861684 16514] Acquired /Users/runner/.ccache-step3/f/stats.lock
+[2026-08-06T13:36:18.861691 16514] Creating /Users/runner/.ccache-step3/f/stats.alive
+[2026-08-06T13:36:18.861892 16514] Releasing /Users/runner/.ccache-step3/f/stats.lock
+[2026-08-06T13:36:18.861933 16514] Released /Users/runner/.ccache-step3/f/stats.lock
+[2026-08-06T13:36:18.861940 16514] Releasing /Users/runner/.ccache-step3/lock/subdir_f9.lock
+[2026-08-06T13:36:18.862020 16514] Released /Users/runner/.ccache-step3/lock/subdir_f9.lock
+[2026-08-06T13:36:18.862115 16514] Result: cache_miss
+--
+[2026-08-06T13:36:18.984784 16515] Acquired /Users/runner/.ccache-step3/c/stats.lock
+[2026-08-06T13:36:18.984790 16515] Creating /Users/runner/.ccache-step3/c/stats.alive
+[2026-08-06T13:36:18.984978 16515] Releasing /Users/runner/.ccache-step3/c/stats.lock
+[2026-08-06T13:36:18.985017 16515] Released /Users/runner/.ccache-step3/c/stats.lock
+[2026-08-06T13:36:18.985024 16515] Releasing /Users/runner/.ccache-step3/lock/subdir_c0.lock
+[2026-08-06T13:36:18.985093 16515] Released /Users/runner/.ccache-step3/lock/subdir_c0.lock
+[2026-08-06T13:36:18.985147 16515] Result: cache_miss
+--
+[2026-08-06T13:36:20.169728 16516] Acquired /Users/runner/.ccache-step3/6/stats.lock
+[2026-08-06T13:36:20.169733 16516] Creating /Users/runner/.ccache-step3/6/stats.alive
+[2026-08-06T13:36:20.169915 16516] Releasing /Users/runner/.ccache-step3/6/stats.lock
+[2026-08-06T13:36:20.169954 16516] Released /Users/runner/.ccache-step3/6/stats.lock
+[2026-08-06T13:36:20.169959 16516] Releasing /Users/runner/.ccache-step3/lock/subdir_67.lock
+[2026-08-06T13:36:20.170006 16516] Released /Users/runner/.ccache-step3/lock/subdir_67.lock
+[2026-08-06T13:36:20.170077 16516] Result: cache_miss
+--
+[2026-08-06T13:36:25.361039 16729] Acquired /Users/runner/.ccache-step3/d/stats.lock
+[2026-08-06T13:36:25.361063 16729] Creating /Users/runner/.ccache-step3/d/stats.alive
+[2026-08-06T13:36:25.361646 16729] Releasing /Users/runner/.ccache-step3/d/stats.lock
+[2026-08-06T13:36:25.361774 16729] Released /Users/runner/.ccache-step3/d/stats.lock
+[2026-08-06T13:36:25.361794 16729] Releasing /Users/runner/.ccache-step3/lock/subdir_d8.lock
+[2026-08-06T13:36:25.361924 16729] Released /Users/runner/.ccache-step3/lock/subdir_d8.lock
+[2026-08-06T13:36:25.362012 16729] Result: cache_miss
+--
+[2026-08-06T13:36:25.420527 16732] Acquired /Users/runner/.ccache-step3/e/stats.lock
+[2026-08-06T13:36:25.420533 16732] Creating /Users/runner/.ccache-step3/e/stats.alive
+[2026-08-06T13:36:25.420797 16732] Releasing /Users/runner/.ccache-step3/e/stats.lock
+[2026-08-06T13:36:25.420855 16732] Released /Users/runner/.ccache-step3/e/stats.lock
+grep: stdout: Broken pipe
++ echo '--- first compile command line (diff this against the previous run) ---'
+--- first compile command line (diff this against the previous run) ---
++ grep -m1 -A1 'Command line:' /Users/runner/ccache-step3.log
+[2026-08-06T13:36:00.593006 16157] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -mios-simulator-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o.d -o deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/stlinit.cpp
+[2026-08-06T13:36:00.593006 16157] Hostname: sjc20-bb714-1b3e7e29-026e-418e-aad3-e895da6e8ac0-668403455A58.local

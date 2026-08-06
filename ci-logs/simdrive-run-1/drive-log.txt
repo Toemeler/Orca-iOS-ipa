@@ -1,0 +1,75 @@
+simulator: 4CEAC8FC-55A2-47A9-A691-0703F3E2E8AD (com.apple.CoreSimulator.SimRuntime.iOS-26-2)
+first seen alive after: 8 s
+Traceback (most recent call last):
+  File "/Users/runner/.local/bin/idb", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.14/site-packages/idb/cli/main.py", line 353, in main
+    loop = asyncio.get_event_loop()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py", line 718, in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
+RuntimeError: There is no current event loop in thread 'MainThread'.
+idb connect failed (continuing)
+step 01 prepare: tap (122,50)
+Traceback (most recent call last):
+  File "/Users/runner/.local/bin/idb", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.14/site-packages/idb/cli/main.py", line 353, in main
+    loop = asyncio.get_event_loop()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py", line 718, in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
+RuntimeError: There is no current event loop in thread 'MainThread'.
+step 01 prepare: tap FAILED
+step 02 preview: tap (257,50)
+Traceback (most recent call last):
+  File "/Users/runner/.local/bin/idb", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.14/site-packages/idb/cli/main.py", line 353, in main
+    loop = asyncio.get_event_loop()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py", line 718, in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
+RuntimeError: There is no current event loop in thread 'MainThread'.
+step 02 preview: tap FAILED
+step 03 device: tap (393,50)
+Traceback (most recent call last):
+  File "/Users/runner/.local/bin/idb", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.14/site-packages/idb/cli/main.py", line 353, in main
+    loop = asyncio.get_event_loop()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py", line 718, in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
+RuntimeError: There is no current event loop in thread 'MainThread'.
+step 03 device: tap FAILED
+step 04 project: tap (530,50)
+Traceback (most recent call last):
+  File "/Users/runner/.local/bin/idb", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.14/site-packages/idb/cli/main.py", line 353, in main
+    loop = asyncio.get_event_loop()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py", line 718, in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
+RuntimeError: There is no current event loop in thread 'MainThread'.
+step 04 project: tap FAILED
+step 05 home: tap (20,50)
+Traceback (most recent call last):
+  File "/Users/runner/.local/bin/idb", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.14/site-packages/idb/cli/main.py", line 353, in main
+    loop = asyncio.get_event_loop()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py", line 718, in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+                       % threading.current_thread().name)
+RuntimeError: There is no current event loop in thread 'MainThread'.
+step 05 home: tap FAILED
+still alive after the walk: 1
+screenshots: 6

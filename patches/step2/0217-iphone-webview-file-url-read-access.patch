@@ -10,7 +10,25 @@ index 8b038a2..9c1f4b3 100644
  #include "wx/msgdlg.h"
  #include "wx/mstream.h"
  #include "wx/textdlg.h"
-@@ -655,8 +656,61 @@
+@@ -276,6 +277,17 @@
+             wxLogDebug("Registering custom wxWebView handlers is not supported under macOS < 10.13");
+     }
+ 
++#if defined(__WXOSX_IPHONE__)
++    // WKPreferences.javaScriptCanOpenWindowsAutomatically defaults to NO on
++    // iOS and YES on macOS. With it off a window.open() that does not come from
++    // a user gesture - anything an application drives through
++    // evaluateJavaScript - is refused, and refused silently: window.open
++    // returns null and no exception reaches the completion handler. An
++    // application driving its own local pages is not the pop-up advertising
++    // this defends against.
++    webViewConfig.preferences.javaScriptCanOpenWindowsAutomatically = YES;
++#endif
++
+     m_webView = [[WXWKWebView alloc] initWithFrame:r configuration:webViewConfig];
+     [(WXWKWebView*)m_webView setWebView:this];
+ #if defined(__WXOSX_IPHONE__)
+@@ -677,8 +689,46 @@
  
  void wxWebViewWebKit::LoadURL(const wxString& url)
  {
@@ -20,26 +38,19 @@ index 8b038a2..9c1f4b3 100644
 +
 +#if defined(__WXOSX_IPHONE__)
 +    // -loadRequest: with a file: URL gives the page read access to its own
-+    // directory and nothing else, so a navigation to a sibling directory is
-+    // refused - silently, with no JavaScript error and no navigation event.
-+    //
-+    // OrcaSlicer's setup wizard is exactly that. resources/web/guide/0/
-+    // index.html is nothing but a "Loading......" block, and load.js finishes
-+    // with window.open('../' + TargetPage + '/index.html', '_self') to reach
-+    // guide/1/. In the simulator, where WebKit's file: policy is laxer, that
-+    // hop works and the welcome page appears; on a device it does not, and the
-+    // wizard sits on "Loading......" for ever.
-+    //
-+    // -loadFileURL:allowingReadAccessToURL: is the iOS API for this. It keeps
-+    // the query string (the page reads ?target=N from it, so losing it would
-+    // break the jump just as thoroughly), and it takes a directory to grant.
++    // directory and nothing else, so a navigation to a sibling directory can be
++    // refused - silently. OrcaSlicer's setup wizard is exactly that:
++    // resources/web/guide/0/index.html is nothing but a "Loading......" block
++    // and jumps to guide/1/. -loadFileURL:allowingReadAccessToURL: is the iOS
++    // API for this, and it keeps the query string, which the page reads
++    // ?target=N from.
 +    if ( [nsurl isFileURL] )
 +    {
-+        // Symlinks, not just . and .. : an iOS bundle is reached through both
++        // Symlinks, not just . and .. : a bundle is reachable as both
 +        // /var/containers/... and /private/var/containers/..., /var being a
 +        // symlink to /private/var. -URLByStandardizingPath does not resolve
-+        // that, so comparing standardized paths can miss and quietly fall back
-+        // to the one-directory grant this exists to avoid.
++        // that, and a missed match falls back to the single-directory grant
++        // this exists to avoid.
 +        NSURL* bundleURL = [[[NSBundle mainBundle] bundleURL]
 +                                URLByResolvingSymlinksInPath];
 +        NSString* bundlePath = [bundleURL path];
@@ -48,18 +59,10 @@ index 8b038a2..9c1f4b3 100644
 +        NSURL* readAccess;
 +        if ( bundlePath != nil && filePath != nil &&
 +             [filePath hasPrefix:bundlePath] )
-+        {
-+            // Where a packaged app's web resources live.
-+            readAccess = bundleURL;
-+        }
++            readAccess = bundleURL;      // where a packaged app's web content lives
 +        else
-+        {
-+            // Outside the bundle: grant the parent of the containing
-+            // directory, which still allows the ../sibling/ hops these pages
-+            // are built from, rather than the containing directory alone.
 +            readAccess = [[nsurl URLByDeletingLastPathComponent]
 +                              URLByDeletingLastPathComponent];
-+        }
 +
 +        wxLogMessage("wx-ios webview: loadFileURL %s (read access %s)",
 +                     wxCFStringRef::AsString([nsurl absoluteString]),
@@ -74,15 +77,15 @@ index 8b038a2..9c1f4b3 100644
  }
  
  wxString wxWebViewWebKit::GetCurrentURL() const
-@@ -1046,6 +1100,16 @@
+@@ -1079,6 +1129,16 @@
      if (webKitWindow && webKitWindow->GetEventHandler())
          webKitWindow->GetEventHandler()->ProcessEvent(event);
  
 +#if defined(__WXOSX_IPHONE__)
-+    // Every navigation the page attempts, and whether it was allowed. A page
++    // Every navigation the page attempts and whether it was allowed. A page
 +    // that will not move is otherwise indistinguishable from one that never
-+    // tried to - and if a window.open is swallowed by WebKit before it reaches
-+    // this delegate, the absence of a line here says that too.
++    // tried - and if a window.open is swallowed before it reaches this
++    // delegate, the absence of a line says that too.
 +    wxLogMessage("wx-ios webview: navigation %s: %s",
 +                 event.IsAllowed() ? "ALLOW" : "CANCEL",
 +                 wxCFStringRef::AsString(url));
@@ -91,3 +94,31 @@ index 8b038a2..9c1f4b3 100644
      decisionHandler(event.IsAllowed() ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
  }
  
+@@ -1236,6 +1296,27 @@
+         wxWEBVIEW_NAV_ACTION_OTHER;
+ 
+ 
++#if defined(__WXOSX_IPHONE__)
++    // A file: URL here is the application's own bundled content, and iOS has no
++    // second window to put it in. Load it in this webview and tell WebKit no
++    // window was created. Without this the event below is the end of the road:
++    // OrcaSlicer answers it with wxLaunchDefaultBrowser, which can do nothing
++    // with a file: URL on iOS, and wx would otherwise build a second
++    // wxWebViewWebKit that nothing ever shows.
++    if ( [navigationAction.request.URL isFileURL] )
++    {
++        wxLogMessage("wx-ios webview: window.open of a file URL handled in place: %s",
++                     wxCFStringRef::AsString(
++                         navigationAction.request.URL.absoluteString));
++
++        if ( webKitWindow != nullptr )
++            webKitWindow->LoadURL(wxCFStringRef::AsString(
++                navigationAction.request.URL.absoluteString));
++
++        return nil;
++    }
++#endif
++
+     wxWebViewEvent newWinEvent(wxEVT_WEBVIEW_NEWWINDOW,
+                          webKitWindow->GetId(),
+                          wxCFStringRef::AsString( navigationAction.request.URL.absoluteString ),

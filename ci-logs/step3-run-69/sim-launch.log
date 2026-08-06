@@ -1,0 +1,4 @@
+2026-08-06 06:59:13.766 OrcaSlicer[86464:199090] Failed to bind EAGLDrawable: <CAEAGLLayer: 0x600005b45180> to GL_RENDERBUFFER 1
+2026-08-06 06:59:13.766 OrcaSlicer[86464:199090] Failed to make complete framebuffer object 8cd6
+2026-08-06 06:59:17.372 OrcaSlicer[86464:199090] Unbalanced calls to begin/end appearance transitions for <wxUIContentViewController: 0x1109f9220>.
+org.orca-ios.orcaslicer: 86464

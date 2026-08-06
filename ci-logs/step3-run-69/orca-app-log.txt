@@ -1,0 +1,155 @@
+4.337340[Thread 0x000000010b834200]:restart_background_process, Line 8296: not started
+[info]	2026-08-06 06:59:14.795125[Thread 0x000000010b834200]:monitor: show_status = 4
+[info]	2026-08-06 06:59:15.369646[Thread 0x000000010b834200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 06:59:15.369789[Thread 0x000000010b834200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 06:59:15.589629[Thread 0x000000010b834200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 06:59:15.589845[Thread 0x000000010b834200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 06:59:15.615763[Thread 0x000000010b834200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 06:59:15.615887[Thread 0x000000010b834200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 06:59:15.622688[Thread 0x000000010b834200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 06:59:15.623146[Thread 0x000000010b834200]:post_init, begin load_gl_resources
+[info]	2026-08-06 06:59:15.631859[Thread 0x000000010b834200]:select_view_3D5730select view3D
+[info]	2026-08-06 06:59:15.632055[Thread 0x000000010b834200]:set_current_panel: current_panel 0x10b9c17b0, new_panel 0x10b9c17b0
+[info]	2026-08-06 06:59:15.632224[Thread 0x000000010b834200]:set_current_panel: the same panel, exit
+[info]	2026-08-06 06:59:15.636075[Thread 0x000000010b834200]:post_init, start to init opengl
+[info]	2026-08-06 06:59:15.698907[Thread 0x000000010b834200]:GLAD loaded OpenGL 3.0
+[info]	2026-08-06 06:59:15.699056[Thread 0x000000010b834200]:Framebuffer Type ARB (core in OpenGL ES 3.0).
+[info]	2026-08-06 06:59:15.699157[Thread 0x000000010b834200]:got opengl version OpenGL ES 3.0 APPLE-23.0.2, glsl version OpenGL ES GLSL ES 3.00, vendor Apple Inc. , graphics card model Apple Software Renderer
+[info]	2026-08-06 06:59:15.781526[Thread 0x000000010b834200]:post_init, finished init opengl
+[info]	2026-08-06 06:59:15.786626[Thread 0x000000010b834200]:init enter
+[info]	2026-08-06 06:59:15.786950[Thread 0x000000010b834200]:init: before m_layers_editing init
+[info]	2026-08-06 06:59:15.787029[Thread 0x000000010b834200]:init: before gizmo init
+[info]	2026-08-06 06:59:15.833002[Thread 0x000000010b834200]:init: before _init_toolbars
+[info]	2026-08-06 06:59:15.847060[Thread 0x000000010b834200]:_init_assemble_view_toolbar: enter,  m_assemble_view_toolbar.is_enabled=true
+[info]	2026-08-06 06:59:15.847645[Thread 0x000000010b834200]:_init_assemble_view_toolbar: Finished Successfully
+[info]	2026-08-06 06:59:15.850381[Thread 0x000000010b834200]:init: finish _init_toolbars
+[info]	2026-08-06 06:59:15.850569[Thread 0x000000010b834200]:init: finish m_selection
+[info]	2026-08-06 06:59:15.850614[Thread 0x000000010b834200]:post_init, finished init canvas3D
+[info]	2026-08-06 06:59:16.418560[Thread 0x000000010b834200]:post_init, finished init imgui frame
+[info]	2026-08-06 06:59:16.418716[Thread 0x000000010b834200]:post_init, start to render a first frame for test
+[warning]	2026-08-06 06:59:16.871637[Thread 0x000000010b834200]:Can't find HarmonyOS Sans SC font
+[warning]	2026-08-06 06:59:16.871892[Thread 0x000000010b834200]:Use system font instead: .AppleSystemUIFont
+[warning]	2026-08-06 06:59:16.936322[Thread 0x000000010b834200]:Can't find HarmonyOS Sans SC font
+[warning]	2026-08-06 06:59:16.936584[Thread 0x000000010b834200]:Use system font instead: .AppleSystemUIFont
+[info]	2026-08-06 06:59:16.997957[Thread 0x000000010b834200]:post_init, finished rendering a first frame for test
+[info]	2026-08-06 06:59:17.003607[Thread 0x000000010b834200]:post_init, end load_gl_resources
+[info]	2026-08-06 06:59:17.003905[Thread 0x000000010b834200]:post_init sync_user_preset: false
+[info]	2026-08-06 06:59:17.004778[Thread 0x000000010b834200]:finished post_init
+[info]	2026-08-06 06:59:17.009235[Thread 0x000000010b834200]:select_view_3D5730select view3D
+[info]	2026-08-06 06:59:17.009546[Thread 0x000000010b834200]:set_current_panel: current_panel 0x10b9c17b0, new_panel 0x10b9c17b0
+[info]	2026-08-06 06:59:17.009753[Thread 0x000000010b834200]:set_current_panel: the same panel, exit
+[info]	2026-08-06 06:59:17.017692[Thread 0x000000010b834200]:Undo / Redo snapshot taken: Reset Project, Undo / Redo stack memory: 0MB Resident memory: 637MB; Peak memory usage: 680MB
+[info]	2026-08-06 06:59:17.017948[Thread 0x000000010b834200]:reset7616 call set_project_filename: empty
+[info]	2026-08-06 06:59:17.018052[Thread 0x000000010b834200]:reset: current result id 4294967295 
+[info]	2026-08-06 06:59:17.018147[Thread 0x000000010b834200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 06:59:17.018211[Thread 0x000000010b834200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 06:59:17.019064[Thread 0x000000010b834200]:update_slice_result_valid_state: plate 1 , update slice result from 0 to 0
+[error]	2026-08-06 06:59:17.019375[Thread 0x000000010b834200]:calc_exclude_triangles:Unable to create exclude triangles
+[info]	2026-08-06 06:59:17.019704[Thread 0x000000010b834200]:set_pos_and_size: plate_id 1, before, origin {240,0,0}, plate_width 200, plate_depth 200, plate_height 100
+[info]	2026-08-06 06:59:17.019774[Thread 0x000000010b834200]:set_pos_and_size: with_instance_move 0, after, origin {240,0,0}, plate_width 200, plate_depth 200, plate_height 100
+[info]	2026-08-06 06:59:17.021267[Thread 0x000000010b834200]:get_current_slice_result:m_current_plate 0, current_plate 0x10cdc2600
+[info]	2026-08-06 06:59:17.021432[Thread 0x000000010b834200]:stop, enter
+[info]	2026-08-06 06:59:17.028813[Thread 0x000000010b834200]:object_list_changed: can_slice 0, model_fits= 1, export_in_progress 0, has_printable_instances 0 
+[info]	2026-08-06 06:59:17.029027[Thread 0x000000010b834200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 06:59:17.029138[Thread 0x000000010b834200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 06:59:17.031047[Thread 0x000000010b834200]:load_current_preset: enter, m_type process
+[info]	2026-08-06 06:59:17.031453[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.032439[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.033732[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.034699[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.035926[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.043330[Thread 0x000000010b834200]:put_other_changes
+[info]	2026-08-06 06:59:17.043524[Thread 0x000000010b834200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 06:59:17.043650[Thread 0x000000010b834200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 06:59:17.046470[Thread 0x000000010b834200]:load_current_preset: exit
+[info]	2026-08-06 06:59:17.046596[Thread 0x000000010b834200]:load_current_preset: enter, m_type filament
+[info]	2026-08-06 06:59:17.046810[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.085067[Thread 0x000000010b834200]:put_other_changes
+[info]	2026-08-06 06:59:17.085359[Thread 0x000000010b834200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 06:59:17.085634[Thread 0x000000010b834200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 06:59:17.086547[Thread 0x000000010b834200]:load_current_preset: exit
+[info]	2026-08-06 06:59:17.086858[Thread 0x000000010b834200]:load_current_preset: enter, m_type machine
+[info]	2026-08-06 06:59:17.087422[Thread 0x000000010b834200]:reset: current result id 4294967295 
+[info]	2026-08-06 06:59:17.087736[Thread 0x000000010b834200]:update_extruder_variants-1
+[info]	2026-08-06 06:59:17.121441[Thread 0x000000010b834200]:put_other_changes
+[info]	2026-08-06 06:59:17.121729[Thread 0x000000010b834200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 06:59:17.121952[Thread 0x000000010b834200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 06:59:17.122566[Thread 0x000000010b834200]:load_current_preset: exit
+[info]	2026-08-06 06:59:17.122911[Thread 0x000000010b834200]:put_other_changes
+[info]	2026-08-06 06:59:17.122964[Thread 0x000000010b834200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 06:59:17.123070[Thread 0x000000010b834200]:Undo / Redo snapshot taken: New Project, Undo / Redo stack memory: 0MB Resident memory: 638MB; Peak memory usage: 680MB
+[info]	2026-08-06 06:59:17.123456[Thread 0x000000010b834200]:model 0x16b6ca4a8, id 34, backup_path empty, set to /Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_17#86464#34
+[info]	2026-08-06 06:59:17.123569[Thread 0x000000010b834200]:create /3D/Objects in "/Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_17#86464#34"
+[info]	2026-08-06 06:59:17.123904[Thread 0x000000010b834200]:create /Metadata in "/Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_17#86464#34"
+[info]	2026-08-06 06:59:17.124032[Thread 0x000000010b834200]:create /lock.txt in "/Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_17#86464#34"
+[info]	2026-08-06 06:59:17.124278[Thread 0x000000010b834200]:set_backup_path, model 0x10de0d478, id 7, remove previous backup /Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_12#86464#7
+[info]	2026-08-06 06:59:17.124337[Thread 0x000000010b834200]:remove_backup /Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_12#86464#7, true
+[info]	2026-08-06 06:59:17.124446[Thread 0x000000010b834200]:set_backup_path, model 0x10de0d478, id 7, set backup to /Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_17#86464#34
+[info]	2026-08-06 06:59:17.124658[Thread 0x000000016ce87000]:process_task{ type:RemoveBackup, id:7, path:/Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_12#86464#7, object:0, extra:1} and interval = 10
+[info]	2026-08-06 06:59:17.124665[Thread 0x000000010b834200]:create missing sub_path/Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_17#86464#34/Auxiliaries
+[info]	2026-08-06 06:59:17.125267[Thread 0x000000010b834200]:select_view_3D5730select view3D
+[info]	2026-08-06 06:59:17.125314[Thread 0x000000010b834200]:set_current_panel: current_panel 0x10b9c17b0, new_panel 0x10b9c17b0
+[info]	2026-08-06 06:59:17.125351[Thread 0x000000010b834200]:set_current_panel: the same panel, exit
+[info]	2026-08-06 06:59:17.130629[Thread 0x000000010b834200]:select_view5608select view3D
+[info]	2026-08-06 06:59:17.131594[Thread 0x000000010b834200]:run wizard...
+[info]	2026-08-06 06:59:17.133866[Thread 0x000000010b834200]:SetStartPage enter, load=0, start_page=0
+[info]	2026-08-06 06:59:17.134095[Thread 0x000000010b834200]:SetStartPage, strlang=en_US
+[info]	2026-08-06 06:59:17.134172[Thread 0x000000010b834200]:SetStartPage exit
+[info]	2026-08-06 06:59:17.134212[Thread 0x000000010b834200]:GuideFrame,  set start page to welcome 
+[info]	2026-08-06 06:59:17.150472[Thread 0x000000010b834200]:SetStartPage enter, load=1, start_page=1
+[info]	2026-08-06 06:59:17.150614[Thread 0x000000010b834200]:SetStartPage, strlang=en_US
+[info]	2026-08-06 06:59:17.151152[Thread 0x000000010b834200]:load_url exit
+[info]	2026-08-06 06:59:17.151218[Thread 0x000000010b834200]:SetStartPage exit
+[info]	2026-08-06 06:59:17.151265[Thread 0x000000010b834200]:GuideFrame,  finished
+[info]	2026-08-06 06:59:17.151389[Thread 0x000000010b834200]:SetStartPage enter, load=1, start_page=0
+[info]	2026-08-06 06:59:17.151457[Thread 0x000000010b834200]:SetStartPage, strlang=en_US
+[info]	2026-08-06 06:59:17.152949[Thread 0x000000010b834200]:load_url exit
+[info]	2026-08-06 06:59:17.153149[Thread 0x000000010b834200]:SetStartPage exit
+[info]	2026-08-06 06:59:17.153288[Thread 0x000000010b834200]:GuideFrame before ShowModal
+[info]	2026-08-06 06:59:17.180986[Thread 0x000000010b834200]:finished run wizard
+[info]	2026-08-06 06:59:17.185951[Thread 0x000000010b834200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 06:59:17.186160[Thread 0x000000010b834200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 06:59:17.186313[Thread 0x000000010b834200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 06:59:17.186362[Thread 0x000000010b834200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 06:59:17.186401[Thread 0x000000010b834200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 06:59:17.186435[Thread 0x000000010b834200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 06:59:17.186469[Thread 0x000000010b834200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 06:59:17.186501[Thread 0x000000010b834200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 06:59:17.186549[Thread 0x000000010b834200]:process_ui_task{ type:RemoveBackup, id:7, path:/Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_12#86464#7, object:0, extra:1} and interval = 10
+[info]	2026-08-06 06:59:17.187399[Thread 0x000000010b834200]:process_ui_task: remove all of backup path /Users/runner/Library/Developer/CoreSimulator/Devices/24265DDE-F2EC-44F1-900C-D0D556247504/data/Containers/Data/Application/5A9B039B-70A9-4A39-AC5A-B39C44A18084/tmp/orcaslicer_model/Thu_Aug_06/06_59_12#86464#7
+[info]	2026-08-06 06:59:17.622389[Thread 0x000000010b834200]:update_print_volume_state, print_volume {0, 0, 0} to {200, 200, 100}, got 0 printable istances
+[info]	2026-08-06 06:59:17.622646[Thread 0x000000010b834200]:update_background_process: enter, force_validation=0 postpone_error_messages=0, switch_print=1, was_running=0
+[info]	2026-08-06 06:59:17.622814[Thread 0x000000010b834200]:get_current_slice_result:m_current_plate 0, current_plate 0x10cdc2600
+[info]	2026-08-06 06:59:17.624398[Thread 0x000000010b834200]:apply, Line 1120: enter
+[info]	2026-08-06 06:59:17.624597[Thread 0x000000010b834200]:apply, has_scarf_joint_seam:false
+[info]	2026-08-06 06:59:17.625326[Thread 0x000000010b834200]:apply, got print_diff 35, object_diff 0, region_diff 0, set status to APPLY_STATUS_CHANGED
+[info]	2026-08-06 06:59:17.625417[Thread 0x000000010b834200]:apply 1261: found full_config_diff changed.
+[info]	2026-08-06 06:59:17.625634[Thread 0x000000010b834200]:apply 1788: finished,  this 0x10cc0bc00, m_modified_count 1, apply_status 1, m_support_used 0
+[info]	2026-08-06 06:59:17.625825[Thread 0x000000010b834200]:update_background_process: background process apply result=1
+[info]	2026-08-06 06:59:17.625893[Thread 0x000000010b834200]:update_background_process, Line 8185: was_running = 0, running 0, invalidated=1, return_state=0, internal_cancel=0
+[info]	2026-08-06 06:59:17.625940[Thread 0x000000010b834200]:update_background_process, Line 8215: background data valid, return_state=0
+[info]	2026-08-06 06:59:17.625976[Thread 0x000000010b834200]:update_background_process, Line 8258: exit, return_state=0
+[info]	2026-08-06 06:59:17.626009[Thread 0x000000010b834200]:restart_background_process, Line 8296: not started
+[info]	2026-08-06 06:59:17.860715[Thread 0x000000010b834200]:OnScriptMessage Create Timer
+[info]	2026-08-06 06:59:22.589933[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:2} and interval = 10
+[info]	2026-08-06 06:59:22.590980[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:2} and interval = 10
+[info]	2026-08-06 06:59:32.581353[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:3} and interval = 10
+[info]	2026-08-06 06:59:32.582228[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:3} and interval = 10
+[info]	2026-08-06 06:59:42.590173[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:4} and interval = 10
+[info]	2026-08-06 06:59:42.591857[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:4} and interval = 10
+[info]	2026-08-06 06:59:52.581946[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:5} and interval = 10
+[info]	2026-08-06 06:59:52.582825[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:5} and interval = 10
+[info]	2026-08-06 07:00:02.584102[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:6} and interval = 10
+[info]	2026-08-06 07:00:02.585514[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:6} and interval = 10
+[info]	2026-08-06 07:00:12.584990[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:7} and interval = 10
+[info]	2026-08-06 07:00:12.585900[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:7} and interval = 10
+[info]	2026-08-06 07:00:22.590378[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:8} and interval = 10
+[info]	2026-08-06 07:00:22.591493[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:8} and interval = 10
+[info]	2026-08-06 07:00:32.581874[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:9} and interval = 10
+[info]	2026-08-06 07:00:32.582848[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:9} and interval = 10
+[info]	2026-08-06 07:00:42.581920[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:10} and interval = 10
+[info]	2026-08-06 07:00:42.588138[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:10} and interval = 10
+[info]	2026-08-06 07:00:52.581614[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:11} and interval = 10
+[info]	2026-08-06 07:00:52.583514[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:11} and interval = 10
+[info]	2026-08-06 07:01:02.583741[Thread 0x000000016ce87000]:process_task{ type:Backup, id:0, path:, object:0, extra:12} and interval = 10
+[info]	2026-08-06 07:01:02.585923[Thread 0x000000010b834200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:12} and interval = 10

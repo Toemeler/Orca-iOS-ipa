@@ -95,8 +95,23 @@ jobs:
           else
             pipx install fb-idb || true
           fi
+          # idb hardcodes /usr/local/bin/idb_companion as the default companion
+          # path. That is the Intel Homebrew prefix; these runners are Apple
+          # Silicon, where brew installs to /opt/homebrew, so every idb call
+          # died with FileNotFoundError on that exact path (sim drive run 2).
+          # Point the default at wherever the companion really is.
+          echo "--- what got installed ---"
+          ls -la "$(brew --prefix)/bin" 2>/dev/null | grep -i idb || echo "(no idb_companion in brew prefix)"
+          COMPANION="$(command -v idb_companion || true)"
+          [ -n "$COMPANION" ] || COMPANION="$(brew --prefix)/bin/idb_companion"
+          if [ -x "$COMPANION" ] && [ ! -x /usr/local/bin/idb_companion ]; then
+            sudo mkdir -p /usr/local/bin
+            sudo ln -sf "$COMPANION" /usr/local/bin/idb_companion
+            echo "linked /usr/local/bin/idb_companion -> $COMPANION"
+          fi
           # Prove it actually runs, rather than merely being on PATH.
           if idb --help >/dev/null 2>&1; then echo "idb ok"; else echo "idb unusable - launch only"; fi
+          ls -la /usr/local/bin/idb_companion 2>/dev/null || echo "no companion available"
 
       - name: Walk the UI
         id: walk

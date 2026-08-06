@@ -1,0 +1,71 @@
+diff --git a/src/osx/webview_webkit.mm b/src/osx/webview_webkit.mm
+index 8b038a2..9c1f4b3 100644
+--- a/src/osx/webview_webkit.mm
++++ b/src/osx/webview_webkit.mm
+@@ -29,6 +29,7 @@
+ #include "wx/private/webview.h"
+ 
+ #include "wx/filesys.h"
++#include "wx/log.h"
+ #include "wx/msgdlg.h"
+ #include "wx/mstream.h"
+ #include "wx/textdlg.h"
+@@ -655,8 +656,40 @@
+ 
+ void wxWebViewWebKit::LoadURL(const wxString& url)
+ {
+-    [m_webView loadRequest:[NSURLRequest requestWithURL:
+-            [NSURL URLWithString:wxCFStringRef(url).AsNSString()]]];
++    NSURL* nsurl = [NSURL URLWithString:wxCFStringRef(url).AsNSString()];
++
++#if defined(__WXOSX_IPHONE__)
++    // -loadRequest: with a file: URL gives the page read access to its own
++    // directory and nothing else, so any navigation to a sibling directory is
++    // refused - silently, with no JavaScript error and no navigation event.
++    //
++    // OrcaSlicer's setup wizard is exactly that: resources/web/guide/0/load.js
++    // finishes with window.open('../' + TargetPage + '/index.html', '_self'),
++    // a hop from guide/0/ to guide/21/. Blocked, the page stays on
++    // "Loading......" for ever, and the only clue anywhere is that nothing
++    // happens - the evaluateJavaScript that called it reports success.
++    //
++    // -loadFileURL:allowingReadAccessToURL: is the iOS API for this. Grant the
++    // whole app bundle when the file is inside it, which is where a packaged
++    // app's web resources live, and fall back to the containing directory
++    // otherwise so a file elsewhere is no worse off than before.
++    if ( [nsurl isFileURL] )
++    {
++        NSURL* bundleURL = [[NSBundle mainBundle] bundleURL];
++        NSString* bundlePath = [[bundleURL URLByStandardizingPath] path];
++        NSString* filePath = [[nsurl URLByStandardizingPath] path];
++
++        NSURL* readAccess =
++            ( bundlePath != nil && [filePath hasPrefix:bundlePath] )
++                ? bundleURL
++                : [nsurl URLByDeletingLastPathComponent];
++
++        [m_webView loadFileURL:nsurl allowingReadAccessToURL:readAccess];
++        return;
++    }
++#endif
++
++    [m_webView loadRequest:[NSURLRequest requestWithURL:nsurl]];
+ }
+ 
+ wxString wxWebViewWebKit::GetCurrentURL() const
+@@ -1046,6 +1079,15 @@
+     if (webKitWindow && webKitWindow->GetEventHandler())
+         webKitWindow->GetEventHandler()->ProcessEvent(event);
+ 
++#if defined(__WXOSX_IPHONE__)
++    // Every navigation the page attempts, and whether it was allowed. A page
++    // that will not move is otherwise indistinguishable from a page that never
++    // tried to.
++    wxLogMessage("wx-ios webview: navigation %s: %s",
++                 event.IsAllowed() ? "ALLOW" : "CANCEL",
++                 wxCFStringRef::AsString(url));
++#endif
++
+     decisionHandler(event.IsAllowed() ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
+ }
+ 

@@ -117,6 +117,9 @@ jobs:
         id: walk
         env:
           DRIVE_STEPS: ${{ github.event.inputs.steps }}
+          # Loading a model on the command line is what gets the 3D editor on
+          # screen without needing to synthesise a single touch.
+          DRIVE_MODEL: test-assets/calibration-cube.stl
         run: |
           set -uxo pipefail
           mkdir -p artifact

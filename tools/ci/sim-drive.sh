@@ -41,7 +41,26 @@ xcrun simctl boot "$UDID"
 xcrun simctl bootstatus "$UDID" -b
 
 xcrun simctl install "$UDID" "$APP" 2>&1 | tee -a "$LOG"
-xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" > "$OUT/sim-launch.log" 2>&1 &
+
+# Reaching the Prepare page needs no tap at all. GUI_App::on_init_inner hands
+# init_params->input_files to plater()->load_files(), so an ordinary positional
+# argument loads a model and puts the 3D editor up - which is exactly the page
+# the black-viewport question is about. simctl passes trailing arguments
+# straight to the app, and a simulator app's paths are host paths, so the file
+# can simply be copied into its container first.
+MODEL="${DRIVE_MODEL:-}"
+if [ -n "$MODEL" ] && [ -f "$MODEL" ]; then
+  DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data 2>/dev/null)
+  if [ -n "${DATA:-}" ]; then
+    mkdir -p "$DATA/Documents"
+    cp "$MODEL" "$DATA/Documents/" && MODEL_ARG="$DATA/Documents/$(basename "$MODEL")"
+    note "launching with model: $MODEL_ARG"
+  fi
+fi
+
+# shellcheck disable=SC2086
+xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} \
+  > "$OUT/sim-launch.log" 2>&1 &
 LPID=$!
 
 EXE=$(basename "$APP" .app)

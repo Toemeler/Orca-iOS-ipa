@@ -1,0 +1,311 @@
+set to 1
+[info]	2026-08-06 13:14:54.786272[Thread 0x0000000109598200]:set_visible_from_appconfig: name GreenGate3D PETG @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786299[Thread 0x0000000109598200]:set_visible_from_appconfig: name NIT ABS @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786326[Thread 0x0000000109598200]:set_visible_from_appconfig: name NIT PETG @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786351[Thread 0x0000000109598200]:set_visible_from_appconfig: name NIT PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786378[Thread 0x0000000109598200]:set_visible_from_appconfig: name Numakers PLA+ @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786403[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture ABS Basic @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786429[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture ASA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786469[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture Air PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786503[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture Easy PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786533[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture Matte PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786560[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786592[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture PLA Pro @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786624[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture Rock PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786664[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture Silk PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786704[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture Super PLA+ @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786733[Thread 0x0000000109598200]:set_visible_from_appconfig: name Overture TPU @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786766[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma CoPE @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786795[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786821[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Celestial @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786847[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Galaxy @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786886[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Glow @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786917[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Luminous @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786942[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Marble @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786968[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Matte @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.786994[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Metallic @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787019[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Neon @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787045[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Satin @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787076[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Silk @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787107[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Starlight @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787133[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Temp Shift @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787158[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA Translucent @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787184[Thread 0x0000000109598200]:set_visible_from_appconfig: name Panchroma PLA UV Shift @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787209[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyLite ABS @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787234[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyLite ASA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787260[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyLite Dual PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787296[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyLite PETG @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787322[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyLite PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787348[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyLite PLA Pro @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787373[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyTerra Dual PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787399[Thread 0x0000000109598200]:set_visible_from_appconfig: name PolyTerra PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787425[Thread 0x0000000109598200]:set_visible_from_appconfig: name Polymaker HT-PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787450[Thread 0x0000000109598200]:set_visible_from_appconfig: name Polymaker HT-PLA-GF @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787476[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU PETG @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787506[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU PLA Marble @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787548[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU PLA Matte @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787596[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU PLA+ 2.0 @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787650[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU PLA+ @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787706[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU Silk PLA+ @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787757[Thread 0x0000000109598200]:set_visible_from_appconfig: name SUNLU Wood PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787806[Thread 0x0000000109598200]:set_visible_from_appconfig: name Valment PLA @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787849[Thread 0x0000000109598200]:set_visible_from_appconfig: name Valment PLA Galaxy @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787897[Thread 0x0000000109598200]:set_visible_from_appconfig: name Valment PLA Silk @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.787950[Thread 0x0000000109598200]:set_visible_from_appconfig: name Valment PLA-CF @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788001[Thread 0x0000000109598200]:set_visible_from_appconfig: name eSUN PETG @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788053[Thread 0x0000000109598200]:set_visible_from_appconfig: name eSUN PLA+ @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788104[Thread 0x0000000109598200]:set_visible_from_appconfig: name eSUN PLA-Basic @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788150[Thread 0x0000000109598200]:set_visible_from_appconfig: name eSUN PLA-Marble @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788194[Thread 0x0000000109598200]:set_visible_from_appconfig: name eSUN PLA-Matte @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788238[Thread 0x0000000109598200]:set_visible_from_appconfig: name eSUN ePLA-LW @System, is_visible set to 1
+[info]	2026-08-06 13:14:54.788282[Thread 0x0000000109598200]:load_installed_filaments: exit.
+[info]	2026-08-06 13:14:54.788348[Thread 0x0000000109598200]:select_preset_by_name: machine, try to select by name , force 1
+[info]	2026-08-06 13:14:54.788405[Thread 0x0000000109598200]:select_preset: machine try to select preset 0
+[info]	2026-08-06 13:14:54.788574[Thread 0x0000000109598200]:select_preset: machine select success, m_idx_selected 0, name Default Printer, is_system 0, is_default 1
+[info]	2026-08-06 13:14:54.788620[Thread 0x0000000109598200]:select_preset_by_name: machine, select , success
+[info]	2026-08-06 13:14:54.788673[Thread 0x0000000109598200]:select_preset_by_name_strict: process, try to select by name 
+[info]	2026-08-06 13:14:54.788713[Thread 0x0000000109598200]:select_preset_by_name_strict: process, select , failed
+[info]	2026-08-06 13:14:54.788808[Thread 0x0000000109598200]:select_preset_by_name_strict: filament, try to select by name 
+[info]	2026-08-06 13:14:54.788862[Thread 0x0000000109598200]:select_preset_by_name_strict: filament, select , failed
+[info]	2026-08-06 13:14:54.788919[Thread 0x0000000109598200]:update_compatibility for all presets enter, select_other_print_if_incompatible 2, select_other_filament_if_incompatible 2
+[info]	2026-08-06 13:14:54.788971[Thread 0x0000000109598200]:update_compatible_internal: active printer Default Printer, unselect_if_incompatible 2
+[info]	2026-08-06 13:14:54.789056[Thread 0x0000000109598200]:update_compatible_internal: type process returned m_idx_selected 18446744073709551615, some_compatible 0
+[info]	2026-08-06 13:14:54.789081[Thread 0x0000000109598200]:select_preset: process try to select preset 0
+[info]	2026-08-06 13:14:54.789376[Thread 0x0000000109598200]:select_preset: process select success, m_idx_selected 0, name Default Setting, is_system 0, is_default 1
+[info]	2026-08-06 13:14:54.789485[Thread 0x0000000109598200]:prefered filaments: size 0, previous selected 18446744073709551615
+[info]	2026-08-06 13:14:54.789520[Thread 0x0000000109598200]:update_compatible_internal: active printer Default Printer, print Default Setting, unselect_if_incompatible 2
+[info]	2026-08-06 13:14:54.789923[Thread 0x0000000109598200]:update_compatible_internal: type filament returned m_idx_selected 18446744073709551615, some_compatible 283
+[info]	2026-08-06 13:14:54.790365[Thread 0x0000000109598200]:select_preset: filament try to select preset 24
+[info]	2026-08-06 13:14:54.790618[Thread 0x0000000109598200]:select_preset: filament select success, m_idx_selected 24, name Generic PLA @System, is_system 1, is_default 0
+[info]	2026-08-06 13:14:54.790663[Thread 0x0000000109598200]:update_compatibility for all presets exit
+[info]	2026-08-06 13:14:54.790703[Thread 0x0000000109598200]:load_selections: finished, preferred printer_model_id 
+[info]	2026-08-06 13:14:54.790735[Thread 0x0000000109598200]:load_presets finished, returned substitutions 0
+[info]	2026-08-06 13:14:54.790765[Thread 0x0000000109598200]:create the main window
+[warning]	2026-08-06 13:14:55.477553[Thread 0x0000000109598200]:Can't find HarmonyOS Sans SC font
+[warning]	2026-08-06 13:14:55.477839[Thread 0x0000000109598200]:Use system font instead: .AppleSystemUIFont
+[info]	2026-08-06 13:14:55.513974[Thread 0x0000000109598200]:select_technology: change the printer technology from  to  
+[info]	2026-08-06 13:14:55.701134[Thread 0x0000000109598200]:get_current_slice_result:m_current_plate 0, current_plate 0x1098b8000
+[info]	2026-08-06 13:14:55.756501[Thread 0x0000000109598200]:set_current_panel: current_panel 0x0, new_panel 0x10e7492b0
+[info]	2026-08-06 13:14:55.760679[Thread 0x0000000109598200]:set_current_panel: successfully, exit
+[info]	2026-08-06 13:14:56.253080[Thread 0x0000000109598200]:ImageGrid::SetStatus: No printers.
+[warning]	2026-08-06 13:14:56.260460[Thread 0x0000000109598200]:get_version, get_version not supported, return 00.00.00.00!
+[info]	2026-08-06 13:14:56.261698[Thread 0x0000000109598200]:monitor: show_status = 4
+[info]	2026-08-06 13:14:56.268683[Thread 0x0000000109598200]:market_scoring_hide hide market scoring page
+[info]	2026-08-06 13:14:56.875643[Thread 0x0000000109598200]:set_filament_count: filament_count=1
+[info]	2026-08-06 13:14:56.895277[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 1, enable= 0 
+[info]	2026-08-06 13:14:56.895517[Thread 0x0000000109598200]:get_enable_slice_status: m_slice_select 1, enable= 1 
+[info]	2026-08-06 13:14:56.895649[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 1, can_print 1, enable_slice 1, enable_print 0 
+[info]	2026-08-06 13:14:56.897280[Thread 0x0000000109598200]:_BBS_Backup_Manager inital and interval = 60
+[info]	2026-08-06 13:14:56.897565[Thread 0x0000000109598200]:set_interval entry, and last interval is: 60
+[info]	2026-08-06 13:14:56.897636[Thread 0x0000000109598200]:set_interval exit, and new interval is: 10
+[info]	2026-08-06 13:14:56.928169[Thread 0x0000000109598200]:model 0x10afb9478, id 7, backup_path empty, set to /Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7
+[info]	2026-08-06 13:14:56.928307[Thread 0x0000000109598200]:create /3D/Objects in "/Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7"
+[info]	2026-08-06 13:14:56.928679[Thread 0x0000000109598200]:create /Metadata in "/Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7"
+[info]	2026-08-06 13:14:56.928791[Thread 0x0000000109598200]:create /lock.txt in "/Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7"
+[info]	2026-08-06 13:14:56.929012[Thread 0x0000000109598200]:create missing sub_path/Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7/Auxiliaries
+[info]	2026-08-06 13:14:56.929788[Thread 0x0000000109598200]:load_current_preset: enter, m_type process
+[info]	2026-08-06 13:14:56.930005[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:56.931692[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:56.932637[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:56.933580[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:56.938259[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:56.939686[Thread 0x0000000109598200]:put_other_changes
+[info]	2026-08-06 13:14:56.939904[Thread 0x0000000109598200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 13:14:56.940432[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:56.943477[Thread 0x0000000109598200]:load_current_preset: exit
+[info]	2026-08-06 13:14:56.943785[Thread 0x0000000109598200]:load_current_preset: enter, m_type filament
+[info]	2026-08-06 13:14:56.944242[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:56.983926[Thread 0x0000000109598200]:put_other_changes
+[info]	2026-08-06 13:14:56.984153[Thread 0x0000000109598200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 13:14:56.984322[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:56.984759[Thread 0x0000000109598200]:load_current_preset: exit
+[info]	2026-08-06 13:14:56.984825[Thread 0x0000000109598200]:load_current_preset: enter, m_type machine
+[info]	2026-08-06 13:14:56.985920[Thread 0x0000000109598200]:reset: current result id 0 
+[info]	2026-08-06 13:14:56.987437[Thread 0x0000000109598200]:set_shape:current position {0,0}, new position {0, 0}
+[info]	2026-08-06 13:14:56.988103[Thread 0x0000000109598200]:reset_size:before size: plate_width 0, plate_depth 0, plate_height 0
+[info]	2026-08-06 13:14:56.988260[Thread 0x0000000109598200]:reset_size:after size: plate_width 200, plate_depth 200, plate_height 100
+[info]	2026-08-06 13:14:56.988351[Thread 0x0000000109598200]:set_pos_and_size: plate_id 0, before, origin {0,0,0}, plate_width 0, plate_depth 0, plate_height 0
+[info]	2026-08-06 13:14:56.988398[Thread 0x0000000109598200]:set_pos_and_size: with_instance_move 0, after, origin {0,0,0}, plate_width 200, plate_depth 200, plate_height 100
+[info]	2026-08-06 13:14:56.988437[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:56.990186[Thread 0x0000000109598200]:set_pos_and_size: plate_id 1, before, origin {0,0,0}, plate_width 0, plate_depth 0, plate_height 0
+[info]	2026-08-06 13:14:56.990363[Thread 0x0000000109598200]:set_pos_and_size: with_instance_move 0, after, origin {240,0,0}, plate_width 200, plate_depth 200, plate_height 100
+[info]	2026-08-06 13:14:56.990501[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 1 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:56.990552[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:56.990598[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 1 , update slice result from 0 to 0
+[error]	2026-08-06 13:14:56.994532[Thread 0x0000000109598200]:calc_exclude_triangles:Unable to create exclude triangles
+[info]	2026-08-06 13:14:57.001959[Thread 0x0000000109598200]:update_extruder_variants-1
+[info]	2026-08-06 13:14:57.007561[Thread 0x0000000109598200]:put_other_changes
+[info]	2026-08-06 13:14:57.007699[Thread 0x0000000109598200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 13:14:57.008796[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:57.008970[Thread 0x0000000109598200]:load_print_as_fff 649: print is step done, posSlice 0, posSupportMaterial 0, psGCodeExport 0
+[info]	2026-08-06 13:14:57.048659[Thread 0x0000000109598200]:Created and cached printer agent: orca
+[info]	2026-08-06 13:14:57.092949[Thread 0x0000000109598200]:switch_printer_agent: printer agent switched to orca
+[info]	2026-08-06 13:14:57.093149[Thread 0x0000000109598200]:put_other_changes
+[info]	2026-08-06 13:14:57.093215[Thread 0x0000000109598200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 13:14:57.093312[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:14:57.093872[Thread 0x0000000109598200]:load_current_preset: exit
+[info]	2026-08-06 13:14:57.093972[Thread 0x0000000109598200]:put_other_changes
+[info]	2026-08-06 13:14:57.094003[Thread 0x0000000109598200]:update_from_presetsproject file name is empty
+[info]	2026-08-06 13:14:57.094782[Thread 0x0000000109598200]:set_filament_count: filament_count=1
+[info]	2026-08-06 13:14:57.671038[Thread 0x0000000109598200]:main frame firstly shown
+[info]	2026-08-06 13:14:58.057219[Thread 0x0000000109598200]:finished the gui app init
+[info]	2026-08-06 13:14:58.109942[Thread 0x0000000109598200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 13:14:58.988472[Thread 0x0000000109598200]:update_print_volume_state, print_volume {0, 0, 0} to {200, 200, 100}, got 0 printable istances
+[info]	2026-08-06 13:14:58.992148[Thread 0x0000000109598200]:update_background_process: enter, force_validation=0 postpone_error_messages=0, switch_print=1, was_running=0
+[info]	2026-08-06 13:14:58.992342[Thread 0x0000000109598200]:get_current_slice_result:m_current_plate 0, current_plate 0x1098b8000
+[info]	2026-08-06 13:14:58.999043[Thread 0x0000000109598200]:apply, Line 1120: enter
+[info]	2026-08-06 13:14:58.999259[Thread 0x0000000109598200]:apply, has_scarf_joint_seam:false
+[info]	2026-08-06 13:14:59.001653[Thread 0x0000000109598200]:apply, got print_diff 35, object_diff 0, region_diff 0, set status to APPLY_STATUS_CHANGED
+[info]	2026-08-06 13:14:59.003189[Thread 0x0000000109598200]:apply 1261: found full_config_diff changed.
+[info]	2026-08-06 13:14:59.007890[Thread 0x0000000109598200]:apply 1788: finished,  this 0x1098b9600, m_modified_count 1, apply_status 1, m_support_used 0
+[info]	2026-08-06 13:14:59.008352[Thread 0x0000000109598200]:update_background_process: background process apply result=1
+[info]	2026-08-06 13:14:59.009069[Thread 0x0000000109598200]:update_background_process, Line 8185: was_running = 0, running 0, invalidated=1, return_state=0, internal_cancel=0
+[info]	2026-08-06 13:14:59.009134[Thread 0x0000000109598200]:update_background_process, Line 8215: background data valid, return_state=0
+[info]	2026-08-06 13:14:59.009196[Thread 0x0000000109598200]:update_background_process, Line 8258: exit, return_state=0
+[info]	2026-08-06 13:14:59.009258[Thread 0x0000000109598200]:restart_background_process, Line 8296: not started
+[info]	2026-08-06 13:14:59.408281[Thread 0x0000000109598200]:monitor: show_status = 4
+[info]	2026-08-06 13:15:00.357769[Thread 0x0000000109598200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 13:15:00.357927[Thread 0x0000000109598200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 13:15:00.519879[Thread 0x0000000109598200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 13:15:00.520108[Thread 0x0000000109598200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 13:15:00.550516[Thread 0x0000000109598200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 13:15:00.550718[Thread 0x0000000109598200]:operator(): begin to add script message handler for wx.
+[info]	2026-08-06 13:15:00.561121[Thread 0x0000000109598200]:operator(): finished add script message handler for wx.
+[info]	2026-08-06 13:15:00.562239[Thread 0x0000000109598200]:post_init, init with input files, size 1, input_gcode 0
+[info]	2026-08-06 13:15:00.660456[Thread 0x0000000109598200]:GLAD loaded OpenGL 3.0
+[info]	2026-08-06 13:15:00.660630[Thread 0x0000000109598200]:Framebuffer Type ARB (core in OpenGL ES 3.0).
+[info]	2026-08-06 13:15:00.660685[Thread 0x0000000109598200]:got opengl version OpenGL ES 3.0 APPLE-23.0.2, glsl version OpenGL ES GLSL ES 3.00, vendor Apple Inc. , graphics card model Apple Software Renderer
+[error]	2026-08-06 13:15:00.790642[Thread 0x0000000109598200]:orca-ios-gl: first render() drawable=1 canvas=1272x2566
+[info]	2026-08-06 13:15:00.796329[Thread 0x0000000109598200]:init enter
+[info]	2026-08-06 13:15:00.796927[Thread 0x0000000109598200]:init: before m_layers_editing init
+[info]	2026-08-06 13:15:00.797019[Thread 0x0000000109598200]:init: before gizmo init
+[info]	2026-08-06 13:15:00.864582[Thread 0x0000000109598200]:init: before _init_toolbars
+[info]	2026-08-06 13:15:00.877497[Thread 0x0000000109598200]:_init_assemble_view_toolbar: enter,  m_assemble_view_toolbar.is_enabled=true
+[info]	2026-08-06 13:15:00.878666[Thread 0x0000000109598200]:_init_assemble_view_toolbar: Finished Successfully
+[info]	2026-08-06 13:15:00.881069[Thread 0x0000000109598200]:init: finish _init_toolbars
+[info]	2026-08-06 13:15:00.881303[Thread 0x0000000109598200]:init: finish m_selection
+[warning]	2026-08-06 13:15:02.063458[Thread 0x0000000109598200]:Can't find HarmonyOS Sans SC font
+[warning]	2026-08-06 13:15:02.064679[Thread 0x0000000109598200]:Use system font instead: .AppleSystemUIFont
+[warning]	2026-08-06 13:15:02.133025[Thread 0x0000000109598200]:Can't find HarmonyOS Sans SC font
+[warning]	2026-08-06 13:15:02.133196[Thread 0x0000000109598200]:Use system font instead: .AppleSystemUIFont
+[info]	2026-08-06 13:15:02.196345[Thread 0x0000000109598200]:select_view_3D5730select view3D
+[info]	2026-08-06 13:15:02.196479[Thread 0x0000000109598200]:set_current_panel: current_panel 0x10e7492b0, new_panel 0x10e7492b0
+[info]	2026-08-06 13:15:02.196563[Thread 0x0000000109598200]:set_current_panel: the same panel, exit
+[info]	2026-08-06 13:15:02.201793[Thread 0x0000000109598200]:load_files: normal_paths 1, gcode_paths 0
+[info]	2026-08-06 13:15:02.203566[Thread 0x0000000109598200]:Undo / Redo snapshot taken: Load File: calibration-cube.stl, Undo / Redo stack memory: 0MB Resident memory: 696MB; Peak memory usage: 696MB
+[info]	2026-08-06 13:15:02.204233[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 13:15:02.204321[Thread 0x0000000109598200]:get_enable_slice_status: m_slice_select 1, enable= 1 
+[info]	2026-08-06 13:15:02.204383[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 1, can_print 1, enable_slice 1, enable_print 0 
+[info]	2026-08-06 13:15:02.204443[Thread 0x0000000109598200]:load_files: load_model 1, load_config 0, input_files size 1
+[info]	2026-08-06 13:15:02.592485[Thread 0x0000000109598200]:load_files: is_project_file 0, type_3mf 0
+[info]	2026-08-06 13:15:02.717736[Thread 0x0000000109598200]:load_files:6855 import 3mf IMPORT_LOAD_MODEL_OBJECTS 
+[info]	2026-08-06 13:15:02.718486[Thread 0x0000000109598200]:load_files:6888, before load_model_objects, count 1
+[info]	2026-08-06 13:15:02.719370[Thread 0x0000000109598200]:load_model_objects:7214, loaded objects, begin to auto placement
+[info]	2026-08-06 13:15:02.722288[Thread 0x0000000109598200]:load_model_objects:7259, finished auto placement, before add_objects_to_list
+[info]	2026-08-06 13:15:02.724231[Thread 0x0000000109598200]:add_instance: plate 0 , m_ready_for_slice changes to 1
+[info]	2026-08-06 13:15:02.724548[Thread 0x0000000109598200]:update_slice_result_valid_state: plate 0 , update slice result from 0 to 0
+[info]	2026-08-06 13:15:02.727424[Thread 0x0000000109598200]:load_model_objects:7271, after add_objects_to_list
+[info]	2026-08-06 13:15:02.747746[Thread 0x0000000109598200]:object_list_changed: can_slice 1, model_fits= 1, export_in_progress 0, has_printable_instances 1 
+[info]	2026-08-06 13:15:02.748273[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 13:15:02.748475[Thread 0x0000000109598200]:get_enable_slice_status: m_slice_select 1, enable= 1 
+[info]	2026-08-06 13:15:02.748661[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 1, can_print 1, enable_slice 1, enable_print 0 
+[info]	2026-08-06 13:15:02.748918[Thread 0x0000000109598200]:load_files:6892, finished load_model_objects
+[info]	2026-08-06 13:15:02.749817[Thread 0x0000000109598200]:select_view_3D5730select view3D
+[info]	2026-08-06 13:15:02.749956[Thread 0x0000000109598200]:set_current_panel: current_panel 0x10e7492b0, new_panel 0x10e7492b0
+[info]	2026-08-06 13:15:02.750078[Thread 0x0000000109598200]:set_current_panel: the same panel, exit
+[info]	2026-08-06 13:15:03.223563[Thread 0x0000000109598200]:post_init sync_user_preset: false
+[info]	2026-08-06 13:15:03.224859[Thread 0x0000000109598200]:finished post_init
+[info]	2026-08-06 13:15:03.441301[Thread 0x0000000109598200]:select_view_3D5730select view3D
+[info]	2026-08-06 13:15:03.441623[Thread 0x0000000109598200]:set_current_panel: current_panel 0x10e7492b0, new_panel 0x10e7492b0
+[info]	2026-08-06 13:15:03.441762[Thread 0x0000000109598200]:set_current_panel: the same panel, exit
+[info]	2026-08-06 13:15:03.452356[Thread 0x0000000109598200]:run wizard...
+[info]	2026-08-06 13:15:03.455550[Thread 0x0000000109598200]:SetStartPage enter, load=0, start_page=0
+[info]	2026-08-06 13:15:03.456351[Thread 0x0000000109598200]:SetStartPage, strlang=en_US
+[info]	2026-08-06 13:15:03.456602[Thread 0x0000000109598200]:SetStartPage exit
+[info]	2026-08-06 13:15:03.456688[Thread 0x0000000109598200]:GuideFrame,  set start page to welcome 
+[info]	2026-08-06 13:15:03.483417[Thread 0x0000000109598200]:SetStartPage enter, load=1, start_page=1
+[info]	2026-08-06 13:15:03.483890[Thread 0x0000000109598200]:SetStartPage, strlang=en_US
+[info]	2026-08-06 13:15:03.485344[Thread 0x0000000109598200]:load_url exit
+[info]	2026-08-06 13:15:03.485550[Thread 0x0000000109598200]:SetStartPage exit
+[info]	2026-08-06 13:15:03.485626[Thread 0x0000000109598200]:GuideFrame,  finished
+[info]	2026-08-06 13:15:03.485790[Thread 0x0000000109598200]:SetStartPage enter, load=1, start_page=0
+[info]	2026-08-06 13:15:03.485869[Thread 0x0000000109598200]:SetStartPage, strlang=en_US
+[info]	2026-08-06 13:15:03.486243[Thread 0x0000000109598200]:load_url exit
+[info]	2026-08-06 13:15:03.486323[Thread 0x0000000109598200]:SetStartPage exit
+[info]	2026-08-06 13:15:03.486484[Thread 0x0000000109598200]:GuideFrame before ShowModal
+[info]	2026-08-06 13:15:03.510948[Thread 0x0000000109598200]:finished run wizard
+[info]	2026-08-06 13:15:03.516032[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 13:15:03.516188[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 13:15:03.523448[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 13:15:03.523721[Thread 0x0000000109598200]:get_enable_slice_status: m_slice_select 1, enable= 1 
+[info]	2026-08-06 13:15:03.523948[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 1, can_print 1, enable_slice 1, enable_print 0 
+[info]	2026-08-06 13:15:03.524685[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 13:15:03.524857[Thread 0x0000000109598200]:get_enable_slice_status: m_slice_select 1, enable= 1 
+[info]	2026-08-06 13:15:03.525002[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 1, can_print 1, enable_slice 1, enable_print 0 
+[info]	2026-08-06 13:15:03.678783[Thread 0x0000000109598200]:update_print_volume_state, print_volume {0, 0, 0} to {200, 200, 100}, got 1 printable istances
+[info]	2026-08-06 13:15:03.679000[Thread 0x0000000109598200]:update_background_process: enter, force_validation=0 postpone_error_messages=0, switch_print=1, was_running=0
+[info]	2026-08-06 13:15:03.679057[Thread 0x0000000109598200]:get_current_slice_result:m_current_plate 0, current_plate 0x1098b8000
+[info]	2026-08-06 13:15:03.682611[Thread 0x0000000109598200]:apply, Line 1120: enter
+[info]	2026-08-06 13:15:03.683056[Thread 0x0000000109598200]:apply, has_scarf_joint_seam:false
+[info]	2026-08-06 13:15:03.687181[Thread 0x0000000109598200]:apply 1341: new model objects added.
+[info]	2026-08-06 13:15:03.687853[Thread 0x0000000109598200]:apply 1591: found print object changed.
+[info]	2026-08-06 13:15:03.690063[Thread 0x0000000109598200]:apply 1788: finished,  this 0x1098b9600, m_modified_count 2, apply_status 1, m_support_used 0
+[info]	2026-08-06 13:15:03.690854[Thread 0x0000000109598200]:update_background_process: background process apply result=1
+[info]	2026-08-06 13:15:03.698824[Thread 0x0000000109598200]:update_background_process: validate err=Relative extruder addressing requires resetting the extruder position at each layer to prevent loss of floating point accuracy. Add "G92 E0" to layer_gcode., warnings=0
+[info]	2026-08-06 13:15:03.699158[Thread 0x0000000109598200]:update_background_process, Line 8185: was_running = 0, running 0, invalidated=1, return_state=4, internal_cancel=0
+[info]	2026-08-06 13:15:03.699290[Thread 0x0000000109598200]:get_enable_print_status: m_print_select 3, enable= 0 
+[info]	2026-08-06 13:15:03.699431[Thread 0x0000000109598200]:update_slice_print_status m_slice_select 1: can_slice= 0, can_print 1, enable_slice 0, enable_print 0 
+[info]	2026-08-06 13:15:03.699784[Thread 0x0000000109598200]:update_background_process, Line 8205: set to process_completed_with_error, return_state=4
+[info]	2026-08-06 13:15:03.699870[Thread 0x0000000109598200]:update_background_process, Line 8258: exit, return_state=4
+[info]	2026-08-06 13:15:03.699914[Thread 0x0000000109598200]:restart_background_process, Line 8296: not started
+[info]	2026-08-06 13:15:05.198079[Thread 0x0000000109598200]:OnScriptMessage Create Timer
+[info]	2026-08-06 13:15:05.948766[Thread 0x000000016f2c7000]:process_task{ type:AddObject, id:1, path:/Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7, object:55, extra:1} and interval = 10
+[info]	2026-08-06 13:15:05.950632[Thread 0x000000016f2c7000]:_add_model_file_to_archive:6742, filename 3D/Objects/calibration-cube.stl_1.model, m_split_model 0,  sub_model 1
+[info]	2026-08-06 13:15:05.951524[Thread 0x000000016f2c7000]:bbs_3mf: save key= BambuStudio:3mfVersion, value = 1
+[info]	2026-08-06 13:15:05.953890[Thread 0x0000000109598200]:process_ui_task{ type:AddObject, id:1, path:/Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7, object:55, extra:1} and interval = 10
+[info]	2026-08-06 13:15:06.903983[Thread 0x000000016f2c7000]:process_task{ type:Backup, id:0, path:, object:0, extra:2} and interval = 10
+[info]	2026-08-06 13:15:06.905939[Thread 0x0000000109598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:2} and interval = 10
+[info]	2026-08-06 13:15:06.907722[Thread 0x0000000109598200]:export_3mf: path=, backup=1, export_plate_idx=-1, SaveStrategy=69748
+[info]	2026-08-06 13:15:06.914820[Thread 0x0000000109598200]:store_to_3mf_structure: plate 1 before load, width 0, height 0, size 0!
+[info]	2026-08-06 13:15:06.916395[Thread 0x0000000109598200]:store_to_3mf_structure: plate 1 after load, width 0, height 0, size 0!
+[info]	2026-08-06 13:15:06.916788[Thread 0x0000000109598200]:store_to_3mf_structure: plate 0, gcode_filename=, with_slice_info=1, slice_valid 0, object item count 1.
+[info]	2026-08-06 13:15:06.917173[Thread 0x0000000109598200]:store_to_3mf_structure:stored 1 plates!
+[info]	2026-08-06 13:15:06.919419[Thread 0x0000000109598200]:_save_model_to_file:6050,before open zip writer, m_skip_static 1, m_save_gcode 1, m_use_loaded_id 0
+[info]	2026-08-06 13:15:06.919702[Thread 0x0000000109598200]:_save_model_to_file:6078, before add _add_content_types_file_to_archive
+[info]	2026-08-06 13:15:06.920331[Thread 0x0000000109598200]:_save_model_to_file:6092,before add thumbnails, count 0
+[info]	2026-08-06 13:15:06.920461[Thread 0x0000000109598200]:_save_model_to_file:6093,top&&pick thumbnails, count 0
+[info]	2026-08-06 13:15:06.920526[Thread 0x0000000109598200]:_save_model_to_file:6231,before add calibration thumbnails, count 0
+[info]	2026-08-06 13:15:06.920600[Thread 0x0000000109598200]:_save_model_to_file:6253,before add calibration boundingbox, count 0
+[info]	2026-08-06 13:15:06.920687[Thread 0x0000000109598200]:_save_model_to_file:6269, before add models
+[info]	2026-08-06 13:15:06.920733[Thread 0x0000000109598200]:_add_model_file_to_archive:6742, filename /Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7/.3mf.tmp, m_split_model 1,  sub_model 0
+[info]	2026-08-06 13:15:06.920914[Thread 0x0000000109598200]:bbs_3mf: save key= Application, value = BambuStudio-02.06.00.51
+[info]	2026-08-06 13:15:06.921284[Thread 0x0000000109598200]:bbs_3mf: save key= BambuStudio:3mfVersion, value = 1
+[info]	2026-08-06 13:15:06.921390[Thread 0x0000000109598200]:bbs_3mf: save key= Copyright, value = 
+[info]	2026-08-06 13:15:06.921445[Thread 0x0000000109598200]:bbs_3mf: save key= CreationDate, value = 
+[info]	2026-08-06 13:15:06.921494[Thread 0x0000000109598200]:bbs_3mf: save key= Description, value = 
+[info]	2026-08-06 13:15:06.921550[Thread 0x0000000109598200]:bbs_3mf: save key= Designer, value = 
+[info]	2026-08-06 13:15:06.921604[Thread 0x0000000109598200]:bbs_3mf: save key= DesignerCover, value = 
+[info]	2026-08-06 13:15:06.921664[Thread 0x0000000109598200]:bbs_3mf: save key= DesignerUserId, value = 
+[info]	2026-08-06 13:15:06.921781[Thread 0x0000000109598200]:bbs_3mf: save key= License, value = 
+[info]	2026-08-06 13:15:06.921837[Thread 0x0000000109598200]:bbs_3mf: save key= ModificationDate, value = 
+[info]	2026-08-06 13:15:06.921906[Thread 0x0000000109598200]:bbs_3mf: save key= Origin, value = 
+[info]	2026-08-06 13:15:06.921978[Thread 0x0000000109598200]:bbs_3mf: save key= Title, value = 
+[info]	2026-08-06 13:15:06.923485[Thread 0x0000000109598200]:_save_model_to_file:6332, before add custom gcodes
+[info]	2026-08-06 13:15:06.923583[Thread 0x0000000109598200]:_save_model_to_file:6343, before add project_settings
+[info]	2026-08-06 13:15:06.929735[Thread 0x0000000109598200]:save_to_json:1530, saved config to /Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7/_temp_1.config
+[info]	2026-08-06 13:15:06.930938[Thread 0x0000000109598200]:_add_file_to_archive:6517, add file /Users/runner/Library/Developer/CoreSimulator/Devices/D614C708-679A-4236-B04E-6183F6884806/data/Containers/Data/Application/08335BF8-76FB-4184-927F-BF737C3B9DC6/tmp/orcaslicer_model/Thu_Aug_06/13_14_56#20520#7/_temp_1.config to archive Metadata/project_settings.config
+[info]	2026-08-06 13:15:06.931002[Thread 0x0000000109598200]:_save_model_to_file:6358, before add project embedded settings
+[info]	2026-08-06 13:15:06.936707[Thread 0x0000000109598200]:_save_model_to_file:6433, before add sliced info to 3mf
+[info]	2026-08-06 13:15:06.942285[Thread 0x0000000109598200]:_save_model_to_file:6453, before add auxiliary dir to 3mf
+[info]	2026-08-06 13:15:06.942405[Thread 0x0000000109598200]:_save_model_to_file:6466, before add relation file to 3mf
+[info]	2026-08-06 13:15:06.942722[Thread 0x0000000109598200]:_save_model_to_file:6488, finished exporting 3mf
+[info]	2026-08-06 13:15:16.909281[Thread 0x000000016f2c7000]:process_task{ type:Backup, id:0, path:, object:0, extra:3} and interval = 10
+[info]	2026-08-06 13:15:16.912059[Thread 0x0000000109598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:3} and interval = 10
+[info]	2026-08-06 13:15:26.905439[Thread 0x000000016f2c7000]:process_task{ type:Backup, id:0, path:, object:0, extra:4} and interval = 10
+[info]	2026-08-06 13:15:26.907027[Thread 0x0000000109598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:4} and interval = 10
+[info]	2026-08-06 13:15:36.906557[Thread 0x000000016f2c7000]:process_task{ type:Backup, id:0, path:, object:0, extra:5} and interval = 10
+[info]	2026-08-06 13:15:36.907421[Thread 0x0000000109598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:5} and interval = 10
+[info]	2026-08-06 13:15:46.901448[Thread 0x000000016f2c7000]:process_task{ type:Backup, id:0, path:, object:0, extra:6} and interval = 10
+[info]	2026-08-06 13:15:46.902566[Thread 0x0000000109598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:6} and interval = 10
+[info]	2026-08-06 13:15:56.907457[Thread 0x000000016f2c7000]:process_task{ type:Backup, id:0, path:, object:0, extra:7} and interval = 10
+[info]	2026-08-06 13:15:56.909395[Thread 0x0000000109598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:7} and interval = 10

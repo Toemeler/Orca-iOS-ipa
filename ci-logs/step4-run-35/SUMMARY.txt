@@ -1,0 +1,7 @@
+=== FAILED targets ===
+Preset.cpp
+
+=== undefined symbols (linker) ===
+
+total FAILED: 1
+undefined symbol count: 0

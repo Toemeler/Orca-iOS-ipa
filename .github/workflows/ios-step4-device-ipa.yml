@@ -389,6 +389,17 @@ jobs:
               <key>NSAllowsLocalNetworking</key><true/>
             </dict>
             <key>UIRequiresFullScreen</key><true/>
+            <!-- Genuinely full screen. UIRequiresFullScreen alone only stops
+                 Split View and Slide Over; the status bar still takes a strip
+                 off the top and wx's CreateContentView lays the root view out
+                 inside -applicationFrame, which excludes it. Hiding the status
+                 bar gives that strip back and makes applicationFrame the whole
+                 display. UIViewControllerBasedStatusBarAppearance must be false
+                 or UIKit asks the view controller instead and ignores the key
+                 above - wx's controller does not override it, so the default
+                 (visible) would win. -->
+            <key>UIStatusBarHidden</key><true/>
+            <key>UIViewControllerBasedStatusBarAppearance</key><false/>
             <key>UIFileSharingEnabled</key><true/>
             <key>LSSupportsOpeningDocumentsInPlace</key><true/>
             <key>UISupportedInterfaceOrientations</key><array>

@@ -164,6 +164,15 @@ if [ -n "${DATA:-}" ]; then
   echo "=== window / dialog lines from the app's own log ==="
   head -80 "$OUT/orca-ui-log.txt"
 
+  # The window tree from patches/step3/0340: every wxWindow with its class,
+  # position, size and shown state. This is the artifact that says whether a
+  # missing sidebar control was never created, created 0 pixels wide, or
+  # created off screen - three different bugs that look identical on an iPad.
+  find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
+    | while IFS= read -r f; do grep -a "orca-ios-ui:" "$f"; done \
+    > "$OUT/orca-window-tree.txt" 2>&1 || true
+  echo "=== window tree lines: $(grep -c '' "$OUT/orca-window-tree.txt" 2>/dev/null || echo 0) ==="
+
   # And the whole log, compressed. Reading the last 40000 bytes of a file whose
   # first megabyte is the interesting part has cost this port several rounds.
   find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \

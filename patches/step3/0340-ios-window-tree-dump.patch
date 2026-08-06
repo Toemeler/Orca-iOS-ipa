@@ -1,0 +1,91 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 66d7d878..996412e2 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -291,6 +291,64 @@
+ #endif
+ static const wxString shift = _L("Shift+");
+ 
++#ifdef __WXOSX_IPHONE__
++#include <wx/timer.h>
++#include <wx/toplevel.h>
++#include <string>
++
++// A control that was never created, one that was created 0 pixels wide, one
++// that sits outside its parent's client area and one that is simply hidden all
++// look exactly the same on an iPad: a gap in the sidebar. Nobody can tell them
++// apart from a screenshot, and asking someone to describe it does not either.
++//
++// So write the window tree down. Every wxWindow under every top level window,
++// with its class, label, position, size, shown and enabled state, indented by
++// depth. At error level because Orca's release log level starts there, and
++// once, from a one-shot timer late enough that the plater, the sidebar and the
++// parameter tabs have all been filled in.
++static void orca_ios_dump_window_tree(wxWindow *w, int depth)
++{
++    if (w == nullptr)
++        return;
++
++    const wxPoint pos  = w->GetPosition();
++    const wxSize  size = w->GetSize();
++    const wxSize  best = w->GetEffectiveMinSize();
++
++    BOOST_LOG_TRIVIAL(error)
++        << "orca-ios-ui: " << std::string(depth * 2, ' ')
++        << w->GetClassInfo()->GetClassName()
++        << " \"" << w->GetLabel().ToUTF8().data() << "\""
++        << " id=" << w->GetId()
++        << " at=" << pos.x << "," << pos.y
++        << " size=" << size.x << "x" << size.y
++        << " best=" << best.x << "x" << best.y
++        << (w->IsShown() ? " shown" : " HIDDEN")
++        << (w->IsEnabled() ? "" : " disabled")
++        << (w->IsShownOnScreen() ? "" : " OFFSCREEN");
++
++    const wxWindowList &children = w->GetChildren();
++    for (wxWindowList::const_iterator it = children.begin(); it != children.end(); ++it)
++        orca_ios_dump_window_tree(*it, depth + 1);
++}
++
++static void orca_ios_dump_all_windows(const char *why)
++{
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-ui: ===== window tree (" << why << ") =====";
++    for (wxWindowList::const_iterator it = wxTopLevelWindows.begin();
++         it != wxTopLevelWindows.end(); ++it) {
++        wxWindow *tlw = *it;
++        BOOST_LOG_TRIVIAL(error)
++            << "orca-ios-ui: --- top level window: "
++            << tlw->GetClassInfo()->GetClassName()
++            << " \"" << tlw->GetLabel().ToUTF8().data() << "\""
++            << (tlw->IsShown() ? " shown" : " HIDDEN");
++        orca_ios_dump_window_tree(tlw, 1);
++    }
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-ui: ===== end window tree =====";
++}
++#endif // __WXOSX_IPHONE__
++
+ MainFrame::MainFrame() :
+ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_STYLE, "mainframe")
+     , m_printhost_queue_dlg(new PrintHostQueueDialog(this))
+@@ -762,6 +820,21 @@
+     // bind events from DiffDlg
+ 
+     bind_diff_dialog();
++
++#ifdef __WXOSX_IPHONE__
++    // 20 s: the sidebar's presets, the parameter tabs and the object list are
++    // all filled in from idle handlers and background loads, so a dump taken at
++    // the end of this constructor would show an empty shell and prove nothing.
++    // The timer owns itself and fires once; the frame outlives it.
++    {
++        wxTimer *dump_timer = new wxTimer(this);
++        this->Bind(wxEVT_TIMER, [dump_timer](wxTimerEvent &) {
++            orca_ios_dump_all_windows("20s after MainFrame");
++            dump_timer->Stop();
++        }, dump_timer->GetId());
++        dump_timer->StartOnce(20000);
++    }
++#endif // __WXOSX_IPHONE__
+ }
+ 
+ void MainFrame::bind_diff_dialog()

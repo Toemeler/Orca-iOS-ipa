@@ -415,6 +415,35 @@ jobs:
             </array>
           </dict></plist>
           PLIST
+          # The app icon. Orca ships no iOS icon, and an iOS icon cannot just be
+          # one of its PNGs: OrcaSlicer.icns is the *document* icon (a page with
+          # "PROJECT" on it), OrcaSlicer.ico is the circular Windows one, which
+          # looks wrong inside iOS's rounded-square mask, and all of them have
+          # transparent margins, which iOS composites against black. The script
+          # crops to the artwork, flattens onto its own background and rescales.
+          python3 "$GITHUB_WORKSPACE/tools/ci/make-ios-icons.py" \
+            orca/resources/images/OrcaSlicer_192px.png icons.xcassets
+          xcrun actool icons.xcassets \
+            --compile "$APP" \
+            --platform iphoneos \
+            --minimum-deployment-target "$IOS_MIN" \
+            --target-device ipad --target-device iphone \
+            --app-icon AppIcon \
+            --output-partial-info-plist icon-partial.plist
+          # actool emits CFBundleIcons/CFBundleIconName describing what it just
+          # compiled; without those keys the Assets.car is ignored and the home
+          # screen shows the blank placeholder.
+          python3 - "$APP/Info.plist" icon-partial.plist <<'MERGE'
+          import plistlib, sys
+          main_path, part_path = sys.argv[1], sys.argv[2]
+          with open(main_path, 'rb') as fh: main = plistlib.load(fh)
+          with open(part_path, 'rb') as fh: part = plistlib.load(fh)
+          main.update(part)
+          with open(main_path, 'wb') as fh: plistlib.dump(main, fh)
+          print("merged icon keys:", sorted(part))
+          MERGE
+          test -f "$APP/Assets.car" || { echo "::error::actool produced no Assets.car"; exit 1; }
+
           # installd reads Info.plist through CFBundle and wants it in BINARY
           # plist format. A hand-written XML one parses fine with every other
           # tool -- plutil, plistlib, CFPropertyList -- and is then rejected at
@@ -449,6 +478,13 @@ jobs:
             echo "::error::the IPA contains a .dSYM; ldid will refuse to sign it"
             exit 1
           fi
+          # The icon is easy to lose silently: the bundle keeps building and
+          # installing without it, and the only symptom is a blank home screen
+          # tile that nobody notices until the app is on a device.
+          unzip -l "$OUT" | grep -q 'Payload/OrcaSlicer.app/Assets.car' || {
+            echo "::error::the IPA has no Assets.car; the app icon will be blank"
+            exit 1
+          }
           ls -lh artifact/
 
           # Verify the artifact the way an installer reads it, rather than

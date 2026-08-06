@@ -395,6 +395,30 @@ jobs:
             <key>UIViewControllerBasedStatusBarAppearance</key><false/>
           </dict></plist>
           PLIST
+          # The app icon, same as step 4 but compiled for the simulator so the
+          # home-screen screenshot this job takes actually shows it. See
+          # tools/ci/make-ios-icons.py for why none of Orca's own icon files can
+          # be used as-is.
+          python3 "$GITHUB_WORKSPACE/tools/ci/make-ios-icons.py" \
+            orca/resources/images/OrcaSlicer_192px.png icons.xcassets
+          xcrun actool icons.xcassets \
+            --compile "$APP" \
+            --platform iphonesimulator \
+            --minimum-deployment-target "$IOS_MIN" \
+            --target-device ipad --target-device iphone \
+            --app-icon AppIcon \
+            --output-partial-info-plist icon-partial.plist
+          python3 - "$APP/Info.plist" icon-partial.plist <<'MERGE'
+          import plistlib, sys
+          main_path, part_path = sys.argv[1], sys.argv[2]
+          with open(main_path, 'rb') as fh: main = plistlib.load(fh)
+          with open(part_path, 'rb') as fh: part = plistlib.load(fh)
+          main.update(part)
+          with open(main_path, 'wb') as fh: plistlib.dump(main, fh)
+          print("merged icon keys:", sorted(part))
+          MERGE
+          test -f "$APP/Assets.car" || { echo "::error::actool produced no Assets.car"; exit 1; }
+
           # installd reads Info.plist through CFBundle and wants it in BINARY
           # plist format. A hand-written XML one parses fine with every other
           # tool -- plutil, plistlib, CFPropertyList -- and is then rejected at

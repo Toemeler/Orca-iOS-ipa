@@ -1777,3 +1777,89 @@ legacy non-scene UIWindow mode. That is why a bare `[[UIWindow alloc]
 initWithFrame:]` displays at all — under a scene lifecycle it would need a
 `windowScene` and would show nothing. Do not add a scene manifest without
 rewriting this file first.
+
+# SESSION 2026-08-06: the simulator loop, and where the viewport stands
+
+Read this section first. It supersedes the CI-infrastructure notes above.
+
+## The loop that removes the human from the cycle
+
+Two workflows now, and the second one is the point:
+
+- `ios-step3-gui.yml` builds the simulator app (~75 min) and now **uploads the
+  bundle as the `orca-sim-app` artifact**.
+- `ios-sim-drive.yml` takes that artifact and does nothing but run the app:
+  boot a fresh iPad simulator, install, launch, screenshot, collect the app's
+  log, the startup-error note and any crash report, and publish the lot to
+  `ci-logs/simdrive-run-N`. **Ten minutes, no rebuild, no sideload.**
+
+It triggers on pushes to its own two files (`ios-sim-drive.yml`,
+`tools/ci/sim-drive.sh`). That is not laziness: a `workflow_dispatch`-only
+workflow that has never existed on the default branch **404s** when dispatched
+through the API on a feature branch.
+
+**Reaching a page needs no touch synthesis.** `GUI_App::on_init_inner` passes
+`init_params->input_files` to `plater()->load_files()`, so a positional
+argument loads a model and brings the 3D editor up. `simctl` forwards trailing
+arguments, and a simulator app's paths are host paths, so the model is copied
+into the app container first. Three rounds were wasted on `idb` before this:
+`fb-idb` breaks on Python 3.14 (`asyncio.get_event_loop()` raises), then wants
+`/usr/local/bin/idb_companion` (Intel prefix, these runners are arm64), and
+`idb_companion` does not install at all any more - the `facebook/fb` tap is
+defunct. **Do not spend more time on idb.**
+
+## Harness lessons paid for in full
+
+- **A backgrounded `--console-pty` launch produces no pid line and no output
+  when the app dies early** - identical to simctl refusing to launch. Runs 64
+  and 66 were both read as "the app never started" on that evidence; run 66 was
+  perfectly healthy. Never conclude "never alive" from an empty console log.
+- **Do not launch twice.** A plain launch followed by a `--console-pty` launch
+  with `--terminate-running-process` kills the first instance; drive run 5's
+  "died during the walk" was that, not the app.
+- **Simulator crash reports live in four places**, not one - the host's
+  DiagnosticReports, `~/Library/Logs/CoreSimulator/<udid>`, and two directories
+  inside the device's own data root.
+- **`log show --predicate 'process == "OrcaSlicer"'` matches nothing** when the
+  app dies before the log subsystem attributes anything to it. Ask for the
+  bundle id and executable name from any process, and capture SpringBoard,
+  launchd and runningboardd separately.
+
+## Fixed and verified in the simulator
+
+- **The wxWidgets Debug Alert is gone.** `CMAKE_BUILD_TYPE=Release` does *not*
+  disable wx's asserts - run 65's screenshot has the `sizer.cpp(2324)` alert
+  sitting in the middle of it. `-DwxBUILD_DEBUG_LEVEL=0` does; wx turns it into
+  `-DwxDEBUG_LEVEL=0` for the whole library (`build/cmake/init.cmake`). The wx
+  cache keys hash `wx-overlay` and `patches/step2` but never the cmake flags,
+  so they must be bumped by hand whenever a flag changes.
+- **The app starts and stays up** for the full observation window, renders the
+  home page, loads a model, and reaches the Prepare page with its entire
+  sidebar drawn correctly.
+- **The instant startup crash is gone**, which points at the hardened 0337 -
+  logging setup must never be able to throw out of `on_init_inner`.
+
+## NOT fixed: the 3D viewport is still empty
+
+This is the open bug. Prepare renders everything except the canvas, and the
+console still carries:
+
+    Failed to bind EAGLDrawable: <CAEAGLLayer: 0x...> to GL_RENDERBUFFER 1
+
+`wxGLContext::SetCurrent` used to call `-bindDrawable` only inside
+`if (v.context != m_glContext)`, so a bind that failed while the layer had no
+size was never retried. Patch 0214 retries while the drawable reports no size
+and binds after making the context current. **It was not enough** - the retry
+fires and the bind still fails, which means the layer is persistently unable to
+back a renderbuffer rather than merely not ready.
+
+0214 now also reports, once, what the view looks like at the moment of failure:
+bounds, frame, contentScaleFactor, whether it has a window and a superview,
+whether it is hidden, and the layer class and bounds. That single NSLog line
+separates "called too early" from "wrong geometry" from "not in the hierarchy",
+and it is the next thing to read.
+
+Ruled out already, do not re-investigate: the ES shader set (38 files, all
+`#version 300 es`, all with precision qualifiers, no legacy constructs), the
+shader list the ES path requests (matches what ships), and the GLKit
+default-framebuffer wrapper in patch 0329 (correct).

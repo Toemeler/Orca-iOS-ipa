@@ -1,43 +1,61 @@
 diff --git a/src/osx/iphone/glcanvas.mm b/src/osx/iphone/glcanvas.mm
-index 1b263a3..07bacb4 100644
+index 1b263a3..c13f5ff 100644
 --- a/src/osx/iphone/glcanvas.mm
 +++ b/src/osx/iphone/glcanvas.mm
-@@ -109,12 +109,35 @@ bool wxGLContext::SetCurrent(const wxGLCanvas& win) const
+@@ -109,11 +109,54 @@ bool wxGLContext::SetCurrent(const wxGLCanvas& win) const
          return false;
  
      wxUICustomOpenGLView* v = (wxUICustomOpenGLView*) win.GetPeer()->GetWXWidget();
 -    if ( v.context != m_glContext ) {
 +    if ( v.context != m_glContext )
          [v setContext:m_glContext];
--        [v bindDrawable];
--    }
 +
-     WXGLSetCurrentContext(m_glContext);
- 
-+    // -bindDrawable is what builds GLKView's framebuffer out of the backing
-+    // CAEAGLLayer, and it fails while that layer still has no size or is not
-+    // yet in a window - which is the normal state the first time wx makes this
-+    // context current, straight after DoCreate and before any sizer has laid
-+    // the canvas out. Binding only when the context pointer changed made that
-+    // first failure permanent: it was never retried, so every later frame drew
-+    // into an incomplete framebuffer and nothing appeared. Measured in the
-+    // simulator with the whole of Orca running:
++    WXGLSetCurrentContext(m_glContext);
++
++    // -bindDrawable builds GLKView's framebuffer from the backing CAEAGLLayer,
++    // and it fails while that layer has no usable size - which is the state
++    // right after DoCreate, before any sizer has laid the canvas out. The
++    // original code bound only when the context pointer changed, so that first
++    // failure was permanent and every later frame drew into an incomplete
++    // framebuffer:
 +    //
 +    //   Failed to bind EAGLDrawable: <CAEAGLLayer: 0x...> to GL_RENDERBUFFER 1
-+    //   Failed to make complete framebuffer object 8cd6
++    //   Failed to make complete framebuffer object 8cd6   (INCOMPLETE_ATTACHMENT)
 +    //
-+    // 0x8CD6 is GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT. The 3D viewport stayed
-+    // empty for the entire life of the process while every other widget drew
-+    // correctly.
-+    //
-+    // A drawable that bound successfully reports a non-zero size, so this
-+    // retries only while there is nothing usable to draw into and costs a
-+    // property read per frame otherwise. Binding now also happens after the
-+    // context is current rather than before, which is the order the GL calls
-+    // inside -bindDrawable actually need.
++    // Retrying while the drawable reports no size fixes the ordering problem
++    // but not a layer that can never back a renderbuffer, and on Orca the
++    // viewport stayed empty either way. Report what the view actually looks
++    // like at the moment of the failure, once, so the difference between "too
++    // early" and "wrong geometry" stops being a guess. wxLogTrace would be
++    // swallowed here - the app's own log sink is not up yet at this point, and
++    // NSLog is what the simulator console captures.
 +    if ( v.drawableWidth == 0 || v.drawableHeight == 0 )
-+        [v bindDrawable];
++    {
+         [v bindDrawable];
 +
++        if ( v.drawableWidth == 0 || v.drawableHeight == 0 )
++        {
++            static bool s_reported = false;
++            if ( !s_reported )
++            {
++                s_reported = true;
++                CGRect b = v.bounds;
++                CGRect f = v.frame;
++                NSLog(@"wxGLCanvas: drawable still 0 after bindDrawable. "
++                       "bounds=%.1fx%.1f frame=(%.1f,%.1f %.1fx%.1f) scale=%.2f "
++                       "window=%@ superview=%@ hidden=%d layer=%@ layerBounds=%.1fx%.1f",
++                      b.size.width, b.size.height,
++                      f.origin.x, f.origin.y, f.size.width, f.size.height,
++                      v.contentScaleFactor,
++                      v.window ? @"yes" : @"nil",
++                      v.superview ? NSStringFromClass([v.superview class]) : @"nil",
++                      (int) v.hidden,
++                      NSStringFromClass([v.layer class]),
++                      v.layer.bounds.size.width, v.layer.bounds.size.height);
++            }
++        }
+     }
+-    WXGLSetCurrentContext(m_glContext);
+ 
      return true;
  }
- 

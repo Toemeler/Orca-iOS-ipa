@@ -1,0 +1,278 @@
+ngBoard: (AppProtection) [com.apple.appprotection:framework] told auth provider org.orca-ios.orcaslicer was dimissed. result:true err:(null)
+2026-08-06 03:26:35.761808+0000 0xc63b     Default     0x4ac59              12594  0    backboardd: [com.apple.BackBoard:TouchEvents] new scene host settings: contextID:14573986 <sceneID:org.orca-ios.orcaslicer-default> foreground -> inactive
+2026-08-06 03:26:35.761997+0000 0xc63b     Default     0x4ac59              12594  0    backboardd: [com.apple.BackBoard:TouchEvents] new scene host settings: contextID:19F70ADC <sceneID:org.orca-ios.orcaslicer-default> foreground -> inactive
+2026-08-06 03:26:35.868111+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x600002157340; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: "<SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>"; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:26:35.872330+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] <SBFullScreenSwitcherLiveContentOverlayCoordinator: 0x600002c93e00> Removing SwitcherScene overlay for: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>, animated: NO
+2026-08-06 03:26:35.996282+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] Invalidating scene: (FBSceneManager):sceneID:org.orca-ios.orcaslicer-default
+2026-08-06 03:26:35.997174+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Common] Invalidating: <FBSceneSnapshotAction: 0x600002c97300; sceneID:org.orca-ios.orcaslicer-default>
+2026-08-06 03:26:35.997324+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] [(FBSceneManager):sceneID:org.orca-ios.orcaslicer-default][1] Scene invalidated.
+2026-08-06 03:26:35.997957+0000 0x9681     Error       0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] Ignoring update for invalidated scene: (FBSceneManager):sceneID:org.orca-ios.orcaslicer-default
+2026-08-06 03:26:35.998531+0000 0xa555     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Common] Got response for <FBSceneSnapshotAction: 0x600002c97300; sceneID:org.orca-ios.orcaslicer-default>: <NSError: 0x600000e716b0; domain: BSActionErrorDomain; code: 6 ("anulled")>
+2026-08-06 03:26:36.000967+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (UIKitCore) [com.apple.UIKit:KBProxyForwarding] <StateMachine:0x6000018fa6c0> Presentation environment invalidated: <_UISceneKeyboardProxyLayerForwardingPresentationScene: 0x600000e77750> Tracking scene: <FBScene: 0x600003e83300; (null):sceneID:org.orca-ios.orcaslicer-default>
+2026-08-06 03:26:36.004036+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Common] [FBSystemService][0x637f] Activation request for org.orca-ios.orcaslicer will wait 10.00s for app availability, with retry every 2.00s.
+2026-08-06 03:26:36.004122+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Common] [FBSystemService][0x637f] Attempting activation of org.orca-ios.orcaslicer with {UUID: 21650B52-8AE6-412B-8CA0-ADBAA3D42A1A, Sequence: 676} vs {UUID: 21650B52-8AE6-412B-8CA0-ADBAA3D42A1A, Sequence: 676}
+2026-08-06 03:26:36.004161+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Workspace] Received trusted open application request for "org.orca-ios.orcaslicer" from <FBProcess: 0x104c43e70; osservice<com.apple.CoreSimulator.bridge>:12603(v65AA)>.
+2026-08-06 03:26:36.007218+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] rules: (scene setting) REMOVED keyboardFocus environment from scene: sceneID:org.orca-ios.orcaslicer-default
+2026-08-06 03:26:36.007831+0000 0x9681     Error       0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] Ignoring update for invalidated scene: (FBSceneManager):sceneID:org.orca-ios.orcaslicer-default
+2026-08-06 03:26:36.015124+0000 0x9681     Error       0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] [(FBSceneManager):sceneID:org.orca-ios.orcaslicer-default] Update failed: <NSError: 0x600000e939f0; domain: FBSceneErrorDomain; code: 1 ("operation-failed"); "Scene update failed."> {
+    NSUnderlyingError = <NSError: 0x600000da1b60; domain: FBWorkspace; code: 1; "Scene client is invalid.">;
+}
+2026-08-06 03:26:36.020060+0000 0x9681     Error       0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] [(FBSceneManager):sceneID:org.orca-ios.orcaslicer-default] Update failed: <NSError: 0x600000e902a0; domain: FBSceneErrorDomain; code: 1 ("operation-failed"); "Scene update failed."> {
+    NSUnderlyingError = <NSError: 0x600000e7fc60; domain: FBWorkspace; code: 1; "Scene client is invalid.">;
+}
+2026-08-06 03:26:36.020235+0000 0x9681     Error       0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Scene] [(FBSceneManager):sceneID:org.orca-ios.orcaslicer-default] Update failed: <NSError: 0x600000e918f0; domain: FBSceneErrorDomain; code: 1 ("operation-failed"); "Scene update failed."> {
+    NSUnderlyingError = <NSError: 0x600000e85950; domain: FBWorkspace; code: 1; "Scene client is invalid.">;
+}
+2026-08-06 03:26:36.044533+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Executing request: <SBMainWorkspaceTransitionRequest: 0x60000333b840; eventLabel: OpenApplication(sceneID:org.orca-ios.orcaslicer-default)ForRequester(CoreSimulatorBr.12603); display: Main; source: FBSystemService>
+2026-08-06 03:26:36.046307+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Common] [FBWorkspaceEvent] Executing: <FBWorkspaceEvent: 0x600000416640; OpenApplication(sceneID:org.orca-ios.orcaslicer-default)ForRequester(CoreSimulatorBr.12603)>
+2026-08-06 03:26:36.055599+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] [SwitcherOrientation] outSwitcherOrientation: portrait (1), outElementsOrientations: {
+    "sceneID:org.orca-ios.orcaslicer-default" = 1;
+}
+2026-08-06 03:26:36.061130+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Transaction] Running <SBAppToAppWorkspaceTransaction: 0x118bd3c80> for transition request:
+<SBMainWorkspaceTransitionRequest: 0x60000333b840; eventLabel: OpenApplication(sceneID:org.orca-ios.orcaslicer-default)ForRequester(CoreSimulatorBr.12603); display: Main; source: FBSystemService> {
+    applicationContext = <SBWorkspaceApplicationSceneTransitionContext: 0x104c7eb80; background: NO> entities = {
+        SBLayoutRolePrimary = <SBDeviceApplicationSceneEntity: 0x60000221c2d0; ID: sceneID:org.orca-ios.orcaslicer-default; layoutRole: primary>;
+    };
+}
+2026-08-06 03:26:36.061521+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Generating initialization context on main thread for: org.orca-ios.orcaslicer
+2026-08-06 03:26:36.067720+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Asked to bootstrap a new process with identity: app<org.orca-ios.orcaslicer((null))>
+2026-08-06 03:26:36.067798+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Creating process (sync=true) with identity: app<org.orca-ios.orcaslicer((null))>
+2026-08-06 03:26:36.068190+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:ProcessWorkspace] Created <FBWorkspace: 0x6000030437b0; <FBApplicationProcess: 0x119498c20; app<org.orca-ios.orcaslicer>:<invalid>>>
+2026-08-06 03:26:36.068572+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Bootstrapping app<org.orca-ios.orcaslicer> with intent foreground-interactive
+2026-08-06 03:26:36.149290+0000 0xc64c     Default     0x4ad3c              12574  7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Acquiring assertion targeting app<org.orca-ios.orcaslicer((null))> from originator [osservice<com.apple.SpringBoard>:12571] with description <RBSAssertionDescriptor| "FBApplicationProcess" ID:12574-12571-835 target:app<org.orca-ios.orcaslicer((null))> attributes:[
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableLPRunReason-Resume" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"Visibility" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableRole-UIFocal" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableJetsamPriority-Foreground" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableBootstrapping" sourceEnvironment:"(null)">
+	]>
+2026-08-06 03:26:36.149467+0000 0xc64c     Default     0x4ad3c              12574  7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Assertion 12574-12571-835 (target:app<org.orca-ios.orcaslicer((null))>) will be created as active
+2026-08-06 03:26:36.193956+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] <SBFullScreenSwitcherLiveContentOverlayCoordinator: 0x600002c93e00> Adding SwitcherScene overlay for: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>, animated: NO
+2026-08-06 03:26:36.196844+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] _updatePreferences <Switcher>: {
+    activationPolicyForParticipantsBelow: AtMostBG;
+    homeAffordanceDrawingSuppression: Default;
+    associatedSceneIdentifiersToSuppressInSystemAperture: (
+        sceneID:org.orca-ios.orcaslicer-default
+    );
+    associatedBundleIdentifiersToSuppressInSystemAperture: (
+        org.orca-ios.orcaslicer
+    );
+    allowsDimmingWhenForegroundInactive: Yes;
+}
+2026-08-06 03:26:36.197212+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] Resolved Stack (update(Switcher)) [
+    Highest: ⬇ ,
+    HUD: ⬇ ,
+    TransientOverlayPresentation: ⬇ ,
+    CoverSheet: ⬇ ,
+    SystemNotes: ⬇ ,
+    FloatingDock: ⬇ ,
+    Switcher: ownsHomeGesture; FGActive; homeAffordanceDrawingSuppressed: Y->N; suppressedBundles: (none)->org.orca-ios.orcaslicer; suppressedScenes: 0->1,
+    HomeScreen: FGActive->BG
+]
+2026-08-06 03:26:36.200130+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] [DeviceSceneHandle] Did set interfaceOrientation[1] on scene with identifier[sceneID:org.orca-ios.orcaslicer-default]
+2026-08-06 03:26:36.200729+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:ContinuitySession] modifying scene setting userInterfaceStyle to Light displayIdentity: Main forSceneManagers: Main <SBDeviceApplicationSceneHandle: 0x104f93f80; sceneID: sceneID:org.orca-ios.orcaslicer-default; scenePointer: 0x0>
+2026-08-06 03:26:36.212099+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] No capture application found for the org.orca-ios.orcaslicer, launchCameraCapture: NO, isCaptureApplication: NO
+2026-08-06 03:26:36.218302+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBSceneReadySwitcherModifierEvent: 0x600000e8d4a0; type: SceneReady; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main> {
+    configuration = full;
+    environment = main;
+    centerConfiguration = undefined;
+    preferredDisplayOrdinal = 0;
+    continuousExposeIdentifier = org.orca-ios.orcaslicer;
+    layoutItems = {
+        primary = <SBDisplayItem: 0x6000018c8680; type: App; bundleIdentifier: org.orca-ios.orcaslicer; uniqueIdentifier: sceneID:org.orca-ios.orcaslicer-default>;
+    }
+}>
+2026-08-06 03:26:36.221906+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Asked to bootstrap a new process with identity: app<org.orca-ios.orcaslicer((null))>
+2026-08-06 03:26:36.222121+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Did not create a new process: A pending process for app<org.orca-ios.orcaslicer((null))> already exists.
+2026-08-06 03:26:37.004186+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:StatusBarish] Verify background audio activity for org.orca-ios.orcaslicer, Recording: 0
+2026-08-06 03:26:47.443853+0000 0xa4e4     Default     0x4ad43              12571  0    SpringBoard: (SplashBoard) [com.apple.SplashBoard:SnapshotReaper] <XBApplicationSnapshotManifestImpl: 0x600002d2ed80> [org.orca-ios.orcaslicer] Reaping invalid snapshot <XBApplicationSnapshot: 0x119177f30; …DDC0C18510F7> [org.orca-ios.orcaslicer]
+ invalidReason: expired. expirationDate: 2026-08-06 03:26:40 +0000; how long ago (seconds): 6.971715
+2026-08-06 03:26:47.444128+0000 0xa4e4     Default     0x4ad43              12571  0    SpringBoard: (SplashBoard) [com.apple.SplashBoard:FileManifest] <XBApplicationSnapshotManifestImpl: 0x600002d2ed80> [org.orca-ios.orcaslicer] Deleting snapshot <XBApplicationSnapshot: 0x119177f30; …DDC0C18510F7> [org.orca-ios.orcaslicer] for reason: _contentType: SceneContent(0)
+2026-08-06 03:27:24.527367+0000 0xb4ed     Default     0x4ad3c              12574  0    runningboardd: (RunningBoard) [com.apple.runningboard:job] Creating and launching job for: app<org.orca-ios.orcaslicer((null))>
+2026-08-06 03:27:24.527761+0000 0xb4ed     Default     0x4ad3c              12574  0    runningboardd: (RunningBoard) [com.apple.runningboard:general] _mutateContextIfNeeded called for org.orca-ios.orcaslicer
+2026-08-06 03:27:24.532260+0000 0xb4ed     Default     0x4ad3c              12574  0    runningboardd: (RunningBoard) [com.apple.runningboard:job] 'app<org.orca-ios.orcaslicer((null))>' Skipping container path lookup because containerization was prevented (<RBSLaunchContext: 0x102e24ad0>)
+2026-08-06 03:27:24.532841+0000 0xc64c     Default     0x4ad3c              12574  0    runningboardd: (RunningBoard) [com.apple.runningboard:job_oversize] 'app<org.orca-ios.orcaslicer((null))>' Constructed job description:
+<dictionary: 0x60000261e340> { count = 21, transaction: 0, voucher = 0x0, contents =
+	"ProcessType" => <string: 0x600000c114d0> { string cache = 0x0, length = 3, contents = "App" }
+	"EnableTransactions" => <bool: 0x1e5760410>: false
+	"_ManagedBy" => <string: 0x600000c13570> { string cache = 0x0, length = 22, contents = "com.apple.runningboard" }
+	"RootedSimulatorPath" => <bool: 0x1e57603f0>: true
+	"StandardOutPath" => <string: 0x600000c11ce0> { string cache = 0x0, length = 12, contents = "/dev/ttys000" }
+	"CFBundleIdentifier" => <string: 0x600000c11740> { string cache = 0x0, length = 23, contents = "org.orca-ios.orcaslicer" }
+	"_ResourceCoalition" => <string: 0x600000c10120> { string cache = 0x0, length = 36, contents = "app<org.orca-ios.orcaslicer((null))>" }
+	"ThrottleInterval" => <int64: 0xbb7175944dc03e1f>: 2147483647
+	"StandardErrorPath" => <string: 0x600000c13d80> { string cache = 0x0, length = 12, contents = "/dev/ttys000" }
+	"MachServices" => <dictionary: 0x60000261fcc0> { count = 0, transaction: 0, voucher = 0x0, contents =
+	}
+	"EnablePressuredExit" => <bool: 0x1e5760410>: false
+	"InitialTaskRole" => <int64: 0xbb717597b23fc1ef>: 1
+	"UserName" => <string: 0x600000c13f60> { string cache = 0x0, length = 6, contents = "mobile" }
+	"EnvironmentVariables" => <dictionary: 0x60000261f7e0> { count = 3, transaction: 0, voucher = 0x0, contents =
+		"TMPDIR" => <string: 0x600000c11dd0> { string cache = 0x0, length = 164, contents = "/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2C-9306-404E-85D0-5D4934FC4E4E/tmp" }
+		"HOME" => <string: 0x600000c12a90> { string cache = 0x0, length = 160, contents = "/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2C-9306-404E-85D0-5D4934FC4E4E" }
+		"CFFIXED_USER_HOME" => <string: 0x600000c109c0> { string cache = 0x0, length = 160, contents = "/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2C-9306-404E-85D0-5D4934FC4E4E" }
+	}
+	"_AdditionalProperties" => <dictionary: 0x60000261e220> { count = 1, transaction: 0, voucher = 0x0, contents =
+		"RunningBoard" => <dictionary: 0x60000261e880> { count = 3, transaction: 0, voucher = 0x0, contents =
+			"Managed" => <bool: 0x1e57603f0>: true
+			"RunningBoardLaunchedIdentity" => <dictionary: 0x60000261f660> { count = 2, transaction: 0, voucher = 0x0, contents =
+				"TYPE" => <int64: 0xbb717597b23fc1f7>: 2
+				"EAI" => <string: 0x600000c13120> { string cache = 0x0, length = 23, contents = "org.orca-ios.orcaslicer" }
+			}
+			"RunningBoardLaunched" => <bool: 0x1e57603f0>: true
+		}
+	}
+	"ExitTimeOut" => <int64: 0xbb717597b23fc1ef>: 1
+	"Label" => <string: 0x600000c11ad0> { string cache = 0x0, length = 57, contents = "UIKitApplication:org.orca-ios.orcaslicer[43d9][rb-legacy]" }
+	"MaterializeDatalessFiles" => <bool: 0x1e57603f0>: true
+	"_LaunchType" => <int64: 0xbb717597b23fc1ff>: 3
+	"ProgramArguments" => <array: 0x600000c126a0> { count = 2, capacity = 8, contents =
+		0: <string: 0x600000c13870> { string cache = 0x0, length = 188, contents = "/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Bundle/Application/08696E05-6BD5-46A8-9671-7CDCAC5F3060/OrcaSlicer.app/OrcaSlicer" }
+		1: <string: 0x600000c10450> { string cache = 0x0, length = 191, contents = "/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2C-9306-404E-85D0-5D4934FC4E4E/Documents/calibration-cube.stl" }
+	}
+	"Program" => <string: 0x600000c11da0> { string cache = 0x0, length = 188, contents = "/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Bundle/Application/08696E05-6BD5-46A8-9671-7CDCAC5F3060/OrcaSlicer.app/OrcaSlicer" }
+}
+2026-08-06 03:27:24.688075+0000 0xd804     Error       0x0                  12547  0    launchd_sim: [user/501/UIKitApplication:org.orca-ios.orcaslicer[43d9][rb-legacy] [18180]:] Service could not initialize: posix_spawn(/Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Bundle/Application/08696E05-6BD5-46A8-9671-7CDCAC5F3060/OrcaSlicer.app/OrcaSlicer), error 0xd - Permission denied
+2026-08-06 03:27:24.688342+0000 0xb4ed     Error       0x4ad3c              12574  0    runningboardd: (AppServerSupport) [com.apple.libxpc.OSLaunchdJob:all] <OSLaunchdJob | handle=EA9F4EB6-A63A-4FF0-8945-0A6B9CCCA893>: job failed to spawn, plist={
+	ProcessType => App
+	EnableTransactions => false
+	_ManagedBy => com.apple.runningboard
+	RootedSimulatorPath => true
+	StandardOutPath => /dev/ttys000
+	CFBundleIdentifier => org.orca-ios.orcaslicer
+	_ResourceCoalition => app<org.orca-ios.orcaslicer((null))>
+	ThrottleInterval => 2147483647
+	StandardErrorPath => /dev/ttys000
+	MachServices => {
+	}
+	EnablePressuredExit => false
+	InitialTaskRole => 1
+	UserName => mobile
+	EnvironmentVariables => {
+		TMPDIR => /Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2C-9306-404E-85D0-5D4934FC4E4E/tmp
+		HOME => /Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2C-9306-404E-85D0-5D4934FC4E4E
+		CFFIXED_USER_HOME => /Users/runner/Library/Developer/CoreSimulator/Devices/5F004258-23DC-4F78-9093-FF6860CEBE2B/data/Containers/Data/Application/DC663E2<…>
+2026-08-06 03:27:24.688947+0000 0xb4ed     Default     0x4ad3c              12574  7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Invalidating assertion 12574-12571-835 (target:app<org.orca-ios.orcaslicer((null))>) from originator [osservice<com.apple.SpringBoard>:12571]
+2026-08-06 03:27:24.689625+0000 0xc5c0     Default     0x4ad3c              12574  0    runningboardd: (RunningBoardServices) [com.apple.runningboard:general] Full encoding handle <inert:[app<org.orca-ios.orcaslicer((null))>:-1]*>, with data 0, and pid -1
+2026-08-06 03:27:24.690124+0000 0xa559     Default     0x4ad48              12571  0    SpringBoard: (RunningBoardServices) [com.apple.runningboard:monitor] Received state update for -1 (app<org.orca-ios.orcaslicer((null))>, none-Visible
+2026-08-06 03:27:24.690281+0000 0xa350     Error       0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Bootstrapping failed for <FBApplicationProcess: 0x119498c20; app<org.orca-ios.orcaslicer>:<invalid>> with error: <NSError: 0x600000c937e0; domain: RBSRequestErrorDomain; code: 5; "Launch failed."> {
+    NSUnderlyingError = <NSError: 0x600000c93570; domain: NSPOSIXErrorDomain; code: 13> {
+        NSLocalizedDescription = Launchd job spawn failed;
+    };
+}
+2026-08-06 03:27:24.690320+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] [app<org.orca-ios.orcaslicer>:-1] Now flagged as pending exit for reason: Bootstrap failed
+2026-08-06 03:27:24.690406+0000 0xc5bc     Default     0x0                  12547  0    launchd_sim: [user/501:] service inactive: UIKitApplication:org.orca-ios.orcaslicer[43d9][rb-legacy]
+2026-08-06 03:27:24.690406+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] [app<org.orca-ios.orcaslicer>:-1] Connection to remote process was not established.
+2026-08-06 03:27:24.690407+0000 0xc5bc     Default     0x0                  12547  0    launchd_sim: [user/501:] removing service: UIKitApplication:org.orca-ios.orcaslicer[43d9][rb-legacy]
+2026-08-06 03:27:24.690613+0000 0xa350     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Adding: <FBApplicationProcess: 0x119498c20; app<org.orca-ios.orcaslicer>:<invalid>>
+2026-08-06 03:27:24.794927+0000 0xb4f7     Default     0x4ad3c              12574  0    runningboardd: (RunningBoard) [com.apple.runningboard:assertion] Removed last relative-start-date-defining assertion for process app<org.orca-ios.orcaslicer((null))>
+2026-08-06 03:27:24.795677+0000 0xb4f7     Default     0x4f4f4              12574  0    runningboardd: (RunningBoardServices) [com.apple.runningboard:general] Full encoding handle <inert:[app<org.orca-ios.orcaslicer((null))>:-1]*>, with data 0, and pid -1
+2026-08-06 03:27:24.795957+0000 0xa4e4     Default     0x4ad49              12571  0    SpringBoard: (RunningBoardServices) [com.apple.runningboard:monitor] Received state update for -1 (app<org.orca-ios.orcaslicer((null))>, none-NotVisible
+2026-08-06 03:27:24.800606+0000 0xa501     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] [app<org.orca-ios.orcaslicer>:-1] Process exited: .
+2026-08-06 03:27:24.800680+0000 0xa501     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] [app<org.orca-ios.orcaslicer>:-1] Setting process task state to: Not Running
+2026-08-06 03:27:24.800766+0000 0xa501     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:ProcessWorkspace] [app<org.orca-ios.orcaslicer>:-1] Invalidating workspace.
+2026-08-06 03:27:24.800838+0000 0xa501     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Process] Removing: <FBApplicationProcess: 0x119498c20; app<org.orca-ios.orcaslicer>:<invalid>>
+2026-08-06 03:27:24.805864+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (FrontBoard) [com.apple.FrontBoard:Common] [FBSystemService][0x637f] Open "org.orca-ios.orcaslicer" request from CoreSimulatorBr:12603 failed with error: <NSError: 0x600000e6f4e0; domain: FBSOpenApplicationServiceErrorDomain; code: 1 ("RequestDenied"); "The request was denied by service delegate (SBMainWorkspace)."> {
+    FBSOpenApplicationRequestID = 0x637f;
+    NSLocalizedDescription = The request to open "org.orca-ios.orcaslicer" failed.;
+    NSUnderlyingError = <NSError: 0x600000e6d830; domain: FBProcessExit; code: 64 ("launch-failed"); "The process failed to launch."> {
+        NSUnderlyingError = <NSError: 0x600000c937e0; domain: RBSRequestErrorDomain; code: 5; "Launch failed."> {
+            NSUnderlyingError = <NSError: 0x600000c93570; domain: NSPOSIXErrorDomain; code: 13> {
+                NSLocalizedDescription = Launchd job spawn failed;
+            };
+        };
+    };
+}
+2026-08-06 03:27:24.817752+0000 0x9715     Error       0x0                  12603  0    CoreSimulatorBridge: (FrontBoardServices) [com.apple.FrontBoard:Common] [FBSSystemService][0x637f] Error handling open request for org.orca-ios.orcaslicer: <NSError: 0x600000c07480; domain: FBSOpenApplicationServiceErrorDomain; code: 1 ("RequestDenied"); "The request was denied by service delegate (SBMainWorkspace)."> {
+    FBSOpenApplicationRequestID = 0x637f;
+    NSLocalizedDescription = The request to open "org.orca-ios.orcaslicer" failed.;
+    NSUnderlyingError = <NSError: 0x600000c06e50; domain: FBProcessExit; code: 64 ("launch-failed"); "The process failed to launch."> {
+        NSUnderlyingError = <NSError: 0x600000c07ab0; domain: RBSRequestErrorDomain; code: 5; "Launch failed."> {
+            NSUnderlyingError = <NSError: 0x600000c07930; domain: NSPOSIXErrorDomain; code: 13> {
+                NSLocalizedDescription = Launchd job spawn failed;
+            };
+        };
+    };
+}
+2026-08-06 03:27:24.820913+0000 0xc1a3     Default     0x0                  12603  0    CoreSimulatorBridge: Error Launching: Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "The request to open "org.orca-ios.orcaslicer" failed." UserInfo={NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace)., BSErrorCodeDescription=RequestDenied, NSUnderlyingError=0x600000c06e50 {Error Domain=FBProcessExit Code=64 "The process failed to launch." UserInfo={NSUnderlyingError=0x600000c07ab0 {Error Domain=RBSRequestErrorDomain Code=5 "Launch failed." UserInfo={NSLocalizedFailureReason=Launch failed., NSUnderlyingError=0x600000c07930 {Error Domain=NSPOSIXErrorDomain Code=13 "Permission denied" UserInfo=0x600000215c80 (not displayed)}}}, NSLocalizedFailureReason=The process failed to launch., BSErrorCodeDescription=launch-failed}}, FBSOpenApplicationRequestID=0x637f, NSLocalizedDescription=The request to open "org.orca-ios.orcaslicer" failed.}
+2026-08-06 03:27:24.824377+0000 0xc1a3     Default     0x0                  12603  0    CoreSimulatorBridge: Non-FBS error launching 'org.orca-ios.orcaslicer'. Error was: Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "The request to open "org.orca-ios.orcaslicer" failed." UserInfo={NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace)., BSErrorCodeDescription=RequestDenied, NSUnderlyingError=0x600000c06e50 {Error Domain=FBProcessExit Code=64 "The process failed to launch." UserInfo={NSUnderlyingError=0x600000c07ab0 {Error Domain=RBSRequestErrorDomain Code=5 "Launch failed." UserInfo={NSLocalizedFailureReason=Launch failed., NSUnderlyingError=0x600000c07930 {Error Domain=NSPOSIXErrorDomain Code=13 "Permission denied" UserInfo=0x600000215c80 (not displayed)}}}, NSLocalizedFailureReason=The process failed to launch., BSErrorCodeDescription=launch-failed}}, FBSOpenApplicationRequestID=0x637f, NSLocalizedDescription=The request to open "org.orca-ios.orcaslicer" failed.}
+2026-08-06 03:27:24.829041+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Returning cached initialization context for org.orca-ios.orcaslicer
+2026-08-06 03:27:24.855175+0000 0xa542     Error       0x4ac59              12571  2    SpringBoard: (CoreServices) [com.apple.launchservices:default] *** ERROR *** Presenting restoration prompt for org.orca-ios.orcaslicer: Error Domain=NSOSStatusErrorDomain Code=-10814 "(null)" UserInfo={_LSFile=LSBindingEvaluator.mm, _LSLine=1973, _LSFunction=runEvaluator}
+2026-08-06 03:27:24.862425+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBTransitionSwitcherModifierEvent: 0x1194adaf0; type: MainTransition; transitionID: A6763484-43C3-46FA-9EFA-47022D4756E3; phase: Prepare; animated: YES; fromAppLayout: 0x0; toAppLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>; fromEnvironmentMode: home-screen; toEnvironmentMode: application; fromSpaceConfiguration: undefined; toSpaceConfiguration: full; pendingTermination: {(
+)}; fromDisplayItemLayoutAttributesMap: {
+}; toDisplayItemLayoutAttributesMap: {
+    "<SBDisplayItem: 0x6000018ab140; type: App; bundleIdentifier: org.orca-ios.orcaslicer; uniqueIdentifier: sceneID:org.orca-ios.orcaslicer-default>" = "<SBDisplayItemLayoutAttributes: 0x118b0d260; contentOrientation: \"portrait (1)\"; lastInteractionTime: 2; sizingPolicy: snap-to-grid; size: FullWidthAndHeight; center: \"{0.5, 0.5}\"; tileConfiguration: \"tile-role-none customSize={1.7976931348623157e+308, 1.7976931348623157e+308}\"; slideOverConfiguration: \"slideove
+2026-08-06 03:27:24.882972+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] handle response:
+<SBSwitcherModifierEventResponse: 0x600000cd2850> {
+    <SBTimerEventSwitcherEventResponse: 0x600000c95710; delay: 0.240000; reason: kSBTransitionModifierInvalidateAsyncRenderingReason>;
+    <SBUpdateLayoutSwitcherEventResponse: 0x60000189ff40; updateVisibleItems; layout; style; mode: None>;
+    <SBRequestFolderSnapshotsSwitcherEventResponse: 0x600000cac870; snapshotRequested: YES>;
+    <SBIconOverlayVisibilitySwitcherEventResponse: 0x6000017846c0; visible: YES; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>>;
+    <SBIconViewVisibilitySwitcherEventResponse: 0x6000021d0190; visible: NO; animationSettings: 0x0; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>>;
+    <SBTimerEventSwitcherEventResponse: 0x600000ccd920; delay: 0.240000; reason: kSBIconZoomDisallowAcceleratedHomeButtonPressReason>;
+    <SBInvalidateContinuousExposeIdentifiersEventResponse: 0x600001787300>;
+2026-08-06 03:27:24.966412+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x6000022337f0; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: 0x0; transitioningToAppLayout: "<SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>"; gestureInitiated: NO>
+2026-08-06 03:27:24.967971+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBTransitionSwitcherModifierEvent: 0x104a5b560; type: MainTransition; transitionID: A6763484-43C3-46FA-9EFA-47022D4756E3; phase: Animate; animated: YES; fromAppLayout: 0x0; toAppLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>; fromEnvironmentMode: home-screen; toEnvironmentMode: application; fromSpaceConfiguration: undefined; toSpaceConfiguration: full; pendingTermination: {(
+)}; fromDisplayItemLayoutAttributesMap: {
+}; toDisplayItemLayoutAttributesMap: {
+    "<SBDisplayItem: 0x6000018bbec0; type: App; bundleIdentifier: org.orca-ios.orcaslicer; uniqueIdentifier: sceneID:org.orca-ios.orcaslicer-default>" = "<SBDisplayItemLayoutAttributes: 0x118b0d260; contentOrientation: \"portrait (1)\"; lastInteractionTime: 2; sizingPolicy: snap-to-grid; size: FullWidthAndHeight; center: \"{0.5, 0.5}\"; tileConfiguration: \"tile-role-none customSize={1.7976931348623157e+308, 1.7976931348623157e+308}\"; slideOverConfiguration: \"slideove
+2026-08-06 03:27:25.026178+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBSceneReadySwitcherModifierEvent: 0x600000eb05a0; type: SceneReady; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main> {
+    configuration = full;
+    environment = main;
+    centerConfiguration = undefined;
+    preferredDisplayOrdinal = 0;
+    continuousExposeIdentifier = org.orca-ios.orcaslicer;
+    layoutItems = {
+        primary = <SBDisplayItem: 0x6000018c8680; type: App; bundleIdentifier: org.orca-ios.orcaslicer; uniqueIdentifier: sceneID:org.orca-ios.orcaslicer-default>;
+    }
+}>
+2026-08-06 03:27:25.033037+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Workspace] Process exited: <FBApplicationProcess: 0x119498c20; app<org.orca-ios.orcaslicer>:<invalid>> ->
+2026-08-06 03:27:25.038521+0000 0x9681     Default     0x4ac59              12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Application process state changed for org.orca-ios.orcaslicer: (null)
+2026-08-06 03:27:25.876308+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBTransitionSwitcherModifierEvent: 0x104cbfe10; type: MainTransition; transitionID: A6763484-43C3-46FA-9EFA-47022D4756E3; phase: Complete; animated: YES; fromAppLayout: 0x0; toAppLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>; fromEnvironmentMode: home-screen; toEnvironmentMode: application; fromSpaceConfiguration: undefined; toSpaceConfiguration: full; pendingTermination: {(
+)}; fromDisplayItemLayoutAttributesMap: {
+}; toDisplayItemLayoutAttributesMap: {
+    "<SBDisplayItem: 0x6000018b1e00; type: App; bundleIdentifier: org.orca-ios.orcaslicer; uniqueIdentifier: sceneID:org.orca-ios.orcaslicer-default>" = "<SBDisplayItemLayoutAttributes: 0x118b0d260; contentOrientation: \"portrait (1)\"; lastInteractionTime: 2; sizingPolicy: snap-to-grid; size: FullWidthAndHeight; center: \"{0.5, 0.5}\"; tileConfiguration: \"tile-role-none customSize={1.7976931348623157e+308, 1.7976931348623157e+308}\"; slideOverConfiguration: \"slideov
+2026-08-06 03:27:25.884115+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] handle response:
+<SBSwitcherModifierEventResponse: 0x600000c87300> {
+    <SBPreemptAnimationSwitcherEventResponse: 0x600000c86d00>;
+    <SBRequestFolderSnapshotsSwitcherEventResponse: 0x600000ca5200; snapshotRequested: NO>;
+    <SBIconOverlayVisibilitySwitcherEventResponse: 0x6000018b0d00; visible: NO; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>>;
+    <SBIconViewVisibilitySwitcherEventResponse: 0x60000225db80; visible: YES; animationSettings: 0x0; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>>;
+    <SBMatchMoveToIconViewSwitcherEventResponse: 0x6000026f3e40; active: NO; appLayout: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>>;
+    <SBUpdateMenuBarVisibilitySwitcherEventResponse: 0x600000caf900>;
+}
+2026-08-06 03:27:25.911949+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Front display did change: <SBApplication: 0x600003d51a40; org.orca-ios.orcaslicer>
+2026-08-06 03:27:25.930212+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] Resolved Stack (update(Switcher)) [
+    Highest: ⬇ ,
+    HUD: ⬇ ,
+    TransientOverlayPresentation: ⬇ ,
+    CoverSheet: ⬇ ,
+    SystemNotes: ⬇ ,
+    FloatingDock: ⬇ ,
+    Switcher: ownsHomeGesture; FGActive; homeAffordanceDrawingSuppressed: N->Y; suppressedBundles: org.orca-ios.orcaslicer->(none); suppressedScenes: 1->0,
+    HomeScreen: BG->FGActive
+]
+2026-08-06 03:27:25.948506+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x600002263b10; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: "<SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>"; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:27:26.033977+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x60000224e800; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: "<SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>"; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:27:26.036913+0000 0x9681     Default     0x0                  12571  0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] <SBFullScreenSwitcherLiveContentOverlayCoordinator: 0x600002c93e00> Removing SwitcherScene overlay for: <SBAppLayout: 0x600002d2eb00; primary: org.orca-ios.orcaslicer:default; environment: main>, animated: NO
+2026-08-06 03:27:29.912730+0000 0xb50d     Default     0x48d64              14716  0    storekitd: [com.apple.storekit:Receipts] [ReceiptManager] Handling app install for (
+    "org.orca-ios.orcaslicer"
+)
+2026-08-06 03:27:32.263654+0000 0x0        Default     0x0                  18208  0    log: [com.apple.log:] log run noninteractively, parent: 12547 (launchd_sim), args: 'log' 'show' '--last' '10m' '--predicate' 'process == "OrcaSlicer" OR eventMessage CONTAINS "OrcaSlicer" OR eventMessage CONTAINS "org.orca-ios.orcaslicer" OR processImagePath CONTAINS "OrcaSlic

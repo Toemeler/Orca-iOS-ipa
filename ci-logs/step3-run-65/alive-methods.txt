@@ -1,0 +1,27 @@
+=== immediately after launch (pid line: none) ===
+--- host: ps -p $APP_PID
+(no pid)
+--- host: pgrep -fl $EXE
+70699 /Users/runner/Library/Developer/CoreSimulator/Devices/C9542502-C4F6-4891-8408-52B78E6C8A34/data/Containers/Bundle/Application/AFB9BC97-92BC-4F61-9DD0-3241984C33A7/OrcaSlicer.app/OrcaSlicer
+--- host: ps -Ao pid,comm | grep EXE
+70699 /Users/runner/Library/Developer/CoreSimulator/Devices/C9542502-C4F6-4891-8408-52B78E6C8A34/data/Containers/Bundle/Application/AFB9BC97-92BC-4F61-9DD0-3241984C33A7/OrcaSlicer.app/OrcaSlicer
+--- sim: launchctl list | grep bundle id
+70699	0	UIKitApplication:org.orca-ios.orcaslicer[447a][rb-legacy]
+--- sim: launchctl list line count
+     359
+--- sim: launchctl list, first 15 lines
+PID	Status	Label
+-	0	com.apple.progressd
+-	0	com.apple.CoreAuthentication.daemon
+-	0	com.apple.cloudphotod
+67132	0	com.apple.homed
+67151	0	com.apple.modelcatalogd
+67235	0	com.apple.dataaccess.dataaccessd
+-	0	com.apple.DragUI.druid
+68480	0	com.apple.bird
+67567	0	com.apple.fitnesscoachingd
+-	0	com.apple.knowledgeconstructiond
+67037	0	com.apple.biomed
+67096	0	com.apple.nsurlsessiond
+-	0	com.apple.devicecheckd
+-	0	com.apple.UIKit.KeyboardManagement

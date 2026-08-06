@@ -2,15 +2,28 @@ diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
 index 66d7d878..996412e2 100644
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
-@@ -291,6 +291,64 @@
+@@ -13,6 +13,16 @@
+ #include <wx/filename.h>
+ #include <wx/debug.h>
+ #include <wx/utils.h>
++#ifdef __WXOSX_IPHONE__
++// For the window tree dump and the self-driver further down. They live inside
++// namespace Slic3r::GUI, where an #include would put every declaration in
++// these headers into that namespace.
++#include <wx/timer.h>
++#include <wx/toplevel.h>
++#include <wx/popupwin.h>
++#include <string>
++#include <cstdlib>
++#endif
+ 
+ #include <boost/algorithm/string/predicate.hpp>
+ #include <boost/log/trivial.hpp>
+@@ -291,6 +301,195 @@
  #endif
  static const wxString shift = _L("Shift+");
  
 +#ifdef __WXOSX_IPHONE__
-+#include <wx/timer.h>
-+#include <wx/toplevel.h>
-+#include <string>
-+
 +// A control that was never created, one that was created 0 pixels wide, one
 +// that sits outside its parent's client area and one that is simply hidden all
 +// look exactly the same on an iPad: a gap in the sidebar. Nobody can tell them
@@ -18,9 +31,7 @@ index 66d7d878..996412e2 100644
 +//
 +// So write the window tree down. Every wxWindow under every top level window,
 +// with its class, label, position, size, shown and enabled state, indented by
-+// depth. At error level because Orca's release log level starts there, and
-+// once, from a one-shot timer late enough that the plater, the sidebar and the
-+// parameter tabs have all been filled in.
++// depth. At error level because Orca's release log level starts there.
 +static void orca_ios_dump_window_tree(wxWindow *w, int depth)
 +{
 +    if (w == nullptr)
@@ -62,28 +73,181 @@ index 66d7d878..996412e2 100644
 +    }
 +    BOOST_LOG_TRIVIAL(error) << "orca-ios-ui: ===== end window tree =====";
 +}
++
++// ---------------------------------------------------------------------------
++// The driver.
++//
++// idb is the only supported way to synthesise a tap into a simulator without an
++// XCUITest target, and on this runner it does not work: brew has no
++// idb-companion for it, so every idb call dies on a missing
++// /usr/local/bin/idb_companion. Four rounds of trying is enough. The
++// application can press its own buttons instead - wx event handlers do not care
++// whether a wxMouseEvent came from UIKit or from here - and that is the only
++// thing that makes a simulator run answer a question rather than just prove the
++// process is alive.
++//
++// Only runs when ORCA_IOS_DRIVE is set in the environment, which the simulator
++// harness passes as SIMCTL_CHILD_ORCA_IOS_DRIVE=1. A device build never sees it.
++static void orca_ios_click(wxWindow *w, const char *what)
++{
++    if (w == nullptr) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-drive: " << what << ": NOT FOUND";
++        return;
++    }
++
++    const wxSize size = w->GetSize();
++    const wxPoint at(size.x / 2, size.y / 2);
++
++    BOOST_LOG_TRIVIAL(error)
++        << "orca-ios-drive: clicking " << what << " ("
++        << w->GetClassInfo()->GetClassName()
++        << " \"" << w->GetLabel().ToUTF8().data() << "\""
++        << " size=" << size.x << "x" << size.y << ")";
++
++    // Orca's own widgets are custom-drawn wxWindows that work off raw mouse
++    // events; wxButton and friends want the command event. Send both, in the
++    // order UIKit would.
++    wxMouseEvent down(wxEVT_LEFT_DOWN);
++    down.SetPosition(at);
++    down.SetEventObject(w);
++    w->GetEventHandler()->ProcessEvent(down);
++
++    wxMouseEvent up(wxEVT_LEFT_UP);
++    up.SetPosition(at);
++    up.SetEventObject(w);
++    w->GetEventHandler()->ProcessEvent(up);
++
++    wxCommandEvent cmd(wxEVT_BUTTON, w->GetId());
++    cmd.SetEventObject(w);
++    w->GetEventHandler()->ProcessEvent(cmd);
++}
++
++// Depth-first search for a shown window whose label matches, optionally
++// restricted to a class name.
++static wxWindow *orca_ios_find_by_label(wxWindow *root, const wxString &label,
++                                        const char *className)
++{
++    if (root == nullptr)
++        return nullptr;
++
++    if (root->IsShown() && root->GetLabel() == label &&
++        (className == nullptr ||
++         wxString(root->GetClassInfo()->GetClassName()) == wxString(className)))
++        return root;
++
++    const wxWindowList &children = root->GetChildren();
++    for (wxWindowList::const_iterator it = children.begin(); it != children.end(); ++it) {
++        if (wxWindow *found = orca_ios_find_by_label(*it, label, className))
++            return found;
++    }
++    return nullptr;
++}
++
++// Orca's drop-down control is Widgets/ComboBox.cpp: a custom wxWindow holding a
++// wxTextCtrl and owning a DropDown, which is a wxPopupTransientWindow. Neither
++// has its own wxRTTI, so the tree shows both as plain wxWindow - but a window
++// that owns a wxPopupTransientWindow child is a combo box and nothing else is.
++static wxWindow *orca_ios_find_combo(wxWindow *root)
++{
++    if (root == nullptr)
++        return nullptr;
++
++    const wxWindowList &children = root->GetChildren();
++    for (wxWindowList::const_iterator it = children.begin(); it != children.end(); ++it) {
++        if (wxDynamicCast(*it, wxPopupTransientWindow) != nullptr && root->IsShown())
++            return root;
++    }
++    for (wxWindowList::const_iterator it = children.begin(); it != children.end(); ++it) {
++        if (wxWindow *found = orca_ios_find_combo(*it))
++            return found;
++    }
++    return nullptr;
++}
++
++static wxWindow *orca_ios_topmost_shown()
++{
++    wxWindow *best = nullptr;
++    for (wxWindowList::const_iterator it = wxTopLevelWindows.begin();
++         it != wxTopLevelWindows.end(); ++it) {
++        if ((*it)->IsShown())
++            best = *it;
++    }
++    return best;
++}
++
++static void orca_ios_drive_step(int step)
++{
++    switch (step) {
++    case 0:
++        orca_ios_dump_all_windows("startup");
++        break;
++
++    case 1:
++        // The first-launch configuration wizard. Its Get Started button is what
++        // a user would press, and everything after it - printer, filament,
++        // process - is behind it.
++        orca_ios_click(orca_ios_find_by_label(orca_ios_topmost_shown(),
++                                              _L("Get Started"), nullptr),
++                       "wizard Get Started");
++        break;
++
++    case 2:
++        orca_ios_dump_all_windows("after wizard Get Started");
++        break;
++
++    case 3:
++        // Does a drop-down open? This is the one question a screenshot of a
++        // static app cannot answer.
++        orca_ios_click(orca_ios_find_combo(orca_ios_topmost_shown()), "first combo box");
++        break;
++
++    case 4:
++        orca_ios_dump_all_windows("after combo box click");
++        break;
++
++    default:
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-drive: walk finished";
++        break;
++    }
++}
 +#endif // __WXOSX_IPHONE__
 +
  MainFrame::MainFrame() :
  DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_STYLE, "mainframe")
      , m_printhost_queue_dlg(new PrintHostQueueDialog(this))
-@@ -762,6 +820,21 @@
+@@ -762,6 +961,37 @@
      // bind events from DiffDlg
  
      bind_diff_dialog();
 +
 +#ifdef __WXOSX_IPHONE__
-+    // 20 s: the sidebar's presets, the parameter tabs and the object list are
-+    // all filled in from idle handlers and background loads, so a dump taken at
-+    // the end of this constructor would show an empty shell and prove nothing.
-+    // The timer owns itself and fires once; the frame outlives it.
++    // 20 s before the first step: the sidebar presets, the parameter tabs and
++    // the object list are all filled in from idle handlers and background
++    // loads, so a dump taken at the end of this constructor would show an empty
++    // shell and prove nothing. Then one step every 10 s.
++    //
++    // The timer keeps running inside a modal dialog's event loop, which is the
++    // point: the configuration wizard is modal, and without this nothing could
++    // ever get past it unattended.
 +    {
-+        wxTimer *dump_timer = new wxTimer(this);
-+        this->Bind(wxEVT_TIMER, [dump_timer](wxTimerEvent &) {
-+            orca_ios_dump_all_windows("20s after MainFrame");
-+            dump_timer->Stop();
-+        }, dump_timer->GetId());
-+        dump_timer->StartOnce(20000);
++        static int  s_orca_ios_drive_step = 0;
++        const bool  driving = ::getenv("ORCA_IOS_DRIVE") != nullptr;
++        wxTimer    *timer   = new wxTimer(this);
++
++        this->Bind(wxEVT_TIMER, [timer, driving](wxTimerEvent &) {
++            if (!driving) {
++                // A device build only wants the one dump.
++                orca_ios_dump_all_windows("20s after MainFrame");
++                timer->Stop();
++                return;
++            }
++            orca_ios_drive_step(s_orca_ios_drive_step);
++            if (++s_orca_ios_drive_step > 5)
++                timer->Stop();
++        }, timer->GetId());
++
++        timer->Start(driving ? 10000 : 20000, driving ? wxTIMER_CONTINUOUS
++                                                      : wxTIMER_ONE_SHOT);
 +    }
 +#endif // __WXOSX_IPHONE__
  }

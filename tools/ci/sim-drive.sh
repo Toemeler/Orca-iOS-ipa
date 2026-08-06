@@ -66,6 +66,14 @@ fi
 # but --terminate-running-process on the second one kills the first instance,
 # so the run was measuring an app that had just been shot. Whether the launch
 # itself succeeded is now read from the pid line simctl prints into the log.
+# ORCA_IOS_DRIVE turns on the in-app walk added by patches/step3/0340: the
+# application presses its own buttons and dumps the window tree after each step.
+# idb is the only supported way to synthesise a tap into a simulator without an
+# XCUITest target and it does not work on this runner - brew has no
+# idb-companion for it, so every idb call dies on a missing
+# /usr/local/bin/idb_companion - which left the walk above taking six identical
+# screenshots. simctl passes SIMCTL_CHILD_* through to the app's environment.
+export SIMCTL_CHILD_ORCA_IOS_DRIVE=1
 # shellcheck disable=SC2086
 xcrun simctl launch --console-pty --terminate-running-process "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} \
   > "$OUT/sim-launch.log" 2>&1 &

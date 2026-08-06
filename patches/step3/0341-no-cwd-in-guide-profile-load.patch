@@ -1,0 +1,90 @@
+diff --git a/src/slic3r/GUI/WebGuideDialog.cpp b/src/slic3r/GUI/WebGuideDialog.cpp
+index 1a2b3c4d..5e6f7a8b 100644
+--- a/src/slic3r/GUI/WebGuideDialog.cpp
++++ b/src/slic3r/GUI/WebGuideDialog.cpp
+@@ -41,6 +41,27 @@
+ 
+ namespace Slic3r { namespace GUI {
+ 
++// boost::filesystem::absolute(p) is absolute(p, current_path()) - the default
++// argument is evaluated whether or not p is already absolute - and iOS refuses
++// getcwd() outside the sandbox's working directory, so current_path() throws
++// boost::filesystem::filesystem_error there.
++//
++// Every use below is on a path that is already absolute (resources_dir(), or a
++// directory derived from it), so the call was a no-op that only ever cost a
++// getcwd. On an iPad it cost the whole first-launch experience: LoadProfileData
++// runs on its own thread, the exception aborted it before it could push the
++// vendor list into the setup wizard's web page, and the wizard sat on
++// "Loading......" for ever with nothing in the log but
++//
++//   LoadProfileData, error: boost::filesystem::current_path: Operation not
++//   permitted [system:1]
++//
++// Same defect and same fix as patches/step3/0339 in Preset.cpp.
++static boost::filesystem::path orca_absolute_no_cwd(const boost::filesystem::path &p)
++{
++    return p.is_absolute() ? p : boost::filesystem::absolute(p);
++}
++
+ json m_ProfileJson;
+ 
+ static wxString update_custom_filaments()
+@@ -1321,7 +1342,7 @@
+ {
+     // wxString strFolder = strFilePath.BeforeLast(boost::filesystem::path::preferred_separator);
+     boost::filesystem::path file_path(strFilePath);
+-    boost::filesystem::path vendor_dir = boost::filesystem::absolute(file_path.parent_path() / strVendor).make_preferred();
++    boost::filesystem::path vendor_dir = orca_absolute_no_cwd(file_path.parent_path() / strVendor).make_preferred();
+     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(",  vendor path %1%.") % vendor_dir.string();
+     try {
+         // wxLogMessage("GUIDE: json_path1  %s", w2s(strFilePath));
+@@ -1347,7 +1368,7 @@
+             std::string s1 = OneModel["model"];
+             std::string s2 = OneModel["sub_path"];
+ 
+-            boost::filesystem::path sub_path = boost::filesystem::absolute(vendor_dir / s2).make_preferred();
++            boost::filesystem::path sub_path = orca_absolute_no_cwd(vendor_dir / s2).make_preferred();
+             if (!boost::filesystem::exists(sub_path)) continue;
+ 
+             std::string             sub_file = sub_path.string();
+@@ -1367,10 +1388,10 @@
+ 
+             // wxString strCoverPath = wxString::Format("%s\\%s\\%s_cover.png", strFolder, strVendor, std::string(s1.mb_str()));
+             std::string             cover_file = s1 + "_cover.png";
+-            boost::filesystem::path cover_path = boost::filesystem::absolute(boost::filesystem::path(resources_dir()) / "/profiles/" / strVendor / cover_file).make_preferred();
++            boost::filesystem::path cover_path = orca_absolute_no_cwd(boost::filesystem::path(resources_dir()) / "/profiles/" / strVendor / cover_file).make_preferred();
+             if (!boost::filesystem::exists(cover_path)) {
+                 cover_path =
+-                    (boost::filesystem::absolute(boost::filesystem::path(resources_dir()) / "/web/image/printer/") /
++                    (orca_absolute_no_cwd(boost::filesystem::path(resources_dir()) / "/web/image/printer/") /
+                      cover_file)
+                         .make_preferred();
+             }
+@@ -1392,7 +1413,7 @@
+             std::string s2 = OneMachine["sub_path"];
+ 
+             // wxString ModelFilePath = wxString::Format("%s\\%s\\%s", strFolder, strVendor, s2);
+-            boost::filesystem::path sub_path = boost::filesystem::absolute(vendor_dir / s2).make_preferred();
++            boost::filesystem::path sub_path = orca_absolute_no_cwd(vendor_dir / s2).make_preferred();
+             if (!boost::filesystem::exists(sub_path)) continue;
+ 
+             std::string             sub_file = sub_path.string();
+@@ -1435,7 +1456,7 @@
+ 
+             if (!m_ProfileJson["filament"].contains(s1)) {
+                 // wxString ModelFilePath = wxString::Format("%s\\%s\\%s", strFolder, strVendor, s2);
+-                boost::filesystem::path sub_path = boost::filesystem::absolute(vendor_dir / s2).make_preferred();
++                boost::filesystem::path sub_path = orca_absolute_no_cwd(vendor_dir / s2).make_preferred();
+                 if (!boost::filesystem::exists(sub_path)) continue;
+ 
+                 std::string             sub_file = sub_path.string();
+@@ -1497,7 +1518,7 @@
+ 
+             std::string s2 = OneProcess["sub_path"];
+             // wxString ModelFilePath = wxString::Format("%s\\%s\\%s", strFolder, strVendor, s2);
+-            boost::filesystem::path sub_path = boost::filesystem::absolute(vendor_dir / s2).make_preferred();
++            boost::filesystem::path sub_path = orca_absolute_no_cwd(vendor_dir / s2).make_preferred();
+             if (!boost::filesystem::exists(sub_path)) continue;
+ 
+             std::string             sub_file = sub_path.string();

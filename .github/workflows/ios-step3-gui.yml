@@ -66,6 +66,20 @@ jobs:
           cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
           test "$(ls resources/shaders/ES | wc -l)" -eq 38
 
+          # boost::filesystem::absolute(p) is absolute(p, current_path()), and
+          # the default argument is evaluated even when p is already absolute.
+          # iOS refuses getcwd() outside the sandbox working directory, so every
+          # one of these throws at run time - it has already cost this port a
+          # permanent startup crash (Preset.cpp, patch 0339) and a setup wizard
+          # stuck on "Loading......" for ever (WebGuideDialog.cpp, patch 0341),
+          # each found only after a full build and a report from a real iPad.
+          # List the rest now, in the build that is running anyway.
+          echo "=== remaining one-argument boost::filesystem::absolute() calls ==="
+          grep -rn "boost::filesystem::absolute([^,)]*)" src/ 2>/dev/null \
+            | grep -v "orca_absolute_no_cwd" | head -40 || true
+          echo "=== remaining boost::filesystem::current_path() calls ==="
+          grep -rn "current_path()" src/ 2>/dev/null | head -40 || true
+
       - name: "[3/8] Restore deps cache (shared with step 1)"
         uses: actions/cache/restore@v4
         with:

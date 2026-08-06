@@ -78,8 +78,25 @@ jobs:
           set -uxo pipefail
           brew tap facebook/fb || true
           brew install idb-companion || true
-          pipx install fb-idb || pip3 install --break-system-packages fb-idb || true
-          idb --help >/dev/null 2>&1 && echo "idb ok" || echo "idb unavailable - launch only"
+          # fb-idb must NOT be installed against the runner's default Python.
+          # It calls asyncio.get_event_loop() at startup, which on 3.14 raises
+          # "There is no current event loop in thread 'MainThread'" instead of
+          # creating one - so every idb invocation dies before it does anything
+          # (sim drive run 1: all five taps failed this way). Pin it to 3.12.
+          PY=""
+          brew install python@3.12 || true
+          for c in "$(brew --prefix python@3.12 2>/dev/null)/bin/python3.12" \
+                   "$(brew --prefix python@3.11 2>/dev/null)/bin/python3.11"; do
+            [ -x "$c" ] && { PY="$c"; break; }
+          done
+          echo "fb-idb python: ${PY:-default}"
+          if [ -n "$PY" ]; then
+            pipx install --python "$PY" fb-idb || true
+          else
+            pipx install fb-idb || true
+          fi
+          # Prove it actually runs, rather than merely being on PATH.
+          if idb --help >/dev/null 2>&1; then echo "idb ok"; else echo "idb unusable - launch only"; fi
 
       - name: Walk the UI
         id: walk

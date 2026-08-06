@@ -1,0 +1,280 @@
+  0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Transaction] Running <SBAppExitedWorkspaceTransaction: 0x102dab010> for transition request:
+<SBMainWorkspaceTransitionRequest: 0x60000333f3e0; display: Main; source: Unspecified> {
+    applicationContext = <SBWorkspaceApplicationSceneTransitionContext: 0x11718ff00; background: NO> entities = {
+        SBLayoutRoleAdditionalSide-41 = <SBEmptyWorkspaceEntity: 0x600000dd1440; layoutRole: additional side 41>;
+        SBLayoutRoleAdditionalSide-18 = <SBEmptyWorkspaceEntity: 0x600000de2910; layoutRole: additional side 18>;
+        SBLayoutRoleAdditionalSide-25 = <SBEmptyWorkspaceEntity: 0x600000dda4c0; layoutRole: additional side 25>;
+        SBLayoutRoleAdditionalSide-4 = <SBEmptyWorkspaceEntity: 0x600000de2c10; layoutRole: additional side 4>;
+        SBLayoutRoleAdditionalSide-32 = <SBEmptyWorkspaceEntity: 0x600000dd9fe0; layoutRole: additional side 32>;
+        SBLayoutRoleAdditionalSide-16 = <SBEmptyWorkspaceEntity: 0x600000de1050; layoutRole: additional side 16>;
+        SBLayoutRoleAdditionalSide-0 = <SBEmptyWorkspaceEntity: 0x600000de255<…>
+2026-08-06 03:53:13.337302+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.BackBoard:OrientationGlobal] Activating wallpaper orientation source HomeScreen
+2026-08-06 03:53:13.337388+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.BackBoard:OrientationGlobal] Not animating wallpaper orientation to portrait (1) in 0.00 because it's already in that orientation
+2026-08-06 03:53:13.343070+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardHome) [com.apple.SpringBoard:Icon] Changing icon manager content visibility to visible (transitioning)
+2026-08-06 03:53:13.355763+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Beging pending app suggestions update because Transitioning
+2026-08-06 03:53:13.378642+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x102db09f0)(SBTraitsParticipantRoleControlCenter-0) validates resolution: NO. isHidden
+2026-08-06 03:53:13.378706+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x10a0187d0)(SBTraitsParticipantRoleHomeScreen-0) validates resolution: YES. (null)
+2026-08-06 03:53:13.379057+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x102db09f0)(SBTraitsParticipantRoleControlCenter-0) validates resolution: NO. isHidden
+2026-08-06 03:53:13.379232+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.BackBoard:OrientationGlobal] Deactivating wallpaper orientation source ActiveOrientation
+2026-08-06 03:53:13.379255+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.BackBoard:OrientationGlobal] Not animating wallpaper orientation to portrait (1) in 0.00 because it's already in that orientation
+2026-08-06 03:53:13.380538+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x102db09f0)(SBTraitsParticipantRoleControlCenter-0) validates resolution: NO. isHidden
+2026-08-06 03:53:13.537213+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] Requested update preferences for <Switcher> with reason: SBSystemApertureZStackPolicyAssistant
+2026-08-06 03:53:13.537547+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] _updatePreferences <Switcher>: {
+    activationPolicyForParticipantsBelow: AtMostFGActive;
+    homeAffordanceDrawingSuppression: Suppress;
+    associatedSceneIdentifiersToSuppressInSystemAperture: ();
+    associatedBundleIdentifiersToSuppressInSystemAperture: ();
+    allowsDimmingWhenForegroundInactive: Inherit;
+}
+2026-08-06 03:53:13.537705+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] Topmost Value Sources: {
+    homeAffordanceDrawingSuppression: Switcher,
+    audioCategoriesDisablingVolumeHUD: Highest,
+    ownsHomeGesture: Switcher
+}
+2026-08-06 03:53:13.541289+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] Resolved Stack (update(Switcher)) [
+    Highest: ⬇ ,
+    HUD: ⬇ ,
+    TransientOverlayPresentation: ⬇ ,
+    CoverSheet: ⬇ ,
+    SystemNotes: ⬇ ,
+    FloatingDock: ⬇ ,
+    Switcher: ownsHomeGesture; FGActive; homeAffordanceDrawingSuppressed: N->Y; suppressedBundles: org.orca-ios.orcaslicer->(none); suppressedScenes: 1->0,
+    HomeScreen: BG->FGActive
+]
+2026-08-06 03:53:13.542364+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] Requested update preferences for <Switcher> with reason: layout state transition did begin
+2026-08-06 03:53:13.542418+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:ZStack] _updatePreferences <Switcher>: no changes
+2026-08-06 03:53:13.544170+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] [coordinator] _removeSceneFromRecents didRemoveExternalForegroundApplicationSceneHandle pid:5873 scene:com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Aorg.orca-ios.orcaslicer-default now:<empty>
+2026-08-06 03:53:13.544197+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] [com.apple.springboard] removing scene: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Aorg.orca-ios.orcaslicer-default pid: 5873 for reason: didRemoveExternalForegroundApplicationSceneHandle
+2026-08-06 03:53:13.544253+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] [com.apple.springboard] no available fallbacks for keyboard arbiter suggested scene
+2026-08-06 03:53:13.547437+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] [com.apple.springboard] coalition says I have focus; enforcing policy: {
+    keyboardFocusTarget: <com.apple.frontboard.systemappservices/FBSceneManager:com.apple.springboard pid:4155>;
+    selectionPolicy: KeyboardArbiter;
+    shouldSuppressRemoteDeferring: 0;
+}
+2026-08-06 03:53:13.547489+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] rules: (keyboardFocus) removing outbound rule -- deferring to SpringBoard
+2026-08-06 03:53:13.559722+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] [coordinator] new enforced policy: {
+    keyboardFocusTarget: <com.apple.frontboard.systemappservices/FBSceneManager:com.apple.springboard pid:4155>;
+    selectionPolicy: KeyboardArbiter;
+    shouldSuppressRemoteDeferring: 0;
+}
+2026-08-06 03:53:13.652249+0000 0x7be0     Default     0x31351              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:message] PERF: Received lookupHandleForPredicate request from [osservice<com.apple.SpringBoard>:4155] (euid 501, auid 501) (persona (null))
+2026-08-06 03:53:13.652261+0000 0x7be0     Activity    0x3138b              4158   0    runningboardd: (RunningBoard) lookupHandleForPredicate
+2026-08-06 03:53:13.652829+0000 0x7be0     Default     0x3138b              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] _resolveProcessWithIdentifier pid 4207 euid 501 auid 501
+2026-08-06 03:53:13.652866+0000 0x7be0     Default     0x3138b              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] Resolved pid 4207 to [osservice<com.apple.lsd>:4207]
+2026-08-06 03:53:13.653049+0000 0x7be0     Error       0x3138b              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:jetsam] memorystatus_control error: MEMORYSTATUS_CMD_CONVERT_MEMLIMIT_MB(-1) returned -1 1 (Operation not permitted)
+2026-08-06 03:53:13.653062+0000 0x7be0     Error       0x3138b              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:jetsam] memorystatus_control error: MEMORYSTATUS_CMD_CONVERT_MEMLIMIT_MB(0) returned -1 1 (Operation not permitted)
+2026-08-06 03:53:13.654170+0000 0x7be0     Default     0x3138b              4158   0    runningboardd: (RunningBoardServices) [com.apple.runningboard:general] Full encoding handle [osservice<com.apple.lsd>:4207], with data 52b59fc20000106f, and pid 4207
+2026-08-06 03:53:13.654312+0000 0x7be0     Default     0x3138b              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] [osservice<com.apple.lsd>:4207] is not RunningBoard jetsam managed.
+2026-08-06 03:53:13.654324+0000 0x7be0     Default     0x3138b              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] [osservice<com.apple.lsd>:4207] This process will not be managed.
+2026-08-06 03:53:13.658309+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:UIController] Begin requiring home screen content for reason 'SBUIHomeScreenActiveContentRequirementReason'
+2026-08-06 03:53:13.658424+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:UIController] Attempting restoreContentWithOptions:((SBUIControllerRequireContentOptions none))
+2026-08-06 03:53:13.658525+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:UIController] Restoring home screen
+2026-08-06 03:53:13.658590+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:UIController] Setting _iconsView to visible
+2026-08-06 03:53:13.694220+0000 0x7be0     Default     0x31351              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:message] PERF: Received lookupHandleForPredicate request from [osservice<com.apple.SpringBoard>:4155] (euid 501, auid 501) (persona (null))
+2026-08-06 03:53:13.696407+0000 0x7be0     Activity    0x3138c              4158   0    runningboardd: (RunningBoard) lookupHandleForPredicate
+2026-08-06 03:53:13.733693+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.BackBoard:OrientationGlobal] Activating wallpaper orientation source HomeScreen
+2026-08-06 03:53:13.767437+0000 0x7be0     Default     0x3138c              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] _resolveProcessWithIdentifier pid 5070 euid 501 auid 501
+2026-08-06 03:53:13.767490+0000 0x7be0     Default     0x3138c              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] Resolved pid 5070 to [osservice<com.apple.dmd>:5070]
+2026-08-06 03:53:13.767559+0000 0x7be0     Error       0x3138c              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:jetsam] memorystatus_control error: MEMORYSTATUS_CMD_CONVERT_MEMLIMIT_MB(-1) returned -1 1 (Operation not permitted)
+2026-08-06 03:53:13.767583+0000 0x7be0     Error       0x3138c              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:jetsam] memorystatus_control error: MEMORYSTATUS_CMD_CONVERT_MEMLIMIT_MB(0) returned -1 1 (Operation not permitted)
+2026-08-06 03:53:13.771232+0000 0x7be0     Default     0x3138c              4158   0    runningboardd: (RunningBoardServices) [com.apple.runningboard:general] Full encoding handle [osservice<com.apple.dmd>:5070], with data 44488689000013ce, and pid 5070
+2026-08-06 03:53:13.771649+0000 0x7be0     Default     0x3138c              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] [osservice<com.apple.dmd>:5070] is not RunningBoard jetsam managed.
+2026-08-06 03:53:13.771677+0000 0x7be0     Default     0x3138c              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] [osservice<com.apple.dmd>:5070] This process will not be managed.
+2026-08-06 03:53:13.798272+0000 0x3a5a     Activity    0x31355              4155   0    SpringBoard: (SpringBoard) XBCapture
+2026-08-06 03:53:13.803723+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:SceneSnapshots] <SBSceneSnapshotRequestor: 0x600000c53150; debugName: LCD> [sceneID:org.orca-ios.orcaslicer-default] Requesting 2 snapshot(s) because the scene actually moved to the background
+2026-08-06 03:53:13.804068+0000 0x7be0     Activity    0x3138d              4158   0    runningboardd: (RunningBoard) acquireAssertionWithDescriptor
+2026-08-06 03:53:13.804234+0000 0x7be0     Default     0x3138d              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Acquiring assertion targeting 5873 from originator [osservice<com.apple.SpringBoard>:4155] with description <RBSAssertionDescriptor| "FBSceneSnapshotAction:sceneID:org.orca-ios.orcaslicer-default" ID:4158-4155-866 target:5873 attributes:[
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SceneSnapshotAction" sourceEnvironment:"(null)">,
+	<RBSDurationAttribute| invalidationDuration:5.00 warningDuration:0.00 startPolicy:Fixed endPolicy:Invalidate>
+	]>
+2026-08-06 03:53:13.813162+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppProtection] Informing <APSystemAppOutlet: 0x600000cc70c0> that <APApplication: org.orca-ios.orcaslicer> will become background as far as we know
+2026-08-06 03:53:13.825614+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardHome) [com.apple.SpringBoard:Icon] Changing icon manager content visibility to visible
+2026-08-06 03:53:13.826112+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] End pending app suggestions update because Transitioning
+2026-08-06 03:53:13.827264+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x102db09f0)(SBTraitsParticipantRoleControlCenter-0) validates resolution: NO. isHidden
+2026-08-06 03:53:13.828334+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x102db09f0)(SBTraitsParticipantRoleControlCenter-0) validates resolution: NO. isHidden
+2026-08-06 03:53:13.829606+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x10a0187d0)(SBTraitsParticipantRoleHomeScreen-0) validates resolution: YES. (null)
+2026-08-06 03:53:13.830270+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:TraitsArbiter] Window(0x102db09f0)(SBTraitsParticipantRoleControlCenter-0) validates resolution: NO. isHidden
+2026-08-06 03:53:13.832229+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] idleTimerDescriptorForBehavior: <SBIdleTimerBehavior: 0x600000e3ba20; duration: Unlocked; mode: Auto; warnMode: Warn>
+2026-08-06 03:53:13.850395+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] not applying updated idle timer descriptor: <SBIdleTimerDescriptor: 0x60000224a530; mode: Auto; samplingStartBeforeFirstTimeout: 12.0s; quickUnwarn: 102.0s; warn: 100.0s; total: 120.0s> reason:SBHomeScreen
+2026-08-06 03:53:13.851796+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x60000224a2b0; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: 0x0; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:53:13.852214+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x600002234af0; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: 0x0; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:53:13.855409+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:PIP] [ShouldAutoPiP] For request(0x60000333f3e0): NO
+2026-08-06 03:53:13.863279+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x60000225b8e0; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: "<SBAppLayout: 0x600002cfe700; primary: org.orca-ios.orcaslicer:default; environment: main>"; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:53:13.882742+0000 0x7bcb     Default     0x31351              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:message] PERF: Received lookupHandleForPredicate request from [osservice<com.apple.SpringBoard>:4155] (euid 501, auid 501) (persona (null))
+2026-08-06 03:53:13.882770+0000 0x7bcb     Activity    0x3138e              4158   0    runningboardd: (RunningBoard) lookupHandleForPredicate
+2026-08-06 03:53:13.910373+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:StatusBarish] removing status bar settings assertion after 143.425469 seconds: <SBWindowSceneStatusBarSettingsAssertion: 0x600000de7900> {
+    settings = <SBStatusBarSettings: 0x600000033680; alpha: 0> {
+        hiddenParts = "both sides";
+    };
+    level = app switcher;
+    reason = kSBMainAppSwitcherStatusBarReason;
+}
+2026-08-06 03:53:14.042954+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Dock] removing floating dock behavior assertion: <SBFloatingDockBehaviorAssertion: 0x6000017f3c00> {
+    pinned = NO;
+    animated = YES;
+    gesture possible = YES;
+    visible progress = 0.000000;
+    level = app switcher;
+    reason = in app;
+    timestamp = 2026-08-06 03:50:50 +0000;
+}
+2026-08-06 03:53:14.043044+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Dock] Floating dock behavior assertions...
+level #13 (in setup) - none
+level #12 (active gesture) - none
+level #11 (invalid) - none
+level #10 (app transition) - none
+level #9 (app switcher) - none
+level #8 (open folder over scene layout) - none
+level #7 (popover) - none
+level #6 (over alert) - none
+level #5 (in app) - none
+level #4 (homescreen overlay (today / app library)) - none
+level #3 (sheet over home screen) - none
+level #2 (icon pull spotlight) - none
+level #1 (open folder over homescreen) - none
+level #0 (homescreen) - assertion: <SBFloatingDockBehaviorAssertion: 0x6000018e8780> {
+    pinned = YES;
+    animated = YES;
+    gesture possible = NO;
+    visible progress = 1.000000;
+    level = homescreen;
+    reason = homescreen;
+    timestamp = 2026-08-06 03:49:47 +0000;
+}
+2026-08-06 03:53:14.153891+0000 0x7bcb     Activity    0x3138f              4158   0    runningboardd: (RunningBoard) acquireAssertionWithDescriptor
+2026-08-06 03:53:14.154242+0000 0x7bcb     Default     0x3138f              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Acquiring assertion targeting [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192](UIScene:com.apple.frontboard.systemappservices/UISceneHosting-com.apple.springboard:UIHostedScene-com.apple.DocumentManager.DockFolderViewService-0F2DF008-1249-4CCA-801E-6850D661C093) from originator [osservice<com.apple.SpringBoard>:4155] with description <RBSAssertionDescriptor| "injecting  inherited from 'UIScene:com.apple.frontboard.systemappservices/FBSceneManager:com.apple.springboard'" ID:4158-4155-867 target:5192<UIScene:com.apple.frontboard.systemappservices/UISceneHosting-com.apple.springboard:UIHostedScene-com.apple.DocumentManager.DockFolderViewService-0F2DF008-1249-4CCA-801E-6850D661C093> attributes:[
+	<RBSHereditaryGrant| endowmentNamespace:com.apple.boardservices.endpoint-injection UIScene:com.apple.frontboard.systemappservices/FBSceneManager:com.apple.springboard>,
+	<RBSHereditaryGrant| endowmentNamespace:com.apple.frontboard.visibility UIScene:com.apple.frontboard.systemappservices/FBSceneManager:com.apple.springboard>
+	]>
+2026-08-06 03:53:14.154414+0000 0x7bcb     Default     0x3138f              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Assertion 4158-4155-867 (target:[app<com.apple.DocumentManager.DockFolderViewService((null))>:5192](UIScene:com.apple.frontboard.systemappservices/UISceneHosting-com.apple.springboard:UIHostedScene-com.apple.DocumentManager.DockFolderViewService-0F2DF008-1249-4CCA-801E-6850D661C093)) will be created as active
+2026-08-06 03:53:14.154628+0000 0x7be0     Activity    0x31480              4158   0    runningboardd: (RunningBoard) state update
+2026-08-06 03:53:14.154769+0000 0x7bcb     Activity    0x31481              4158   0    runningboardd: (RunningBoard) acquireAssertionWithDescriptor
+2026-08-06 03:53:14.155189+0000 0x7bcb     Default     0x31481              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Acquiring assertion targeting [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] from originator [osservice<com.apple.SpringBoard>:4155] with description <RBSAssertionDescriptor| "FBWorkspace (FV-Focal[100])" ID:4158-4155-868 target:5192 attributes:[
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableLPRunReason-Resume" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"Visibility" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableRole-UIFocal" sourceEnvironment:"(null)">,
+	<RBSDomainAttribute| domain:"com.apple.frontboard" name:"SuspendableJetsamPriority-Foreground" sourceEnvironment:"(null)">
+	]>
+2026-08-06 03:53:14.155328+0000 0x7bcb     Default     0x31481              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Assertion 4158-4155-868 (target:[app<com.apple.DocumentManager.DockFolderViewService((null))>:5192]) will be created as active
+2026-08-06 03:53:14.155563+0000 0x7bde     Default     0x3138f              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:monitor] Calculated state for app<com.apple.DocumentManager.DockFolderViewService((null))>: running-suspended (role: None) (endowments: {(
+    <RBSProcessEndowmentInfo| namespace:com.apple.frontboard.visibility env:UIScene:com.apple.frontboard.systemappservices/UISceneHosting-com.apple.springboard:UIHostedScene-com.apple.DocumentManager.DockFolderViewService-0F2DF008-1249-4CCA-801E-6850D661C093 payload: 18348668041502042917>
+)})
+2026-08-06 03:53:14.155601+0000 0x7be1     Default     0x3138f              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] visiblity is yes
+2026-08-06 03:53:14.155604+0000 0x7bcb     Activity    0x31482              4158   0    runningboardd: (RunningBoard) state update
+2026-08-06 03:53:14.156759+0000 0x7be2     Default     0x31481              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] Resuming task.
+2026-08-06 03:53:14.157317+0000 0x7bde     Default     0x31481              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:monitor] Calculated state for app<com.apple.DocumentManager.DockFolderViewService((null))>: running-active (role: UserInteractiveFocal) (endowments: {(
+    <RBSProcessEndowmentInfo| namespace:com.apple.frontboard.visibility env:UIScene:com.apple.frontboard.systemappservices/UISceneHosting-com.apple.springboard:UIHostedScene-com.apple.DocumentManager.DockFolderViewService-0F2DF008-1249-4CCA-801E-6850D661C093 payload: 18348668041502042917>,
+    <RBSProcessEndowmentInfo| namespace:com.apple.frontboard.visibility env:(null)  0>
+)})
+2026-08-06 03:53:14.209000+0000 0x7be2     Error       0x31481              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] pid_resume() returned error 1: Operation not permitted
+2026-08-06 03:53:14.209052+0000 0x7be2     Default     0x31481              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] Set darwin role to: UserInteractiveFocal
+2026-08-06 03:53:14.209065+0000 0x7be2     Error       0x31481              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:process] 5192 Error setting Darwin GPU to "UserInteractiveFocals" (7): Invalid argument
+2026-08-06 03:53:14.212980+0000 0x7be3     Activity    0x31483              4158   0    runningboardd: (RunningBoard) statesForPredicate
+2026-08-06 03:53:14.231868+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoardFoundation) [com.apple.SpringBoard:KeyWindow] Evaluate: making new window key: <SBHomeScreenWindow: 0x10a0187d0>, for reason: Window hidden: <SBMainSwitcherWindow: 0x102d4df40>
+2026-08-06 03:53:14.241815+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] [embedded coalition] _abritrateForReason: <keyWindowNotification> - new policy is unchanged
+2026-08-06 03:53:14.308255+0000 0x7be0     Activity    0x31484              4158   0    runningboardd: (RunningBoard) statesForPredicate
+2026-08-06 03:53:14.310105+0000 0x6d0e     Activity    0x31485              4158   0    runningboardd: (RunningBoard) incoming connection
+2026-08-06 03:53:14.310159+0000 0x6d0e     Default     0x31485              4158   0    runningboardd: (RunningBoard) [com.apple.runningboard:connection] Incoming connection from 5192, user 501/501
+2026-08-06 03:53:14.310210+0000 0x6d0e     Default     0x31485              4158   0    runningboardd: (libxpc.dylib) [com.apple.xpc:connection] [0x104b0f1e0] activating connection: mach=false listener=false peer=true name=com.apple.runningboard.peer[5192].0x104b0f1e0
+2026-08-06 03:53:14.310434+0000 0x7be3     Activity    0x31486              4158   0    runningboardd: (RunningBoard) lookupHandleForKey
+2026-08-06 03:53:14.313372+0000 0x7be0     Activity    0x31487              4158   0    runningboardd: (RunningBoard) acquireAssertionWithDescriptor
+2026-08-06 03:53:14.314893+0000 0x7be0     Default     0x31487              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Acquiring assertion targeting [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] from originator [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192] with description <RBSAssertionDescriptor| "systemAnimationFence" ID:4158-5192-869 target:5192 attributes:[
+	<RBSLegacyAttribute| requestedReason:FinishTask reason:FinishTask flags:( AllowIdleSleep PreventTaskSuspend PreventTaskThrottleDown )>,
+	<RBSAcquisitionCompletionAttribute| policy:AfterValidation>
+	]>
+2026-08-06 03:53:14.314947+0000 0x7be0     Default     0x31487              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Assertion 4158-5192-869 (target:[app<com.apple.DocumentManager.DockFolderViewService((null))>:5192]) will be created as inactive as start-time-defining assertions exist
+2026-08-06 03:53:14.315599+0000 0x7be0     Activity    0x31488              4158   0    runningboardd: (RunningBoard) state update
+2026-08-06 03:53:14.323699+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] Destroying shadow path display link
+2026-08-06 03:53:14.323835+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:PIP] [ShouldAutoPiP] For request(0x60000333f3e0): NO
+2026-08-06 03:53:14.324639+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] [Main (EmbeddedDisplay)] dispatch event:
+<SBContinuousExposeIdentifiersChangedModifierEvent: 0x60000225d540; type: ContinuousExposeIdentifiersChanged; previousContinuousExposeIdentifiersInStrip: (
+); previousContinuousExposeIdentifiersInSwitcher: (
+); transitioningFromAppLayout: "<SBAppLayout: 0x600002cfe700; primary: org.orca-ios.orcaslicer:default; environment: main>"; transitioningToAppLayout: 0x0; gestureInitiated: NO>
+2026-08-06 03:53:14.329750+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Scene handle active appearance assertion was invalidated: <SBSceneHandleActiveAppearanceAssertion: 0x6000018d4440; switcher style update; identifier: SBSceneHandleActiveAppearanceAssertion; state: invalidated; activeAppearance: active; priority: 1>
+2026-08-06 03:53:14.330218+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:AppSwitcher] <SBFullScreenSwitcherLiveContentOverlayCoordinator: 0x600002d2f100> Removing SwitcherScene overlay for: <SBAppLayout: 0x600002cfe700; primary: org.orca-ios.orcaslicer:default; environment: main>, animated: NO
+2026-08-06 03:53:14.331437+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:SceneRelevancy] Scene handle assertion was invalidated: <SBSceneHandleActivityModeAssertion: 0x600001902580; set relevancy result; identifier: SBSceneHandleActivityModeAssertion; state: invalidated; activityMode: focal>
+2026-08-06 03:53:14.331942+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:SceneRelevancy] Scene handle assertion was invalidated: <SBSceneHandleJetsamModeAssertion: 0x60000177c000; set relevancy result; identifier: SBSceneHandleJetsamModeAssertion; state: invalidated; jetsamMode: elevated>
+2026-08-06 03:53:14.332558+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Front display did change: (null)
+2026-08-06 03:53:14.335146+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:UIController] Begin requiring home screen content for reason 'SBUIHomeScreenActiveContentRequirementReason'
+2026-08-06 03:53:14.347150+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Transaction] Root transaction complete: <SBAppExitedWorkspaceTransaction: 0x102dab010>
+2026-08-06 03:53:14.348305+0000 0x3a5a     Error       0x284b6              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Dock] tried to remove a behavior assertion that was never added: <SBFloatingDockBehaviorAssertion: 0x6000017f3c00> {
+    pinned = NO;
+    animated = YES;
+    gesture possible = YES;
+    visible progress = 0.000000;
+    level = app switcher;
+    reason = in app;
+    timestamp = 2026-08-06 03:50:50 +0000;
+}
+2026-08-06 03:53:14.348396+0000 0x3a5a     Default     0x284b6              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Dock] Floating dock behavior assertions...
+level #13 (in setup) - none
+level #12 (active gesture) - none
+level #11 (invalid) - none
+level #10 (app transition) - none
+level #9 (app switcher) - none
+level #8 (open folder over scene layout) - none
+level #7 (popover) - none
+level #6 (over alert) - none
+level #5 (in app) - none
+level #4 (homescreen overlay (today / app library)) - none
+level #3 (sheet over home screen) - none
+level #2 (icon pull spotlight) - none
+level #1 (open folder over homescreen) - none
+level #0 (homescreen) - assertion: <SBFloatingDockBehaviorAssertion: 0x6000018e8780> {
+    pinned = YES;
+    animated = YES;
+    gesture possible = NO;
+    visible progress = 1.000000;
+    level = homescreen;
+    reason = homescreen;
+    timestamp = 2026-08-06 03:49:47 +0000;
+}
+2026-08-06 03:53:14.381346+0000 0x3a5a     Default     0x284b6              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:HomeAffordance] Updating gesture recognizers; _registeredHomeAffordanceInteractions count changed to 0
+2026-08-06 03:53:14.385144+0000 0x3af8     Default     0x284b6              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] attention client SUSPEND <AWAttentionAwarenessConfiguration: 0x600003340280> (identifier: com.apple.SpringBoard.HomeGrabberView-4 samplingInterval:       0.00000, samplingDelay:       0.00000, sampleWhileAbsent: false, retroactiveTimeoutMode: false, pollingFilter: false, continuousFaceDetectMode: false, activateAttentionDetection: true, activateEyeRelief: false, activateMotionDetection: false, unityStream: false, attentionLostTimeouts:       1.00000 nonSampledAttentionLostTimeoutEnable: false nonSampledAttentionLostTimeout:       0.00000 notificationMask NONE mask Digitizer attentionLostEventMask Digitizer digitizerDisplayUUIDs (null) buttonDisplayUUIDs (null) keyboardDisplayUUIDs (null) tagIndex 0 (nil tag))
+2026-08-06 03:53:14.385982+0000 0x3a5a     Default     0x284b6              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] attention client INVALIDATE <AWAttentionAwarenessConfiguration: 0x600003340280> (identifier: com.apple.SpringBoard.HomeGrabberView-4 samplingInterval:       0.00000, samplingDelay:       0.00000, sampleWhileAbsent: false, retroactiveTimeoutMode: false, pollingFilter: false, continuousFaceDetectMode: false, activateAttentionDetection: true, activateEyeRelief: false, activateMotionDetection: false, unityStream: false, attentionLostTimeouts:       1.00000 nonSampledAttentionLostTimeoutEnable: false nonSampledAttentionLostTimeout:       0.00000 notificationMask NONE mask Digitizer attentionLostEventMask Digitizer digitizerDisplayUUIDs (null) buttonDisplayUUIDs (null) keyboardDisplayUUIDs (null) tagIndex 0 (nil tag))
+2026-08-06 03:53:14.403532+0000 0x6d0e     Activity    0x31489              4158   0    runningboardd: (RunningBoard) invalidateAssertionWithIdentifier
+2026-08-06 03:53:14.403594+0000 0x6d0e     Default     0x31489              4158   7    runningboardd: (RunningBoard) [com.apple.runningboard:ttl] Invalidating assertion 4158-5192-869 (target:[app<com.apple.DocumentManager.DockFolderViewService((null))>:5192]) from originator [app<com.apple.DocumentManager.DockFolderViewService((null))>:5192]
+2026-08-06 03:53:14.487406+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] rules: (scene setting) REMOVED keyboardFocus environment from scene: sceneID:org.orca-ios.orcaslicer-default
+2026-08-06 03:53:14.487612+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:KeyboardFocus] rules: (scene setting) ADDED keyboardFocus environment to scene: com.apple.springboard
+2026-08-06 03:53:14.488865+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] SBMainDisplaySceneManager requested idle timer behavior disabled? NO(null)
+2026-08-06 03:53:14.498719+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] idleTimerDescriptorForBehavior: <SBIdleTimerBehavior: 0x600000e1b540; duration: Unlocked; mode: Auto; warnMode: Warn>
+2026-08-06 03:53:14.500482+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Application process state changed for com.apple.DocumentManager.DockFolderViewService: <SBApplicationProcessState: 0x6000003e84a0; pid: 5192; taskState: Suspended; visibility: Foreground>
+2026-08-06 03:53:14.500888+0000 0x3a5a     Default     0x31358              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Common] Application process state changed for com.apple.DocumentManager.DockFolderViewService: <SBApplicationProcessState: 0x600000412a00; pid: 5192; taskState: Running; visibility: Foreground>
+2026-08-06 03:53:14.508965+0000 0x7be3     Activity    0x3148a              4158   0    runningboardd: (RunningBoard) state update
+2026-08-06 03:53:14.509599+0000 0x7be3     Activity    0x3148b              4158   0    runningboardd: (RunningBoard) state notification
+2026-08-06 03:53:14.521849+0000 0x3a5a     Default     0x284b6              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] attention client INVALIDATE <AWAttentionAwarenessConfiguration: 0x600003336e40> (identifier: 3D334C0E-816C-4489-A50B-4A88EF86A4AC samplingInterval:       0.00000, samplingDelay:       0.00000, sampleWhileAbsent: false, retroactiveTimeoutMode: false, pollingFilter: false, continuousFaceDetectMode: false, activateAttentionDetection: true, activateEyeRelief: false, activateMotionDetection: false, unityStream: false, attentionLostTimeouts:       1.00000 nonSampledAttentionLostTimeoutEnable: false nonSampledAttentionLostTimeout:       0.00000 notificationMask NONE mask Digitizer attentionLostEventMask Digitizer digitizerDisplayUUIDs (null) buttonDisplayUUIDs (null) keyboardDisplayUUIDs (null) tagIndex 0 (nil tag))
+2026-08-06 03:53:14.521856+0000 0x7be0     Activity    0x3148c              4158   0    runningboardd: (RunningBoard) statesForPredicate
+2026-08-06 03:53:15.050201+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:IdleTimer] idleTimerDescriptorForBehavior: <SBIdleTimerBehavior: 0x600000e64a50; duration: Unlocked; mode: Auto; warnMode: Warn>
+2026-08-06 03:53:15.095518+0000 0x3a5a     Default     0x0                  4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:Dock] Floating dock behavior assertions...
+level #13 (in setup) - none
+level #12 (active gesture) - none
+level #11 (invalid) - none
+level #10 (app transition) - none
+level #9 (app switcher) - none
+level #8 (open folder over scene layout) - none
+level #7 (popover) - none
+level #6 (over alert) - none
+level #5 (in app) - none
+level #4 (homescreen overlay (today / app library)) - none
+level #3 (sheet over home screen) - none
+level #2 (icon pull spotlight) - none
+level #1 (open folder over homescreen) - none
+level #0 (homescreen) - assertion: <SBFloatingDockBehaviorAssertion: 0x6000018e8780> {
+    pinned = YES;
+    animated = YES;
+    gesture possible = NO;
+    visible progress = 1.000000;
+    level = homescreen;
+    reason = homescreen;
+    timestamp = 2026-08-06 03:49:47 +0000;
+}
+2026-08-06 03:53:15.150920+0000 0x3a5a     Default     0x31351              4155   0    SpringBoard: (SpringBoard) [com.apple.SpringBoard:StatusBarish] Verify background audio activity for org.orca-ios.orcaslicer, Recording: 0

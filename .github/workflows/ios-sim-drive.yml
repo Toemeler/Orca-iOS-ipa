@@ -10,6 +10,16 @@ name: iOS sim drive - walk the UI page by page
 # empty to take the newest successful step-3 run on this branch.
 
 on:
+  # A workflow_dispatch-only workflow that has never existed on the default
+  # branch cannot be dispatched through the API on a feature branch - the call
+  # 404s. Triggering on pushes to the driver's own two files sidesteps that and
+  # is the loop anyway: change where the walk goes, push, watch it walk.
+  push:
+    branches:
+      - claude/ipad-build-failure-dkutxc
+    paths:
+      - '.github/workflows/ios-sim-drive.yml'
+      - 'tools/ci/sim-drive.sh'
   workflow_dispatch:
     inputs:
       app_run_id:

@@ -1,0 +1,27 @@
+=== immediately after launch (pid line: none) ===
+--- host: ps -p $APP_PID
+(no pid)
+--- host: pgrep -fl $EXE
+83943 /Users/runner/Library/Developer/CoreSimulator/Devices/C34ED23C-7554-48E4-B744-7D6E8368850F/data/Containers/Bundle/Application/022BB508-61B4-48C3-BD6B-4460FD507D28/OrcaSlicer.app/OrcaSlicer
+--- host: ps -Ao pid,comm | grep EXE
+83943 /Users/runner/Library/Developer/CoreSimulator/Devices/C34ED23C-7554-48E4-B744-7D6E8368850F/data/Containers/Bundle/Application/022BB508-61B4-48C3-BD6B-4460FD507D28/OrcaSlicer.app/OrcaSlicer
+--- sim: launchctl list | grep bundle id
+83943	0	UIKitApplication:org.orca-ios.orcaslicer[71da][rb-legacy]
+--- sim: launchctl list line count
+     359
+--- sim: launchctl list, first 15 lines
+PID	Status	Label
+-	0	com.apple.progressd
+-	0	com.apple.CoreAuthentication.daemon
+-	0	com.apple.cloudphotod
+80010	0	com.apple.homed
+80030	0	com.apple.modelcatalogd
+80045	0	com.apple.dataaccess.dataaccessd
+-	0	com.apple.DragUI.druid
+81763	0	com.apple.bird
+80188	0	com.apple.fitnesscoachingd
+-	0	com.apple.knowledgeconstructiond
+81634	0	UIKitApplication:com.apple.DocumentManager.DockFolderViewService[f67d][rb-legacy]
+79915	0	com.apple.biomed
+79969	0	com.apple.nsurlsessiond
+-	0	com.apple.devicecheckd

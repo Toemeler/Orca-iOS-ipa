@@ -142,7 +142,7 @@ jobs:
           mkdir -p "$D"
           cp artifact/*.png "$D/" 2>/dev/null || true
           for f in drive-log.txt orca-app-log.txt orca-startup-error.txt \
-                   sim-launch.log sim-launch-plain.log sim-oslog.txt sim-oslog-system.txt; do
+                   orca-gl-log.txt sim-launch.log sim-oslog.txt sim-oslog-system.txt; do
             [ -f "artifact/$f" ] && tail -c 40000 "artifact/$f" > "$D/$f"
           done
           cp artifact/OrcaSlicer*.ips "$D/" 2>/dev/null || true

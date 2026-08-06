@@ -136,6 +136,18 @@ if [ -n "${DATA:-}" ]; then
   find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
     | while IFS= read -r f; do echo "--- $f ---"; tail -c 40000 "$f"; done \
     > "$OUT/orca-app-log.txt" 2>&1 || true
+
+  # The tail is the wrong end of the file for anything about startup. Orca
+  # writes tens of thousands of preset lines, so OpenGL init - which happens
+  # first and says whether the context, GLAD and the shaders came up - is
+  # always past the 40000-byte cut. Pull those lines out of the whole log.
+  find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
+    | while IFS= read -r f; do
+        echo "--- $f ---"
+        grep -inE "opengl|glad|shader|framebuffer|glcanvas|canvas3d|es 3|renderer|gl version|Unable to|Error loading" "$f"
+      done > "$OUT/orca-gl-log.txt" 2>&1 || true
+  echo "=== GL lines from the app's own log ==="
+  head -60 "$OUT/orca-gl-log.txt"
   [ -f "$DATA/Documents/orca-startup-error.txt" ] && \
     cp "$DATA/Documents/orca-startup-error.txt" "$OUT/" 2>/dev/null
 fi

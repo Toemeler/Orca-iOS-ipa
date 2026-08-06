@@ -79,7 +79,7 @@ new file mode 100644
 index 00000000..f8431bb2
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,78 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -99,6 +99,7 @@ index 00000000..f8431bb2
 +#include "libslic3r/libslic3r.h"
 +#include "slic3r/Utils/MacDarkMode.hpp"
 +#include <wx/osx/core/cfstring.h>
++#include <boost/log/trivial.hpp>
 +
 +namespace Slic3r {
 +namespace GUI {
@@ -109,9 +110,26 @@ index 00000000..f8431bb2
 +    if (web == nullptr)
 +        return;
 +
++    // Orca drives its embedded pages entirely through this call and passes a
++    // null callback at every site, so before this the completion handler threw
++    // every JavaScript error away. That is the one place a failure could hide:
++    // the setup wizard's page sits on "Loading......" for ever if the
++    // HandleStudio() call that hands it the profile list never runs, and
++    // nothing anywhere would say so. Log the script and the outcome.
++    const wxString head = script.Left(100);
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-webview: evaluateJavaScript: "
++                             << head.ToUTF8().data()
++                             << (script.length() > 100 ? " ..." : "");
++
 +    // Identical API to the macOS implementation this mirrors.
 +    [(WKWebView *) web evaluateJavaScript:wxCFStringRef(script).AsNSString()
 +                       completionHandler:^(id result, NSError *error) {
++        if (error != nil) {
++            const wxString desc = wxCFStringRef(
++                [error localizedDescription]).AsString();
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-webview: FAILED: "
++                                     << desc.ToUTF8().data();
++        }
 +        if (callback && error != nil) {
 +            wxString err = wxCFStringRef(error.localizedFailureReason).AsString();
 +            callback(err);

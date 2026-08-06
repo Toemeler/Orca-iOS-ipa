@@ -10,24 +10,21 @@ index 8b038a2..9c1f4b3 100644
  #include "wx/msgdlg.h"
  #include "wx/mstream.h"
  #include "wx/textdlg.h"
-@@ -276,6 +277,16 @@
+@@ -276,6 +277,13 @@
              wxLogDebug("Registering custom wxWebView handlers is not supported under macOS < 10.13");
      }
  
 +#if defined(__WXOSX_IPHONE__)
-+    // WKPreferences.javaScriptCanOpenWindowsAutomatically defaults to NO on
-+    // iOS and YES on macOS. With it off a window.open() with no user activation
-+    // behind it - anything an application drives through evaluateJavaScript -
-+    // is refused silently: window.open returns null and no exception reaches
-+    // the completion handler. An application driving its own local pages is not
-+    // the pop-up advertising this defends against.
++    // Defaults to NO on iOS, YES on macOS. With it off a window.open() with no
++    // user activation behind it - anything driven through evaluateJavaScript -
++    // is refused silently: it returns null and raises nothing.
 +    webViewConfig.preferences.javaScriptCanOpenWindowsAutomatically = YES;
 +#endif
 +
      m_webView = [[WXWKWebView alloc] initWithFrame:r configuration:webViewConfig];
      [(WXWKWebView*)m_webView setWebView:this];
  #if defined(__WXOSX_IPHONE__)
-@@ -677,8 +688,89 @@
+@@ -677,8 +685,79 @@
  
  void wxWebViewWebKit::LoadURL(const wxString& url)
  {
@@ -38,23 +35,24 @@ index 8b038a2..9c1f4b3 100644
 +
 +#if defined(__WXOSX_IPHONE__)
 +    // A file: page loaded with -loadRequest: gets read access to its own
-+    // directory and nothing else, so a navigation to a sibling directory can be
-+    // refused, silently. OrcaSlicer's setup wizard needs exactly that hop:
-+    // resources/web/guide/0/index.html is only a "Loading......" splash and
-+    // jumps to guide/1/.
++    // directory only, so a navigation to a sibling directory can be refused in
++    // silence - and OrcaSlicer's setup wizard needs exactly that hop, from
++    // web/guide/0/ (a "Loading......" splash) to web/guide/1/.
 +    //
-+    // -loadFileURL:allowingReadAccessToURL: is the usual answer and is the
-+    // wrong one here: it takes a bare URL, and these URLs carry a query string
-+    // (index.html?target=1&lang=en, which the page reads the target page
-+    // number out of). It refuses them, loading nothing at all and leaving every
-+    // web panel in the application blank. -loadFileRequest: takes a request, so
-+    // the query survives.
++    // -loadFileRequest:allowingReadAccessToURL: grants a directory and takes a
++    // request, so the query string survives; these URLs carry one
++    // (index.html?target=1&lang=en) and the page reads its target from it.
++    //
++    // Both paths are put through -stringByResolvingSymlinksInPath FIRST, and
++    // whatever comes out is what gets loaded and what gets granted. That method
++    // does not only follow symlinks, it also strips a leading /private - so
++    // resolving one side and not the other produced a file under
++    // /private/var/... granted read access to /var/..., which is not a prefix
++    // of it. WebKit then refused every page in the application and reported
++    // nothing: the load returns a navigation object and simply never arrives.
 +    if ( [nsurl isFileURL] )
 +    {
-+        // Rebuild the URL from its path rather than trusting the string form:
-+        // Orca composes it as "file://" + an absolute path, and the result does
-+        // not always round-trip through NSURL as a well formed file URL.
-+        NSString* path = [nsurl path];
++        NSString* path = [[nsurl path] stringByResolvingSymlinksInPath];
 +        if ( path != nil && [path length] > 0 )
 +        {
 +            NSURL* fileURL = [NSURL fileURLWithPath:path];
@@ -69,19 +67,12 @@ index 8b038a2..9c1f4b3 100644
 +                    fileURL = [comps URL];
 +            }
 +
-+            // Symlinks, not just . and .. : a bundle is reachable as both
-+            // /var/containers/... and /private/var/containers/..., /var being a
-+            // symlink to /private/var, and a missed match would silently fall
-+            // back to the single-directory grant this exists to avoid.
-+            NSURL* bundleURL = [[[NSBundle mainBundle] bundleURL]
-+                                    URLByResolvingSymlinksInPath];
-+            NSString* bundlePath = [bundleURL path];
-+            NSString* filePath = [[fileURL URLByResolvingSymlinksInPath] path];
++            NSString* bundlePath =
++                [[[NSBundle mainBundle] bundlePath] stringByResolvingSymlinksInPath];
 +
 +            NSURL* readAccess;
-+            if ( bundlePath != nil && filePath != nil &&
-+                 [filePath hasPrefix:bundlePath] )
-+                readAccess = bundleURL;   // where a packaged app's web content lives
++            if ( bundlePath != nil && [path hasPrefix:bundlePath] )
++                readAccess = [NSURL fileURLWithPath:bundlePath isDirectory:YES];
 +            else
 +                readAccess = [[fileURL URLByDeletingLastPathComponent]
 +                                  URLByDeletingLastPathComponent];
@@ -93,10 +84,6 @@ index 8b038a2..9c1f4b3 100644
 +            {
 +                WKNavigation* nav = [m_webView loadFileRequest:fileRequest
 +                                      allowingReadAccessToURL:readAccess];
-+
-+                // A nil navigation means nothing started. Never leave the page
-+                // blank over this: fall back to the load that has always
-+                // worked, and say so.
 +                if ( nav != nil )
 +                {
 +                    wxLogMessage("wx-ios webview: loadFileRequest %s (read access %s)",
@@ -119,14 +106,45 @@ index 8b038a2..9c1f4b3 100644
  }
  
  wxString wxWebViewWebKit::GetCurrentURL() const
-@@ -1079,6 +1171,15 @@
+@@ -1023,6 +1102,16 @@
+     if (webKitWindow){
+         NSString *url = webView.URL.absoluteString;
+ 
++#if defined(__WXOSX_IPHONE__)
++        // wx turns this into wxEVT_WEBVIEW_ERROR, which OrcaSlicer logs at
++        // trace level - invisible in a release build. A page that fails to load
++        // then looks exactly like a page that loaded and rendered nothing,
++        // which has cost this port two rounds.
++        wxLogMessage("wx-ios webview: LOAD FAILED for %s: %s",
++                     wxCFStringRef::AsString(url),
++                     wxCFStringRef::AsString([error localizedDescription]));
++#endif
++
+         wxWebViewNavigationError type;
+         wxString description = nsErrorToWxHtmlError(error, &type);
+         wxWebViewEvent event(wxEVT_WEBVIEW_ERROR,
+@@ -1046,6 +1135,16 @@
+     if (webKitWindow){
+         NSString *url = webView.URL.absoluteString;
+ 
++#if defined(__WXOSX_IPHONE__)
++        // wx turns this into wxEVT_WEBVIEW_ERROR, which OrcaSlicer logs at
++        // trace level - invisible in a release build. A page that fails to load
++        // then looks exactly like a page that loaded and rendered nothing,
++        // which has cost this port two rounds.
++        wxLogMessage("wx-ios webview: LOAD FAILED for %s: %s",
++                     wxCFStringRef::AsString(url),
++                     wxCFStringRef::AsString([error localizedDescription]));
++#endif
++
+         wxWebViewNavigationError type;
+         wxString description = nsErrorToWxHtmlError(error, &type);
+         wxWebViewEvent event(wxEVT_WEBVIEW_ERROR,
+@@ -1079,6 +1178,12 @@
      if (webKitWindow && webKitWindow->GetEventHandler())
          webKitWindow->GetEventHandler()->ProcessEvent(event);
  
 +#if defined(__WXOSX_IPHONE__)
-+    // Every navigation the page attempts and whether it was allowed. A page
-+    // that will not move is otherwise indistinguishable from one that never
-+    // tried, and an absent line says the attempt never reached this delegate.
 +    wxLogMessage("wx-ios webview: navigation %s: %s",
 +                 event.IsAllowed() ? "ALLOW" : "CANCEL",
 +                 wxCFStringRef::AsString(url));
@@ -135,16 +153,14 @@ index 8b038a2..9c1f4b3 100644
      decisionHandler(event.IsAllowed() ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
  }
  
-@@ -1236,6 +1337,26 @@
+@@ -1236,6 +1341,24 @@
          wxWEBVIEW_NAV_ACTION_OTHER;
  
  
 +#if defined(__WXOSX_IPHONE__)
-+    // A file: URL here is the application's own bundled content and iOS has no
-+    // second window to put it in. Load it in this webview and tell WebKit no
-+    // window was created; otherwise the event below is the end of the road,
-+    // since OrcaSlicer answers it with wxLaunchDefaultBrowser, which can do
-+    // nothing with file: on iOS.
++    // The app's own bundled content, and iOS has no second window for it.
++    // Otherwise this falls through to wxEVT_WEBVIEW_NEWWINDOW, which
++    // OrcaSlicer answers with wxLaunchDefaultBrowser - nothing, for file: URLs.
 +    if ( [navigationAction.request.URL isFileURL] )
 +    {
 +        wxLogMessage("wx-ios webview: window.open of a file URL handled in place: %s",

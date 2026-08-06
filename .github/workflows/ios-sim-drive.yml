@@ -1,0 +1,112 @@
+name: iOS sim drive - walk the UI page by page
+
+# The fast loop. ios-step3-gui.yml spends ~75 minutes building OrcaSlicer and
+# then runs it once; this takes the bundle that run already published and does
+# nothing but launch it and walk the UI, which is minutes. Anything about how
+# the app behaves - a page that does not render, a dialog that never appears, a
+# tap that kills it - is answered here without recompiling a line.
+#
+# Point it at the run whose "orca-sim-app" artifact you want. Leave app_run_id
+# empty to take the newest successful step-3 run on this branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_run_id:
+        description: "step-3 run id to take the orca-sim-app artifact from (blank = newest)"
+        required: false
+        default: ""
+      steps:
+        description: 'walk, as "label:x:y" in POINTS, space separated'
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: sim-drive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drive:
+    name: Walk the Orca UI in the simulator
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the built simulator bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          RUN_ID="${{ github.event.inputs.app_run_id }}"
+          if [ -z "$RUN_ID" ]; then
+            # Newest step-3 run on this branch that produced the artifact. A
+            # failed run still uploads it (the upload step is if: always()), and
+            # a run that failed at the launch step is exactly the one worth
+            # driving, so success is not required here.
+            RUN_ID=$(gh run list --workflow ios-step3-gui.yml \
+                       --branch "${GITHUB_REF_NAME}" --limit 20 \
+                       --json databaseId,status \
+                       --jq '[.[] | select(.status=="completed")][0].databaseId')
+          fi
+          echo "app from run $RUN_ID"
+          echo "APP_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          gh run download "$RUN_ID" -n orca-sim-app -D simapp
+          ls -la simapp
+          test -d simapp/OrcaSlicer.app
+          # The artifact upload does not preserve the executable bit.
+          chmod +x simapp/OrcaSlicer.app/OrcaSlicer
+
+      - name: Install idb (tap synthesis)
+        continue-on-error: true
+        run: |
+          set -uxo pipefail
+          brew tap facebook/fb || true
+          brew install idb-companion || true
+          pipx install fb-idb || pip3 install --break-system-packages fb-idb || true
+          idb --help >/dev/null 2>&1 && echo "idb ok" || echo "idb unavailable - launch only"
+
+      - name: Walk the UI
+        id: walk
+        env:
+          DRIVE_STEPS: ${{ github.event.inputs.steps }}
+        run: |
+          set -uxo pipefail
+          mkdir -p artifact
+          [ -n "${DRIVE_STEPS:-}" ] || unset DRIVE_STEPS
+          bash tools/ci/sim-drive.sh simapp/OrcaSlicer.app org.orca-ios.orcaslicer "$PWD/artifact"
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-sim-drive
+          path: artifact/
+          if-no-files-found: ignore
+
+      - name: Publish to ci-logs/
+        if: always()
+        run: |
+          set -ux
+          D="ci-logs/simdrive-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          cp artifact/*.png "$D/" 2>/dev/null || true
+          for f in drive-log.txt orca-app-log.txt orca-startup-error.txt \
+                   sim-launch.log sim-oslog.txt; do
+            [ -f "artifact/$f" ] && tail -c 40000 "artifact/$f" > "$D/$f"
+          done
+          cp artifact/OrcaSlicer*.ips "$D/" 2>/dev/null || true
+          echo "app artifact from run ${APP_RUN_ID:-unknown}" > "$D/SOURCE.txt"
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "sim drive run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep $((i * 3))
+          done

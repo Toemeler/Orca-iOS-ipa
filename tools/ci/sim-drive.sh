@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Install an iOS .app in a fresh iPad simulator, launch it, then walk the UI:
+# tap each place named in the step list, screenshotting after every one.
+#
+# This exists so the app can be exercised page by page without a person and a
+# sideload in the loop. It deliberately does NOT build anything - it takes a
+# bundle that ios-step3-gui.yml already built and published, so a round trip is
+# minutes rather than the ~75 the full Orca compile costs.
+#
+# usage: sim-drive.sh <path to .app> <bundle id> <output dir>
+#
+# Steps come from DRIVE_STEPS: "label:x:y" separated by spaces, coordinates in
+# POINTS (idb's unit), not pixels. The iPad Pro 13" M4 is 1032x1376 points at
+# 2x, so a coordinate read off a 2064x2752 screenshot must be halved.
+#
+# Every tap is best effort. If idb is unavailable or a tap fails, the run still
+# produces launch screenshots and logs - degraded, not dead, because the launch
+# evidence is worth having even when the driving is not working yet.
+
+set -uo pipefail
+
+APP="${1:?usage: sim-drive.sh <app> <bundle-id> <outdir>}"
+BUNDLE_ID="${2:?missing bundle id}"
+OUT="${3:?missing output dir}"
+
+# Default walk: the four tabs across the top of Orca's main frame, then back to
+# home. Read off ci-logs/step3-run-65/ui-t67s.png.
+DRIVE_STEPS="${DRIVE_STEPS:-prepare:122:50 preview:257:50 device:393:50 project:530:50 home:20:50}"
+SETTLE="${DRIVE_SETTLE:-4}"
+
+mkdir -p "$OUT"
+LOG="$OUT/drive-log.txt"
+: > "$LOG"
+note() { echo "$@" | tee -a "$LOG"; }
+
+RT=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9-]*' | tail -1)
+UDID=$(xcrun simctl create "orca-drive" \
+  "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB" "$RT")
+note "simulator: $UDID ($RT)"
+xcrun simctl boot "$UDID"
+xcrun simctl bootstatus "$UDID" -b
+
+xcrun simctl install "$UDID" "$APP" 2>&1 | tee -a "$LOG"
+xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" > "$OUT/sim-launch.log" 2>&1 &
+LPID=$!
+
+EXE=$(basename "$APP" .app)
+alive() {
+  pgrep -f "\.app/${EXE}" >/dev/null 2>&1 && return 0
+  pgrep -x "$EXE" >/dev/null 2>&1 && return 0
+  return 1
+}
+
+FIRST_ALIVE=""
+for i in $(seq 1 60); do
+  if alive; then FIRST_ALIVE="$i"; break; fi
+  sleep 1
+done
+note "first seen alive after: ${FIRST_ALIVE:-never} s"
+
+# Orca does a lot before its first frame; do not start tapping into a window
+# that has not been drawn yet.
+sleep "${DRIVE_WARMUP:-20}"
+xcrun simctl io "$UDID" screenshot "$OUT/drive-00-start.png" >/dev/null 2>&1
+
+# idb is the only supported way to synthesise a tap into a simulator without an
+# XCUITest target. It is optional here on purpose: when it is missing the run
+# still reports launch and startup evidence instead of failing outright.
+IDB=""
+command -v idb >/dev/null 2>&1 && IDB=idb
+if [ -z "$IDB" ]; then
+  note "idb not available - launch evidence only, no UI walk"
+else
+  idb connect "$UDID" >>"$LOG" 2>&1 || note "idb connect failed (continuing)"
+fi
+
+N=0
+for step in $DRIVE_STEPS; do
+  LABEL="${step%%:*}"; REST="${step#*:}"; X="${REST%%:*}"; Y="${REST##*:}"
+  N=$((N + 1))
+  IDX=$(printf '%02d' "$N")
+  if ! alive; then
+    note "step $IDX $LABEL: app is GONE before this tap - stopping the walk"
+    break
+  fi
+  if [ -n "$IDB" ]; then
+    note "step $IDX $LABEL: tap ($X,$Y)"
+    idb ui tap --udid "$UDID" "$X" "$Y" >>"$LOG" 2>&1 \
+      || note "step $IDX $LABEL: tap FAILED"
+  else
+    note "step $IDX $LABEL: (skipped, no idb)"
+  fi
+  sleep "$SETTLE"
+  xcrun simctl io "$UDID" screenshot "$OUT/drive-$IDX-$LABEL.png" >/dev/null 2>&1 \
+    || note "step $IDX $LABEL: screenshot failed"
+  alive || note "step $IDX $LABEL: app DIED during this step"
+done
+
+STILL_ALIVE=0; alive && STILL_ALIVE=1
+note "still alive after the walk: $STILL_ALIVE"
+
+kill "$LPID" 2>/dev/null || true
+
+# Same evidence set the launch verifier collects: the app's own log, the
+# startup-error note 0338 writes, and the crash report from wherever the
+# simulator decided to put it.
+DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data 2>/dev/null)
+if [ -n "${DATA:-}" ]; then
+  find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
+    | while IFS= read -r f; do echo "--- $f ---"; tail -c 40000 "$f"; done \
+    > "$OUT/orca-app-log.txt" 2>&1 || true
+  [ -f "$DATA/Documents/orca-startup-error.txt" ] && \
+    cp "$DATA/Documents/orca-startup-error.txt" "$OUT/" 2>/dev/null
+fi
+for d in "$HOME/Library/Logs/DiagnosticReports" \
+         "$HOME/Library/Logs/CoreSimulator/$UDID" \
+         "$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Logs/CrashReporter"; do
+  [ -d "$d" ] || continue
+  find "$d" \( -name "${EXE}*.ips" -o -name "${EXE}*.crash" \) -exec cp {} "$OUT/" \; 2>/dev/null
+done
+xcrun simctl spawn "$UDID" log show --last 10m \
+  --predicate "process == \"$EXE\"" > "$OUT/sim-oslog.txt" 2>&1 || true
+
+xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
+xcrun simctl delete "$UDID" >/dev/null 2>&1 || true
+
+note "screenshots: $(ls -1 "$OUT"/drive-*.png 2>/dev/null | wc -l | tr -d ' ')"
+[ -n "$FIRST_ALIVE" ] || { echo "::error::$BUNDLE_ID never started"; exit 1; }
+exit 0

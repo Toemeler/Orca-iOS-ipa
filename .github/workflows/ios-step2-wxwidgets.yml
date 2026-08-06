@@ -62,6 +62,7 @@ jobs:
             -DIPHONE=ON \
             -DwxBUILD_TOOLKIT=osx_iphone \
             -DCMAKE_BUILD_TYPE=Release \
+            -DwxBUILD_DEBUG_LEVEL=0 \
             -DwxBUILD_SHARED=OFF \
             -DwxBUILD_PRECOMP=OFF \
             -DwxBUILD_SAMPLES=OFF \

@@ -1,0 +1,105 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/0EB06B90-7D61-4547-8212-092D2EEE372B/data/Containers/Data/Application/2C3AA941-9D88-4610-A03B-0FDA7F0DADB2/Documents/log/debug_Thu_Aug_06_14_54_57_4728.log.0 ---
+655:[warning]	2026-08-06 14:55:01.279582[Thread 0x00000001077e0200]:02:55:01 PM: wx-ios TLW SHOW: wxFrame "" style=0x1600 popup=0 main=1 hidden=0 frame=0,0 1032x1376 level=0
+706:[warning]	2026-08-06 14:55:04.666799[Thread 0x00000001077e0200]:02:55:04 PM: wx-ios TLW SHOW: wxDialog "Loading..." style=0x20081800 popup=0 main=0 hidden=0 frame=328,612 376x152 level=2001
+723:[warning]	2026-08-06 14:55:04.971073[Thread 0x00000001077e0200]:02:55:04 PM: wx-ios TLW HIDE: wxDialog "Loading..." style=0x20081800 popup=0 main=0 hidden=1 frame=328,612 376x119 level=2001
+733:[info]	2026-08-06 14:55:05.050008[Thread 0x00000001077e0200]:GuideFrame,  set start page to welcome 
+738:[info]	2026-08-06 14:55:05.063003[Thread 0x00000001077e0200]:GuideFrame,  finished
+743:[info]	2026-08-06 14:55:05.064112[Thread 0x00000001077e0200]:GuideFrame before ShowModal
+744:[warning]	2026-08-06 14:55:05.072108[Thread 0x00000001077e0200]:02:55:05 PM: wx-ios TLW SHOW: wxDialog "Setup Wizard" style=0x20080000 popup=0 main=0 hidden=0 frame=106,358 820x660 level=2001
+745:[warning]	2026-08-06 14:55:05.072352[Thread 0x00000001077e0200]:02:55:05 PM: wx-ios: modal loop ENTER for native window 0x10c991d90
+420681:[error]	2026-08-06 14:55:20.907832[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2008 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420684:[error]	2026-08-06 14:55:20.908268[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2011 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420688:[error]	2026-08-06 14:55:20.908858[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2015 at=0,0 size=350x418 best=1x1 HIDDEN OFFSCREEN
+420691:[error]	2026-08-06 14:55:20.909145[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2018 at=0,0 size=350x418 best=1x1 HIDDEN OFFSCREEN
+420695:[error]	2026-08-06 14:55:20.909500[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2022 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420698:[error]	2026-08-06 14:55:20.909653[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2025 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420702:[error]	2026-08-06 14:55:20.909953[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2029 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420705:[error]	2026-08-06 14:55:20.910088[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2032 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420709:[error]	2026-08-06 14:55:20.910383[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2036 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420712:[error]	2026-08-06 14:55:20.910516[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2039 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+420735:[error]	2026-08-06 14:55:20.913277[Thread 0x00000001077e0200]:orca-ios-ui:             wxPopupTransientWindow "" id=-2062 at=0,0 size=437x243 best=437x243 HIDDEN OFFSCREEN
+420772:[error]	2026-08-06 14:55:20.916493[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2421 at=0,0 size=216x364 best=216x364 HIDDEN OFFSCREEN
+420921:[error]	2026-08-06 14:55:20.931734[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2567 at=0,0 size=200x200 best=200x200 HIDDEN OFFSCREEN
+420926:[error]	2026-08-06 14:55:20.932193[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2572 at=0,0 size=750x404 best=750x379 HIDDEN OFFSCREEN
+421015:[error]	2026-08-06 14:55:20.935487[Thread 0x00000001077e0200]:orca-ios-ui:                 wxPopupTransientWindow "" id=-2660 at=0,0 size=151x216 best=1x1 HIDDEN OFFSCREEN
+421051:[error]	2026-08-06 14:55:20.936626[Thread 0x00000001077e0200]:orca-ios-ui:         wxPopupTransientWindow "" id=-2702 at=0,0 size=216x364 best=216x364 HIDDEN OFFSCREEN
+421093:[error]	2026-08-06 14:55:20.939584[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2738 at=0,0 size=429x271 best=429x246 HIDDEN OFFSCREEN
+421137:[error]	2026-08-06 14:55:20.942426[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2772 at=0,0 size=500x108 best=1x1 HIDDEN OFFSCREEN
+421142:[error]	2026-08-06 14:55:20.942608[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2777 at=0,0 size=500x54 best=1x1 HIDDEN OFFSCREEN
+421149:[error]	2026-08-06 14:55:20.942912[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2784 at=0,0 size=250x108 best=1x1 HIDDEN OFFSCREEN
+421153:[error]	2026-08-06 14:55:20.943048[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2788 at=0,0 size=250x54 best=1x1 HIDDEN OFFSCREEN
+421158:[error]	2026-08-06 14:55:20.943217[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2793 at=0,0 size=250x108 best=1x1 HIDDEN OFFSCREEN
+421162:[error]	2026-08-06 14:55:20.943331[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2797 at=0,0 size=250x54 best=1x1 HIDDEN OFFSCREEN
+421166:[error]	2026-08-06 14:55:20.943444[Thread 0x00000001077e0200]:orca-ios-ui:                     wxPopupTransientWindow "" id=-2801 at=0,0 size=500x162 best=1x1 HIDDEN OFFSCREEN
+421181:[error]	2026-08-06 14:55:20.943858[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2814 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421188:[error]	2026-08-06 14:55:20.944113[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2821 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421195:[error]	2026-08-06 14:55:20.944352[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2828 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421202:[error]	2026-08-06 14:55:20.944584[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2835 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421215:[error]	2026-08-06 14:55:20.944964[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2846 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421222:[error]	2026-08-06 14:55:20.945212[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2853 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421229:[error]	2026-08-06 14:55:20.945434[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2860 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421236:[error]	2026-08-06 14:55:20.945669[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2867 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421245:[error]	2026-08-06 14:55:20.945971[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2876 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421252:[error]	2026-08-06 14:55:20.946177[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2883 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421259:[error]	2026-08-06 14:55:20.946396[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2890 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421266:[error]	2026-08-06 14:55:20.946623[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-2897 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421272:[error]	2026-08-06 14:55:20.946853[Thread 0x00000001077e0200]:orca-ios-ui:                     wxPopupTransientWindow "" id=-2903 at=0,0 size=500x54 best=1x1 HIDDEN OFFSCREEN
+421428:[error]	2026-08-06 14:55:20.953356[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-3058 at=0,0 size=429x271 best=429x246 HIDDEN OFFSCREEN
+421494:[error]	2026-08-06 14:55:20.956080[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3109 at=0,0 size=500x108 best=1x1 HIDDEN OFFSCREEN
+421499:[error]	2026-08-06 14:55:20.956273[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3114 at=0,0 size=500x54 best=1x1 HIDDEN OFFSCREEN
+421506:[error]	2026-08-06 14:55:20.956591[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3121 at=0,0 size=250x108 best=1x1 HIDDEN OFFSCREEN
+421510:[error]	2026-08-06 14:55:20.956710[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3125 at=0,0 size=250x54 best=1x1 HIDDEN OFFSCREEN
+421515:[error]	2026-08-06 14:55:20.956881[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3130 at=0,0 size=250x108 best=1x1 HIDDEN OFFSCREEN
+421519:[error]	2026-08-06 14:55:20.957015[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3134 at=0,0 size=250x54 best=1x1 HIDDEN OFFSCREEN
+421523:[error]	2026-08-06 14:55:20.957214[Thread 0x00000001077e0200]:orca-ios-ui:                     wxPopupTransientWindow "" id=-3138 at=0,0 size=500x162 best=1x1 HIDDEN OFFSCREEN
+421538:[error]	2026-08-06 14:55:20.957635[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3151 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421545:[error]	2026-08-06 14:55:20.957907[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3158 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421552:[error]	2026-08-06 14:55:20.958288[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3165 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421559:[error]	2026-08-06 14:55:20.958607[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3172 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421572:[error]	2026-08-06 14:55:20.959231[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3183 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421579:[error]	2026-08-06 14:55:20.959445[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3190 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421586:[error]	2026-08-06 14:55:20.959670[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3197 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421593:[error]	2026-08-06 14:55:20.959908[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3204 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421602:[error]	2026-08-06 14:55:20.960192[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3213 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421609:[error]	2026-08-06 14:55:20.960447[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3220 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421616:[error]	2026-08-06 14:55:20.960697[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3227 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421623:[error]	2026-08-06 14:55:20.960932[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3234 at=0,0 size=250x10 best=1x1 HIDDEN OFFSCREEN
+421752:[error]	2026-08-06 14:55:20.965911[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-3360 at=0,0 size=1032x1376 best=1x1 HIDDEN OFFSCREEN
+421865:[error]	2026-08-06 14:55:20.970090[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-3470 at=0,0 size=1032x1376 best=1x1 HIDDEN OFFSCREEN
+421968:[error]	2026-08-06 14:55:20.974166[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2149 at=0,0 size=0x108 best=1x1 HIDDEN OFFSCREEN
+421974:[error]	2026-08-06 14:55:20.974460[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2155 at=0,0 size=52x27 best=1x1 HIDDEN OFFSCREEN
+421980:[error]	2026-08-06 14:55:20.974945[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2161 at=0,0 size=191x162 best=1x1 HIDDEN OFFSCREEN
+421985:[error]	2026-08-06 14:55:20.975251[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2166 at=0,0 size=1032x1376 best=1x1 HIDDEN OFFSCREEN
+421989:[error]	2026-08-06 14:55:20.975499[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2170 at=0,0 size=31x10 best=1x1 HIDDEN OFFSCREEN
+422003:[error]	2026-08-06 14:55:20.975972[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2184 at=0,0 size=1032x1376 best=1x1 HIDDEN OFFSCREEN
+422007:[error]	2026-08-06 14:55:20.976127[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2188 at=0,0 size=31x10 best=1x1 HIDDEN OFFSCREEN
+422021:[error]	2026-08-06 14:55:20.976710[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2202 at=0,0 size=1x27 best=1x1 HIDDEN OFFSCREEN
+422025:[error]	2026-08-06 14:55:20.976893[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2206 at=0,0 size=90x27 best=1x1 HIDDEN OFFSCREEN
+422048:[error]	2026-08-06 14:55:20.977963[Thread 0x00000001077e0200]:orca-ios-ui:                 wxPopupTransientWindow "" id=-2229 at=0,0 size=2x418 best=1x1 HIDDEN OFFSCREEN
+422049:[error]	2026-08-06 14:55:20.978034[Thread 0x00000001077e0200]:orca-ios-ui:                 wxPopupTransientWindow "" id=-3597 at=0,0 size=1032x1376 best=1x1 HIDDEN OFFSCREEN
+422102:[error]	2026-08-06 14:55:20.980771[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3629 at=0,0 size=120x135 best=1x1 HIDDEN OFFSCREEN
+422108:[error]	2026-08-06 14:55:20.981121[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3635 at=0,0 size=143x81 best=1x1 HIDDEN OFFSCREEN
+422164:[error]	2026-08-06 14:55:20.983773[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3691 at=0,0 size=171x108 best=1x1 HIDDEN OFFSCREEN
+422167:[error]	2026-08-06 14:55:20.983933[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3694 at=0,0 size=131x68 best=1x1 HIDDEN OFFSCREEN
+422189:[error]	2026-08-06 14:55:20.984787[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3716 at=0,0 size=120x54 best=1x1 HIDDEN OFFSCREEN
+422216:[error]	2026-08-06 14:55:20.985891[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3743 at=0,0 size=141x81 best=1x1 HIDDEN OFFSCREEN
+422220:[error]	2026-08-06 14:55:20.986085[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3747 at=0,0 size=151x54 best=1x1 HIDDEN OFFSCREEN
+422269:[error]	2026-08-06 14:55:20.988158[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3796 at=0,0 size=160x108 best=1x1 HIDDEN OFFSCREEN
+422272:[error]	2026-08-06 14:55:20.988282[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3799 at=0,0 size=132x81 best=1x1 HIDDEN OFFSCREEN
+422275:[error]	2026-08-06 14:55:20.988418[Thread 0x00000001077e0200]:orca-ios-ui:                       wxPopupTransientWindow "" id=-3802 at=0,0 size=137x81 best=1x1 HIDDEN OFFSCREEN
+422301:[error]	2026-08-06 14:55:20.989795[Thread 0x00000001077e0200]:orca-ios-ui:                     wxPopupTransientWindow "" id=-2275 at=0,0 size=151x54 best=1x1 HIDDEN OFFSCREEN
+422383:[error]	2026-08-06 14:55:20.994097[Thread 0x00000001077e0200]:orca-ios-ui:           wxPopupTransientWindow "" id=-2240 at=0,0 size=412x477 best=412x452 HIDDEN OFFSCREEN
+422425:[error]	2026-08-06 14:55:20.996240[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2374 at=0,0 size=334x418 best=1x1 HIDDEN OFFSCREEN
+422446:[error]	2026-08-06 14:55:20.997126[Thread 0x00000001077e0200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2398 at=0,0 size=334x54 best=1x1 HIDDEN OFFSCREEN
+422467:[error]	2026-08-06 14:55:20.998097[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2008 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422470:[error]	2026-08-06 14:55:20.998215[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2011 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422474:[error]	2026-08-06 14:55:20.998403[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2015 at=0,0 size=350x418 best=1x1 HIDDEN OFFSCREEN
+422477:[error]	2026-08-06 14:55:20.998517[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2018 at=0,0 size=350x418 best=1x1 HIDDEN OFFSCREEN
+422481:[error]	2026-08-06 14:55:20.998687[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2022 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422484:[error]	2026-08-06 14:55:20.998803[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2025 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422488:[error]	2026-08-06 14:55:20.998978[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2029 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422491:[error]	2026-08-06 14:55:20.999105[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2032 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422495:[error]	2026-08-06 14:55:20.999244[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2036 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422498:[error]	2026-08-06 14:55:20.999383[Thread 0x00000001077e0200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2039 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+422545:[error]	2026-08-06 14:55:21.001194[Thread 0x00000001077e0200]:orca-ios-ui:             wxPopupTransientWindow "" id=-2374 at=0,0 size=334x418 best=1x1 HIDDEN OFFSCREEN
+422566:[error]	2026-08-06 14:55:21.001855[Thread 0x00000001077e0200]:orca-ios-ui:             wxPopupTransientWindow "" id=-2398 at=0,0 size=334x54 best=1x1 HIDDEN OFFSCREEN

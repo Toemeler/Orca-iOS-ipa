@@ -103,26 +103,30 @@ index 2b3c4d5e..6f7a8b9c 100644
  #include <algorithm>
  #include <utility>
  #include <vector>
-@@ -353,8 +357,21 @@
+@@ -353,8 +357,26 @@
      if (get("enable_ssl_for_ftp").empty())
          set_bool("enable_ssl_for_ftp", true);
  
--    if (get("log_severity_level").empty())
-+    if (get("log_severity_level").empty()) {
 +#if defined(__APPLE__) && !TARGET_OS_OSX
-+        // "info" is not survivable on a tablet. A first launch writes 49 MB of
-+        // log in 61 seconds - one 25 MB line for the setup wizard's profile
-+        // JSON, and a line per filament of every one of 132 vendors - and the
-+        // app spends that time doing I/O rather than finishing startup, which
-+        // is what leaves the wizard sitting on "Loading......".
-+        // "warning" keeps everything this port's own instrumentation emits: the
-+        // window tree and the GL report log at error, and wx's own messages
-+        // arrive at warning through wxBoostLog in GUI_App.cpp.
-+        set("log_severity_level", "warning");
++    // "info" is not survivable on a tablet. A first launch writes 49 MB of log
++    // in 61 seconds - one 25 MB line for the setup wizard's profile JSON, and a
++    // line per filament of every one of 132 vendors - and the app spends that
++    // time doing I/O rather than finishing startup, which is what leaves the
++    // wizard sitting on "Loading......".
++    //
++    // Clamped rather than defaulted: an install that has already run once has
++    // "info" written to its config, and a default only applies to an empty
++    // value, so defaulting would fix nothing for anyone who already has the app.
++    // A quieter choice is left alone.
++    {
++        const std::string lvl = get("log_severity_level");
++        if (lvl.empty() || lvl == "info" || lvl == "debug" || lvl == "trace")
++            set("log_severity_level", "warning");
++    }
 +#else
+     if (get("log_severity_level").empty())
          set("log_severity_level", "info");
 +#endif
-+    }
  
      if (get("internal_developer_mode").empty())
          set_bool("internal_developer_mode", false);

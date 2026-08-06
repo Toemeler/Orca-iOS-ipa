@@ -1,0 +1,27 @@
+=== immediately after launch (pid line: none) ===
+--- host: ps -p $APP_PID
+(no pid)
+--- host: pgrep -fl $EXE
+98447 /Users/runner/Library/Developer/CoreSimulator/Devices/5F8B6259-D62E-4B9F-A2AB-B57FAF8F78EA/data/Containers/Bundle/Application/62F11589-04B2-4076-8F26-6F75A8D5A467/OrcaSlicer.app/OrcaSlicer
+--- host: ps -Ao pid,comm | grep EXE
+98447 /Users/runner/Library/Developer/CoreSimulator/Devices/5F8B6259-D62E-4B9F-A2AB-B57FAF8F78EA/data/Containers/Bundle/Application/62F11589-04B2-4076-8F26-6F75A8D5A467/OrcaSlicer.app/OrcaSlicer
+--- sim: launchctl list | grep bundle id
+98447	0	UIKitApplication:org.orca-ios.orcaslicer[7b67][rb-legacy]
+--- sim: launchctl list line count
+     358
+--- sim: launchctl list, first 15 lines
+PID	Status	Label
+-	0	com.apple.progressd
+-	0	com.apple.CoreAuthentication.daemon
+-	0	com.apple.cloudphotod
+95309	0	com.apple.homed
+95344	0	com.apple.modelcatalogd
+95326	0	com.apple.dataaccess.dataaccessd
+-	0	com.apple.DragUI.druid
+96396	0	com.apple.bird
+95470	0	com.apple.fitnesscoachingd
+-	0	com.apple.knowledgeconstructiond
+95212	0	com.apple.biomed
+95271	0	com.apple.nsurlsessiond
+-	0	com.apple.devicecheckd
+-	0	com.apple.UIKit.KeyboardManagement

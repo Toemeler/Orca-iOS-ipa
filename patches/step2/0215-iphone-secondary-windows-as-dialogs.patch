@@ -1,27 +1,40 @@
 diff --git a/src/osx/iphone/nonownedwnd.mm b/src/osx/iphone/nonownedwnd.mm
-index 9bc7aa9..b708fa3 100644
+index 9bc7aa9..1720402 100644
 --- a/src/osx/iphone/nonownedwnd.mm
 +++ b/src/osx/iphone/nonownedwnd.mm
-@@ -166,9 +166,55 @@ void wxNonOwnedWindowIPhoneImpl::Lower()
+@@ -13,6 +13,7 @@
+ 
+ #include "wx/nonownedwnd.h"
+ #include "wx/frame.h"
++#include "wx/log.h"
+ #include <algorithm>
+ 
+ CGRect wxToNSRect(UIView* parent, const wxRect& r )
+@@ -166,14 +167,69 @@
  {
  }
  
-+// The first top level window to be shown is the application's main frame.
-+// Every one after it is a dialog, a preferences panel, a wizard - something the
-+// user is meant to see *over* the main frame - and on this port none of them
-+// were visible at all.
++// The first top level window shown is the application's main frame. Everything
++// after it - a dialog, a preferences panel, a wizard, a combo box drop-down -
++// is meant to appear *over* it, and on this port none of them did.
 +//
 +// Each wxTopLevelWindow becomes its own UIWindow here. A wxDialog carries
-+// wxCAPTION, which lands in an empty branch in Create() below and leaves the
-+// level at UIWindowLevelNormal - the same level as the main frame. UIKit gives
-+// no defined z-order between windows at equal level, and -makeKeyWindow changes
-+// key status, not order, so a dialog was created, told to show, and then simply
-+// never appeared. Its geometry was wrong too: CGRectMake(0, 0, size.x, size.y)
-+// puts it in the top-left corner at whatever size the desktop layout asked for.
++// wxCAPTION, which lands in an empty branch in Create() and leaves the level at
++// UIWindowLevelNormal, the same as the main frame. UIKit gives no defined
++// z-order between windows at equal level, and -makeKeyWindow moves key status
++// rather than order, so a dialog was created, told to show, and never seen.
 +static UIWindow* gs_mainWindow = nil;
 +
  bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
  {
++    wxNonOwnedWindow* const now = dynamic_cast<wxNonOwnedWindow*> (GetWXPeer());
++    const long style = now != NULL ? now->GetWindowStyle() : 0;
++
++    // A drop-down, a menu or a tooltip is positioned by the code that opens it,
++    // relative to the control it belongs to. Only a dialog wants centring.
++    const bool isPopup = (style & wxPOPUP_WINDOW) != 0 ||
++                         (style & wxFRAME_TOOL_WINDOW) != 0;
++
 +    if ( show )
 +    {
 +        if ( gs_mainWindow == nil )
@@ -31,24 +44,29 @@ index 9bc7aa9..b708fa3 100644
 +        }
 +        else if ( m_macWindow != gs_mainWindow )
 +        {
-+            // A secondary window: put it above the main frame and centre it, so
-+            // it reads as a dialog rather than a panel wedged into the corner.
-+            const CGRect screen = [[UIScreen mainScreen] bounds];
-+            CGRect r = [m_macWindow frame];
++            if ( !isPopup )
++            {
++                // Centre a dialog, and keep it inside the screen: a desktop
++                // layout is routinely wider than an iPad.
++                const CGRect screen = [[UIScreen mainScreen] bounds];
++                CGRect r = [m_macWindow frame];
 +
-+            // A window that was never given a sensible size, or one carrying a
-+            // desktop layout larger than an iPad, fills the screen instead.
-+            if ( r.size.width <= 1 || r.size.width > screen.size.width )
-+                r.size.width = screen.size.width;
-+            if ( r.size.height <= 1 || r.size.height > screen.size.height )
-+                r.size.height = screen.size.height;
++                if ( r.size.width <= 1 || r.size.width > screen.size.width )
++                    r.size.width = screen.size.width;
++                if ( r.size.height <= 1 || r.size.height > screen.size.height )
++                    r.size.height = screen.size.height;
 +
-+            r.origin.x = (screen.size.width - r.size.width) / 2;
-+            r.origin.y = (screen.size.height - r.size.height) / 2;
-+            [m_macWindow setFrame:r];
++                r.origin.x = (screen.size.width - r.size.width) / 2;
++                r.origin.y = (screen.size.height - r.size.height) / 2;
++                [m_macWindow setFrame:r];
++            }
 +
-+            // Above the main frame, and above anything the main frame itself
-+            // raised to alert level.
++            // Everything secondary goes above the main frame - a popup that
++            // stays at UIWindowLevelNormal is just as invisible as a dialog.
++            // Its geometry is left alone: a drop-down that has not been sized
++            // yet would otherwise be blown up to fill the screen by the clamp
++            // above, and an opaque full-screen popup sits on top of the 3D
++            // viewport and looks exactly like a canvas that stopped rendering.
 +            [m_macWindow setWindowLevel:UIWindowLevelAlert + 1];
 +        }
 +    }
@@ -58,22 +76,52 @@ index 9bc7aa9..b708fa3 100644
      if ( show )
      {
          if ( !m_initialShowSent )
-@@ -181,9 +227,18 @@ bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+         {
+-            wxNonOwnedWindow* now = dynamic_cast<wxNonOwnedWindow*> (GetWXPeer());
+             wxShowEvent eventShow(now->GetId(), true);
+             eventShow.SetEventObject(now);
+ 
+@@ -181,9 +237,43 @@
  
              m_initialShowSent = true;
          }
 -        //[m_macWindow orderFront: self];
 -        [m_macWindow makeKeyWindow];
 +        // -makeKeyAndVisible, not -makeKeyWindow: the latter only moves key
-+        // status and leaves a window that has never been made visible exactly
-+        // where it was.
++        // status and leaves a window that was never made visible where it was.
 +        [m_macWindow makeKeyAndVisible];
-     }
++    }
 +    else if ( m_macWindow != gs_mainWindow && gs_mainWindow != nil )
 +    {
-+        // Hand key status back when a dialog closes, otherwise the main frame
-+        // stays unable to receive keyboard input for the rest of the session.
++        // Hand key status back, or the main frame takes no keyboard input for
++        // the rest of the session once any dialog has been opened.
 +        [gs_mainWindow makeKeyWindow];
+     }
++
++    // Report every top level window that appears or disappears. A dialog that
++    // is created but ends up off screen, sized 0x0, behind the main frame, or
++    // never asked to show at all look identical from the outside - they are all
++    // just "the dialog did not come up" - and each of those four has actually
++    // happened on this port. The class name says which dialog it was, the frame
++    // and level say whether it could possibly have been seen.
++    {
++        const wxString clsName = now != NULL
++                                    ? wxString(now->GetClassInfo()->GetClassName())
++                                    : wxString("(none)");
++        const wxString label = now != NULL ? now->GetLabel() : wxString();
++        const CGRect frame = [m_macWindow frame];
++
++        wxLogMessage("wx-ios TLW %s: %s \"%s\" style=0x%lx popup=%d main=%d "
++                     "hidden=%d frame=%.0f,%.0f %.0fx%.0f level=%.0f",
++                     show ? "SHOW" : "HIDE",
++                     clsName, label,
++                     style,
++                     (int) isPopup,
++                     (int) (m_macWindow == gs_mainWindow),
++                     (int) [m_macWindow isHidden],
++                     (double) frame.origin.x, (double) frame.origin.y,
++                     (double) frame.size.width, (double) frame.size.height,
++                     (double) [m_macWindow windowLevel]);
 +    }
 +
      return true;

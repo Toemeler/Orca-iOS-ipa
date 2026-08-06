@@ -1,0 +1,48 @@
+diff --git a/src/osx/iphone/evtloop.mm b/src/osx/iphone/evtloop.mm
+index 89dcb09..cfa1998 100644
+--- a/src/osx/iphone/evtloop.mm
++++ b/src/osx/iphone/evtloop.mm
+@@ -133,10 +133,41 @@
+ 
+ void wxModalEventLoop::OSXDoRun()
+ {
+-    // presentModalViewController:animated:
++    // This was an empty stub - a comment and nothing else - and it quietly
++    // broke every modal dialog in every application built against this port.
++    //
++    // wxDialog::ShowModal() (src/osx/dialog_osx.cpp) is:
++    //
++    //     Show();
++    //     wxModalEventLoop modalLoop(this);
++    //     modalLoop.Run();          // <- came straight back
++    //     return GetReturnCode();
++    //
++    // With Run() returning at once the dialog existed for microseconds and the
++    // caller read a return code nobody had set, so every modal behaved as if
++    // the user had dismissed it immediately. In OrcaSlicer that is the
++    // configuration wizard on first launch, the login dialog and every
++    // confirmation in the application: they never appeared, and nothing was
++    // logged, because from the application's point of view nothing had failed.
++    //
++    // wxCFEventLoop::OSXDoRun() is wx's own nested run loop pump - the one
++    // wxGUIEventLoop::OSXDoRun() above already delegates to for any loop that
++    // is not the main one. It runs CFRunLoopRunInMode in the default mode, so
++    // UIKit keeps delivering touches to the dialog, and it returns once Exit()
++    // (from EndModal) has set m_shouldExit and the queue has drained.
++    wxLogMessage("wx-ios: modal loop ENTER for native window %p",
++                 (void*) m_modalNativeWindow);
++
++    wxCFEventLoop::OSXDoRun();
++
++    wxLogMessage("wx-ios: modal loop EXIT rc=%d", m_exitcode);
+ }
+ 
+ void wxModalEventLoop::OSXDoStop()
+ {
+-    // (void)dismissModalViewControllerAnimated:(BOOL)animated
++    // Exit() has already set m_shouldExit; CFRunLoopStop makes the innermost
++    // CFRunLoopRunInMode above return now rather than after its timeout.
++    wxLogMessage("wx-ios: modal loop STOP requested");
++
++    wxCFEventLoop::OSXDoStop();
+ }

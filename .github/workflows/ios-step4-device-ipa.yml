@@ -300,7 +300,13 @@ jobs:
             echo "=== miss reasons, ranked ==="
             grep -oE "Result: .*" "$LOG" | sort | uniq -c | sort -rn | head -20
             echo "=== a miss in context ==="
-            grep -B8 "Result: cache miss" "$LOG" | head -40
+            grep -B8 "Result: cache_miss" "$LOG" | head -40
+            # ccache keys the manifest on the command line, so a flag added to
+            # the Orca build - which is what -DwxBUILD_DEBUG_LEVEL=0 did in run
+            # 70 - misses every single object exactly once and looks identical
+            # to a broken cache. Print the line so the next run can diff it.
+            echo "=== first compile command line ==="
+            grep -m1 -A1 "Command line:" "$LOG"
           else
             echo "no ccache log at $LOG"
           fi
@@ -523,7 +529,9 @@ jobs:
             {
               grep -oE "Result: .*" "$HOME/ccache-step4.log" | sort | uniq -c | sort -rn | head -20
               echo "--- sample miss context ---"
-              grep -B6 "Result: cache miss" "$HOME/ccache-step4.log" | head -60
+              grep -B6 "Result: cache_miss" "$HOME/ccache-step4.log" | head -60
+              echo "--- first compile command line (diff this against the previous run) ---"
+              grep -m1 -A1 "Command line:" "$HOME/ccache-step4.log"
             } > "$D/ccache-miss-reasons.txt" 2>&1 || true
           fi
           for f in /tmp/step4-configure.log; do

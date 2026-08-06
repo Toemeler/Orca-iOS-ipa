@@ -148,6 +148,27 @@ if [ -n "${DATA:-}" ]; then
       done > "$OUT/orca-gl-log.txt" 2>&1 || true
   echo "=== GL lines from the app's own log ==="
   head -60 "$OUT/orca-gl-log.txt"
+
+  # Every top level window that appeared or disappeared, and every modal loop
+  # that ran, from the wx instrumentation in patches/step2/0215 and 0216. This
+  # is what answers "the wizard never came up" / "the dropdown does nothing"
+  # without anyone having to look at a screenshot: a dialog that was never
+  # created logs nothing, one that was created and left behind the main window
+  # logs a SHOW with level=0, and one that was shown and torn down in the same
+  # millisecond logs a SHOW and a HIDE with no modal loop between them.
+  find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
+    | while IFS= read -r f; do
+        echo "--- $f ---"
+        grep -inE "wx-ios|modal loop|ConfigWizard|GuideFrame|LoginDialog|PreferencesDialog|PhysicalPrinterDialog|DropDown|Popup" "$f"
+      done > "$OUT/orca-ui-log.txt" 2>&1 || true
+  echo "=== window / dialog lines from the app's own log ==="
+  head -80 "$OUT/orca-ui-log.txt"
+
+  # And the whole log, compressed. Reading the last 40000 bytes of a file whose
+  # first megabyte is the interesting part has cost this port several rounds.
+  find "$DATA" -name "*.log" -o -name "*.log.[0-9]*" \
+    | while IFS= read -r f; do echo "--- $f ---"; cat "$f"; done \
+    | gzip -9 > "$OUT/orca-app-log-full.txt.gz" 2>/dev/null || true
   [ -f "$DATA/Documents/orca-startup-error.txt" ] && \
     cp "$DATA/Documents/orca-startup-error.txt" "$OUT/" 2>/dev/null
 fi

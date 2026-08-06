@@ -10,7 +10,26 @@ index 9bc7aa9..1720402 100644
  #include <algorithm>
  
  CGRect wxToNSRect(UIView* parent, const wxRect& r )
-@@ -166,14 +167,69 @@
+@@ -139,7 +140,17 @@
+ 
+     if ( ( style & wxSTAY_ON_TOP ) )
+         level = UIWindowLevelAlert;
+-    CGRect r = CGRectMake( 0, 0, size.x, size.y) ;
++
++    // pos was dropped on the floor here: every top level window was created at
++    // the top left corner of the screen whatever the caller asked for. A dialog
++    // usually survives it, because something moves it afterwards, but a combo
++    // box drop-down is created at the position it wants and shown straight
++    // away - so it opened in the corner of the screen instead of under its
++    // control, which is indistinguishable from "the drop-down does nothing".
++    // wxDefaultPosition is -1,-1 and must not be taken literally.
++    CGRect r = CGRectMake( pos.x == wxDefaultCoord ? 0 : pos.x,
++                           pos.y == wxDefaultCoord ? 0 : pos.y,
++                           size.x, size.y) ;
+ 
+     [m_macWindow initWithFrame:r ];
+     [m_macWindow setHidden:YES];
+@@ -166,14 +177,69 @@
  {
  }
  
@@ -81,7 +100,7 @@ index 9bc7aa9..1720402 100644
              wxShowEvent eventShow(now->GetId(), true);
              eventShow.SetEventObject(now);
  
-@@ -181,9 +237,43 @@
+@@ -181,9 +247,43 @@
  
              m_initialShowSent = true;
          }

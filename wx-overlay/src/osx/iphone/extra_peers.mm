@@ -21,6 +21,7 @@
 #include "wx/arrstr.h"
 
 #include "wx/osx/private.h"
+#include "wx/private/bmpbndl.h"
 
 #import <UIKit/UIKit.h>
 
@@ -81,16 +82,110 @@ wxWidgetImplType* wxWidgetImpl::CreateRadioButton( wxWindowMac* wxpeer,
     return wxIPhoneMakePlainPeer( wxpeer, pos, size );
 }
 
+// ---------------------------------------------------------------------------
+// Toggle buttons
+//
+// These were plain UIViews like everything else above, and that is wrong three
+// times over. wxWidgetIPhoneImpl::SetBitmap, SetValue and GetValue are all
+// empty bodies in the port (src/osx/iphone/window.mm), so the control shows no
+// image and always reads false; and a UIView is not a UIControl, so
+// InstallEventHandler has nothing to attach UIControlEventTouchUpInside to and
+// the control receives no clicks at all.
+//
+// In OrcaSlicer wxBitmapToggleButton *is* the check box
+// (Widgets/CheckBox.cpp, which draws itself entirely by handing the peer a
+// check_on/check_off bitmap) and the on/off switch (Widgets/SwitchButton.cpp).
+// A blank, dead, always-false control is exactly the "check boxes are missing
+// from the left bar" that this port shows.
+//
+// A UIButton is a UIControl, so touches arrive. The value has to be flipped
+// here because wx's own OSX code never does it - on Cocoa the NSButton toggles
+// itself and wxToggleButton::OSXHandleClicked only reads the result - and
+// OSXHandleClicked runs from the base controlAction below, so the flip has to
+// happen before it is called.
+class wxIPhoneToggleButtonPeer : public wxWidgetIPhoneImpl
+{
+public:
+    wxIPhoneToggleButtonPeer( wxWindowMac* wxpeer, UIButton* v )
+        : wxWidgetIPhoneImpl( wxpeer, v )
+    {
+    }
+
+    wxInt32 GetValue() const override { return m_value; }
+
+    void SetValue( wxInt32 v ) override { m_value = v; }
+
+    wxBitmap GetBitmap() const override
+    {
+        return m_bitmap.IsOk() ? m_bitmap.GetBitmap( wxDefaultSize ) : wxBitmap();
+    }
+
+    void SetBitmap( const wxBitmapBundle& bitmap ) override
+    {
+        m_bitmap = bitmap;
+
+        UIButton* b = (UIButton*) GetWXWidget();
+        if ( ![b isKindOfClass:[UIButton class]] )
+            return;
+
+        // wxAnyButton::DoSetBitmap funnels every bitmap change - the label,
+        // the disabled and the hover variants - through the peer's SetBitmap,
+        // so this one override keeps all of them in sync.
+        [b setImage:(bitmap.IsOk() ? wxOSXGetImageFromBundle( bitmap ) : nil)
+           forState:UIControlStateNormal];
+    }
+
+    void controlAction( void* sender,
+                        wxUint32 controlEvent,
+                        WX_UIEvent rawEvent ) override
+    {
+        if ( controlEvent == UIControlEventTouchUpInside )
+            m_value = m_value ? 0 : 1;
+
+        wxWidgetIPhoneImpl::controlAction( sender, controlEvent, rawEvent );
+    }
+
+private:
+    wxBitmapBundle m_bitmap;
+    wxInt32        m_value = 0;
+};
+
+static wxWidgetImplType* wxIPhoneMakeToggleButtonPeer( wxWindowMac* wxpeer,
+                                                       const wxPoint& pos,
+                                                       const wxSize& size,
+                                                       const wxBitmapBundle& bitmap )
+{
+    CGRect r = wxOSXGetFrameForControl( wxpeer, pos, size );
+
+    // -buttonWithType: returns an autoreleased button, hence the retain, which
+    // is what button.mm does for wxButton and wxBitmapButton too. Custom
+    // rather than RoundedRect: a check box supplies its own artwork and must
+    // not get a system button's chrome behind it.
+    UIButton* v = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
+    v.frame = r;
+
+    wxIPhoneToggleButtonPeer* c = new wxIPhoneToggleButtonPeer( wxpeer, v );
+
+    if ( bitmap.IsOk() )
+        c->SetBitmap( bitmap );
+
+    return c;
+}
+
 wxWidgetImplType* wxWidgetImpl::CreateToggleButton( wxWindowMac* wxpeer,
                                     wxWindowMac* WXUNUSED(parent),
                                     wxWindowID WXUNUSED(id),
-                                    const wxString& WXUNUSED(label),
+                                    const wxString& label,
                                     const wxPoint& pos,
                                     const wxSize& size,
                                     long WXUNUSED(style),
                                     long WXUNUSED(extraStyle))
 {
-    return wxIPhoneMakePlainPeer( wxpeer, pos, size );
+    wxWidgetImplType* c =
+        wxIPhoneMakeToggleButtonPeer( wxpeer, pos, size, wxBitmapBundle() );
+    if ( !label.empty() )
+        c->SetLabel( label );
+    return c;
 }
 
 // tglbtn_osx.cpp routes bitmap toggle buttons to this factory rather than
@@ -98,13 +193,13 @@ wxWidgetImplType* wxWidgetImpl::CreateToggleButton( wxWindowMac* wxpeer,
 wxWidgetImplType* wxWidgetImpl::CreateBitmapToggleButton( wxWindowMac* wxpeer,
                                     wxWindowMac* WXUNUSED(parent),
                                     wxWindowID WXUNUSED(id),
-                                    const wxBitmapBundle& WXUNUSED(label),
+                                    const wxBitmapBundle& label,
                                     const wxPoint& pos,
                                     const wxSize& size,
                                     long WXUNUSED(style),
                                     long WXUNUSED(extraStyle))
 {
-    return wxIPhoneMakePlainPeer( wxpeer, pos, size );
+    return wxIPhoneMakeToggleButtonPeer( wxpeer, pos, size, label );
 }
 
 wxWidgetImplType* wxWidgetImpl::CreateSpinButton( wxWindowMac* wxpeer,

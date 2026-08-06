@@ -222,7 +222,15 @@ jobs:
           echo "CCACHE_DIR=$HOME/.ccache-step4" >> "$GITHUB_ENV"
           echo "CCACHE_COMPRESS=1" >> "$GITHUB_ENV"
           echo "CCACHE_MAXSIZE=1.5G" >> "$GITHUB_ENV"
-          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime" >> "$GITHUB_ENV"
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,locale,system_headers" >> "$GITHUB_ENV"
+          # An 11.9% hit rate means a one-file change still recompiles 563 of
+          # 639 objects, which is the whole reason an iteration costs an hour.
+          # The cache is only a quarter full, so it is not eviction. Log the
+          # per-object miss reason so the next run names the cause instead of
+          # another guess.
+          echo "CCACHE_LOGFILE=$HOME/ccache-step4.log" >> "$GITHUB_ENV"
+          # Absolute paths inside the workspace should not defeat hashing.
+          echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
 
       - name: Restore ccache
         uses: actions/cache/restore@v4
@@ -462,6 +470,15 @@ jobs:
           set -ux
           D="ci-logs/step4-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
+          # Why ccache missed, ranked. One line per distinct reason is
+          # enough to tell "input changed" from "cache never consulted".
+          if [ -f "$HOME/ccache-step4.log" ]; then
+            {
+              grep -oE "Result: .*" "$HOME/ccache-step4.log" | sort | uniq -c | sort -rn | head -20
+              echo "--- sample miss context ---"
+              grep -B6 "Result: cache miss" "$HOME/ccache-step4.log" | head -60
+            } > "$D/ccache-miss-reasons.txt" 2>&1 || true
+          fi
           for f in /tmp/step4-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done

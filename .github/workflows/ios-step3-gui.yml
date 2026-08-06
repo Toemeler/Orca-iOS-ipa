@@ -223,6 +223,12 @@ jobs:
           # runner image updates that only move the SDK. system_headers stops
           # the whole SDK being hashed into every single object.
           echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,system_headers,locale" >> "$GITHUB_ENV"
+          # 11.9% hit rate (run 69: 563 misses of 639) is why a one-file
+          # change still costs a full rebuild. The cache is a quarter full, so
+          # it is not eviction, and the sloppiness list above already covers
+          # mtimes and system headers. Log the per-object miss reason.
+          echo "CCACHE_LOGFILE=$HOME/ccache-step3.log" >> "$GITHUB_ENV"
+          echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
 
       - name: Restore ccache
         uses: actions/cache/restore@v4
@@ -422,6 +428,15 @@ jobs:
           set -ux
           D="ci-logs/step3-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
+          # Why ccache missed, ranked. One line per distinct reason is
+          # enough to tell "input changed" from "cache never consulted".
+          if [ -f "$HOME/ccache-step3.log" ]; then
+            {
+              grep -oE "Result: .*" "$HOME/ccache-step3.log" | sort | uniq -c | sort -rn | head -20
+              echo "--- sample miss context ---"
+              grep -B6 "Result: cache miss" "$HOME/ccache-step3.log" | head -60
+            } > "$D/ccache-miss-reasons.txt" 2>&1 || true
+          fi
           for f in /tmp/step3-configure.log; do
             [ -f "$f" ] && tail -c 40000 "$f" > "$D/$(basename "$f")"
           done

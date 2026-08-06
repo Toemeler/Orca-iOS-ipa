@@ -1,0 +1,8 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/D47E0F05-0E0D-4C3F-94E7-EEE8FD8F57A0/data/Containers/Data/Application/5F0F221C-EBF5-4AD1-86D6-680AE0226D7D/Documents/log/debug_Thu_Aug_06_14_36_22_14993.log.0 ---
+640:[error]	2026-08-06 14:36:25.924003[Thread 0x0000000107598200]:calc_exclude_triangles:Unable to create exclude triangles
+681:[info]	2026-08-06 14:36:28.608610[Thread 0x0000000107598200]:GLAD loaded OpenGL 3.0
+682:[info]	2026-08-06 14:36:28.608766[Thread 0x0000000107598200]:Framebuffer Type ARB (core in OpenGL ES 3.0).
+683:[info]	2026-08-06 14:36:28.608829[Thread 0x0000000107598200]:got opengl version OpenGL ES 3.0 APPLE-23.0.2, glsl version OpenGL ES GLSL ES 3.00, vendor Apple Inc. , graphics card model Apple Software Renderer
+602110:[error]	2026-08-06 14:36:45.937158[Thread 0x0000000107598200]:orca-ios-ui:             wxGLCanvas "" id=-2260 at=0,0 size=636x1315 best=20x20 shown
+602112:[error]	2026-08-06 14:36:45.937247[Thread 0x0000000107598200]:orca-ios-ui:             wxGLCanvas "" id=-2262 at=0,0 size=254x490 best=20x20 shown OFFSCREEN
+602114:[error]	2026-08-06 14:36:45.937313[Thread 0x0000000107598200]:orca-ios-ui:             wxGLCanvas "" id=-2264 at=0,0 size=253x490 best=20x20 shown OFFSCREEN

@@ -1,0 +1,254 @@
+FSCREEN
+[error]	2026-08-06 14:36:45.934783[Thread 0x0000000107598200]:orca-ios-ui:                 wxPanel "" id=-2332 at=-2,-2 size=1x1 best=273x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.934827[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2333 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.934900[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2334 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.934932[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2335 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.934961[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2336 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.934995[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2337 at=-2,-2 size=129x45 best=129x45 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935034[Thread 0x0000000107598200]:orca-ios-ui:                     wxWindow "" id=-2338 at=6,2 size=121x41 best=121x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935063[Thread 0x0000000107598200]:orca-ios-ui:                       wxTextCtrl "" id=-2339 at=21,4 size=90x33 best=100x33 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935106[Thread 0x0000000107598200]:orca-ios-ui:                     wxWindow "" id=-2340 at=2,0 size=0x45 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935140[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2341 at=0,0 size=0x0 best=200x25 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935172[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Frequent" id=-2345 at=4,0 size=0x0 best=62x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935200[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Quality" id=-2346 at=4,0 size=0x0 best=50x21 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935228[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Strength" id=-2347 at=4,0 size=0x0 best=60x21 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935255[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Others" id=-2348 at=4,0 size=0x0 best=48x21 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935295[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2342 at=0,10 size=0x0 best=0x20 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.935323[Thread 0x0000000107598200]:orca-ios-ui:                 wxPanel "" id=-2343 at=0,10 size=0x0 best=0x0 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935351[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2344 at=0,0 size=0x0 best=72x30 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.935445[Thread 0x0000000107598200]:orca-ios-ui:               wxPanel "" id=-2351 at=0,0 size=0x0 best=200x25 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935554[Thread 0x0000000107598200]:orca-ios-ui:                 wxPanel "" id=-2352 at=-2,-2 size=1x1 best=273x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935584[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2353 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935654[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2354 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935685[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2355 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935712[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2356 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935766[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2357 at=-2,-2 size=129x45 best=129x45 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935797[Thread 0x0000000107598200]:orca-ios-ui:                     wxWindow "" id=-2358 at=6,2 size=121x41 best=121x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935828[Thread 0x0000000107598200]:orca-ios-ui:                       wxTextCtrl "" id=-2359 at=21,4 size=90x33 best=100x33 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935872[Thread 0x0000000107598200]:orca-ios-ui:                     wxWindow "" id=-2360 at=2,0 size=0x45 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935903[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2361 at=0,0 size=0x0 best=200x25 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935935[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Frequent" id=-2365 at=4,0 size=0x0 best=62x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.935967[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Quality" id=-2366 at=4,0 size=0x0 best=50x21 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.935995[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Strength" id=-2367 at=4,0 size=0x0 best=60x21 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.936026[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "Others" id=-2368 at=4,0 size=0x0 best=48x21 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.936056[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2362 at=0,10 size=0x0 best=0x20 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.936088[Thread 0x0000000107598200]:orca-ios-ui:                 wxPanel "" id=-2363 at=0,10 size=0x0 best=0x0 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.936118[Thread 0x0000000107598200]:orca-ios-ui:                   wxButton "" id=-2364 at=0,0 size=0x0 best=72x30 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.936150[Thread 0x0000000107598200]:orca-ios-ui:             wxStaticBox "" id=-2249 at=-1,-1 size=20x20 best=20x20 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.936267[Thread 0x0000000107598200]:orca-ios-ui:           wxPopupTransientWindow "" id=-2240 at=0,0 size=412x477 best=412x452 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.936311[Thread 0x0000000107598200]:orca-ios-ui:             wxPanel "" id=-2241 at=1,1 size=1030x1349 best=410x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936349[Thread 0x0000000107598200]:orca-ios-ui:               wxPanel "" id=-2242 at=0,0 size=1030x1349 best=410x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936381[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2243 at=10,10 size=1010x450 best=395x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936411[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2244 at=-1,-1 size=1010x450 best=389x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936443[Thread 0x0000000107598200]:orca-ios-ui:                     wxPanel "" id=-2245 at=0,0 size=1010x450 best=389x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936490[Thread 0x0000000107598200]:orca-ios-ui:                       wxWindow "" id=-2248 at=-2,-2 size=0x0 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936521[Thread 0x0000000107598200]:orca-ios-ui:                     wxWindow "" id=-2246 at=389,0 size=6x450 best=6x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936552[Thread 0x0000000107598200]:orca-ios-ui:                       wxPanel "" id=-2247 at=0,0 size=0x450 best=6x450 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936585[Thread 0x0000000107598200]:orca-ios-ui:         wxDialog "Import SLA archive" id=-2250 at=0,0 size=367x154 best=367x154 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.936646[Thread 0x0000000107598200]:orca-ios-ui:           wxFilePickerCtrl "" id=-2251 at=-2,-2 size=119x39 best=119x39 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936680[Thread 0x0000000107598200]:orca-ios-ui:             wxTextCtrl "" id=-2252 at=0,0 size=42x39 best=42x39 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936727[Thread 0x0000000107598200]:orca-ios-ui:             wxGenericFileButton "Browse" id=-2253 at=47,0 size=72x39 best=72x39 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936807[Thread 0x0000000107598200]:orca-ios-ui:           wxStaticText "Import file: " id=-2254 at=-1,-1 size=86x20 best=86x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936852[Thread 0x0000000107598200]:orca-ios-ui:           wxComboBox "" id=-2255 at=-1,-1 size=189x20 best=189x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936914[Thread 0x0000000107598200]:orca-ios-ui:           wxStaticText "Quality: " id=-2256 at=-1,-1 size=62x20 best=62x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.936961[Thread 0x0000000107598200]:orca-ios-ui:           wxComboBox "" id=-2257 at=-1,-1 size=96x20 best=96x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937004[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "&Cancel" id=5101 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937055[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "&OK" id=5100 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937093[Thread 0x0000000107598200]:orca-ios-ui:         wxPanel "" id=-2258 at=396,0 size=636x1315 best=20x20 shown
+[error]	2026-08-06 14:36:45.937125[Thread 0x0000000107598200]:orca-ios-ui:           wxPanel "" id=-2259 at=0,0 size=636x1315 best=20x20 shown
+[error]	2026-08-06 14:36:45.937158[Thread 0x0000000107598200]:orca-ios-ui:             wxGLCanvas "" id=-2260 at=0,0 size=636x1315 best=20x20 shown
+[error]	2026-08-06 14:36:45.937214[Thread 0x0000000107598200]:orca-ios-ui:           wxPanel "" id=-2261 at=253,0 size=254x490 best=20x20 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.937247[Thread 0x0000000107598200]:orca-ios-ui:             wxGLCanvas "" id=-2262 at=0,0 size=254x490 best=20x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937284[Thread 0x0000000107598200]:orca-ios-ui:           wxPanel "" id=-2263 at=507,0 size=253x490 best=20x20 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.937313[Thread 0x0000000107598200]:orca-ios-ui:             wxGLCanvas "" id=-2264 at=0,0 size=253x490 best=20x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937346[Thread 0x0000000107598200]:orca-ios-ui:         wxDialog "" id=-2268 at=4,0 size=750x600 best=0x25 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.937401[Thread 0x0000000107598200]:orca-ios-ui:           wxPanel "" id=-2269 at=0,0 size=750x600 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937432[Thread 0x0000000107598200]:orca-ios-ui:             wxPanel "" id=-2270 at=0,174 size=750x426 best=15x15 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937460[Thread 0x0000000107598200]:orca-ios-ui:               wxScrolledWindow "" id=-2271 at=0,0 size=750x426 best=15x15 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937571[Thread 0x0000000107598200]:orca-ios-ui:             wxPanel "" id=-2371 at=0,0 size=750x84 best=616x84 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937612[Thread 0x0000000107598200]:orca-ios-ui:               wxPanel "" id=-2375 at=0,9 size=750x41 best=616x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937639[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2376 at=433,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937716[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2377 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.937757[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2378 at=12,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937792[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2379 at=523,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937830[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2380 at=-2,-2 size=129x45 best=129x45 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.937879[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2381 at=6,2 size=121x41 best=121x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937914[Thread 0x0000000107598200]:orca-ios-ui:                     wxTextCtrl "" id=-2382 at=21,4 size=90x33 best=100x33 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937950[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2383 at=2,0 size=0x45 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.937995[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Generic PLA @System" id=-2372 at=89,0 size=334x41 best=200x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938060[Thread 0x0000000107598200]:orca-ios-ui:                   wxTextCtrl "" id=-2373 at=166,4 size=13x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.938106[Thread 0x0000000107598200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2374 at=0,0 size=334x418 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.938155[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2384 at=613,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938201[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2385 at=690,11 size=48x18 best=48x18 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938252[Thread 0x0000000107598200]:orca-ios-ui:               wxWindow "" id=-2386 at=0,59 size=750x25 best=200x25 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938299[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Filament" id=-2388 at=14,0 size=59x21 best=59x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938350[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Cooling" id=-2389 at=104,0 size=54x21 best=54x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938395[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Setting Overrides" id=-2390 at=189,0 size=117x21 best=117x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938430[Thread 0x0000000107598200]:orca-ios-ui:               wxWindow "" id=-2387 at=20,94 size=0x20 best=152x20 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.938467[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Direct Drive: Standard" id=-3596 at=0,0 size=0x20 best=152x1 shown disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.938543[Thread 0x0000000107598200]:orca-ios-ui:             wxPanel "" id=-2395 at=0,84 size=750x84 best=616x84 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938583[Thread 0x0000000107598200]:orca-ios-ui:               wxPanel "" id=-2399 at=0,9 size=750x41 best=616x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938612[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2400 at=433,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938687[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2401 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.938717[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2402 at=12,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938745[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2403 at=523,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938774[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2404 at=-2,-2 size=129x45 best=129x45 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.938804[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2405 at=6,2 size=121x41 best=121x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938834[Thread 0x0000000107598200]:orca-ios-ui:                     wxTextCtrl "" id=-2406 at=21,4 size=90x33 best=100x33 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938862[Thread 0x0000000107598200]:orca-ios-ui:                   wxWindow "" id=-2407 at=2,0 size=0x45 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938889[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Default Printer" id=-2396 at=89,0 size=334x41 best=200x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.938918[Thread 0x0000000107598200]:orca-ios-ui:                   wxTextCtrl "" id=-2397 at=115,4 size=115x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.938947[Thread 0x0000000107598200]:orca-ios-ui:                   wxPopupTransientWindow "" id=-2398 at=0,0 size=334x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.938981[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2408 at=613,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939016[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "" id=-2409 at=690,11 size=48x18 best=48x18 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939045[Thread 0x0000000107598200]:orca-ios-ui:               wxWindow "" id=-2410 at=0,59 size=750x25 best=200x25 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939077[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Basic information" id=-2414 at=14,0 size=116x21 best=116x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939107[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Extruder" id=-2415 at=161,0 size=59x21 best=59x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939135[Thread 0x0000000107598200]:orca-ios-ui:                 wxWindow "Motion ability" id=-2416 at=251,0 size=91x21 best=91x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939165[Thread 0x0000000107598200]:orca-ios-ui:               wxWindow "" id=-2411 at=375,99 size=0x20 best=0x20 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.939199[Thread 0x0000000107598200]:orca-ios-ui:               wxPanel "" id=-2412 at=668,94 size=72x30 best=0x0 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939237[Thread 0x0000000107598200]:orca-ios-ui:                 wxButton "" id=-2413 at=0,0 size=72x30 best=72x30 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.939305[Thread 0x0000000107598200]:orca-ios-ui:     wxDialog "Setup Wizard" id=-3825 at=106,358 size=820x660 best=20x20 shown
+[error]	2026-08-06 14:36:45.939349[Thread 0x0000000107598200]:orca-ios-ui:       wxWebView "" id=-3826 at=0,0 size=820x660 best=20x20 shown
+[error]	2026-08-06 14:36:45.939379[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "OrcaSlicer - Settings" HIDDEN
+[error]	2026-08-06 14:36:45.939416[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "OrcaSlicer - Settings" id=-2001 at=0,0 size=850x500 best=0x25 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939451[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "" HIDDEN
+[error]	2026-08-06 14:36:45.939482[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "" id=-2002 at=0,0 size=802x228 best=802x228 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939522[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Select presets to compare" id=-2003 at=-1,-1 size=200x20 best=200x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939582[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "" id=-2004 at=-1,-1 size=16x16 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939628[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "" id=-2005 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939671[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Printer" id=-2006 at=-1,-2 size=350x41 best=350x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939702[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2007 at=115,4 size=131x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939732[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2008 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939771[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Printer" id=-2009 at=-1,-2 size=350x41 best=350x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.939801[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2010 at=115,4 size=131x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939831[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2011 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939882[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "" id=-2012 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939926[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Generic PLA @System" id=-2013 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939956[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2014 at=166,4 size=29x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.939985[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2015 at=0,0 size=350x418 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940025[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Generic PLA @System" id=-2016 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940057[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2017 at=166,4 size=29x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940087[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2018 at=0,0 size=350x418 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940159[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "" id=-2019 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940213[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Setting" id=-2020 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940246[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2021 at=118,4 size=125x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940287[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2022 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940338[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Setting" id=-2023 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940368[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2024 at=118,4 size=125x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940405[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2025 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940449[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "" id=-2026 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940490[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Setting" id=-2027 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940524[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2028 at=118,4 size=125x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940557[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2029 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940599[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Setting" id=-2030 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940630[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2031 at=118,4 size=125x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940658[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2032 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940697[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "" id=-2033 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940754[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Setting" id=-2034 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940790[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2035 at=118,4 size=125x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940819[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2036 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940859[Thread 0x0000000107598200]:orca-ios-ui:     wxWindow "Default Setting" id=-2037 at=-1,-2 size=350x41 best=350x41 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940888[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2038 at=118,4 size=125x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940916[Thread 0x0000000107598200]:orca-ios-ui:       wxPopupTransientWindow "" id=-2039 at=0,0 size=350x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.940953[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Show all presets (including incompatible)" id=-2041 at=59,4 size=312x20 best=312x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.940994[Thread 0x0000000107598200]:orca-ios-ui:     wxCheckBox "Show all presets (including incompatible)" id=-2040 at=-1,-1 size=372x31 best=51x31 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941033[Thread 0x0000000107598200]:orca-ios-ui:     wxDataViewCtrl "" id=-2042 at=-1,-1 size=650x400 best=650x400 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.941062[Thread 0x0000000107598200]:orca-ios-ui:       wxDataViewMainWindow "" id=-2043 at=-2,-2 size=1x1 best=1x1 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941091[Thread 0x0000000107598200]:orca-ios-ui:       wxControl "" id=-2044 at=-2,-2 size=1x1 best=650x26 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941129[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Transfer values from left to right" id=-2046 at=59,4 size=243x20 best=243x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941169[Thread 0x0000000107598200]:orca-ios-ui:     wxCheckBox "Transfer values from left to right" id=-2045 at=-1,-1 size=303x31 best=51x31 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.941209[Thread 0x0000000107598200]:orca-ios-ui:     wxPanel "" id=-2047 at=-2,-2 size=230x52 best=230x52 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.941237[Thread 0x0000000107598200]:orca-ios-ui:       wxWindow "Transfer" id=5100 at=10,10 size=100x32 best=100x32 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941265[Thread 0x0000000107598200]:orca-ios-ui:       wxWindow "Cancel" id=5101 at=120,10 size=100x32 best=100x32 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941298[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "Print host upload queue" HIDDEN
+[error]	2026-08-06 14:36:45.941350[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "Print host upload queue" id=-2050 at=0,0 size=720x360 best=560x62 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.941404[Thread 0x0000000107598200]:orca-ios-ui:     wxDataViewListCtrl "" id=-2051 at=-2,-2 size=1x1 best=560x27 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941434[Thread 0x0000000107598200]:orca-ios-ui:       wxDataViewMainWindow "" id=-2052 at=-2,-2 size=1x1 best=1x1 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941465[Thread 0x0000000107598200]:orca-ios-ui:       wxControl "" id=-2053 at=-2,-2 size=1x1 best=560x26 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941503[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "Cancel selected" id=5038 at=-1,-1 size=110x30 best=110x30 shown disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.941542[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "Show error message" id=-2054 at=-1,-1 size=141x30 best=141x30 shown disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.941581[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "Close" id=5101 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941610[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "Import SLA archive" HIDDEN
+[error]	2026-08-06 14:36:45.941637[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "Import SLA archive" id=-2250 at=0,0 size=367x154 best=367x154 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.941676[Thread 0x0000000107598200]:orca-ios-ui:     wxFilePickerCtrl "" id=-2251 at=-2,-2 size=119x39 best=119x39 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941705[Thread 0x0000000107598200]:orca-ios-ui:       wxTextCtrl "" id=-2252 at=0,0 size=42x39 best=42x39 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941732[Thread 0x0000000107598200]:orca-ios-ui:       wxGenericFileButton "Browse" id=-2253 at=47,0 size=72x39 best=72x39 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941770[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Import file: " id=-2254 at=-1,-1 size=86x20 best=86x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941809[Thread 0x0000000107598200]:orca-ios-ui:     wxComboBox "" id=-2255 at=-1,-1 size=189x20 best=189x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941847[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Quality: " id=-2256 at=-1,-1 size=62x20 best=62x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941886[Thread 0x0000000107598200]:orca-ios-ui:     wxComboBox "" id=-2257 at=-1,-1 size=96x20 best=96x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941926[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "&Cancel" id=5101 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941964[Thread 0x0000000107598200]:orca-ios-ui:     wxButton "&OK" id=5100 at=-1,-1 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.941992[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "" HIDDEN
+[error]	2026-08-06 14:36:45.942018[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "" id=-2268 at=4,0 size=750x600 best=0x25 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.942072[Thread 0x0000000107598200]:orca-ios-ui:     wxPanel "" id=-2269 at=0,0 size=750x600 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942111[Thread 0x0000000107598200]:orca-ios-ui:       wxPanel "" id=-2270 at=0,174 size=750x426 best=15x15 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942140[Thread 0x0000000107598200]:orca-ios-ui:         wxScrolledWindow "" id=-2271 at=0,0 size=750x426 best=15x15 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942172[Thread 0x0000000107598200]:orca-ios-ui:       wxPanel "" id=-2371 at=0,0 size=750x84 best=616x84 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942200[Thread 0x0000000107598200]:orca-ios-ui:         wxPanel "" id=-2375 at=0,9 size=750x41 best=616x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942236[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2376 at=433,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942271[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2377 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.942311[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2378 at=12,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942351[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2379 at=523,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942383[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "" id=-2380 at=-2,-2 size=129x45 best=129x45 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.942412[Thread 0x0000000107598200]:orca-ios-ui:             wxWindow "" id=-2381 at=6,2 size=121x41 best=121x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942442[Thread 0x0000000107598200]:orca-ios-ui:               wxTextCtrl "" id=-2382 at=21,4 size=90x33 best=100x33 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942470[Thread 0x0000000107598200]:orca-ios-ui:             wxWindow "" id=-2383 at=2,0 size=0x45 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942500[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Generic PLA @System" id=-2372 at=89,0 size=334x41 best=200x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942528[Thread 0x0000000107598200]:orca-ios-ui:             wxTextCtrl "" id=-2373 at=166,4 size=13x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.942558[Thread 0x0000000107598200]:orca-ios-ui:             wxPopupTransientWindow "" id=-2374 at=0,0 size=334x418 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.942592[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2384 at=613,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942622[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "" id=-2385 at=690,11 size=48x18 best=48x18 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942651[Thread 0x0000000107598200]:orca-ios-ui:         wxWindow "" id=-2386 at=0,59 size=750x25 best=200x25 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942688[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Filament" id=-2388 at=14,0 size=59x21 best=59x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942720[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Cooling" id=-2389 at=104,0 size=54x21 best=54x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942750[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Setting Overrides" id=-2390 at=189,0 size=117x21 best=117x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942784[Thread 0x0000000107598200]:orca-ios-ui:         wxWindow "" id=-2387 at=20,94 size=0x20 best=152x20 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.942814[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Direct Drive: Standard" id=-3596 at=0,0 size=0x20 best=152x1 shown disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.942844[Thread 0x0000000107598200]:orca-ios-ui:       wxPanel "" id=-2395 at=0,84 size=750x84 best=616x84 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942876[Thread 0x0000000107598200]:orca-ios-ui:         wxPanel "" id=-2399 at=0,9 size=750x41 best=616x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942906[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2400 at=433,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942934[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2401 at=-1,-1 size=72x30 best=72x30 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.942962[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2402 at=12,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.942989[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2403 at=523,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943018[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "" id=-2404 at=-2,-2 size=129x45 best=129x45 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.943049[Thread 0x0000000107598200]:orca-ios-ui:             wxWindow "" id=-2405 at=6,2 size=121x41 best=121x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943078[Thread 0x0000000107598200]:orca-ios-ui:               wxTextCtrl "" id=-2406 at=21,4 size=90x33 best=100x33 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943106[Thread 0x0000000107598200]:orca-ios-ui:             wxWindow "" id=-2407 at=2,0 size=0x45 best=0x0 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943134[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Default Printer" id=-2396 at=89,0 size=334x41 best=200x41 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943176[Thread 0x0000000107598200]:orca-ios-ui:             wxTextCtrl "" id=-2397 at=115,4 size=115x33 best=100x33 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.943209[Thread 0x0000000107598200]:orca-ios-ui:             wxPopupTransientWindow "" id=-2398 at=0,0 size=334x54 best=1x1 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.943239[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2408 at=613,5 size=72x30 best=72x30 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943268[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "" id=-2409 at=690,11 size=48x18 best=48x18 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943296[Thread 0x0000000107598200]:orca-ios-ui:         wxWindow "" id=-2410 at=0,59 size=750x25 best=200x25 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943327[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Basic information" id=-2414 at=14,0 size=116x21 best=116x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943363[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Extruder" id=-2415 at=161,0 size=59x21 best=59x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943391[Thread 0x0000000107598200]:orca-ios-ui:           wxWindow "Motion ability" id=-2416 at=251,0 size=91x21 best=91x21 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943419[Thread 0x0000000107598200]:orca-ios-ui:         wxWindow "" id=-2411 at=375,99 size=0x20 best=0x20 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.943448[Thread 0x0000000107598200]:orca-ios-ui:         wxPanel "" id=-2412 at=668,94 size=72x30 best=0x0 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.943477[Thread 0x0000000107598200]:orca-ios-ui:           wxButton "" id=-2413 at=0,0 size=72x30 best=72x30 HIDDEN disabled OFFSCREEN
+[error]	2026-08-06 14:36:45.943504[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "" HIDDEN
+[error]	2026-08-06 14:36:45.943537[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "" id=-2577 at=0,0 size=400x270 best=400x270 HIDDEN OFFSCREEN
+[error]	2026-08-06 14:36:45.943591[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Current AMS humidity" id=-2578 at=116,10 size=168x20 best=168x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943633[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticBitmap "" id=-2579 at=192,70 size=16x60 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943676[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticBitmap "" id=-2580 at=181,140 size=16x16 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943717[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "" id=-2581 at=202,140 size=16x16 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943756[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Humidity" id=-2582 at=29,202 size=68x20 best=68x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943808[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Temperature" id=-2583 at=150,202 size=97x20 best=97x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943856[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "Left Time" id=-2584 at=299,202 size=71x20 best=71x20 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943896[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "" id=-2585 at=55,239 size=16x16 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943936[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "" id=-2586 at=191,239 size=16x16 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.943975[Thread 0x0000000107598200]:orca-ios-ui:     wxStaticText "" id=-2587 at=327,239 size=16x16 best=16x16 shown OFFSCREEN
+[error]	2026-08-06 14:36:45.944004[Thread 0x0000000107598200]:orca-ios-ui: --- top level window: wxDialog "Setup Wizard" shown
+[error]	2026-08-06 14:36:45.944044[Thread 0x0000000107598200]:orca-ios-ui:   wxDialog "Setup Wizard" id=-3825 at=106,358 size=820x660 best=20x20 shown
+[error]	2026-08-06 14:36:45.944083[Thread 0x0000000107598200]:orca-ios-ui:     wxWebView "" id=-3826 at=0,0 size=820x660 best=20x20 shown
+[error]	2026-08-06 14:36:45.944112[Thread 0x0000000107598200]:orca-ios-ui: ===== end window tree =====
+[info]	2026-08-06 14:36:55.830216[Thread 0x0000000170f23000]:process_task{ type:Backup, id:0, path:, object:0, extra:4} and interval = 10
+[info]	2026-08-06 14:36:55.833073[Thread 0x0000000107598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:4} and interval = 10
+[info]	2026-08-06 14:37:05.831006[Thread 0x0000000170f23000]:process_task{ type:Backup, id:0, path:, object:0, extra:5} and interval = 10
+[info]	2026-08-06 14:37:05.834131[Thread 0x0000000107598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:5} and interval = 10
+[info]	2026-08-06 14:37:15.834062[Thread 0x0000000170f23000]:process_task{ type:Backup, id:0, path:, object:0, extra:6} and interval = 10
+[info]	2026-08-06 14:37:15.836582[Thread 0x0000000107598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:6} and interval = 10
+[info]	2026-08-06 14:37:25.828446[Thread 0x0000000170f23000]:process_task{ type:Backup, id:0, path:, object:0, extra:7} and interval = 10
+[info]	2026-08-06 14:37:25.830016[Thread 0x0000000107598200]:process_ui_task{ type:Backup, id:0, path:, object:0, extra:7} and interval = 10

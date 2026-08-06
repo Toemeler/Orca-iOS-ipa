@@ -145,6 +145,13 @@ jobs:
                    orca-gl-log.txt sim-launch.log sim-oslog.txt sim-oslog-system.txt; do
             [ -f "artifact/$f" ] && tail -c 40000 "artifact/$f" > "$D/$f"
           done
+          # These two are already filtered down from the whole log by
+          # sim-drive.sh, and truncating them defeats the point: the window tree
+          # is one block in the middle of the file, and the last 40000 bytes of
+          # it is the end of some dialog nobody asked about. Copy them whole.
+          for f in orca-window-tree.txt orca-ui-log.txt; do
+            [ -f "artifact/$f" ] && cp "artifact/$f" "$D/$f"
+          done
           cp artifact/OrcaSlicer*.ips "$D/" 2>/dev/null || true
           echo "app artifact from run ${APP_RUN_ID:-unknown}" > "$D/SOURCE.txt"
           git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"

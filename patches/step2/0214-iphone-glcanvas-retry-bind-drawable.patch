@@ -1,0 +1,43 @@
+diff --git a/src/osx/iphone/glcanvas.mm b/src/osx/iphone/glcanvas.mm
+index 1b263a3..07bacb4 100644
+--- a/src/osx/iphone/glcanvas.mm
++++ b/src/osx/iphone/glcanvas.mm
+@@ -109,12 +109,35 @@ bool wxGLContext::SetCurrent(const wxGLCanvas& win) const
+         return false;
+ 
+     wxUICustomOpenGLView* v = (wxUICustomOpenGLView*) win.GetPeer()->GetWXWidget();
+-    if ( v.context != m_glContext ) {
++    if ( v.context != m_glContext )
+         [v setContext:m_glContext];
+-        [v bindDrawable];
+-    }
++
+     WXGLSetCurrentContext(m_glContext);
+ 
++    // -bindDrawable is what builds GLKView's framebuffer out of the backing
++    // CAEAGLLayer, and it fails while that layer still has no size or is not
++    // yet in a window - which is the normal state the first time wx makes this
++    // context current, straight after DoCreate and before any sizer has laid
++    // the canvas out. Binding only when the context pointer changed made that
++    // first failure permanent: it was never retried, so every later frame drew
++    // into an incomplete framebuffer and nothing appeared. Measured in the
++    // simulator with the whole of Orca running:
++    //
++    //   Failed to bind EAGLDrawable: <CAEAGLLayer: 0x...> to GL_RENDERBUFFER 1
++    //   Failed to make complete framebuffer object 8cd6
++    //
++    // 0x8CD6 is GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT. The 3D viewport stayed
++    // empty for the entire life of the process while every other widget drew
++    // correctly.
++    //
++    // A drawable that bound successfully reports a non-zero size, so this
++    // retries only while there is nothing usable to draw into and costs a
++    // property read per frame otherwise. Binding now also happens after the
++    // context is current rather than before, which is the order the GL calls
++    // inside -bindDrawable actually need.
++    if ( v.drawableWidth == 0 || v.drawableHeight == 0 )
++        [v bindDrawable];
++
+     return true;
+ }
+ 

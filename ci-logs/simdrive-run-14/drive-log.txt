@@ -1,0 +1,1 @@
+simulator: 2027B689-B5D3-424E-9118-8971E45E13D7 (com.apple.CoreSimulator.SimRuntime.iOS-26-2)

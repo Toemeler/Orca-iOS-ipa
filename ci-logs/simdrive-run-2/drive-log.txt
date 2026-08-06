@@ -1,0 +1,409 @@
+simulator: 61443648-4867-4650-AFF2-53FBDF30E7DF (com.apple.CoreSimulator.SimRuntime.iOS-26-2)
+first seen alive after: 5 s
+2026-08-06 01:24:08,091 [ERROR] - root - Exception thrown in main
+Traceback (most recent call last):
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/main.py", line 313, in gen_main
+    await root_command.run(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/command.py", line 90, in run
+    return await self.resolve_command_from_args(args).run(args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 106, in run
+    await self._run_impl(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 149, in _run_impl
+    await self.run_with_manager(
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/commands/target.py", line 74, in run_with_manager
+    response = await manager.connect(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 225, in connect
+    companion = await self._spawn_companion_server(udid=destination)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 122, in _spawn_companion_server
+    target_type = await _local_target_type(companion=companion, udid=udid)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 37, in _local_target_type
+    target.udid: target for target in await companion.list_targets(only=None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 383, in list_targets
+    output = await self._run_companion_command(arguments=arguments, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 161, in _run_companion_command
+    async with self._start_companion_command(arguments=arguments) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 137, in _start_companion_command
+    process = await asyncio.create_subprocess_exec(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 211, in _make_subprocess_transport
+    transp = _UnixSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_subprocess.py", line 36, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 820, in _start
+    self._proc = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/local/bin/idb_companion'
+idb connect failed (continuing)
+step 01 prepare: tap (122,50)
+2026-08-06 01:24:08,395 [ERROR] - root - Exception thrown in main
+Traceback (most recent call last):
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/main.py", line 313, in gen_main
+    await root_command.run(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/command.py", line 90, in run
+    return await self.resolve_command_from_args(args).run(args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 106, in run
+    await self._run_impl(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 126, in _run_impl
+    async with _get_client(args=args, logger=self.logger) as client:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 63, in _get_client
+    async with GrpcClientManager(
+               ^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 166, in from_udid
+    companion = await self._spawn_companion_server(udid=udid)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 122, in _spawn_companion_server
+    target_type = await _local_target_type(companion=companion, udid=udid)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 37, in _local_target_type
+    target.udid: target for target in await companion.list_targets(only=None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 383, in list_targets
+    output = await self._run_companion_command(arguments=arguments, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 161, in _run_companion_command
+    async with self._start_companion_command(arguments=arguments) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 137, in _start_companion_command
+    process = await asyncio.create_subprocess_exec(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 211, in _make_subprocess_transport
+    transp = _UnixSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_subprocess.py", line 36, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 820, in _start
+    self._proc = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/local/bin/idb_companion'
+step 01 prepare: tap FAILED
+step 02 preview: tap (257,50)
+2026-08-06 01:24:14,382 [ERROR] - root - Exception thrown in main
+Traceback (most recent call last):
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/main.py", line 313, in gen_main
+    await root_command.run(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/command.py", line 90, in run
+    return await self.resolve_command_from_args(args).run(args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 106, in run
+    await self._run_impl(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 126, in _run_impl
+    async with _get_client(args=args, logger=self.logger) as client:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 63, in _get_client
+    async with GrpcClientManager(
+               ^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 166, in from_udid
+    companion = await self._spawn_companion_server(udid=udid)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 122, in _spawn_companion_server
+    target_type = await _local_target_type(companion=companion, udid=udid)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 37, in _local_target_type
+    target.udid: target for target in await companion.list_targets(only=None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 383, in list_targets
+    output = await self._run_companion_command(arguments=arguments, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 161, in _run_companion_command
+    async with self._start_companion_command(arguments=arguments) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 137, in _start_companion_command
+    process = await asyncio.create_subprocess_exec(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 211, in _make_subprocess_transport
+    transp = _UnixSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_subprocess.py", line 36, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 820, in _start
+    self._proc = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/local/bin/idb_companion'
+step 02 preview: tap FAILED
+step 03 device: tap (393,50)
+2026-08-06 01:24:20,099 [ERROR] - root - Exception thrown in main
+Traceback (most recent call last):
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/main.py", line 313, in gen_main
+    await root_command.run(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/command.py", line 90, in run
+    return await self.resolve_command_from_args(args).run(args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 106, in run
+    await self._run_impl(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 126, in _run_impl
+    async with _get_client(args=args, logger=self.logger) as client:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 63, in _get_client
+    async with GrpcClientManager(
+               ^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 166, in from_udid
+    companion = await self._spawn_companion_server(udid=udid)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 122, in _spawn_companion_server
+    target_type = await _local_target_type(companion=companion, udid=udid)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 37, in _local_target_type
+    target.udid: target for target in await companion.list_targets(only=None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 383, in list_targets
+    output = await self._run_companion_command(arguments=arguments, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 161, in _run_companion_command
+    async with self._start_companion_command(arguments=arguments) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 137, in _start_companion_command
+    process = await asyncio.create_subprocess_exec(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 211, in _make_subprocess_transport
+    transp = _UnixSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_subprocess.py", line 36, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 820, in _start
+    self._proc = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/local/bin/idb_companion'
+step 03 device: tap FAILED
+step 04 project: tap (530,50)
+2026-08-06 01:24:25,822 [ERROR] - root - Exception thrown in main
+Traceback (most recent call last):
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/main.py", line 313, in gen_main
+    await root_command.run(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/command.py", line 90, in run
+    return await self.resolve_command_from_args(args).run(args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 106, in run
+    await self._run_impl(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 126, in _run_impl
+    async with _get_client(args=args, logger=self.logger) as client:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 63, in _get_client
+    async with GrpcClientManager(
+               ^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 166, in from_udid
+    companion = await self._spawn_companion_server(udid=udid)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 122, in _spawn_companion_server
+    target_type = await _local_target_type(companion=companion, udid=udid)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 37, in _local_target_type
+    target.udid: target for target in await companion.list_targets(only=None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 383, in list_targets
+    output = await self._run_companion_command(arguments=arguments, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 161, in _run_companion_command
+    async with self._start_companion_command(arguments=arguments) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 137, in _start_companion_command
+    process = await asyncio.create_subprocess_exec(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 211, in _make_subprocess_transport
+    transp = _UnixSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_subprocess.py", line 36, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 820, in _start
+    self._proc = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/local/bin/idb_companion'
+step 04 project: tap FAILED
+step 05 home: tap (20,50)
+2026-08-06 01:24:31,870 [ERROR] - root - Exception thrown in main
+Traceback (most recent call last):
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/main.py", line 313, in gen_main
+    await root_command.run(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/command.py", line 90, in run
+    return await self.resolve_command_from_args(args).run(args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 106, in run
+    await self._run_impl(args)
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 126, in _run_impl
+    async with _get_client(args=args, logger=self.logger) as client:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/cli/__init__.py", line 63, in _get_client
+    async with GrpcClientManager(
+               ^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 166, in from_udid
+    companion = await self._spawn_companion_server(udid=udid)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 122, in _spawn_companion_server
+    target_type = await _local_target_type(companion=companion, udid=udid)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/grpc/management.py", line 37, in _local_target_type
+    target.udid: target for target in await companion.list_targets(only=None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 113, in _async_wrapper
+    raise ex
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/logging.py", line 88, in _async_wrapper
+    value = await function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 383, in list_targets
+    output = await self._run_companion_command(arguments=arguments, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 161, in _run_companion_command
+    async with self._start_companion_command(arguments=arguments) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/runner/.local/pipx/venvs/fb-idb/lib/python3.12/site-packages/idb/common/companion.py", line 137, in _start_companion_command
+    process = await asyncio.create_subprocess_exec(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 211, in _make_subprocess_transport
+    transp = _UnixSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_subprocess.py", line 36, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/unix_events.py", line 820, in _start
+    self._proc = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/local/bin/idb_companion'
+step 05 home: tap FAILED
+still alive after the walk: 1
+screenshots: 6

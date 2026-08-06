@@ -146,7 +146,23 @@ jobs:
           # Same key as the restore: an existing key makes the save a skip.
           key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
 
+      # Both workflows have been SAVING this prefix and never restoring it,
+      # so wx was rebuilt from scratch on every single run - 5-6 minutes each
+      # time, for a tree that only changes when patches/step2 or wx-overlay
+      # do. WX_KEY already hashes exactly those, so a hit is always correct.
+      #
+      # It may also matter for ccache: every Orca GUI file includes wx
+      # headers, and a restored prefix is byte-identical across runs where a
+      # rebuilt one only ought to be.
+      - name: Restore wx prefix cache
+        id: wxcache
+        uses: actions/cache/restore@v4
+        with:
+          path: wx-prefix
+          key: ${{ env.WX_KEY }}
+
       - name: "[5/9] Build wxWidgets iPhone port (device)"
+        if: steps.wxcache.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
           git clone --recurse-submodules https://github.com/SoftFever/Orca-deps-wxWidgets.git wx

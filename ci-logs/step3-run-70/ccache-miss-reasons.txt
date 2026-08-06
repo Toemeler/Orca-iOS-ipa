@@ -1,0 +1,18 @@
++ grep -oE 'Result: .*' /Users/runner/ccache-step3.log
++ sort
++ uniq -c
++ sort -rn
++ head -20
+1126 Result: local_storage_write
+ 711 Result: local_storage_read_hit
+ 565 Result: local_storage_read_miss
+ 563 Result: preprocessed_cache_miss
+ 563 Result: local_storage_miss
+ 563 Result: direct_cache_miss
+ 563 Result: cache_miss
+  76 Result: local_storage_hit
+  76 Result: direct_cache_hit
++ echo '--- sample miss context ---'
+--- sample miss context ---
++ grep -B6 'Result: cache miss' /Users/runner/ccache-step3.log
++ head -60

@@ -1,0 +1,7 @@
+00-home.png              180x240 colours=5688  top=#ffffff 15%
+orca-on-ipad.png         180x240 colours=245   top=#ffffff 91%
+ui-t02s.png              180x240 colours=243   top=#ffffff 91%
+ui-t07s.png              180x240 colours=243   top=#ffffff 91%
+ui-t17s.png              180x240 colours=243   top=#ffffff 91%
+ui-t37s.png              180x240 colours=245   top=#ffffff 91%
+ui-t67s.png              180x240 colours=245   top=#ffffff 91%

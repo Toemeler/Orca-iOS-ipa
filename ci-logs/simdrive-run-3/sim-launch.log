@@ -1,0 +1,81 @@
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2324): assert "CheckSizerFlags(!((flags) & (wxALIGN_RIGHT)))" failed in DoInsert(): wxALIGN_RIGHT will be ignored in this sizer: only vertical alignment flags can be used in horizontal sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+Collecting stack trace information, please wait.../Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2315): assert "CheckSizerFlags(!((flags) & (wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: only horizontal alignment flags can be used in vertical sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2315): assert "CheckSizerFlags(!((flags) & (wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: only horizontal alignment flags can be used in vertical sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2315): assert "CheckSizerFlags(!((flags) & (wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: only horizontal alignment flags can be used in vertical sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2315): assert "CheckSizerFlags(!((flags) & (wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: only horizontal alignment flags can be used in vertical sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2315): assert "CheckSizerFlags(!((flags) & (wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: only horizontal alignment flags can be used in vertical sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2347): assert "CheckSizerFlags(!((flags) & (wxALIGN_RIGHT | wxALIGN_CENTRE_HORIZONTAL | wxALIGN_BOTTOM | wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_RIGHT | wxALIGN_CENTRE_HORIZONTAL | wxALIGN_BOTTOM | wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: wxEXPAND overrides alignment flags in box sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/textcmn.cpp(936): assert "Assert failure" failed in SetLabel(): Use SetValue() or ChangeValue() instead.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/textcmn.cpp(936): assert "Assert failure" failed in SetLabel(): Use SetValue() or ChangeValue() instead.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/textcmn.cpp(936): assert "Assert failure" failed in SetLabel(): Use SetValue() or ChangeValue() instead.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/textcmn.cpp(936): assert "Assert failure" failed in SetLabel(): Use SetValue() or ChangeValue() instead.
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/textcmn.cpp(936): assert "Assert failure" failed in SetLabel(): Use SetValue() or ChangeValue() instead.
+2026-08-06 01:45:43.735 OrcaSlicer[11495:39134] Failed to bind EAGLDrawable: <CAEAGLLayer: 0x600005b49e80> to GL_RENDERBUFFER 1
+2026-08-06 01:45:43.736 OrcaSlicer[11495:39134] Failed to make complete framebuffer object 8cd6
+/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/common/sizer.cpp(2347): assert "CheckSizerFlags(!((flags) & (wxALIGN_RIGHT | wxALIGN_CENTRE_HORIZONTAL | wxALIGN_BOTTOM | wxALIGN_CENTRE_VERTICAL)))" failed in DoInsert(): wxALIGN_RIGHT | wxALIGN_CENTRE_HORIZONTAL | wxALIGN_BOTTOM | wxALIGN_CENTRE_VERTICAL will be ignored in this sizer: wxEXPAND overrides alignment flags in box sizers
+
+DO NOT PANIC !!
+
+If you're an end user running a program not developed by you, please ignore this message, it is harmless, and please try reporting the problem to the program developers.
+
+You may also set WXSUPPRESS_SIZER_FLAGS_CHECK environment variable to suppress all such checks when running this program.
+
+If you're the developer, simply remove this flag from your code to avoid getting this message. You can also call wxSizerFlags::DisableConsistencyChecks() to globally disable all such checks, but this is strongly not recommended.
+2026-08-06 01:45:47.485 OrcaSlicer[11495:39134] Unbalanced calls to begin/end appearance transitions for <wxUIContentViewController: 0x1086e08e0>.
+org.orca-ios.orcaslicer: 11495

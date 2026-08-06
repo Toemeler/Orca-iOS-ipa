@@ -2,7 +2,7 @@ diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
 index 8ffac135..26147c74 100644
 --- a/src/slic3r/GUI/GLCanvas3D.cpp
 +++ b/src/slic3r/GUI/GLCanvas3D.cpp
-@@ -48,6 +48,14 @@
+@@ -48,6 +48,15 @@
  
  #include <glad/gl.h>
  
@@ -12,12 +12,13 @@ index 8ffac135..26147c74 100644
 +#if defined(__APPLE__) && !TARGET_OS_OSX
 +// src/slic3r/GUI/ios_gl_compat.cpp
 +extern void orca_ios_note_default_framebuffer();
++extern unsigned orca_ios_default_framebuffer();
 +#endif
 +
  #include <wx/glcanvas.h>
  #include <wx/bitmap.h>
  #include <wx/dcmemory.h>
-@@ -1951,6 +1959,12 @@ void GLCanvas3D::render(bool only_init)
+@@ -1951,6 +1959,32 @@ void GLCanvas3D::render(bool only_init)
      if (!_is_shown_on_screen() || !_set_current() || !wxGetApp().init_opengl())
          return;
  
@@ -25,6 +26,26 @@ index 8ffac135..26147c74 100644
 +    // Note the drawable GLKit just bound, before any offscreen pass can replace
 +    // it -- see src/slic3r/GUI/ios_gl_compat.cpp.
 +    orca_ios_note_default_framebuffer();
++
++    // The viewport is blank on iOS while the context is a healthy ES 3.0, every
++    // shader loads, the drawable binds, and this function runs - so the scene
++    // goes somewhere that is not the screen, or into an area with no size.
++    // These two numbers separate those cases and nothing else reports them.
++    // A drawable of 0 means GLKit had not bound it when render() started, which
++    // is precisely what the glBindFramebuffer(0) wrapper depends on. Logged at
++    // error level so it survives the release log level, and once, because this
++    // runs every frame.
++    {
++        static bool s_orca_ios_gl_reported = false;
++        if (!s_orca_ios_gl_reported) {
++            s_orca_ios_gl_reported = true;
++            const Size cnv_size = get_canvas_size();
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-gl: first render() drawable="
++                                     << orca_ios_default_framebuffer()
++                                     << " canvas=" << cnv_size.get_width()
++                                     << "x" << cnv_size.get_height();
++        }
++    }
 +#endif
 +
      if (!is_initialized() && !init())
@@ -92,7 +113,7 @@ index 7e6dea11..c4d13cae 100644
      if (glad_glDeleteFramebuffersEXT == nullptr)
          glad_glDeleteFramebuffersEXT = es_entry<PFNGLDELETEFRAMEBUFFERSEXTPROC>("glDeleteFramebuffers");
  
-@@ -137,4 +170,16 @@ void orca_ios_install_gl_es_compat()
+@@ -137,4 +170,26 @@ void orca_ios_install_gl_es_compat()
      if (glad_glPolygonMode == nullptr)        glad_glPolygonMode = &compat_glPolygonMode;
  }
  
@@ -106,6 +127,16 @@ index 7e6dea11..c4d13cae 100644
 +    glad_glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound);
 +    if (bound > 0)
 +        s_default_framebuffer = static_cast<GLuint>(bound);
++
++}
++
++// The remembered drawable, for the one-shot report in GLCanvas3D::render().
++// Kept here because this file owns the value; printed there because this is a
++// .cpp with no logging facility of its own, and adding <cstdio> mid-file would
++// drop the C stdio declarations into whatever namespace is open at that point.
++unsigned orca_ios_default_framebuffer()
++{
++    return (unsigned) s_default_framebuffer;
 +}
 +
  #endif // __APPLE__ && !TARGET_OS_OSX

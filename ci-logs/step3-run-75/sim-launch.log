@@ -1,0 +1,3 @@
+2026-08-06 16:00:32.570 OrcaSlicer[94311:219622] Failed to bind EAGLDrawable: <CAEAGLLayer: 0x600005b0af40> to GL_RENDERBUFFER 1
+2026-08-06 16:00:32.570 OrcaSlicer[94311:219622] Failed to make complete framebuffer object 8cd6
+org.orca-ios.orcaslicer: 94311

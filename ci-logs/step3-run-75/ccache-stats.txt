@@ -1,0 +1,20 @@
+Cache directory:       /Users/runner/.ccache-step3
+Config file:           /Users/runner/.ccache-step3/ccache.conf
+Directory config file:
+System config file:    /opt/homebrew/etc/ccache.conf
+Stats updated:         Thu Aug  6 15:56:21 2026
+Cacheable calls:        639 / 639 (100.0%)
+  Hits:                  76 / 639 (11.89%)
+    Direct:              76 /  76 (100.0%)
+    Preprocessed:         0 /  76 ( 0.00%)
+  Misses:               563 / 639 (88.11%)
+Successful lookups:
+  Direct:                76 / 639 (11.89%)
+  Preprocessed:           0 / 563 ( 0.00%)
+Local storage:
+  Cache size (GB):      0.9 / 3.0 (30.69%)
+  Files:               6336
+  Hits:                  76 / 639 (11.89%)
+  Misses:               563 / 639 (88.11%)
+  Reads:               1276
+  Writes:              1126

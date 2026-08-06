@@ -58,8 +58,21 @@ if [ -n "$MODEL" ] && [ -f "$MODEL" ]; then
   fi
 fi
 
+# Launch once WITHOUT a pty first, synchronously, and keep its exit status.
+# --console-pty backgrounded swallows everything when the app dies immediately:
+# step-3 runs 64 and 66 both produced an empty sim-launch.log, no pid line and
+# no crash report, which is indistinguishable from "simctl itself failed". This
+# call answers that - it prints either "<bundle id>: <pid>" or the real error.
 # shellcheck disable=SC2086
-xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} \
+LAUNCH_OUT=$(xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} 2>&1)
+LAUNCH_RC=$?
+note "simctl launch rc=$LAUNCH_RC: $LAUNCH_OUT"
+echo "$LAUNCH_OUT" > "$OUT/sim-launch-plain.log"
+
+# Then attach a console for the app's own stdout/stderr, where wx asserts and
+# UIKit's EAGL complaints appear.
+# shellcheck disable=SC2086
+xcrun simctl launch --console-pty --terminate-running-process "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} \
   > "$OUT/sim-launch.log" 2>&1 &
 LPID=$!
 
@@ -137,8 +150,17 @@ for d in "$HOME/Library/Logs/DiagnosticReports" \
   [ -d "$d" ] || continue
   find "$d" \( -name "${EXE}*.ips" -o -name "${EXE}*.crash" \) -exec cp {} "$OUT/" \; 2>/dev/null
 done
+# `process == "OrcaSlicer"` matches nothing when the app dies before the log
+# subsystem ever attributes a message to it - run 66's capture was 133 bytes of
+# header. Ask a much wider question: anything mentioning the bundle id or the
+# executable, from any process, including SpringBoard and launchd, which are
+# the ones that say why a launch was refused or a process was killed.
 xcrun simctl spawn "$UDID" log show --last 10m \
-  --predicate "process == \"$EXE\"" > "$OUT/sim-oslog.txt" 2>&1 || true
+  --predicate "process == \"$EXE\" OR eventMessage CONTAINS \"$EXE\" OR eventMessage CONTAINS \"$BUNDLE_ID\" OR processImagePath CONTAINS \"$EXE\"" \
+  > "$OUT/sim-oslog.txt" 2>&1 || true
+xcrun simctl spawn "$UDID" log show --last 10m --predicate \
+  'senderImagePath CONTAINS "SpringBoard" OR process == "launchd" OR process == "runningboardd"' \
+  > "$OUT/sim-oslog-system.txt" 2>&1 || true
 
 xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
 xcrun simctl delete "$UDID" >/dev/null 2>&1 || true

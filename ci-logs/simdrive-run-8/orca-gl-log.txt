@@ -1,0 +1,5 @@
+--- /Users/runner/Library/Developer/CoreSimulator/Devices/9743EC30-C2C3-4CFB-BC16-092183B4EBAC/data/Containers/Data/Application/CDFB3971-AC96-404B-A89E-A99AAE2852FE/Documents/log/debug_Thu_Aug_06_05_43_32_7645.log.0 ---
+640:[error]	2026-08-06 05:43:35.382180[Thread 0x000000010b2c0200]:calc_exclude_triangles:Unable to create exclude triangles
+680:[info]	2026-08-06 05:43:38.819753[Thread 0x000000010b2c0200]:GLAD loaded OpenGL 3.0
+681:[info]	2026-08-06 05:43:38.819991[Thread 0x000000010b2c0200]:Framebuffer Type ARB (core in OpenGL ES 3.0).
+682:[info]	2026-08-06 05:43:38.820141[Thread 0x000000010b2c0200]:got opengl version OpenGL ES 3.0 APPLE-23.0.2, glsl version OpenGL ES GLSL ES 3.00, vendor Apple Inc. , graphics card model Apple Software Renderer

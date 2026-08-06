@@ -58,19 +58,14 @@ if [ -n "$MODEL" ] && [ -f "$MODEL" ]; then
   fi
 fi
 
-# Launch once WITHOUT a pty first, synchronously, and keep its exit status.
-# --console-pty backgrounded swallows everything when the app dies immediately:
-# step-3 runs 64 and 66 both produced an empty sim-launch.log, no pid line and
-# no crash report, which is indistinguishable from "simctl itself failed". This
-# call answers that - it prints either "<bundle id>: <pid>" or the real error.
-# shellcheck disable=SC2086
-LAUNCH_OUT=$(xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} 2>&1)
-LAUNCH_RC=$?
-note "simctl launch rc=$LAUNCH_RC: $LAUNCH_OUT"
-echo "$LAUNCH_OUT" > "$OUT/sim-launch-plain.log"
-
-# Then attach a console for the app's own stdout/stderr, where wx asserts and
-# UIKit's EAGL complaints appear.
+# One launch, with a console attached: the app's own stdout/stderr is where
+# UIKit's EAGL complaints land, and those are the whole reason this exists.
+#
+# It is deliberately not launched twice. An earlier version did a plain launch
+# for the pid and exit status and then a --console-pty launch for the output,
+# but --terminate-running-process on the second one kills the first instance,
+# so the run was measuring an app that had just been shot. Whether the launch
+# itself succeeded is now read from the pid line simctl prints into the log.
 # shellcheck disable=SC2086
 xcrun simctl launch --console-pty --terminate-running-process "$UDID" "$BUNDLE_ID" ${MODEL_ARG:-} \
   > "$OUT/sim-launch.log" 2>&1 &

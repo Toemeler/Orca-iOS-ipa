@@ -1,0 +1,130 @@
+diff --git a/src/slic3r/GUI/ios_gl_compat.cpp b/src/slic3r/GUI/ios_gl_compat.cpp
+index 7e6dea114..4666ec91f 100644
+--- a/src/slic3r/GUI/ios_gl_compat.cpp
++++ b/src/slic3r/GUI/ios_gl_compat.cpp
+@@ -47,6 +47,8 @@
+ 
+ #include <dlfcn.h>
+ 
++#include <boost/log/trivial.hpp>
++
+ namespace {
+ 
+ template<typename Fn> Fn es_entry(const char *name)
+@@ -89,12 +91,116 @@ void compat_glPopAttrib() {}
+ void compat_glLineStipple(GLint, GLushort) {}
+ void compat_glPolygonMode(GLenum, GLenum) {}
+ 
++
++// OpenGL ES 3.0 core entry points that the *desktop* loader never asked for.
++// ------------------------------------------------------------------------
++// Orca links one glad, generated for desktop OpenGL, and libvgcode's sources
++// declare against <glad/gles2.h> but take their definitions from it (patches
++// 0323 and 0325). gladLoadGL() decides what to resolve from the version string:
++//
++//     GLAD_GL_VERSION_3_1 = (major == 3 && minor >= 1) || major > 3;
++//     ...
++//     glad_gl_load_GL_VERSION_3_1(load, userptr);   // returns at once if unset
++//
++// An OpenGL ES 3.0 context reports "OpenGL ES 3.0 ...", so glad reads 3.0 and
++// loads nothing from desktop GL 3.1 and up. But OpenGL ES 3.0 has plenty that
++// desktop GL only got after 3.0 - instanced drawing (GL 3.1), attribute
++// divisors (3.3), uniform blocks (3.1), sync objects (3.2), immutable texture
++// storage (4.2). Every one of those pointers stays null while the driver
++// underneath supports them perfectly well.
++//
++// The consequence was a crash with no diagnosis: libvgcode::SegmentTemplate
++// ::render() draws the toolpaths with glDrawArraysInstanced, so pressing Slice
++// and landing on Preview called through a null pointer and the process took
++// EXC_BAD_ACCESS at pc = 0 - an instruction fetch from address zero, which is
++// why nothing was logged and no C++ handler ran.
++//
++// Every name below is ES 3.0 core, so iOS exports it from OpenGLES.framework
++// and dlsym finds it. The list was computed rather than guessed: the functions
++// declared in libvgcode's glad/include/glad/gles2.h, intersected with the ones
++// src/glad/src/gl.c only loads in a group above GL_VERSION_3_0. Anything that
++// does not resolve is left null, exactly as it is today.
++struct EsCoreEntry
++{
++    void      **slot;
++    const char *name;
++};
++
++const EsCoreEntry ES3_CORE_MISSED_BY_DESKTOP_LOADER[] = {
++    { reinterpret_cast<void **>(&glad_glBindSampler),                "glBindSampler" },
++    { reinterpret_cast<void **>(&glad_glBindTransformFeedback),      "glBindTransformFeedback" },
++    { reinterpret_cast<void **>(&glad_glClearDepthf),                "glClearDepthf" },
++    { reinterpret_cast<void **>(&glad_glClientWaitSync),             "glClientWaitSync" },
++    { reinterpret_cast<void **>(&glad_glCopyBufferSubData),          "glCopyBufferSubData" },
++    { reinterpret_cast<void **>(&glad_glDeleteSamplers),             "glDeleteSamplers" },
++    { reinterpret_cast<void **>(&glad_glDeleteSync),                 "glDeleteSync" },
++    { reinterpret_cast<void **>(&glad_glDeleteTransformFeedbacks),   "glDeleteTransformFeedbacks" },
++    { reinterpret_cast<void **>(&glad_glDepthRangef),                "glDepthRangef" },
++    { reinterpret_cast<void **>(&glad_glDrawArraysInstanced),        "glDrawArraysInstanced" },
++    { reinterpret_cast<void **>(&glad_glDrawElementsInstanced),      "glDrawElementsInstanced" },
++    { reinterpret_cast<void **>(&glad_glFenceSync),                  "glFenceSync" },
++    { reinterpret_cast<void **>(&glad_glGenSamplers),                "glGenSamplers" },
++    { reinterpret_cast<void **>(&glad_glGenTransformFeedbacks),      "glGenTransformFeedbacks" },
++    { reinterpret_cast<void **>(&glad_glGetActiveUniformBlockName),  "glGetActiveUniformBlockName" },
++    { reinterpret_cast<void **>(&glad_glGetActiveUniformBlockiv),    "glGetActiveUniformBlockiv" },
++    { reinterpret_cast<void **>(&glad_glGetActiveUniformsiv),        "glGetActiveUniformsiv" },
++    { reinterpret_cast<void **>(&glad_glGetBufferParameteri64v),     "glGetBufferParameteri64v" },
++    { reinterpret_cast<void **>(&glad_glGetInteger64i_v),            "glGetInteger64i_v" },
++    { reinterpret_cast<void **>(&glad_glGetInteger64v),              "glGetInteger64v" },
++    { reinterpret_cast<void **>(&glad_glGetInternalformativ),        "glGetInternalformativ" },
++    { reinterpret_cast<void **>(&glad_glGetProgramBinary),           "glGetProgramBinary" },
++    { reinterpret_cast<void **>(&glad_glGetSamplerParameterfv),      "glGetSamplerParameterfv" },
++    { reinterpret_cast<void **>(&glad_glGetSamplerParameteriv),      "glGetSamplerParameteriv" },
++    { reinterpret_cast<void **>(&glad_glGetShaderPrecisionFormat),   "glGetShaderPrecisionFormat" },
++    { reinterpret_cast<void **>(&glad_glGetSynciv),                  "glGetSynciv" },
++    { reinterpret_cast<void **>(&glad_glGetUniformBlockIndex),       "glGetUniformBlockIndex" },
++    { reinterpret_cast<void **>(&glad_glGetUniformIndices),          "glGetUniformIndices" },
++    { reinterpret_cast<void **>(&glad_glInvalidateFramebuffer),      "glInvalidateFramebuffer" },
++    { reinterpret_cast<void **>(&glad_glInvalidateSubFramebuffer),   "glInvalidateSubFramebuffer" },
++    { reinterpret_cast<void **>(&glad_glIsSampler),                  "glIsSampler" },
++    { reinterpret_cast<void **>(&glad_glIsSync),                     "glIsSync" },
++    { reinterpret_cast<void **>(&glad_glIsTransformFeedback),        "glIsTransformFeedback" },
++    { reinterpret_cast<void **>(&glad_glPauseTransformFeedback),     "glPauseTransformFeedback" },
++    { reinterpret_cast<void **>(&glad_glProgramBinary),              "glProgramBinary" },
++    { reinterpret_cast<void **>(&glad_glProgramParameteri),          "glProgramParameteri" },
++    { reinterpret_cast<void **>(&glad_glReleaseShaderCompiler),      "glReleaseShaderCompiler" },
++    { reinterpret_cast<void **>(&glad_glResumeTransformFeedback),    "glResumeTransformFeedback" },
++    { reinterpret_cast<void **>(&glad_glSamplerParameterf),          "glSamplerParameterf" },
++    { reinterpret_cast<void **>(&glad_glSamplerParameterfv),         "glSamplerParameterfv" },
++    { reinterpret_cast<void **>(&glad_glSamplerParameteri),          "glSamplerParameteri" },
++    { reinterpret_cast<void **>(&glad_glSamplerParameteriv),         "glSamplerParameteriv" },
++    { reinterpret_cast<void **>(&glad_glShaderBinary),               "glShaderBinary" },
++    { reinterpret_cast<void **>(&glad_glTexStorage2D),               "glTexStorage2D" },
++    { reinterpret_cast<void **>(&glad_glTexStorage3D),               "glTexStorage3D" },
++    { reinterpret_cast<void **>(&glad_glUniformBlockBinding),        "glUniformBlockBinding" },
++    { reinterpret_cast<void **>(&glad_glVertexAttribDivisor),        "glVertexAttribDivisor" },
++    { reinterpret_cast<void **>(&glad_glWaitSync),                   "glWaitSync" },
++};
++
+ } // namespace
+ 
+ // Called from OpenGLManager::init_gl once the loader has run, before anything
+ // renders.
+ void orca_ios_install_gl_es_compat()
+ {
++    // First the ES 3.0 core the desktop loader skipped over - these are real
++    // driver functions, so they must be filled in before any of the no-op
++    // stubs below could shadow one.
++    int filled = 0, still_null = 0;
++    for (const EsCoreEntry &entry : ES3_CORE_MISSED_BY_DESKTOP_LOADER) {
++        if (*entry.slot != nullptr)
++            continue;
++        *entry.slot = dlsym(RTLD_DEFAULT, entry.name);
++        if (*entry.slot != nullptr)
++            ++filled;
++        else {
++            ++still_null;
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-gl: no ES entry point for " << entry.name;
++        }
++    }
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-gl: filled " << filled << " ES 3.0 core entry points the desktop loader skipped, "
++                             << still_null << " still null";
++
+     s_glClearDepthf = es_entry<PFNGLCLEARDEPTHFPROC>("glClearDepthf");
+ 
+     if (glad_glClearDepth == nullptr)

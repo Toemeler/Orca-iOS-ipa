@@ -2496,3 +2496,79 @@ Not yet built or tested on device.
 2. `dev_type` may need to be something other than `3DPrinter-N2S-01` —
    `_parse_printer_type()` maps it, and a wrong value gives the right printer
    with the wrong capabilities.
+
+
+# SESSION 2026-08-07 (later still): the slice crash, from the OS crash report
+
+## Root cause: glad never loaded OpenGL ES 3.0's core entry points
+
+The user sent `OrcaSlicer20260807123035.ips` — the OS crash report, fully
+symbolicated, which settled in one read what three log rounds could not.
+
+```
+exception: EXC_BAD_ACCESS, KERN_PROTECTION_FAILURE at 0x0
+ktriageinfo: VM - Failed to fault in a page with execute permissions
+esr: (Instruction Abort) Translation fault      pc = 0
+
+Thread 0 (orcaslicer_main), triggered:
+  0   ???                                        (imageIndex 2 = the null image)
+  1   libvgcode::SegmentTemplate::render(unsigned long) + 124
+  2   libvgcode::ViewerImpl::render_segments(...)
+  3   libvgcode::ViewerImpl::render(...)
+  4   Slic3r::GUI::GCodeViewer::render(int, int, int)
+  5   Slic3r::GUI::GLCanvas3D::_render_gcode(int, int)
+  6   Slic3r::GUI::GLCanvas3D::render(bool)
+  7   Slic3r::GUI::GLCanvas3D::on_idle(wxIdleEvent&)
+```
+
+`pc = 0` with an *instruction* abort is a call through a null function pointer.
+`SegmentTemplate::render()` makes three GL calls — `glGetIntegerv`,
+`glBindVertexArray`, `glDrawArraysInstanced` — and the null one is the third:
+
+- Orca links **one** glad, generated for **desktop** OpenGL. libvgcode declares
+  against `<glad/gles2.h>` but takes its definitions from that shared target
+  (patches 0323 and 0325).
+- `gladLoadGL()` picks what to resolve from the version string:
+  `GLAD_GL_VERSION_3_1 = (major == 3 && minor >= 1) || major > 3;`, and each
+  `glad_gl_load_GL_VERSION_X_Y()` returns immediately if its flag is unset.
+- An ES 3.0 context reports `OpenGL ES 3.0 …`, so glad reads **3.0** and loads
+  nothing from desktop GL 3.1 upward.
+- `glBindVertexArray` is desktop GL **3.0** → loaded, which is why
+  `SegmentTemplate::init()` built its VAO and `render()` got past its
+  `m_vao_id == 0` guard. `glDrawArraysInstanced` is desktop GL **3.1** → null.
+
+**Forty-eight ES 3.0 core entry points were left null this way.** Computed, not
+guessed: the functions declared in `src/libvgcode/glad/include/glad/gles2.h`,
+intersected with those `src/glad/src/gl.c` only loads in a group above
+`GL_VERSION_3_0`. Instanced drawing (3.1), attribute divisors (3.3), uniform
+blocks (3.1), sync objects (3.2), immutable texture storage (4.2),
+`glClearDepthf`/`glDepthRangef`/`glShaderBinary` (4.1), transform feedback
+(4.0), samplers (3.3), `glInvalidateFramebuffer` (4.3).
+
+## 0349-ios-es3-core-entry-points
+
+Extends `orca_ios_install_gl_es_compat()` (patch 0328, which already runs
+straight after `gladLoadGL` for exactly this class of problem) with a first
+pass over a table of those 48 names, `dlsym`ing any slot still null. They are
+all ES 3.0 core, so iOS exports them from OpenGLES.framework. The pass runs
+*before* the existing no-op stubs so a real driver function is never shadowed
+by one. It logs `orca-ios-gl: filled N …, M still null` at error level, and
+names anything that would not resolve.
+
+Compiled and run standalone with `-Wall -Wextra -Wstrict-aliasing=2`.
+
+## What this probably also explains
+
+The **empty 3D viewport**, open since 2026-08-06 and blamed on the EAGL
+drawable bind. The plater's own render path may well be calling through other
+members of the same 48. Re-test the viewport on this build before touching the
+drawable code.
+
+## Method note worth keeping
+
+The OS `.ips` crash report is symbolicated, names every thread, and costs the
+user two taps to export (Settings › Privacy & Security › Analytics & Improvements
+› Analytics Data). **Ask for it first next time.** Patch 0346's own
+`Documents/orca-crash.txt` is still worth having — it survives cases the OS
+report misses, and it catches C++ exception text the OS never sees — but it is
+the second-best source, not the first.

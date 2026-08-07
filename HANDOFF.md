@@ -2557,6 +2557,33 @@ names anything that would not resolve.
 
 Compiled and run standalone with `-Wall -Wextra -Wstrict-aliasing=2`.
 
+**Run 72 failed on this patch and the reason is a procedure lesson.** 0349 was
+first generated against a tree with only 0328's `ios_gl_compat.cpp` applied —
+but **0329 and 0333 also edit that file**, so the hunks did not match the real
+series and `git apply` rejected them two minutes into the build. The handoff
+already said to generate a patch from a checkout that has its predecessors
+applied; a *filtered* subset is not that. Regenerated against the real
+post-0348 file and re-verified.
+
+### Verifying the series properly — the recipe that actually works
+
+```bash
+git clone --filter=blob:none --no-checkout <orca> full && cd full
+git sparse-checkout init --no-cone
+grep -h '^+++ b/\|^--- a/' patches/step*/*.patch | sed 's|^+++ b/||; s|^--- a/||' \
+  | grep -v '^/dev/null' | sort -u > .git/info/sparse-checkout   # 47 files, no full checkout needed
+git checkout <ORCA_REF>
+for p in patches/step1/*.patch patches/step3/*.patch; do git apply "$p" || echo "FAILED $p"; done
+```
+
+To re-run it, reset with **`git reset --hard <ORCA_REF> && git clean -fd`**.
+`git checkout <ref> -- .` is not enough: it does not remove the files earlier
+patches *created* (`ios_platform_stubs.cpp`, `ios_gl_compat.cpp`,
+`ios_webview_support.mm`), so the next pass fails with "already exists in
+working directory" and sends you chasing a conflict that is not real.
+
+Current state: **all 57 patches apply cleanly in order on a clean tree.**
+
 ## What this probably also explains
 
 The **empty 3D viewport**, open since 2026-08-06 and blamed on the EAGL

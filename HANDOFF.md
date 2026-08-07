@@ -2098,3 +2098,81 @@ Reading order for a device log: `grep "modal loop"` first, then
   3. The sidebar should show the printer and filament; the plate should render.
   4. Relaunch. The wizard must **not** come back, and the app must not crash.
 
+
+## Loose ends from this session that belong in the record
+
+### `wxIPhoneToggleButtonPeer` (in `wx-overlay/src/osx/iphone/extra_peers.mm`)
+
+Orca's `CheckBox` and `SwitchButton` widgets are both `wxBitmapToggleButton`.
+On the iPhone port `wxWidgetIPhoneImpl::SetBitmap`, `SetValue` and `GetValue`
+are **empty bodies**, and the peer it created was a bare `UIView` — which is
+not a `UIControl`, so it received no touches at all. Every checkbox and switch
+in the app was invisible, unclickable and permanently `false`.
+
+`extra_peers.mm` now defines `wxIPhoneToggleButtonPeer`, backed by a real
+`UIButton`, implementing `GetValue`/`SetValue`/`SetBitmap`/`GetBitmap` and a
+`controlAction` that flips the value on `TouchUpInside` **before**
+`OSXHandleClicked` reads it. This is overlay code, not a patch — the overlay
+files are copied over the wx tree after the step2 patches are applied, and they
+are part of `WX_KEY`, so touching them also forces a wx rebuild.
+
+### How to verify patches before burning an hour of CI
+
+The patches are **cumulative**, applied in filename order with plain
+`git apply` from the source root. Consequences:
+
+- `git apply --check` on individual patches is meaningless and will report
+  false failures. Verify by applying the whole series **sequentially** against
+  a fresh checkout.
+- Index hashes in the diff headers are irrelevant to `git apply`; do not chase
+  them.
+- A patch generated against pristine upstream will conflict if an earlier patch
+  edits the same region. This bit patch 0217 (generated against pristine wx,
+  conflicted with 0210, had to be regenerated against the post-0210 file).
+  Always generate a new patch from a checkout that already has its predecessors
+  applied.
+
+Recipe used this session to read upstream source without a full clone:
+
+```
+git clone --filter=blob:none --no-checkout <url> src && cd src
+git sparse-checkout init --cone
+git sparse-checkout set src/osx/core src/osx/iphone include/wx src/common
+git checkout <ref>
+```
+
+wx: `https://github.com/SoftFever/Orca-deps-wxWidgets` @ `v3.3.2`
+Orca: `https://github.com/SoftFever/OrcaSlicer` @ `395e070a0e`
+(`src/slic3r/GUI` + `resources/web` is enough for the GUI questions).
+
+Note the sparse checkout is fine for *reading* and for generating a diff of one
+file, but `git apply` of the full series needs the files it touches to be
+present.
+
+### Where the device logs come from
+
+The user exports the app's own log from the iPad — patch 0337 writes it to the
+app's `Documents/` as `debug_<Day>_<Mon>_<DD>_<HH>_<MM>_<SS>_<pid>.log.0`, so
+one file per launch and the pid is in the name. A crash loop shows up as
+several short files a few seconds apart. `patches/step3/0338` also drops
+`orca-startup-error.txt` next to it when startup throws.
+
+Log level on iOS is clamped to `warning` by patch 0341, so anything you want to
+see from the device must be logged at `warning` or `error`. That is why the
+instrumentation in 0215/0216/0340 uses `BOOST_LOG_TRIVIAL(error)` and
+`wxLogMessage` (wx messages arrive as `warning`).
+
+### Workflows, and which one to use
+
+| Workflow | Use it for | Trigger | Cost |
+|---|---|---|---|
+| `ios-step4-device-ipa.yml` | the real IPA for the iPad | dispatch only | 60-75 min |
+| `ios-step3-gui.yml` | simulator `.app` + one launch | dispatch | ~75 min |
+| `ios-sim-drive.yml` | **the fast loop** — takes an existing `orca-sim-app` artifact and walks the UI, no compile | push to its own two files, or dispatch with `app_run_id` | minutes |
+| `ios-step1-core-cli.yml`, `ios-step2-wxwidgets.yml` | deps / wx in isolation | dispatch | — |
+
+`ios-sim-drive.yml` collects `orca-window-tree.txt`, `orca-ui-log.txt`, the
+full gzipped log and screenshots into `ci-logs/simdrive-run-N/`. Use it for
+anything that does not need a recompile. Remember the simulator is iOS 26.2 and
+the device is iOS 27 beta 4.
+

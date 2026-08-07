@@ -1,0 +1,40 @@
+diff --git a/src/osx/core/evtloop_cf.cpp b/src/osx/core/evtloop_cf.cpp
+index 386722a..71f5e3e 100644
+--- a/src/osx/core/evtloop_cf.cpp
++++ b/src/osx/core/evtloop_cf.cpp
+@@ -277,7 +277,34 @@ void wxCFEventLoop::OSXDoRun()
+         // Pending() returns true, do process them
+         if ( m_shouldExit )
+         {
+-            while ( DoProcessEvents() == 1 )
++            // This drain used to be "while ( DoProcessEvents() == 1 );" and
++            // that never finished on iOS, so a loop which had been asked to
++            // exit simply kept running.
++            //
++            // DoProcessEvents() ends up in CFRunLoopRunInMode(..., true),
++            // which returns kCFRunLoopRunHandledSource - i.e. 1 - as soon as
++            // it services any source at all. A live UIKit application always
++            // has another one ready: the display link driving the GL canvas,
++            // the WebKit IPC ports, any wxTimer. So the condition stayed true
++            // for as long as the application was on screen and the drain was,
++            // in practice, an infinite loop.
++            //
++            // On macOS this is invisible, because neither the main loop
++            // ([NSApp run]) nor a modal one ([NSApp runModalForWindow:]) uses
++            // this function. On iOS the modal loop does, and the effect was
++            // that wxDialog::ShowModal() never returned: EndModal() set
++            // m_shouldExit and stopped the run loop, the dialog was hidden,
++            // the user saw it close - and the code after ShowModal() never
++            // ran. In OrcaSlicer that code is what applies the setup wizard's
++            // printer and filament choices, so the wizard appeared to work
++            // and then changed nothing, and the modal loops piled up on the
++            // stack until the application died unwinding them.
++            //
++            // Draining is still worth doing: events that are already queued
++            // should be delivered before Run() returns. It just has to be
++            // bounded. Anything left over stays queued and is handled by the
++            // loop we are about to return into.
++            for ( int i = 0; i < 32 && DoProcessEvents() == 1; ++i )
+                 ;
+ 
+             break;

@@ -1,5 +1,5 @@
 diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
-index 521128e33..1e9e06c04 100644
+index 521128e33..aff9930aa 100644
 --- a/src/libslic3r/utils.cpp
 +++ b/src/libslic3r/utils.cpp
 @@ -17,6 +17,15 @@
@@ -18,7 +18,7 @@ index 521128e33..1e9e06c04 100644
  #endif
  
  #ifdef WIN32
-@@ -360,8 +369,165 @@ namespace src = boost::log::sources;
+@@ -360,8 +369,169 @@ namespace src = boost::log::sources;
  namespace expr = boost::log::expressions;
  namespace keywords = boost::log::keywords;
  namespace attrs = boost::log::attributes;
@@ -166,7 +166,11 @@ index 521128e33..1e9e06c04 100644
 +	struct sigaction sa = {};
 +	sa.sa_handler = ios_crash_signal_handler;
 +	sa.sa_flags   = SA_ONSTACK;
-+	::sigemptyset(&sa.sa_mask);
++	// Unqualified on purpose. Darwin's <signal.h> defines sigemptyset as a
++	// macro - #define sigemptyset(set) (*(set) = 0, 0) - so ::sigemptyset(x)
++	// expands to ::(*(&x) = 0, 0) and does not parse. glibc makes it a real
++	// function, which is why a Linux test build of this code did not notice.
++	sigemptyset(&sa.sa_mask);
 +	static const int fatal_signals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGABRT, SIGTRAP};
 +	for (size_t i = 0; i < sizeof(fatal_signals) / sizeof(fatal_signals[0]); ++i)
 +		(void) ::sigaction(fatal_signals[i], &sa, nullptr);

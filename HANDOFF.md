@@ -2584,6 +2584,29 @@ working directory" and sends you chasing a conflict that is not real.
 
 Current state: **all 57 patches apply cleanly in order on a clean tree.**
 
+## Run 73: `::sigemptyset` does not compile on Darwin
+
+One compile error, in 0346:
+
+```
+utils.cpp:516:4: error: expected unqualified-id
+        ::sigemptyset(&sa.sa_mask);
+signal.h:125:26: note: expanded from macro 'sigemptyset'
+  125 | #define sigemptyset(set)        (*(set) = 0, 0)
+```
+
+Darwin makes `sigemptyset` a **function-like macro**, so `::sigemptyset(x)`
+expands to `::(*(&x) = 0, 0)`. glibc makes it a real function — which is exactly
+why the standalone Linux test build of that handler passed. **A Linux
+`-fsyntax-only` check does not prove Darwin will compile it**; the value of that
+test is logic, not portability.
+
+Audited the rest of the new code the same way afterwards: every other
+`::`-qualified call in 0343-0349 resolves to a real function on Darwin
+(`sigemptyset`, `sigfillset`, `sigaddset`, `sigdelset`, `sigismember` are the
+function-like macros in `<signal.h>`, and only the first was used). `std::tolower`
+is safe — libc++'s `<cctype>` undefines the C macro.
+
 ## What this probably also explains
 
 The **empty 3D viewport**, open since 2026-08-06 and blamed on the EAGL

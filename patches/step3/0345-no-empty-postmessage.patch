@@ -1,0 +1,57 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 5b5fde662..e7bc88dd5 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -4665,15 +4665,28 @@ void GUI_App::request_login(bool show_user_info, const std::string& provider/* =
+ void GUI_App::get_login_info(const std::string& provider/* = ORCA_CLOUD_PROVIDER*/)
+ {
+     if (m_agent) {
++        // An agent that has nothing to say returns an empty command, and
++        // "window.postMessage()" with no argument is a TypeError - which is
++        // exactly what the iOS webview reported on every launch:
++        //
++        //   orca-ios-webview: FAILED: A JavaScript exception occurred
++        //
++        // The LAN agent (patch 0335) is never logged in to anything, so this
++        // fired every time. post_logout_to_webview() below already guards the
++        // same way; this is that guard, applied where it was missing.
+         if (m_agent->is_user_login(provider)) {
+             std::string login_cmd = m_agent->build_login_cmd(provider);
+-            wxString strJS = wxString::Format("window.postMessage(%s)", from_u8(login_cmd));
+-            GUI::wxGetApp().run_script(strJS);
++            if (! login_cmd.empty()) {
++                wxString strJS = wxString::Format("window.postMessage(%s)", from_u8(login_cmd));
++                GUI::wxGetApp().run_script(strJS);
++            }
+         } else {
+             m_agent->user_logout(false, provider);
+             std::string logout_cmd = m_agent->build_logout_cmd(provider);
+-            wxString    strJS      = wxString::Format("window.postMessage(%s)", from_u8(logout_cmd));
+-            GUI::wxGetApp().run_script(strJS);
++            if (! logout_cmd.empty()) {
++                wxString strJS = wxString::Format("window.postMessage(%s)", from_u8(logout_cmd));
++                GUI::wxGetApp().run_script(strJS);
++            }
+         }
+         mainframe->m_webview->SetLoginPanelVisibility(true);
+     }
+diff --git a/src/slic3r/GUI/WebViewDialog.cpp b/src/slic3r/GUI/WebViewDialog.cpp
+index 20ed70e79..98f1077b5 100644
+--- a/src/slic3r/GUI/WebViewDialog.cpp
++++ b/src/slic3r/GUI/WebViewDialog.cpp
+@@ -485,9 +485,13 @@ void WebViewPanel::OpenModelDetail(std::string id, NetworkAgent *agent)
+ void WebViewPanel::SendLoginInfo()
+ {
+     if (wxGetApp().getAgent()) {
++        // Empty when the agent has no session - and "window.postMessage()" with
++        // no argument is a TypeError, not a no-op. See GUI_App::get_login_info().
+         std::string login_info = wxGetApp().getAgent()->build_login_info();
+-        wxString strJS = wxString::Format("window.postMessage(%s)", login_info);
+-        RunScript(strJS);
++        if (! login_info.empty()) {
++            wxString strJS = wxString::Format("window.postMessage(%s)", login_info);
++            RunScript(strJS);
++        }
+     }
+ }
+ 

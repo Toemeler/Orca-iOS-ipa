@@ -2193,3 +2193,104 @@ Other branches on the remote, kept for reference only, all strictly behind:
 
 Audited this session: `main` now carries 8 step1 + 18 step2 + 43 step3 patches
 plus both overlays. Nothing from any other branch is missing.
+
+
+# SESSION 2026-08-07: the second-launch crash — one boost::filesystem call
+
+## Headline
+
+The app died on the second launch, and on every launch after it, in
+`Sidebar::update_printer_thumbnail()` (`src/slic3r/GUI/Plater.cpp`), on
+
+```
+boost::filesystem::absolute(boost::filesystem::path(resources_dir()) /
+                            "/profiles/" / vendor.id / cover_file)
+```
+
+`absolute(p)` is `absolute(p, current_path())` and evaluates that default
+argument even when `p` is already absolute. On iOS `current_path()` throws
+
+```
+boost::filesystem::current_path: Operation not permitted [system:1]
+```
+
+Fixed by `patches/step3/0343-no-cwd-in-printer-thumbnail.patch` — the same
+one-line helper as 0339 (Preset.cpp) and 0341 (WebGuideDialog.cpp) — plus
+0344, which stops the process taking a working directory it cannot getcwd()
+from in the first place, and 0345, which stops the JS exception on the
+homepage.
+
+## How the logs said it, and why the timing is the proof
+
+Three device logs from 2026-08-07 (one launch each; the pid is in the name):
+
+| Launch | Log | Ends |
+|---|---|---|
+| 1 | `10_28_10_5505` | two `Uncaught exception: …current_path…`, 10:28:34 and 10:28:39 |
+| 2 | `10_28_40_5519` | 8526 bytes, no exception logged |
+| 3 | `10_28_44_5528` | 8526 bytes, byte-identical shape to launch 2 |
+
+`update_printer_thumbnail()` only reaches the `absolute()` call when a printer
+model is selected **and** the matching vendor profile is installed —
+`preset_bundle->vendors` is empty before the setup wizard runs. So:
+
+- Launch 1 got all the way to the wizard fine, and threw 1.4 s after the wizard
+  returned `rc=5100` (`modal loop EXIT` 10:28:32.765 → `calc_exclude_triangles`
+  10:28:34.116 → throw 10:28:34.120). The static `printer_thumbnails` cache is
+  never populated, because the throw happens before the line that populates it,
+  so the second sidebar refresh threw again at 10:28:39.
+- Launches 2 and 3 had a printer preset from the start, hit the same call while
+  the main frame was still coming up, and died there.
+
+**Why launch 2 logged nothing.** On launch 1 the throw unwound into
+`GUI_App::OnInit`'s `try` (the wizard runs inside `on_init_inner`), which is why
+it produced a log line *and* two lines in `Documents/orca-startup-error.txt` —
+that file had exactly two lines, i.e. nothing from launches 2 and 3. Without a
+wizard the same code runs from an event dispatched by UIKit, with no C++ frame
+above it to catch anything, so the process goes away silently. **A silent death
+on iOS does not mean "not an exception" — it means the throw did not unwind
+through a C++ `try`.** Do not use "nothing in the log" as evidence again.
+
+## Patches added
+
+- **0343-no-cwd-in-printer-thumbnail** — `orca_absolute_no_cwd()` in Plater.cpp,
+  and the filesystem calls moved *inside* the `try` that was already wrapping
+  the bitmap load, so a thumbnail can never again cost the process.
+- **0344-ios-keep-a-usable-working-directory** — `init_app_config()` chdir()s to
+  `data_dir()/log` (GUI_App.cpp:2429 upstream). That directory is only useful on
+  the desktop, where relative paths land next to the log; on iOS the log path is
+  absolute (0337). On iOS the chdir now happens only if `getcwd()` still answers
+  from the new directory, and reverts to the previous cwd (or `/`) if it does
+  not. Either way it writes one line to the log at **error** level:
+  `orca-ios-cwd: …`. **Read that line in the next device log** — it is the first
+  direct measurement of where `getcwd()` works in this sandbox, and it settles a
+  question three patches have now worked around by inference.
+- **0345-no-empty-postmessage** — `GUI_App::get_login_info()` and
+  `WebViewPanel::SendLoginInfo()` formatted `window.postMessage(%s)` with an
+  empty command whenever the agent has no session (the LAN agent never does).
+  `window.postMessage()` with no argument is a TypeError, which is the
+  `orca-ios-webview: FAILED: A JavaScript exception occurred` seen on every
+  launch. `post_logout_to_webview()` a few lines below already had the
+  `!empty()` guard; this is the same guard where it was missing. Closes the
+  first item on the previous session's "Still open" list — it was harmless,
+  and it was not the crash.
+
+## Verification done
+
+All three apply cleanly with plain `git apply`, in filename order, to a fresh
+checkout of `395e070a0e` with their predecessors applied (0321, 0335, 0336,
+0338, 0342 are the only earlier patches touching `GUI_App.cpp`; nothing else
+touches `Plater.cpp` or `WebViewDialog.cpp`). The `ios_chdir_to_log_dir()`
+helper was compiled and run standalone with `-Wall -Wextra`. Not built for iOS
+in this session — no CI run yet on these patches.
+
+## Still open (carried forward, unchanged)
+
+- The log level clamp costs breadcrumbs; promote the wizard/`OnScriptMessage`
+  lines to error rather than raising the global level.
+- Window-tree dumps only happen once, 20 s after `MainFrame`; add ~90 s/~180 s.
+- The app reports the screen as 1600×1200 on a 1032×1376-point iPad Pro.
+- ccache is at 88 % miss on step 3/4.
+- The 3D viewport / EAGL drawable bind — and note the plater has never had a
+  valid printer preset for long enough to render, because of the crash above.
+  Re-test once this build is on the device.

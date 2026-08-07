@@ -1,0 +1,64 @@
+diff --git a/src/slic3r/GUI/Plater.cpp b/src/slic3r/GUI/Plater.cpp
+index af589a127..fa34aae17 100644
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -4158,6 +4158,28 @@ std::string& Sidebar::get_search_line()
+ 
+ static std::map<std::string, std::string> printer_thumbnails = {};
+ 
++// boost::filesystem::absolute(p) is absolute(p, current_path()) - the default
++// second argument is evaluated even when p is already absolute - and on iOS
++// current_path() throws
++//
++//   boost::filesystem::current_path: Operation not permitted [system:1]
++//
++// because the process cannot getcwd() from the working directory it is started
++// on (see patch 0344, which stops taking that working directory in the first
++// place). Same defect and same fix as patches/step3/0339 in Preset.cpp and 0341
++// in WebGuideDialog.cpp; the path here is resources_dir()-derived and therefore
++// already absolute, so the cwd was never actually needed.
++//
++// This is the call that killed the app on the *second* launch and every launch
++// after it. The loop below is only reached once a printer model is selected and
++// its vendor profile is installed, so a fresh install first hit it when the
++// setup wizard finished - and from then on hit it while the main frame was
++// still coming up.
++static boost::filesystem::path orca_absolute_no_cwd(const boost::filesystem::path &p)
++{
++    return p.is_absolute() ? p : boost::filesystem::absolute(p);
++}
++
+ void Sidebar::update_printer_thumbnail()
+ {
+     auto& preset_bundle = wxGetApp().preset_bundle;
+@@ -4183,17 +4205,22 @@ void Sidebar::update_printer_thumbnail()
+         for (auto vendor_profile : preset_bundle->vendors) {
+             for (auto vendor_model : vendor_profile.second.models) {
+                 if (vendor_model.name == model_name) {
+-                    // Try to find the printer cover
+-                    boost::filesystem::path cover_path = boost::filesystem::absolute(boost::filesystem::path(resources_dir()) /
+-                                                                                     "/profiles/" / vendor_profile.second.id / cover_file)
+-                                                             .make_preferred();
+-                    if (boost::filesystem::exists(cover_path)) {
+-                        try {
++                    // Try to find the printer cover. The filesystem calls are inside
++                    // the try too, not just the bitmap load: this runs from event
++                    // handlers that on iOS have no C++ frame above them to catch
++                    // anything, so an exception leaving here takes the process with
++                    // it and leaves nothing in the log. A missing thumbnail must
++                    // never cost more than the thumbnail.
++                    try {
++                        boost::filesystem::path cover_path = orca_absolute_no_cwd(boost::filesystem::path(resources_dir()) /
++                                                                                  "/profiles/" / vendor_profile.second.id / cover_file)
++                                                                 .make_preferred();
++                        if (boost::filesystem::exists(cover_path)) {
+                             p->image_printer->SetBitmap(create_scaled_bitmap(cover_path.string(), this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+                             printer_thumbnails[printer_type] = cover_path.string(); // Cache the path so we don't look up again
+                             return;
+-                        } catch (...) {}
+-                    }
++                        }
++                    } catch (...) {}
+                 }
+             }
+         }

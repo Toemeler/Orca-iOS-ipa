@@ -1,0 +1,103 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index ef4d6b59d..5b5fde662 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -7,6 +7,11 @@
+ #include <TargetConditionals.h>
+ #include <cstdio>      // the iOS startup-error note in generic_exception_handle
+ #include <cstdlib>
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++#include <cerrno>      // the iOS working-directory probe in init_app_config
++#include <climits>     // PATH_MAX
++#include <unistd.h>    // chdir, getcwd
++#endif
+ #endif
+ #include "GUI_Init.hpp"
+ #include "GUI_ObjectList.hpp"
+@@ -2407,6 +2412,62 @@ void GUI_App::init_webview_runtime()
+ }
+ #endif
+ 
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++// The chdir() in init_app_config() is there so a relative path - a crash dump,
++// a stray temporary - lands next to the log. Nothing on iOS writes one: patch
++// 0337 sends the log to Documents/log by absolute path. The chdir still costs
++// something, and the cost is only visible on iOS.
++//
++// boost::filesystem::absolute(p) is absolute(p, current_path()) and evaluates
++// that default argument even when p is already absolute, so every absolute()
++// call anywhere in the process is a getcwd(). getcwd() has to name every
++// directory between "/" and the working directory, and this app is not
++// permitted to read its way out through its own container - so from a working
++// directory inside the sandbox, current_path() fails with
++//
++//   boost::filesystem::current_path: Operation not permitted [system:1]
++//
++// and every caller of absolute() throws. Three patches (0339, 0341, 0343) have
++// each removed one such call site after it crashed the app. This removes the
++// cause: take the new working directory only if getcwd() still answers from it,
++// and put which way it went in the log, so the next device log settles the
++// question instead of another round of inference.
++static std::string g_ios_cwd_note;
++
++static bool ios_getcwd_works()
++{
++    char buf[PATH_MAX];
++    return ::getcwd(buf, sizeof(buf)) != nullptr;
++}
++
++static void ios_chdir_to_log_dir(const std::string &log_dir)
++{
++    char       previous[PATH_MAX];
++    const bool had_cwd = ::getcwd(previous, sizeof(previous)) != nullptr;
++
++    if (::chdir(log_dir.c_str()) != 0) {
++        // errno first, and into a local: the getcwd() below overwrites it, and
++        // the order the operands of a + are evaluated in is up to the compiler.
++        const int chdir_errno = errno;
++        g_ios_cwd_note = "chdir to the log dir failed (errno " + std::to_string(chdir_errno) + "); staying put, getcwd() " +
++                         (ios_getcwd_works() ? "works" : "FAILS") + " here";
++        return;
++    }
++    if (ios_getcwd_works()) {
++        g_ios_cwd_note = "working directory is the log dir, getcwd() works";
++        return;
++    }
++
++    // getcwd() is refused from in there. A log directory is not worth making
++    // every boost::filesystem::absolute() in the process throw.
++    const bool restored = had_cwd && ::chdir(previous) == 0;
++    if (! restored)
++        (void) ::chdir("/");
++    g_ios_cwd_note = std::string("getcwd() is refused inside the data dir; moved back to ") + (restored ? previous : "/") +
++                     ", where getcwd() " + (ios_getcwd_works() ? "works" : "STILL FAILS");
++}
++#endif
++
+ void GUI_App::init_app_config()
+ {
+ 	// Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
+@@ -2466,6 +2527,8 @@ void GUI_App::init_app_config()
+ 
+ #ifdef _WIN32
+     [[maybe_unused]] auto unused_result = _chdir(encode_path((Slic3r::data_dir() + "/log").c_str()).c_str());
++#elif defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++    ios_chdir_to_log_dir(encode_path((Slic3r::data_dir() + "/log").c_str()));
+ #else
+     [[maybe_unused]] auto unused_result = chdir(encode_path((Slic3r::data_dir() + "/log").c_str()).c_str());
+ #endif
+@@ -2489,6 +2552,14 @@ void GUI_App::init_app_config()
+ 
+     BOOST_LOG_TRIVIAL(info) << boost::format("gui mode, Current OrcaSlicer Version %1% build %2%") % SoftFever_VERSION % GIT_COMMIT_HASH;
+ 
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++    // Logged at error level on purpose: patch 0341 clamps the iOS log level to
++    // warning, and this is the first thing to read when a filesystem call throws
++    // "boost::filesystem::current_path: Operation not permitted".
++    if (! g_ios_cwd_note.empty())
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-cwd: " << g_ios_cwd_note;
++#endif
++
+     //BBS: remove GCodeViewer as seperate APP logic
+ 	if (!app_config)
+         app_config = new AppConfig();

@@ -2622,3 +2622,60 @@ user two taps to export (Settings › Privacy & Security › Analytics & Improve
 `Documents/orca-crash.txt` is still worth having — it survives cases the OS
 report misses, and it catches C++ exception text the OS never sees — but it is
 the second-best source, not the first.
+
+
+## The ccache report, read properly (run 73)
+
+```
+1124 Result: local_storage_write
+ 710 Result: local_storage_read_hit
+ 564 Result: local_storage_read_miss
+ 563 Result: direct_cache_miss
+ 563 Result: preprocessed_cache_miss
+ 562 Result: cache_miss
+  75 Result: direct_cache_hit
+```
+
+What this rules out, and what it points at:
+
+- **The cache is not cold and is not being ignored.** 710 `local_storage_read_hit`
+  means ccache found and read that many entries — manifests included. The
+  restore key works and the save works. "ccache never consulted" is dead as a
+  theory.
+- **`direct_cache_miss` 563 with manifests being found** is the signature of
+  *the manifest exists for this command line, but one of the inputs it recorded
+  hashes differently now*. Not a command-line change — that would show as
+  manifests not being found at all.
+- `preprocessed_cache_miss` equals `direct_cache_miss` exactly: the fallback
+  preprocessor mode missed on all the same units, so the inputs genuinely differ
+  rather than being a direct-mode-only artefact.
+- Configuration is already correct for the usual suspects:
+  `CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,locale,system_headers`
+  and `CCACHE_BASEDIR=$GITHUB_WORKSPACE`. So it is not header mtimes, not
+  `__DATE__`, and not absolute paths in the command line.
+
+**Leading hypothesis: the precompiled header.** Every libslic3r and
+libslic3r_gui TU compiles with
+`-Xclang -include-pch .../CMakeFiles/<target>.dir/cmake_pch.hxx.pch`, and ccache
+hashes that `.pch` as one of the unit's inputs. The build directory is created
+fresh every run, so the `.pch` is rebuilt every run, and a clang PCH serialises
+the absolute paths and mtimes of everything it absorbed — of a tree that was
+re-cloned minutes earlier. Different bytes, different hash, and every TU that
+uses it misses. `pch_defines` sloppiness does not help with this: it governs how
+the PCH may be *used*, not whether its content is hashed. The 75 hits would then
+be the targets with no PCH.
+
+That fits the constant 639 / 75 / 563 split the handoff has recorded across
+runs, but it is **not yet proven**.
+
+**The proposed fix, if it is confirmed: `-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON`
+in CI.** Losing the PCH makes a genuinely cold TU slower, but it would take the
+hit rate from 12 % to near 100 % on an unchanged tree, which is the difference
+between a 60-minute build and something closer to ten.
+
+**Why run 73's report could not settle it:** the report grepped `-B8` around
+`Result: cache_miss`, and those eight lines are all stats-lock bookkeeping. The
+reason lines sit much further up each unit's section. The report now ranks the
+reason lines directly (`Include file … has changed`, manifest lines, anything
+mentioning pch) and prints one whole unit's section with `-B60`. The next run
+that produces a report will say which it is.

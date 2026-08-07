@@ -294,8 +294,15 @@ jobs:
           if [ -f "$LOG" ]; then
             echo "=== miss reasons, ranked ==="
             grep -oE "Result: .*" "$LOG" | sort | uniq -c | sort -rn | head -20
-            echo "=== a miss in context ==="
-            grep -B8 "Result: cache_miss" "$LOG" | head -40
+            # -B8 only ever caught ccache's stats-lock bookkeeping, which is
+            # why run 73's report could not say WHY 563 objects missed. The
+            # reason lines ccache emits are much further up each unit's
+            # section, so rank them directly and then print one whole unit.
+            echo "=== reasons, ranked ==="
+            grep -oE "(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Got object file hash from manifest|Failed to .*|Disabling direct mode.*|.* is a precompiled header.*|.*pch.*)" "$LOG" \
+              | sed -E "s#/Users/runner[^ ]*/##" | sort | uniq -c | sort -rn | head -25
+            echo "=== one missing unit, whole section ==="
+            grep -B60 -m1 "Result: cache_miss" "$LOG" | tail -60
             # ccache keys the manifest on the command line, so a flag added to
             # the Orca build - which is what -DwxBUILD_DEBUG_LEVEL=0 did in run
             # 70 - misses every single object exactly once and looks identical
@@ -560,7 +567,10 @@ jobs:
             {
               grep -oE "Result: .*" "$HOME/ccache-step4.log" | sort | uniq -c | sort -rn | head -20
               echo "--- sample miss context ---"
-              grep -B6 "Result: cache_miss" "$HOME/ccache-step4.log" | head -60
+              grep -B60 -m1 "Result: cache_miss" "$HOME/ccache-step4.log" | tail -60
+            echo "--- reasons, ranked ---"
+            grep -oE "(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)" "$HOME/ccache-step4.log" \
+              | sed -E "s#/Users/runner[^ ]*/##" | sort | uniq -c | sort -rn | head -25
               echo "--- first compile command line (diff this against the previous run) ---"
               grep -m1 -A1 "Command line:" "$HOME/ccache-step4.log"
             } > "$D/ccache-miss-reasons.txt" 2>&1 || true

@@ -2442,15 +2442,33 @@ needs no entitlement. Only the three facts SSDP would have carried are missing.
 ## 0348-ios-preconfigured-lan-printer
 
 Answers the user's "can the printer be presetup" — and on iOS it is not a
-convenience, it is the only route. Reads
+convenience, it is the only route.
+
+**The owner's own A1 is built in**, at their explicit request, so the app works
+on their iPad with no setup step:
+
+```
+dev_id 03919D552413839   dev_ip 192.168.0.171   dev_type 3DPrinter-N2S-01
+```
+
+plus its LAN access code. The concern was raised first and reaffirmed: **this
+repository is public, so that access code is public.** It is a LAN credential —
+worth something only to someone already on the same network as the printer — and
+it can be regenerated on the printer's own screen if it should stop being valid.
+Do not extend this pattern to anything that is not a LAN credential.
+
+Any field can be overridden per-device without a rebuild, which is the escape
+hatch for a DHCP lease moving the printer:
 
 ```
 <app>/Documents/orca-printer.json
-{ "dev_id": "<serial>", "dev_ip": "192.168.1.42", "access_code": "<code>",
+{ "dev_id": "<serial>", "dev_ip": "192.168.0.171", "access_code": "<code>",
   "dev_name": "A1", "dev_type": "3DPrinter-N2S-01" }
 ```
 
-(the last two optional; N2S is the A1), writes the access code to
+Every key is optional and falls back to the built-in value, so overriding only
+the IP is a one-line file; invalid JSON is logged and ignored rather than
+leaving the app with no printer. It writes the access code to
 `AppConfig["access_code"][dev_id]` — where `on_machine_alive` has
 `MachineObject` read it from, DevManager.cpp:323 — then hands
 `DeviceManager::on_machine_alive()` exactly the record SSDP would have

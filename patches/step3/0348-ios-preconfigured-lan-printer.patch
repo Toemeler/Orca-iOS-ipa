@@ -1,8 +1,8 @@
 diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
-index e7bc88dd5..0d667d008 100644
+index e7bc88dd5..d3f9ed3a3 100644
 --- a/src/slic3r/GUI/GUI_App.cpp
 +++ b/src/slic3r/GUI/GUI_App.cpp
-@@ -791,6 +791,102 @@ std::vector<std::string> GUI_App::split_str(std::string src, std::string separat
+@@ -791,6 +791,110 @@ std::vector<std::string> GUI_App::split_str(std::string src, std::string separat
      return result;
  }
  
@@ -20,59 +20,67 @@ index e7bc88dd5..0d667d008 100644
 +// Nothing downstream of discovery is blocked. The connection itself is an
 +// ordinary unicast TLS MQTT session to the printer's own address and needs no
 +// entitlement. All that is missing is the three facts SSDP would have carried,
-+// so take them from a file the user can write on the device:
++// so they are built in below, and the record SSDP would have produced is handed
++// to DeviceManager directly. From there it is Orca's ordinary LAN path:
++// MachineObject takes the access code out of AppConfig, and the Device page has
++// a printer to show instead of the MONITOR_NO_PRINTER blank it shows otherwise.
++//
++// The values are the owner's own A1, built in at their explicit request so the
++// app works on their iPad with no setup step. Note what that means: this
++// repository is public, so the access code is public with it. It is a LAN
++// credential - it is worth something only to someone already on the same
++// network as the printer - and it can be regenerated on the printer's own
++// screen, which is what to do if it should stop being valid.
++//
++// Anything here can be overridden per-device, without a rebuild, by
 +//
 +//   <app>/Documents/orca-printer.json
-+//   {
-+//     "dev_id":      "<printer serial, from the printer's own settings screen>",
-+//     "dev_ip":      "192.168.1.42",
-+//     "access_code": "<LAN access code, same screen>",
-+//     "dev_name":    "A1",                  // optional, cosmetic
-+//     "dev_type":    "3DPrinter-N2S-01"     // optional, N2S is the A1
-+//   }
++//   { "dev_id": "...", "dev_ip": "192.168.0.171", "access_code": "...",
++//     "dev_name": "A1", "dev_type": "3DPrinter-N2S-01" }
 +//
-+// and hand DeviceManager exactly the record SSDP would have produced. From
-+// there it is Orca's ordinary LAN path: MachineObject takes the access code out
-+// of AppConfig, and the Device page has a printer to show instead of the
-+// MONITOR_NO_PRINTER blank it shows now.
-+//
-+// The file lives on the device rather than in this repository on purpose: an
-+// access code is a credential for anyone on the same network, and this
-+// repository is public.
++// which is the escape hatch for the field most likely to change: a DHCP lease
++// moving the printer to another address.
 +static void ios_announce_preconfigured_printer(AppConfig *app_config, Slic3r::DeviceManager *device_manager, bool select_it)
 +{
-+    const char *const ios_home = ::getenv("HOME");
-+    if (ios_home == nullptr || *ios_home == '\0' || device_manager == nullptr)
++    if (device_manager == nullptr)
 +        return;
 +
-+    const boost::filesystem::path cfg_path = boost::filesystem::path(ios_home) / "Documents" / "orca-printer.json";
-+    boost::system::error_code     ec;
-+    if (! boost::filesystem::exists(cfg_path, ec) || ec)
-+        return; // no file, nothing configured - not an error
++    std::string dev_id      = "03919D552413839";
++    std::string dev_ip      = "192.168.0.171";
++    std::string access_code = "8c715b4c";
++    std::string dev_name    = "Bambu Lab A1";
++    std::string dev_type    = "3DPrinter-N2S-01"; // N2S is the A1
 +
-+    std::string dev_id, dev_ip, access_code, dev_name, dev_type;
-+    try {
-+        boost::nowide::ifstream in(cfg_path.string().c_str());
-+        json                    j;
-+        in >> j;
-+        dev_id      = j.value("dev_id", std::string());
-+        dev_ip      = j.value("dev_ip", std::string());
-+        access_code = j.value("access_code", std::string());
-+        dev_name    = j.value("dev_name", std::string());
-+        dev_type    = j.value("dev_type", std::string());
-+    } catch (const std::exception &ex) {
-+        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: " << cfg_path.string() << " is not valid JSON: " << ex.what();
-+        return;
++    if (const char *const ios_home = ::getenv("HOME")) {
++        const boost::filesystem::path cfg_path = boost::filesystem::path(ios_home) / "Documents" / "orca-printer.json";
++        boost::system::error_code     ec;
++        if (boost::filesystem::exists(cfg_path, ec) && !ec) {
++            try {
++                boost::nowide::ifstream in(cfg_path.string().c_str());
++                json                    j;
++                in >> j;
++                // Each key is optional; whatever the file does not say keeps the
++                // built-in value, so overriding just the IP is one short file.
++                dev_id      = j.value("dev_id", dev_id);
++                dev_ip      = j.value("dev_ip", dev_ip);
++                access_code = j.value("access_code", access_code);
++                dev_name    = j.value("dev_name", dev_name);
++                dev_type    = j.value("dev_type", dev_type);
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: overridden by " << cfg_path.string();
++            } catch (const std::exception &ex) {
++                // Keep the built-in printer rather than none at all.
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: " << cfg_path.string()
++                                         << " is not valid JSON, ignoring it: " << ex.what();
++            }
++        }
 +    }
 +
 +    if (dev_id.empty() || dev_ip.empty()) {
-+        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: " << cfg_path.string() << " needs both dev_id and dev_ip";
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: need both dev_id and dev_ip, not announcing";
 +        return;
 +    }
 +    if (dev_name.empty())
 +        dev_name = dev_id;
-+    if (dev_type.empty())
-+        dev_type = "3DPrinter-N2S-01"; // N2S is the A1
 +
 +    // This is where MachineObject reads it when on_machine_alive() builds the
 +    // object, so it has to be in place before the announcement below.
@@ -105,7 +113,7 @@ index e7bc88dd5..0d667d008 100644
  void GUI_App::post_init()
  {
      assert(initialized());
-@@ -1049,6 +1145,18 @@ void GUI_App::post_init()
+@@ -1049,6 +1153,18 @@ void GUI_App::post_init()
          m_agent->start_discovery(true, false);
      }
  

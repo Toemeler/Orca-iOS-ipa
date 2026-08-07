@@ -2794,3 +2794,36 @@ fix is in wx or in Orca. **Read that line first next session.**
 - Preset combo text (`PlaterPresetComboBox`) still not painted — may well be
   the same scaling problem rather than a separate paint bug; re-judge once the
   geometry is right.
+
+## 0351: deeper logging, so a device round trip carries more than one fact
+
+Four changes, all aimed at the same problem — the user can only report symptoms,
+and each round trip costs an hour of CI plus a reinstall.
+
+1. **OpenGL error checking is on again.** `3DScene.hpp` only defines
+   `HAS_GLSAFE` when `!NDEBUG`, so on the iOS release build `glsafe(cmd)` was a
+   bare `cmd` and every GL error was discarded — on the one platform where the
+   GL path is new and undebuggable. That is part of why a null
+   `glDrawArraysInstanced` took three rounds to find. Now defined on iOS too.
+   **It costs nothing at the default level**: `glAssertRecentCallImpl()` returns
+   immediately unless `get_logging_level() >= 5`, so it is one branch per GL
+   call until someone asks for `trace`.
+2. **The log level rises to `debug` 30 s after MainFrame**, when startup is
+   over. The clamp in 0341 exists because a *first launch* at `info` writes
+   49 MB in 61 s — nearly all of it the wizard's profile JSON, which is finished
+   long before this fires. Everything after that point is the user importing,
+   slicing and talking to the printer, which is exactly what has been invisible.
+   Only ever raises, so `Documents/orca-log-level.txt` still wins.
+3. **Every dialog is logged.** `MsgDialog`'s constructor is the base of
+   `ErrorDialog`, `MessageDialog` and `WarningDialog`, so one line there catches
+   all of them: `orca-ios-dialog: [title] headline`. `show_error()` logs at the
+   call site too (`orca-ios-error:`), because it defers the dialog to an idle
+   event and the call site is where the surrounding lines say what failed. This
+   is what will finally name the "network plugin not detected" popup.
+4. **Three window-tree dumps** (30 s, 60 s, 150 s) instead of one at 20 s, which
+   on a first launch photographed the setup wizard and an empty plater.
+
+To get the deepest level, put `trace` in `Documents/orca-log-level.txt`: that
+turns on per-GL-call error reporting with file, line and function. Expect it to
+be slow — it adds a driver round trip per GL call inside the render loop — so it
+is for one reproduction, not for daily use.

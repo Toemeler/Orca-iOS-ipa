@@ -1,0 +1,131 @@
+diff --git a/src/slic3r/GUI/3DScene.hpp b/src/slic3r/GUI/3DScene.hpp
+index 76d10620d..90a7bd16a 100644
+--- a/src/slic3r/GUI/3DScene.hpp
++++ b/src/slic3r/GUI/3DScene.hpp
+@@ -23,6 +23,22 @@
+ #define HAS_GLSAFE
+ #endif // NDEBUG
+ 
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++#if defined(__APPLE__) && !TARGET_OS_OSX && !defined(HAS_GLSAFE)
++// iOS ships as a release build, so NDEBUG is set and glsafe(cmd) degrades to a
++// bare cmd - throwing every OpenGL error away on the one platform where the GL
++// path is new, unproven and impossible to attach a debugger to. A null
++// glDrawArraysInstanced went undiagnosed for three rounds partly because of
++// this. Turn it back on: glAssertRecentCallImpl() in 3DScene.cpp already
++// returns immediately unless get_logging_level() >= 5, so at the normal level
++// this costs one predictable branch per GL call, and putting "trace" in
++// Documents/orca-log-level.txt reports every failing call with its file, line
++// and function.
++#define HAS_GLSAFE
++#endif
++
+ #ifdef HAS_GLSAFE
+     extern void glAssertRecentCallImpl(const char *file_name, unsigned int line, const char *function_name);
+     inline void glAssertRecentCall() { glAssertRecentCallImpl(__FILE__, __LINE__, __FUNCTION__); }
+diff --git a/src/slic3r/GUI/GUI.cpp b/src/slic3r/GUI/GUI.cpp
+index 0ee5db79f..3c4ab4e1b 100644
+--- a/src/slic3r/GUI/GUI.cpp
++++ b/src/slic3r/GUI/GUI.cpp
+@@ -1,4 +1,5 @@
+ #include "GUI.hpp"
++#include <boost/log/trivial.hpp>
+ #include "GUI_App.hpp"
+ #include "ICloudServiceAgent.hpp"
+ #include "format.hpp"
+@@ -248,6 +249,10 @@ void change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt
+ 
+ void show_error(wxWindow* parent, const wxString& message, bool monospaced_font)
+ {
++    // Logged here as well as in MsgDialog: this runs at the point of failure,
++    // where the lines around it say what was being attempted, while the dialog
++    // itself is built later from an idle event.
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-error: " << message.utf8_string();
+     wxGetApp().CallAfter([=] {
+         ErrorDialog msg(parent, message, monospaced_font);
+         msg.ShowModal();
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index d1c915d61..df45bf30e 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -1003,9 +1003,39 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+ 
+         this->Bind(wxEVT_TIMER, [timer, driving](wxTimerEvent &) {
+             if (!driving) {
+-                // A device build only wants the one dump.
+-                orca_ios_dump_all_windows("20s after MainFrame");
+-                timer->Stop();
++                // One dump 20 s in is a picture of an empty shell: on a first
++                // launch the setup wizard is still up and no preset exists yet.
++                // Take three, and turn the log up once startup is behind us.
++                static int tick = 0;
++                ++tick;
++                if (tick == 1) {
++                    // The reason for the clamp is over. 0341 pins iOS to
++                    // "warning" because a first launch at "info" writes 49 MB in
++                    // 61 s, almost all of it the wizard's profile JSON - which
++                    // is long finished by now. Everything from here on is the
++                    // user importing, slicing and talking to the printer, and
++                    // that is exactly what we have been unable to see.
++                    //
++                    // Deliberately debug and not trace: glsafe() calls
++                    // glGetError() after every GL call and only reports at
++                    // level 5, so trace adds a driver round trip per call
++                    // inside the render loop. Ask for trace explicitly, in
++                    // Documents/orca-log-level.txt, when that is what is
++                    // wanted - the check below only ever raises the level, so
++                    // it will not undo it.
++                    if (Slic3r::get_logging_level() < 4) {
++                        Slic3r::set_logging_level(4);
++                        BOOST_LOG_TRIVIAL(error)
++                            << "orca-ios-log: startup done, level raised to debug"
++                               " (Documents/orca-log-level.txt overrides; 'trace' also turns on OpenGL error checking)";
++                    }
++                    orca_ios_dump_all_windows("30s after MainFrame");
++                } else if (tick == 2) {
++                    orca_ios_dump_all_windows("60s after MainFrame");
++                } else if (tick >= 5) {
++                    orca_ios_dump_all_windows("150s after MainFrame");
++                    timer->Stop();
++                }
+                 return;
+             }
+             orca_ios_drive_step(s_orca_ios_drive_step);
+@@ -1013,8 +1043,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 timer->Stop();
+         }, timer->GetId());
+ 
+-        timer->Start(driving ? 10000 : 20000, driving ? wxTIMER_CONTINUOUS
+-                                                      : wxTIMER_ONE_SHOT);
++        // 30 s ticks on a device: dumps at 30, 60 and 150 seconds.
++        timer->Start(driving ? 10000 : 30000, wxTIMER_CONTINUOUS);
+     }
+ #endif // __WXOSX_IPHONE__
+ }
+diff --git a/src/slic3r/GUI/MsgDialog.cpp b/src/slic3r/GUI/MsgDialog.cpp
+index 724e54c2f..4da4b83e0 100644
+--- a/src/slic3r/GUI/MsgDialog.cpp
++++ b/src/slic3r/GUI/MsgDialog.cpp
+@@ -1,4 +1,5 @@
+ #include "MsgDialog.hpp"
++#include <boost/log/trivial.hpp>
+ 
+ #include <wx/settings.h>
+ #include <wx/sizer.h>
+@@ -32,6 +33,14 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
+     , btn_sizer(new wxBoxSizer(wxHORIZONTAL))
+     , m_forward_str(forward_str)
+ {
++	// Every Orca dialog - ErrorDialog, MessageDialog, WarningDialog - derives
++	// from this one, so this is the single place that sees all of them. On a
++	// sideloaded iOS build the user can only report "there was an error"; the
++	// text of it never reaches anyone who can act on it. Log it. At error
++	// level, because the iOS log is clamped to warning (0341) and a dialog the
++	// user was shown is the single most useful line in the file.
++	BOOST_LOG_TRIVIAL(error) << "orca-ios-dialog: [" << title.utf8_string() << "] " << headline.utf8_string();
++
+ 	boldfont.SetWeight(wxFONTWEIGHT_BOLD);
+     SetBackgroundColour(0xFFFFFF);
+     SetFont(wxGetApp().normal_font());

@@ -1,0 +1,27 @@
+diff --git a/src/libslic3r/LocalesUtils.cpp b/src/libslic3r/LocalesUtils.cpp
+index d32107233..de0335417 100644
+--- a/src/libslic3r/LocalesUtils.cpp
++++ b/src/libslic3r/LocalesUtils.cpp
+@@ -3,6 +3,8 @@
+ #ifdef _WIN32
+     #include <charconv>
+ #endif
++#include <sstream>     // std::stringstream, below. Came from the precompiled
++                       // header until SLIC3R_PCH=0 (see the step-4 workflow).
+ #include <stdexcept>
+ 
+ #include <fast_float/fast_float.h>
+diff --git a/src/slic3r/GUI/PhysicalPrinterDialog.cpp b/src/slic3r/GUI/PhysicalPrinterDialog.cpp
+index d403d0717..91d83da9d 100644
+--- a/src/slic3r/GUI/PhysicalPrinterDialog.cpp
++++ b/src/slic3r/GUI/PhysicalPrinterDialog.cpp
+@@ -2,6 +2,9 @@
+ #include "PresetComboBoxes.hpp"
+ #include "PrinterCloudAuthDialog.hpp"
+ 
++#include <wx/tooltip.h>  // GetToolTip()->Enable() below needs the complete
++                         // type; wx/window.h only forward-declares it. Came
++                         // from the precompiled header until SLIC3R_PCH=0.
+ #include <cstddef>
+ #include <vector>
+ #include <string>

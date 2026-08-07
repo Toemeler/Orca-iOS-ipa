@@ -2827,3 +2827,24 @@ To get the deepest level, put `trace` in `Documents/orca-log-level.txt`: that
 turns on per-GL-call error reporting with file, line and function. Expect it to
 be slow — it adds a driver round trip per GL call inside the render loop — so it
 is for one reproduction, not for daily use.
+
+## 0352: the two includes the PCH used to supply
+
+Turning the PCH off (SLIC3R_PCH=0, for ccache) removed the force-included
+`pchheader.hpp` from every libslic3r and libslic3r_gui TU, and two files were
+relying on it:
+
+```
+LocalesUtils.cpp:79           std::stringstream buf;          -> <sstream>
+PhysicalPrinterDialog.cpp:474 temp->GetToolTip()->Enable(..)  -> <wx/tooltip.h>
+```
+
+**Exactly two.** Run 77 built with `ninja -k 0`, so it compiled the whole tree
+and reported every failure: `total FAILED: 2`. That is the authoritative list —
+a grep for `std::stringstream` without `<sstream>` also flags `utils.cpp`, which
+compiles fine because it picks the header up transitively. Do not trust the
+grep; trust the `-k 0` run.
+
+Run 77 also proves 0350 and 0351 compile: the display-metrics call, the dialog
+logging, and `HAS_GLSAFE` being defined on iOS all went through the entire tree
+without a diagnostic.

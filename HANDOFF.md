@@ -1863,3 +1863,238 @@ Ruled out already, do not re-investigate: the ES shader set (38 files, all
 `#version 300 es`, all with precision qualifiers, no legacy constructs), the
 shader list the ES path requests (matches what ships), and the GLKit
 default-framebuffer wrapper in patch 0329 (correct).
+
+---
+
+# SESSION 2026-08-06/07: dialogs, the webview, and the bug that made the
+# wizard a no-op
+
+Read this section first. It supersedes everything above it where they disagree.
+
+## Headline: `wxDialog::ShowModal()` never returned on iOS
+
+This is the bug behind almost every symptom the user reported in the last two
+rounds — the empty sidebar, the blank printer combo, the empty filament box,
+the missing build plate, the setup wizard reappearing on every launch, and the
+crash on the second launch. One bug, six symptoms.
+
+`patches/step2/0218-cf-loop-bounded-exit-drain.patch` fixes it.
+
+### The mechanism
+
+`wxCFEventLoop::OSXDoRun()` (`src/osx/core/evtloop_cf.cpp`) drains queued
+events before it returns:
+
+```cpp
+if ( m_shouldExit )
+{
+    while ( DoProcessEvents() == 1 )
+        ;
+    break;
+}
+```
+
+`DoProcessEvents()` → `DispatchTimeout(1000)` → `DoDispatchTimeout()` →
+`CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0, /*returnAfterSourceHandled*/ true)`.
+That returns `kCFRunLoopRunHandledSource` — mapped to **1** — as soon as it
+services *any* source. A live UIKit app always has another one ready: the
+display link driving the GL canvas, WebKit's IPC ports, a `wxTimer`. So the
+condition never went false and the drain was an infinite loop.
+
+macOS never hits this. There `wxGUIEventLoop::OSXDoRun` is `[NSApp run]` and
+`wxModalEventLoop::OSXDoRun` is `[NSApp runModalForWindow:]`; neither touches
+this function. On iPhone the modal loop *does* — because patch 0216 (previous
+session) replaced the empty `wxModalEventLoop::OSXDoRun` stub with
+`wxCFEventLoop::OSXDoRun()`. 0216 was right and necessary; it just landed us on
+this landmine.
+
+The fix bounds the drain (`for (int i = 0; i < 32 && DoProcessEvents() == 1; ++i)`).
+Anything still queued is handled by the loop we return into.
+
+### How the log proved it (this is the technique to reuse)
+
+Patch 0216 logs `modal loop ENTER` / `STOP requested` / `EXIT rc=`. The device
+log from 2026-08-07 08:55:57 has **three ENTERs, three STOPs and one EXIT**:
+
+```
+08:55:58 modal loop ENTER   (Setup Wizard)
+08:56:21 modal loop STOP requested        <- no EXIT
+08:56:30 modal loop ENTER   (wizard again, opened from the printer combo)
+08:56:42 modal loop STOP requested        <- no EXIT
+08:56:48 modal loop ENTER   ("Orca Slicer info")
+08:57:00 modal loop STOP requested
+08:57:07 modal loop EXIT rc=5100          <- 46s after the first STOP
+```
+
+`OSXDoRun`'s outer loop checks `m_shouldExit` at least once a second (the
+`DoProcessEvents()` timeout is 1000 ms), so a stop is *always* noticed within a
+second. Therefore the hang can only be in the drain. That is a proof, not a
+guess.
+
+### Why it produced exactly those symptoms
+
+`GuideFrame::run()` (`WebGuideDialog.cpp`) is:
+
+```cpp
+int result = this->ShowModal();
+if (result == wxID_OK) {
+    this->apply_config(app.app_config, app.preset_bundle, app.preset_updater, ...);
+    app.update_mode();
+    ...
+}
+```
+
+The wizard's own `user_guide_finish` handler calls `SaveProfile()`, which
+writes `firstguide/finish = "1"` and `app_config->save()` — that part *did*
+run. But the vendor / printer-model / filament selections live in
+`m_appconfig_new` and are only pushed into the real `AppConfig` and
+`PresetBundle` by **`apply_config()`, after `ShowModal()`**. That never ran. So:
+
+- the printer combo had no selected preset → blank row, only the three
+  "System presets / --Select/Remove printers-- / --Create printer--" entries;
+- no filaments → empty grey box;
+- no bed/plate selected → nothing to render in the viewport;
+- `preset_bundle->printers.only_default_printers()` stayed true, so
+  `GUI_App::config_wizard_startup()` re-ran the wizard on the next launch;
+- three modal loops piled up on the C++ stack and the process died while
+  unwinding them (the earlier `objc_release` SIGSEGV crash report).
+
+**Independent confirmation of "firstguide was written but presets were not":**
+`GUI_App::run_wizard` picks the dialog style from that flag —
+
+```cpp
+long pStyle = wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU;      // 0x20081800
+if (strFinish == "false" || strFinish.empty())
+    pStyle = wxCAPTION | wxTAB_TRAVERSAL;                    // 0x20080000
+```
+
+and patch 0215 logs the style on every `TLW SHOW`. Launch 1 showed
+`style=0x20080000`, launches 2 and 3 showed `style=0x20081800`. The flag was
+persisted; the presets were not. Decoding that style number is how you tell
+"first run" from "re-run" without any extra instrumentation.
+
+## Everything else fixed this session
+
+| Patch | What it does |
+|---|---|
+| `step2/0215-iphone-secondary-windows-as-dialogs.patch` | Secondary `wxTopLevelWindow`s get their own `UIWindow`, centred, clamped to the screen, `windowLevel = UIWindowLevelAlert+1`, `makeKeyAndVisible`. Also fixes `Create()` ignoring `pos`. Logs every `TLW SHOW`/`HIDE` with class, title, **style**, popup/main flags, frame and level. |
+| `step2/0216-iphone-real-modal-event-loop.patch` | `wxModalEventLoop::OSXDoRun`/`OSXDoStop` were empty stubs — every `ShowModal()` returned instantly, so the config wizard and every login/error dialog flashed and vanished. Now runs the CF loop. Logs ENTER/STOP/EXIT. |
+| `step2/0217-iphone-webview-file-url-read-access.patch` | `loadFileRequest:allowingReadAccessToURL:` for `file:` URLs, `javaScriptCanOpenWindowsAutomatically = YES`, in-place load for `createWebViewWithConfiguration`, navigation ALLOW/CANCEL and LOAD FAILED logging, and **no synchronous `RunScript` in `AddScriptMessageHandler`** (kept `AddUserScript`). |
+| `step2/0218-cf-loop-bounded-exit-drain.patch` | The headline fix above. |
+| `step3/0340-ios-window-tree-dump.patch` | `orca-ios-ui:` window tree dump 20 s after `MainFrame` — class, label, id, position, size, best size, shown/HIDDEN/disabled/OFFSCREEN for every `wxWindow`. Plus an in-app driver gated on `ORCA_IOS_DRIVE`. |
+| `step3/0341-no-cwd-in-guide-profile-load.patch` | `orca_absolute_no_cwd()` replaces seven one-arg `boost::filesystem::absolute()` calls in `WebGuideDialog.cpp`; drops a 25 MB JSON log line; clamps the iOS log level to `warning`. **Log went from 49 MB / 61 s to 320 KB.** |
+| `step3/0342-ios-no-network-plugin-download.patch` | Guards `GUI_App::updating_bambu_networking()` and `ShowDownNetPluginDlg()` on iOS. Confirmed working — the "Install Bambu Network plugin" screen is gone from the 08:55 log. |
+| `tools/ci/make-ios-icons.py` | Stdlib-only PNG decode/crop/flatten/downscale → `AppIcon.appiconset`; both workflows run it + `actool` and merge the partial plist. **User confirmed the icon works.** |
+
+## Root causes found and fixed earlier in this session (all confirmed on device)
+
+- **`boost::filesystem::absolute(p)` is `absolute(p, current_path())`** — the
+  default argument is always evaluated, and `getcwd()` is EPERM on iOS outside
+  the sandbox working directory. This made `LoadProfileData` throw. Any
+  remaining one-arg `absolute()` / `current_path()` call is a live landmine;
+  the step3 workflow now lists them at the end of the build.
+- **A 25 MB `strAll` JSON dump at info level** was 60 s of the startup time.
+- **`loadFileURL:` rejects URLs with a query string.** Orca's guide pages are
+  `index.html?target=1&lang=en_US`, so switching to `loadFileURL:` blanked every
+  webview. `loadFileRequest:allowingReadAccessToURL:` (iOS 15+) is the right API.
+- **`stringByResolvingSymlinksInPath` strips a leading `/private`.** Both sides
+  of a read-access prefix comparison must use the same normalisation, and the
+  URL you load must be the normalised one.
+- **`WKPreferences.javaScriptCanOpenWindowsAutomatically` defaults to NO on
+  iOS** (YES on macOS). It silently blocked the wizard's `window.open` jump.
+  `orca-overlay/resources/web/guide/0/load.js` also now uses
+  `window.location.replace()` instead of `window.open(..., '_self')`.
+- **`wxWebView::RunScript` is synchronous** — it waits in
+  `wxEventLoopBase::YieldFor`, which pumps a nested CFRunLoop. Calling it from
+  `AddScriptMessageHandler` inside a `CallAfter` inside `ShowModal` popped an
+  autorelease pool underneath one in flight (the `objc_release` SIGSEGV).
+
+## Diagnostics to use next time — do not re-derive these
+
+1. **`wx-ios TLW SHOW/HIDE`** (0215): tells you whether a window was created,
+   where, how big, and at what level. The `style=0x…` field distinguishes code
+   paths (see the wizard example above).
+2. **`wx-ios: modal loop ENTER/STOP/EXIT`** (0216): an ENTER with no matching
+   EXIT means the code after `ShowModal()` never ran. **Always count these.**
+3. **`orca-ios-ui:` window tree** (0340): separates "never created" from
+   "created 0 px wide" from "created off screen" from "hidden".
+4. **`wx-ios webview: loadFileRequest … (read access …)` / `navigation ALLOW` /
+   `LOAD FAILED`** (0217): the whole webview story in three line types.
+5. **`orca-ios-webview: evaluateJavaScript:` / `FAILED:`** (0333): every script
+   Orca injects and every JS exception.
+
+Reading order for a device log: `grep "modal loop"` first, then
+`grep "wx-ios TLW"`, then the tree.
+
+## Still open
+
+- **`window.postMessage()` with no arguments** is being evaluated on the
+  homepage webview and throws `A JavaScript exception occurred`. Present on
+  every launch. Probably harmless, but it is the last line before the process
+  died on the two crash-loop launches (08:58:48 and 08:58:52), so it is worth
+  ten minutes. Find the `RunScript` caller that formats an empty payload.
+- **The log level clamp costs breadcrumbs.** 0341 forces iOS to `warning`, which
+  hides `run wizard...`, `GuideFrame returned ok`, `finished run wizard` and the
+  `OnScriptMessage` trace. Promote those specific lines to error rather than
+  raising the global level — that is the cheapest next diagnostic win, and it
+  would have shown the modal-loop bug in one line.
+- **The window tree is dumped only once, 20 s after `MainFrame`**, which is
+  while the wizard is still up and before any presets exist. Add dumps at ~90 s
+  and ~180 s (the timer block is at the end of `MainFrame::MainFrame()` in
+  patch 0340) so there is a tree of the Prepare page in its loaded state.
+- **The app reports the screen as 1600×1200** while an M4 iPad Pro is
+  1032×1376 points. The GL canvas reports `2070x1959`. Something is running
+  scaled; this may explain broad UI misalignment. Not investigated.
+- **ccache is at 88 % miss on step 3/4** — a constant 639 total / 76 hit / 563
+  miss across runs. Not explained. This is most of the ~60-70 minute build time.
+- **The 3D viewport** (previous session's open bug) — the EAGL drawable bind.
+  Note the plater has never yet had a valid printer preset, so "nothing renders"
+  has had two possible causes all along. Re-test after this build.
+
+## Environment facts that changed conclusions
+
+- The user's device is an **iPad Pro M4 (2024) on iOS 27 beta 4**. The runner's
+  simulator is **iOS 26.2** — a full major version apart. "It worked in the
+  simulator" is therefore *not* evidence that it works on the device. A
+  hypothesis was wrongly discarded once on that basis; do not repeat it.
+- The user runs **Bambu A1 in LAN-only mode**, has already made LAN work on the
+  `lan-backend` branch, and does not want the Bambu network plugin prompt at
+  all. Branch audit done this session: the working branch's 68 patches are a
+  strict superset of `main` (59) and `lan-backend` (58); no non-patch files are
+  missing; only 4 patches differ in content, all changed this session, none
+  LAN-related. **No LAN progress has been lost.**
+- **`idb` does not work on the runner.** `brew install idb-companion` fails and
+  every `idb` call dies on a missing `/usr/local/bin/idb_companion`. That is why
+  the in-app driver (`ORCA_IOS_DRIVE`, patch 0340) exists — the app presses its
+  own buttons.
+
+## CI facts
+
+- **`ios-step4-device-ipa.yml` is `workflow_dispatch` only.** It used to trigger
+  on pushes matching `paths: patches/**`, and because it has
+  `cancel-in-progress`, an unrelated commit killed a running device build. Do
+  not put a push trigger back on it.
+- `ios-step3-gui.yml` has `concurrency: group: step3-gui-${{ github.ref }},
+  cancel-in-progress: true`.
+- **`WX_KEY` hashes `wx-overlay/**` + `patches/step2/*.patch`.** Any step2 patch
+  invalidates the wxWidgets prefix cache and adds a full wx rebuild to the run.
+  0218 is a step2 patch, so build 66 pays that cost.
+- Builds take **60-75 minutes**. Do not promise less. An earlier estimate of
+  ~37 minutes based on a wx cache hit was wrong: the wx build was skipped and
+  the Orca compile still took 36+ minutes on its own.
+- GitHub had an **Actions incident from 15:22 UTC on 2026-08-06**; queue delays
+  and cancel 502s that day were that, not runner congestion.
+
+## Where things stand right now
+
+- Branch: `claude/ipad-build-failure-dkutxc`, HEAD `f6a6c7b`
+  ("Make modal dialogs actually return on iOS").
+- **Step 4 device-IPA run 66 is queued on `f6a6c7b`.** Run 65 (on `5925087`,
+  without the modal fix) was cancelled to free the runner.
+- What to check on the device once run 66's IPA is installed, in order:
+  1. Complete the setup wizard, pick the A1 and a filament.
+  2. `grep "modal loop"` in the log — every ENTER must have an EXIT within a
+     second of its STOP.
+  3. The sidebar should show the printer and filament; the plate should render.
+  4. Relaunch. The wizard must **not** come back, and the app must not crash.
+

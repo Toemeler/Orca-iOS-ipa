@@ -2405,3 +2405,76 @@ custom-control painting:
   combo is collapsed to nothing.
 
 Not investigated further — it needs the app, not a log.
+
+
+# SESSION 2026-08-07 (later still): why the Device page is blank, and pre-setup
+
+## The Device page is not broken — there is no printer to show
+
+`MonitorPanel::update_all()` (Monitor.cpp:341):
+
+```cpp
+obj = dev->get_selected_machine();
+if (!obj) { show_status((int)MONITOR_NO_PRINTER); ... return; }
+```
+
+and `show_status(MONITOR_NO_PRINTER)` calls `set_default()`, which blanks the
+page. The 11:59:31 window tree confirms the page itself is fully built and
+populated — Status/Storage/Update/Assistant(HMS) rail, camera panel,
+`MediaPlayCtrl`, printing-progress panel, Control panel with "Printer Parts".
+Nothing is missing. `get_selected_machine()` simply returns null, so the user
+sees an empty page and reads it as "doesn't load".
+
+## Why no printer ever appears: iOS will not let this app do SSDP
+
+Bambu LAN discovery is SSDP — the printer announces to multicast
+`239.255.255.250` (`BambuLanDiscovery.cpp:42`, ports 2021 and 1990). Since
+iOS 14, receiving multicast requires
+`com.apple.developer.networking.multicast`, which Apple grants on request to a
+paid developer account for a named App ID. **A sideloaded build cannot have
+it.** `BambuLanDiscovery` already calls `IP_ADD_MEMBERSHIP` best-effort and
+notes this in a comment; that best effort fails, and nothing is discovered.
+
+The connection itself is *not* affected: it is a unicast TLS MQTT session to
+the printer's own address (`BambuLanPrinterAgent::connect_printer`), which
+needs no entitlement. Only the three facts SSDP would have carried are missing.
+
+## 0348-ios-preconfigured-lan-printer
+
+Answers the user's "can the printer be presetup" — and on iOS it is not a
+convenience, it is the only route. Reads
+
+```
+<app>/Documents/orca-printer.json
+{ "dev_id": "<serial>", "dev_ip": "192.168.1.42", "access_code": "<code>",
+  "dev_name": "A1", "dev_type": "3DPrinter-N2S-01" }
+```
+
+(the last two optional; N2S is the A1), writes the access code to
+`AppConfig["access_code"][dev_id]` — where `on_machine_alive` has
+`MachineObject` read it from, DevManager.cpp:323 — then hands
+`DeviceManager::on_machine_alive()` exactly the record SSDP would have
+produced, and selects the machine once. From there it is Orca's ordinary LAN
+path, untouched.
+
+- Hooked into `GUI_App::post_init()` right after `m_agent->start_discovery()`.
+- A 5 s beacon re-announces (Orca ages out machines that stop announcing) but
+  **does not re-select**: `set_selected_machine()` on the same LAN dev_id
+  disconnects and reconnects, so re-selecting on a timer would thrash the
+  session.
+- Logged at error level (`orca-ios-printer:`) so it survives the clamp.
+- **The file is on the device, not in this repo, deliberately.** An access code
+  is a credential for anyone on the network and this repository is public.
+  Never commit one, and never bake one into a build.
+
+Not yet built or tested on device.
+
+## Two things to check when this lands
+
+1. If the Device page fills in, discovery was the only thing missing and the
+   whole LAN stack works. If it shows "connecting" and stays there, the MQTT
+   path is next — turn the log level up with `orca-log-level.txt` (0347) and
+   look for `BambuLanPrinterAgent`.
+2. `dev_type` may need to be something other than `3DPrinter-N2S-01` —
+   `_parse_printer_type()` maps it, and a wrong value gives the right printer
+   with the wrong capabilities.

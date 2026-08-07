@@ -1,0 +1,126 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index e7bc88dd5..0d667d008 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -791,6 +791,102 @@ std::vector<std::string> GUI_App::split_str(std::string src, std::string separat
+     return result;
+ }
+ 
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++// A sideloaded iOS build cannot find a Bambu printer by itself.
++//
++// Discovery is SSDP: the printer announces itself to the multicast group
++// 239.255.255.250, and iOS has refused multicast to apps without the
++// com.apple.developer.networking.multicast entitlement since iOS 14. Apple
++// grants that entitlement on request, to a paid developer account, for a named
++// App ID - there is no form of it a sideloaded build can carry.
++// BambuLanDiscovery already joins the group best-effort and says as much in a
++// comment; this is what to do when the best effort fails.
++//
++// Nothing downstream of discovery is blocked. The connection itself is an
++// ordinary unicast TLS MQTT session to the printer's own address and needs no
++// entitlement. All that is missing is the three facts SSDP would have carried,
++// so take them from a file the user can write on the device:
++//
++//   <app>/Documents/orca-printer.json
++//   {
++//     "dev_id":      "<printer serial, from the printer's own settings screen>",
++//     "dev_ip":      "192.168.1.42",
++//     "access_code": "<LAN access code, same screen>",
++//     "dev_name":    "A1",                  // optional, cosmetic
++//     "dev_type":    "3DPrinter-N2S-01"     // optional, N2S is the A1
++//   }
++//
++// and hand DeviceManager exactly the record SSDP would have produced. From
++// there it is Orca's ordinary LAN path: MachineObject takes the access code out
++// of AppConfig, and the Device page has a printer to show instead of the
++// MONITOR_NO_PRINTER blank it shows now.
++//
++// The file lives on the device rather than in this repository on purpose: an
++// access code is a credential for anyone on the same network, and this
++// repository is public.
++static void ios_announce_preconfigured_printer(AppConfig *app_config, Slic3r::DeviceManager *device_manager, bool select_it)
++{
++    const char *const ios_home = ::getenv("HOME");
++    if (ios_home == nullptr || *ios_home == '\0' || device_manager == nullptr)
++        return;
++
++    const boost::filesystem::path cfg_path = boost::filesystem::path(ios_home) / "Documents" / "orca-printer.json";
++    boost::system::error_code     ec;
++    if (! boost::filesystem::exists(cfg_path, ec) || ec)
++        return; // no file, nothing configured - not an error
++
++    std::string dev_id, dev_ip, access_code, dev_name, dev_type;
++    try {
++        boost::nowide::ifstream in(cfg_path.string().c_str());
++        json                    j;
++        in >> j;
++        dev_id      = j.value("dev_id", std::string());
++        dev_ip      = j.value("dev_ip", std::string());
++        access_code = j.value("access_code", std::string());
++        dev_name    = j.value("dev_name", std::string());
++        dev_type    = j.value("dev_type", std::string());
++    } catch (const std::exception &ex) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: " << cfg_path.string() << " is not valid JSON: " << ex.what();
++        return;
++    }
++
++    if (dev_id.empty() || dev_ip.empty()) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: " << cfg_path.string() << " needs both dev_id and dev_ip";
++        return;
++    }
++    if (dev_name.empty())
++        dev_name = dev_id;
++    if (dev_type.empty())
++        dev_type = "3DPrinter-N2S-01"; // N2S is the A1
++
++    // This is where MachineObject reads it when on_machine_alive() builds the
++    // object, so it has to be in place before the announcement below.
++    if (! access_code.empty() && app_config != nullptr)
++        app_config->set_str("access_code", dev_id, access_code);
++
++    json alive;
++    alive["dev_name"]     = dev_name;
++    alive["dev_id"]       = dev_id;
++    alive["dev_ip"]       = dev_ip;
++    alive["dev_type"]     = dev_type;
++    alive["dev_signal"]   = "-40dBm";
++    alive["connect_type"] = "lan";
++    alive["bind_state"]   = "free";
++    alive["sec_link"]     = "secure";
++    device_manager->on_machine_alive(alive.dump());
++
++    // Selecting is what dials the printer, and re-selecting a LAN machine tears
++    // the session down and dials again - so it happens once, not on every
++    // beacon. The beacon exists because Orca ages out machines that stop
++    // announcing themselves.
++    if (select_it) {
++        device_manager->set_selected_machine(dev_id);
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: selected " << dev_name << " (" << dev_id << ") at " << dev_ip
++                                 << ", access code " << (access_code.empty() ? "MISSING - it will not connect" : "set");
++    }
++}
++#endif // TARGET_OS_IPHONE
++
+ void GUI_App::post_init()
+ {
+     assert(initialized());
+@@ -1049,6 +1145,18 @@ void GUI_App::post_init()
+         m_agent->start_discovery(true, false);
+     }
+ 
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++    // Stand in for the SSDP announcements iOS will not let this app receive.
++    ios_announce_preconfigured_printer(app_config, m_device_manager, true);
++    {
++        wxTimer *const beacon = new wxTimer(this);
++        this->Bind(wxEVT_TIMER, [this](wxTimerEvent &) {
++            ios_announce_preconfigured_printer(app_config, m_device_manager, false);
++        }, beacon->GetId());
++        beacon->Start(5000, wxTIMER_CONTINUOUS);
++    }
++#endif
++
+     //update the plugin tips
+     CallAfter([this] {
+             mainframe->refresh_plugin_tips();

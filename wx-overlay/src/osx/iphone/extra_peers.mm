@@ -133,6 +133,27 @@ public:
         // so this one override keeps all of them in sync.
         [b setImage:(bitmap.IsOk() ? wxOSXGetImageFromBundle( bitmap ) : nil)
            forState:UIControlStateNormal];
+
+        // A UIButton lays its image out inside the content rect, and a
+        // UIImageView defaults to UIViewContentModeScaleToFill - so an 18x18
+        // check mark is *stretched* to whatever that rect happens to be rather
+        // than kept square. On the iPad the checkboxes came out as ~13x6 teal
+        // slivers with no visible tick. Keep the aspect ratio and take the
+        // insets out of the way, so a wrong content rect can only make the
+        // artwork small, never squash it.
+        b.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        b.contentEdgeInsets     = UIEdgeInsetsZero;
+        b.imageEdgeInsets       = UIEdgeInsetsZero;
+        b.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+        b.contentVerticalAlignment   = UIControlContentVerticalAlignmentCenter;
+
+        // And report what the geometry actually is, because wx believing the
+        // control is 18x18 while it draws 13x6 is the whole question.
+        if ( bitmap.IsOk() ) {
+            const CGSize img = wxOSXGetImageFromBundle( bitmap ).size;
+            NSLog( @"orca-ios-toggle: button frame %.0fx%.0f, image %.0fx%.0f",
+                   b.frame.size.width, b.frame.size.height, img.width, img.height );
+        }
     }
 
     void controlAction( void* sender,

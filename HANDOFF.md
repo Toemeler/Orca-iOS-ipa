@@ -2858,3 +2858,85 @@ header really was the cache-buster, and `SLIC3R_PCH=0` really is the fix.
 
 Cost of getting there: run 76 (superseded), run 77 (the two missing includes).
 Two builds to halve every build from here on.
+
+
+# SESSION 2026-08-07 (night): the sidebar, diagnosed properly
+
+A desktop screenshot of the same panel finally made a proper diff possible.
+~25 defects, which sort into **three** causes, not twenty-five.
+
+## Cause 1: owner-drawn text is not painted
+
+Blank: printer name, filament name, the whole process preset row, every tab
+label (Quality/Strength/...), and the icon buttons in the three header rows.
+Painted correctly: the nozzle combo ("0.4"), the seam combo ("Aligned"), every
+`wxStaticText`, every section header and icon.
+
+Note the tab strip is **not missing** — its baseline rule and the teal
+active-tab underline both draw. Only the labels are gone. Same for the preset
+combos: `ComboBox::GetLabel()` returns the right string (the window tree shows
+`wxWindow "Bambu Lab A1"`), and `TextInput::render()` draws it with
+`dc.DrawText`. So the string is there and the paint runs; the text lands
+somewhere invisible.
+
+The suspect line is in `TextInput::render()`:
+
+```cpp
+pt.x += textSize.x;                                   // textSize = text_ctrl->GetSize()
+pt.y = (size.y + textSize.y) / 2 - labelSize.y;       // <- grows negative as the font grows
+```
+
+The taller the label font relative to the control, the further **up** the text
+is placed, until it is off the top. That single formula would produce both the
+blank combos and the half-clipped "Nozzle" caption. Not yet proven.
+
+## Cause 2: fonts and control heights are on different scales
+
+`Label::sysFont()` has `#ifndef __APPLE__ size = size * 4 / 5; #endif` — iOS
+takes the unscaled branch, because it is `__APPLE__`. Meanwhile a native iOS
+`UITextField` is ~33 pt tall where a macOS one is ~21, which inflates every
+`TextInput`/`ComboBox` to 41 pt (confirmed in the window tree) against ~28 on
+the desktop. Captions render at body size and clip; row padding is inflated;
+some spacers collapse to zero. Whether the right fix is the font branch, the
+control metrics, or both is unresolved.
+
+## Cause 3: the checkbox squash — found and fixed
+
+`wxIPhoneToggleButtonPeer::SetBitmap` in `wx-overlay/src/osx/iphone/extra_peers.mm`
+did `[b setImage:...]` and nothing else. A `UIButton` lays its image out inside
+its content rect and `UIImageView` defaults to `UIViewContentModeScaleToFill`,
+so an 18x18 tick is **stretched** to whatever that rect is — hence ~13x6 teal
+slivers with no visible tick. Now sets `ScaleAspectFit`, zeroes the content and
+image insets, and centres both alignments, so a wrong content rect can make the
+artwork small but never squash it. It also `NSLog`s the button frame against the
+image size (`orca-ios-toggle:`), which will say whether the frame is wrong too.
+
+**This touches wx-overlay, so WX_KEY changes and wx rebuilds (~6 min).**
+
+## The canvas: three IPAs from one compile
+
+`UIScreen.bounds` 1600x1200 / `nativeBounds` 2064x2752 / `scale` 2 /
+`nativeScale` 1.72 is iOS running the app on a compatibility canvas. wx 3.3.2's
+iPhone port has no `UIScene` support and iPadOS puts non-scene apps in exactly
+that mode. Since the Info.plist is written *after* the link, variants cost a
+re-zip and nothing else — so the step-4 workflow now emits:
+
+| artifact | difference |
+|---|---|
+| `OrcaSlicer-iPad.ipa` | baseline, unchanged |
+| `OrcaSlicer-iPad-scene.ipa` | adds `UIApplicationSceneManifest` |
+| `OrcaSlicer-iPad-windowed.ipa` | drops `UIRequiresFullScreen` |
+
+Same bundle id in all three, so installing one over another keeps the data
+directory and the printer config. Install one, read `orca-ios-display`, and the
+question is answered without another build. **The scene variant may show a black
+screen** — wx creates its `UIWindow` from the app delegate and has no scene
+delegate. That is a real possible outcome, not a build failure.
+
+## Still unfixed, deliberately
+
+Causes 1 and 2 are not guessed at in this build. Both hypotheses are plausible
+and both touch code that every widget in the app goes through; a wrong guess
+there is a worse regression than the current state. The canvas result decides
+which is even worth pursuing — if the app gets a native canvas, the font/metric
+mismatch may resolve with it.

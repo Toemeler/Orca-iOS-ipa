@@ -511,6 +511,62 @@ jobs:
             echo "::error::the IPA has no Assets.car; the app icon will be blank"
             exit 1
           }
+
+          # ---- Info.plist variants, three IPAs from one compile ------------
+          #
+          # The iPad is handed a 1600x1200 point canvas on a panel that is
+          # 2752x2064 physical: UIScreen reports scale 2 but nativeScale 1.72,
+          # which is the signature of iOS running the app on a compatibility
+          # canvas and downsampling it. wx 3.3.2's iPhone port has no UIScene
+          # support at all, and iPadOS puts non-scene apps into exactly that
+          # mode - so the fix is a bundle key, and there are three candidates.
+          #
+          # Testing one candidate per build is what has been costing an hour a
+          # question. The plist is written AFTER the binary is linked, so extra
+          # variants cost a re-zip and nothing else. Install one, read the
+          # "orca-ios-display" line, and the question is answered.
+          #
+          #   -baseline : exactly what shipped before (control)
+          #   -scene    : adds UIApplicationSceneManifest
+          #   -windowed : drops UIRequiresFullScreen
+          #
+          # The bundle id is deliberately the same in all three, so installing
+          # one over another keeps the data directory and the printer config.
+          # Keep the baseline plist, not a fourth 171 MB copy of the IPA:
+          # OrcaSlicer-iPad.ipa already *is* the baseline.
+          cp "$APP/Info.plist" /tmp/Info.plist.baseline
+
+          make_variant () {
+            local name="$1"; shift
+            python3 - "$APP/Info.plist" "$@" <<'MUTATE'
+          import plistlib, sys
+          path, mode = sys.argv[1], sys.argv[2]
+          with open(path, 'rb') as fh:
+              pl = plistlib.load(fh)
+          if mode == 'scene':
+              pl['UIApplicationSceneManifest'] = {
+                  'UIApplicationSupportsMultipleScenes': False,
+              }
+          elif mode == 'windowed':
+              pl.pop('UIRequiresFullScreen', None)
+          with open(path, 'wb') as fh:
+              plistlib.dump(pl, fh, fmt=plistlib.FMT_BINARY)
+          MUTATE
+            plutil -lint "$APP/Info.plist"
+            local out="$PWD/artifact/OrcaSlicer-iPad-${name}.ipa"
+            rm -f "$out"
+            (cd stage && zip -qr "$out" Payload/OrcaSlicer.app/Info.plist \
+                                        Payload/OrcaSlicer.app/OrcaSlicer)
+            (cd stage && zip -qr "$out" Payload)
+            echo "built variant $name"
+          }
+
+          make_variant scene    scene
+          # Rebuild the plist from the baseline before the second variant, so
+          # the two changes are tested separately rather than stacking.
+          cp /tmp/Info.plist.baseline "$APP/Info.plist"
+          make_variant windowed windowed
+
           ls -lh artifact/
 
           # Verify the artifact the way an installer reads it, rather than

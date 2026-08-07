@@ -2176,3 +2176,20 @@ full gzipped log and screenshots into `ci-logs/simdrive-run-N/`. Use it for
 anything that does not need a recompile. Remember the simulator is iOS 26.2 and
 the device is iOS 27 beta 4.
 
+
+### Branch state (2026-08-07)
+
+`main` was fast-forwarded to the working branch at `d05018d`. **`main` and
+`claude/ipad-build-failure-dkutxc` are now identical** — start from `main`.
+
+Other branches on the remote, kept for reference only, all strictly behind:
+
+- `claude/lan-backend-implementation-gxu2jr` — where the Bambu A1 LAN backend
+  was built and tested. Its 58 patches are a subset of what is now on `main`;
+  the LAN work itself lives in `orca-overlay/src/slic3r/Utils/BambuLan*` and
+  `patches/step3/0335-ios-bambu-lan-agent.patch`, both present on `main`.
+- `claude/step-4-ipa-parity-bkdym6`, `claude/basic-ipad-app-plan-pb0b4p`,
+  `claude/merge-branches-to-main-78ua1g` — older tracks, superseded.
+
+Audited this session: `main` now carries 8 step1 + 18 step2 + 43 step3 patches
+plus both overlays. Nothing from any other branch is missing.

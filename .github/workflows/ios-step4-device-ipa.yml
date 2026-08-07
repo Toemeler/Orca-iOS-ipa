@@ -264,6 +264,7 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$IOS_MIN \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DSLIC3R_GUI=1 -DSLIC3R_OPENGL_ES=1 -DSLIC3R_STATIC=1 \
+            -DSLIC3R_PCH=0 -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
             -DCMAKE_PREFIX_PATH="$PREFIX/usr/local;$WXPREFIX" \
             -DCMAKE_FIND_ROOT_PATH="$PREFIX/usr/local;$WXPREFIX" \
             -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
@@ -273,6 +274,29 @@ jobs:
             -DJPEG_INCLUDE_DIR="$PREFIX/usr/local/include" \
             -DCMAKE_BUILD_TYPE=Release 2>&1 | tee /tmp/step4-configure.log
 
+      # Precompiled headers off, on purpose, to make ccache work.
+      #
+      # Run 73: 75 direct_cache_hit against 563 direct_cache_miss, with 710
+      # local_storage_read_hit - so the cache was restored and the manifests
+      # were found, and then rejected because a recorded input hashed
+      # differently. Sloppiness already covers time_macros, pch_defines and
+      # header mtimes, and CCACHE_BASEDIR covers absolute paths, which leaves
+      # the PCH: ccache hashes cmake_pch.hxx.pch as an input, the build tree is
+      # created fresh every run so the .pch is rebuilt every run, and a clang
+      # PCH serialises the paths and mtimes of a source tree that was cloned
+      # minutes earlier. Different bytes, different hash, every dependent TU
+      # misses. pch_defines governs how a PCH may be used, not whether its
+      # content is hashed.
+      #
+      # SLIC3R_PCH=0 is Orca's own option (guarding add_precompiled_header in
+      # src/libslic3r/CMakeLists.txt); CMAKE_DISABLE_PRECOMPILE_HEADERS is the
+      # backstop for anything calling target_precompile_headers directly.
+      #
+      # Expect NO speedup on the first run after this change - dropping
+      # -include-pch changes every compile command line, so every manifest is
+      # new and the whole tree is a miss. The payoff is the run after that.
+      # If the hit rate does not move, put the PCH back: a genuinely cold TU
+      # is slower without it.
       - name: "[7/9] Build + link OrcaSlicer (device)"
         run: |
           set -euxo pipefail

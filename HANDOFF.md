@@ -2668,10 +2668,28 @@ be the targets with no PCH.
 That fits the constant 639 / 75 / 563 split the handoff has recorded across
 runs, but it is **not yet proven**.
 
-**The proposed fix, if it is confirmed: `-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON`
-in CI.** Losing the PCH makes a genuinely cold TU slower, but it would take the
-hit rate from 12 % to near 100 % on an unchanged tree, which is the difference
-between a 60-minute build and something closer to ten.
+**Applied: `-DSLIC3R_PCH=0 -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON`** in the step-4
+configure. `SLIC3R_PCH` is Orca's own option (`CMakeLists.txt:124`, guarding
+`add_precompiled_header` at `src/libslic3r/CMakeLists.txt:635`); that macro is a
+wrapper around CMake's `target_precompile_headers`
+(`cmake/modules/PrecompiledHeader.cmake:257`), which is what emits the
+`cmake_pch.hxx` seen on the compile line. The CMake global is the backstop for
+anything calling `target_precompile_headers` directly.
+
+**Two things to expect.**
+
+1. **The first run after this change is a full miss and will not be faster.**
+   Dropping `-include-pch` changes every compile command line, so every manifest
+   is new. The payoff is the run after that.
+2. **It may not compile.** `FORCEINCLUDE` means every libslic3r TU currently gets
+   `pchheader.hpp` whether it asks for it or not, so any source that has been
+   relying on that for a declaration will now fail. `SLIC3R_PCH` is an
+   upstream-supported option, so this should be rare, but it is the risk being
+   taken. If it happens the answer is to put the PCH back, not to start adding
+   includes — losing the cache is cheaper than diverging from upstream.
+
+If the hit rate does not move on the second run, revert: a genuinely cold TU is
+slower without a PCH, and the whole point was the cache.
 
 **Why run 73's report could not settle it:** the report grepped `-B8` around
 `Result: cache_miss`, and those eight lines are all stats-lock bookkeeping. The

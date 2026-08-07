@@ -1,0 +1,119 @@
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -794,6 +794,7 @@
+ #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+ // src/slic3r/GUI/ios_webview_support.mm
+ void orca_ios_request_local_network_permission();
++void orca_ios_register_bundled_fonts();
+ 
+ // A sideloaded iOS build cannot find a Bambu printer by itself.
+ //
+@@ -2920,6 +2921,11 @@
+     wxLog::SetLogLevel(wxLOG_Message);
+ #endif
+ 
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++    // Must precede initSysFont: that is where every Label:: font is built, and
++    // a face that is not registered yet is silently replaced by Helvetica.
++    orca_ios_register_bundled_fonts();
++#endif
+     ::Label::initSysFont();
+ 
+     // Set initialization of image handlers before any UI actions - See GH issue #7469
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -13,8 +13,10 @@
+ 
+ #import <WebKit/WebKit.h>
+ #import <UIKit/UIKit.h>
++#import <CoreText/CoreText.h>
+ 
+ #include "libslic3r/libslic3r.h"
++#include "libslic3r/Utils.hpp"
+ #include "slic3r/Utils/MacDarkMode.hpp"
+ #include <wx/osx/core/cfstring.h>
+ #include <boost/log/trivial.hpp>
+@@ -112,6 +114,83 @@
+         << ", keyWindow " << wb.size.width << "x" << wb.size.height;
+ }
+ 
++// Register the fonts Orca ships with, because nothing else does it on iOS.
++//
++// Every label in the custom widget set is drawn in a font from Label::sysFont,
++// which asks for "HarmonyOS Sans SC" and - on Apple only - passes the point
++// size through untouched:
++//
++//     #ifndef __APPLE__
++//         size = size * 4 / 5;
++//     #endif
++//
++// That exception exists because on macOS the bundled font really is loaded, and
++// the sizes in the code were chosen against its metrics. Loading it there is
++// declarative: the bundle's Info.plist carries ATSApplicationFontsPath and the
++// OS registers Contents/Resources/Fonts at launch. Which is why
++// Label::initSysFont only calls wxFont::AddPrivateFont on Windows and Linux -
++// and why calling it here would not help either, since wx's osx implementation
++// does nothing but check that the file sits in that directory.
++//
++// iOS does not read ATSApplicationFontsPath. Its equivalent, UIAppFonts, was
++// never in our Info.plist, and our resources live under orca-resources/ rather
++// than where either key would look. So the face has simply never existed on the
++// device. Nothing reports that: wxFont::SetFaceName only records the name,
++// IsOk() stays true, so initSysFont's fallback branch never runs, and CoreText
++// quietly substitutes Helvetica - rendered at the unscaled sizes, into controls
++// whose widths were computed for a narrower face. That is the stretched,
++// clipped and overlapping text.
++//
++// Register the files directly. Process scope is all we need and, unlike the
++// Info.plist route, it does not care which directory they are in.
++void orca_ios_register_bundled_fonts()
++{
++    NSString *const dir = [NSString stringWithUTF8String:
++                              (Slic3r::resources_dir() + "/fonts").c_str()];
++    NSError *err = nil;
++    NSArray<NSString *> *const names =
++        [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dir error:&err];
++    if (names == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-font: cannot list " << dir.UTF8String
++            << ": " << (err ? err.localizedDescription.UTF8String : "?");
++        return;
++    }
++
++    for (NSString *name in names) {
++        NSString *const ext = name.pathExtension.lowercaseString;
++        if (![ext isEqualToString:@"ttf"] && ![ext isEqualToString:@"otf"] &&
++            ![ext isEqualToString:@"ttc"])
++            continue;
++
++        NSURL *const url = [NSURL fileURLWithPath:[dir stringByAppendingPathComponent:name]];
++        CFErrorRef cferr = NULL;
++        // Plain casts and an explicit CFRelease: this target is built without
++        // -fobjc-arc, so __bridge and CFBridgingRelease are not available.
++        const bool ok = CTFontManagerRegisterFontsForURL(
++            (CFURLRef) url, kCTFontManagerScopeProcess, &cferr);
++        if (ok) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-font: registered " << name.UTF8String;
++        } else {
++            NSError *const e = (NSError *) cferr;
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-font: FAILED " << name.UTF8String
++                << ": " << (e ? [e localizedDescription].UTF8String : "?");
++            if (cferr != NULL)
++                CFRelease(cferr);
++        }
++    }
++
++    // Say whether the name Label::sysFont actually asks for now resolves, and
++    // to what. If this line reports no faces the sizing is still wrong and the
++    // family name in the file differs from the one in the code - which no
++    // amount of staring at Label.cpp would have told us.
++    for (NSString *const family in @[@"HarmonyOS Sans SC", @"NanumGothic"]) {
++        NSArray<NSString *> *const faces = [UIFont fontNamesForFamilyName:family];
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-font: family \"" << family.UTF8String
++            << "\" -> " << (unsigned) faces.count << " face(s): "
++            << [faces componentsJoinedByString:@", "].UTF8String;
++    }
++}
++
+ // Ask for local-network permission at launch, rather than whenever something
+ // happens to touch the LAN first.
+ //

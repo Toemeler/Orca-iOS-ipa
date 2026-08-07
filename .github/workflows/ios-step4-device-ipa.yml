@@ -411,6 +411,16 @@ jobs:
             <key>LSRequiresIPhoneOS</key><true/>
             <key>UIDeviceFamily</key><array><integer>2</integer></array>
             <key>UILaunchScreen</key><dict/>
+            <!-- Force light appearance. Orca draws its own panels in hardcoded
+                 white and picks text colours from StateColor, which follows the
+                 system appearance - wx reads it from UIScreen's
+                 traitCollection. So when the iPad flipped to dark mode after
+                 sunset, every custom-drawn label went light-on-white and the
+                 "Printer", "Filament" and "Process" headers became invisible,
+                 while the native wxStaticText labels stayed dark. The daytime
+                 screenshots show them dark and the evening ones white, which is
+                 the whole tell. Orca has no dark theme to switch to here. -->
+            <key>UIUserInterfaceStyle</key><string>Light</string>
             <!-- iOS 14+ blocks every local-network connection until the user
                  agrees. Without this key the native Bambu LAN backend cannot reach
                  the printer at all, and the failure is silent. -->

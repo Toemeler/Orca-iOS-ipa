@@ -1,0 +1,41 @@
+diff --git a/src/slic3r/GUI/Widgets/TextInput.cpp b/src/slic3r/GUI/Widgets/TextInput.cpp
+index 362e4c99b..bcc5e77f1 100644
+--- a/src/slic3r/GUI/Widgets/TextInput.cpp
++++ b/src/slic3r/GUI/Widgets/TextInput.cpp
+@@ -1,4 +1,7 @@
+ #include "TextInput.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "Label.hpp"
+ #include "TextCtrl.h"
+ #include "slic3r/GUI/Widgets/Label.hpp"
+@@ -252,6 +255,28 @@ void TextInput::render(wxDC& dc)
+         pt.x += szIcon.x + 0;
+     }
+     auto text = wxWindow::GetLabel();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Fall back to the hidden text control's value.
++    //
++    // ComboBox::SetLabel puts the value in one of two places:
++    //
++    //   if (GetTextCtrl()->IsShown() || text_off) GetTextCtrl()->SetValue(value);
++    //   else                                      TextInput::SetLabel(value);
++    //
++    // and this function paints only the second. A preset combo is set up while
++    // its text control is still shown and hides it afterwards, so on iOS the
++    // printer and filament names went into a control that is never drawn, and
++    // the painted label stayed empty - the combos rendered blank while the
++    // window tree cheerfully reported "Bambu Lab A1", because that comes from
++    // the virtual ComboBox::GetLabel() and this line deliberately calls the
++    // non-virtual base.
++    //
++    // Rather than chase the ordering, paint what the control is holding: if
++    // there is no label and the text control is hidden, its value *is* the
++    // text this widget is supposed to show.
++    if (text.IsEmpty() && text_ctrl != nullptr && !text_ctrl->IsShown())
++        text = text_ctrl->GetValue();
++#endif
+     if (!text.IsEmpty()) {
+         if (static_tips.IsEmpty()) {
+             wxSize textSize = text_ctrl->GetSize();

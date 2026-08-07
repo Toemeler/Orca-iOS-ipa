@@ -1,0 +1,141 @@
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -1951,10 +1951,24 @@
+             });
+         }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // A box sizer, not a grid. wxGridSizer gives every cell the height of
++        // the tallest one, so the two 12pt captions each reserve as much room
++        // as the combo box between them: 3 x 32 + gaps against a box pinned to
++        // 60 by PRINTER_PANEL_SIZE. The sizer cannot shrink to fit, so it
++        // overlaps instead, and "Nozzle" ends up drawn underneath the combo
++        // box it labels. Stacking them at their own heights needs 12 + 32 + 12
++        // and fits with room to spare.
++        wxBoxSizer *nozzle_dia_sizer = new wxBoxSizer(wxVERTICAL);
++        nozzle_dia_sizer->Add(p->label_nozzle_title, 0, wxALIGN_CENTER | wxTOP, FromDIP(4));
++        nozzle_dia_sizer->Add(p->combo_nozzle_dia  , 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, FromDIP(2));
++        nozzle_dia_sizer->Add(p->label_nozzle_type , 0, wxALIGN_CENTER);
++#else
+         wxGridSizer *nozzle_dia_sizer = new wxGridSizer(3, 1, FromDIP(2), 0);
+         nozzle_dia_sizer->Add(p->label_nozzle_title, 0, wxALIGN_CENTER | wxTOP, FromDIP(4));
+         nozzle_dia_sizer->Add(p->combo_nozzle_dia  , 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, FromDIP(2));
+         nozzle_dia_sizer->Add(p->label_nozzle_type , 0, wxALIGN_CENTER);
++#endif
+ 
+         p->panel_nozzle_dia->SetSizer(nozzle_dia_sizer);
+ 
+--- a/src/slic3r/GUI/Widgets/TextInput.cpp
++++ b/src/slic3r/GUI/Widgets/TextInput.cpp
+@@ -10,6 +10,7 @@
+ #include <wx/dcgraph.h>
+ 
+ #include <map>
++#include <chrono>
+ #include <boost/log/trivial.hpp>
+ 
+ BEGIN_EVENT_TABLE(TextInput, StaticBox)
+@@ -280,48 +281,19 @@
+     if (text.IsEmpty() && text_ctrl != nullptr && !text_ctrl->IsShown())
+         text = text_ctrl->GetValue();
+ #endif
+-#if defined(__APPLE__) && !TARGET_OS_OSX
+-    // Three of the sidebar's combo boxes paint no text at all, and the numbers
+-    // that decide where that text lands are all computed rather than stored:
+-    // labelSize comes from a wxClientDC measurement, the draw position is
+-    // derived from the hidden text control's width, and the colour comes from
+-    // a StateColor. Any one of them can silently produce an invisible result -
+-    // a zero extent, a position past the right edge, white on white - and the
+-    // window tree cannot show which, because it only reports labels and sizes.
+-    //
+-    // Print the whole calculation for the first two paints of each widget.
+-    // Bounded per instance because these repaint on every hover.
+-    {
+-        static std::map<const void *, int> counts;
+-        int &n = counts[this];
+-        if (n < 2) {
+-            ++n;
+-            const wxColour fg = label_color.colorForStates(states);
+-            const wxFont   f  = align_right ? GetFont() : Label::Body_12;
+-            BOOST_LOG_TRIVIAL(error) << "orca-ios-textinput: " << this
+-                << " size " << size.x << "x" << size.y
+-                << " label '" << text.utf8_string() << "'"
+-                << " labelSize " << labelSize.x << "x" << labelSize.y
+-                << " tc " << (text_ctrl ? text_ctrl->GetSize().x : -1)
+-                << "x" << (text_ctrl ? text_ctrl->GetSize().y : -1)
+-                << (text_ctrl && text_ctrl->IsShown() ? " shown" : " hidden")
+-                << " tcval '" << (text_ctrl ? text_ctrl->GetValue().utf8_string() : "")
+-                << "' cursor " << pt.x << "," << pt.y
+-                << " (left-aligned text starts at cursor.x + tc width)"
+-                << " fg " << fg.GetAsString(wxC2S_HTML_SYNTAX).utf8_string()
+-                << " font " << f.GetPointSize() << "pt "
+-                << f.GetFaceName().utf8_string()
+-                << (align_right ? " right" : align_center ? " center" : " left");
+-        }
+-    }
+-#endif
+     if (!text.IsEmpty()) {
+         if (static_tips.IsEmpty()) {
+             wxSize textSize = text_ctrl->GetSize();
+             if (align_right || align_center)
+             {
+-                if (pt.x + labelSize.x + 5 > size.x)
+-                    text = wxControl::Ellipsize(text, dc, wxELLIPSIZE_END, size.x - pt.x - 5);
++                // Only shorten the text if there is somewhere to put it.
++                // Ellipsize() with a zero or negative width has nothing to
++                // return but an empty string, so a widget that ends up
++                // narrower than its own icon silently loses its label
++                // instead of showing a truncated one.
++                const int avail = size.x - pt.x - 5;
++                if (pt.x + labelSize.x + 5 > size.x && avail > 0)
++                    text = wxControl::Ellipsize(text, dc, wxELLIPSIZE_END, avail);
+                 pt.y = (size.y - labelSize.y) / 2;
+             }
+             else
+@@ -334,6 +306,46 @@
+                 dc.SetFont(GetFont());
+             else
+                 dc.SetFont(Label::Body_12);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            // Every number that decides whether this DrawText produces
++            // anything, printed at the moment of the call.
++            //
++            // The previous round logged the first two paints of each widget
++            // and caught them all mid-construction, at size 1x32 with no
++            // label yet - useless. What matters is the steady state, so wait
++            // 20 seconds before logging anything and then take two paints per
++            // widget. The pen and the text here are post-ellipsize: when the
++            // widget is narrower than pt.x + labelSize.x + 5 this branch
++            // shortens the string to size.x - pt.x - 5, and nothing stops
++            // that from being zero or negative.
++            {
++                static const auto t0 = std::chrono::steady_clock::now();
++                static int        budget = 80;
++                static std::map<const void *, int> counts;
++                const auto age = std::chrono::duration_cast<std::chrono::seconds>(
++                                     std::chrono::steady_clock::now() - t0).count();
++                int &n = counts[this];
++                if (age >= 20 && budget > 0 && n < 2) {
++                    ++n;
++                    --budget;
++                    const wxPoint scr = ClientToScreen(wxPoint(0, 0));
++                    BOOST_LOG_TRIVIAL(error) << "orca-ios-textinput: " << this
++                        << " screen " << scr.x << "," << scr.y
++                        << " size " << size.x << "x" << size.y
++                        << (IsShownOnScreen() ? " onscreen" : " OFFSCREEN")
++                        << (IsThisEnabled() ? "" : " DISABLED")
++                        << " draws '" << text.utf8_string() << "'"
++                        << " at " << pt.x << "," << pt.y
++                        << " labelSize " << labelSize.x << "x" << labelSize.y
++                        << " tc " << text_ctrl->GetSize().x << "x" << text_ctrl->GetSize().y
++                        << (text_ctrl->IsShown() ? " shown" : " hidden")
++                        << " fg " << dc.GetTextForeground().GetAsString(wxC2S_HTML_SYNTAX).utf8_string()
++                        << " font " << dc.GetFont().GetPointSize() << "pt "
++                        << dc.GetFont().GetFaceName().utf8_string()
++                        << (align_right ? " right" : align_center ? " center" : " left");
++                }
++            }
++#endif
+             dc.DrawText(text, pt);
+         } else {
+             wxSize textSize = text_ctrl->GetSize();

@@ -2697,3 +2697,100 @@ reason lines sit much further up each unit's section. The report now ranks the
 reason lines directly (`Include file … has changed`, manifest lines, anything
 mentioning pch) and prints one whole unit's section with `-B60`. The next run
 that produces a report will say which it is.
+
+
+# SESSION 2026-08-07 (evening): slicing works; the UI does not
+
+Run 74's build (`e2bad0f`) on the device. Four launches, 15:30-15:35.
+
+## Confirmed working
+
+```
+orca-ios-gl: filled 48 ES 3.0 core entry points the desktop loader skipped, 0 still null
+orca-ios-printer: selected Bambu Lab A1 (03919D552413839) at 192.168.0.171, access code set
+```
+
+**Slicing works.** 0349 was right and complete — every one of the 48 resolved.
+The printer pre-setup registers and selects the machine.
+
+## A measurement that contradicts an earlier theory — read this before trusting 0344
+
+```
+orca-ios-cwd: working directory is the log dir, getcwd() works     (3 of 4 launches)
+orca-ios-cwd: chdir to the log dir failed (errno 2); staying put   (1, fresh container)
+```
+
+**getcwd() works fine from inside the app container.** The sandbox theory in
+0344's comment is wrong, and 0344's revert path has never once fired. So what
+actually fixed the `boost::filesystem::current_path: Operation not permitted`
+crashes was 0339/0341/0343 removing the call sites — *not* 0344. Why
+`current_path()` ever returned EPERM is still unexplained. 0344 is harmless and
+its diagnostic is worth keeping, but do not cite it as the fix, and do not build
+on its explanation.
+
+## Found: the printer type was wrong, and it explains four separate symptoms
+
+```
+_parse_printer_type Unsupported printer type: 3DPrinter-N2S-01          (x12 a launch)
+load_compatible_settings failed, file = .../printers/3DPrinter-N2S-01.json
+```
+
+`_parse_printer_type()` passes anything it does not recognise to
+`DevPrinterConfigUtil::get_printer_type()`, which looks up
+`resources/printers/<dev_type>.json`. The A1's file is **`N2S.json`**
+(`"display_name": "Bambu Lab A1"`). The guessed `3DPrinter-N2S-01` matched
+nothing, so the MachineObject had no recognised type and therefore no
+capabilities — no bed model, no `ftp_folder` to upload to, no camera config.
+That is one cause behind four reported symptoms: the Device page doing nothing,
+sending to the printer failing, the build-plate sync failing, and the plate
+being wrong. Fixed in 0348: `dev_type` defaults to `N2S`.
+
+## Open, and the biggest one: the whole UI is laid out for the wrong screen
+
+Reported: text stretched, checkboxes squished, buttons stretched, the nozzle
+control drawn in front of another panel, the filament and printer names not
+drawn at all, viewports intermittently wrong or frozen.
+
+One number explains the class:
+
+```
+wx-ios TLW SHOW: wxFrame ... frame=0,0 1600x1200
+```
+
+The device is **iPad16,5** (13-inch iPad Pro M4): 2752x2064 px, documented as
+1376x1032 points at 2x. It is being given **1600x1200 points**, and
+2752/1600 = 2064/1200 = **exactly 1.72**. So the app draws into a non-native
+logical canvas that the system rescales by a non-integer factor — which is
+precisely what stretched text and squished controls look like.
+
+Ruled out already: patch 0326 does set the frame from `wxDisplay`, and wx's iOS
+implementation (`wxDisplayImplSingleiOS::GetGeometry` in
+`src/osx/iphone/utils.mm`) is a straight `[[UIScreen mainScreen] bounds]`. So
+wx is faithfully reporting what UIKit tells it. The Info.plist already carries
+`UILaunchScreen`, `UIRequiresFullScreen`, `UIStatusBarHidden` and
+`UIDeviceFamily=2`, so the usual causes of a scaled compatibility canvas are
+not it either.
+
+**0350 measures instead of guessing.** `orca_ios_log_display_metrics()` in
+`ios_webview_support.mm` (already compiled, so no new CMake source and no wx
+rebuild) logs, at error level, from `MainFrame`:
+
+```
+orca-ios-display (wx):        wxDisplay client area WxH, content scale S
+orca-ios-display (MainFrame): UIScreen.bounds WxH, nativeBounds WxH,
+                              scale S, nativeScale S, keyWindow WxH
+```
+
+`nativeBounds` vs `bounds` is the discriminator: if `nativeBounds` is
+2752x2064 while `bounds` is 1600x1200 and `nativeScale` is 1.72, the system is
+scaling the app and the fix is in the bundle, not the code. If `bounds` is the
+documented 1376x1032 and something later resizes the frame to 1600x1200, the
+fix is in wx or in Orca. **Read that line first next session.**
+
+## Still open beyond that
+
+- "Network plugin not detected" still shown on import, despite 0342.
+- Viewport intermittently stuck after an import.
+- Preset combo text (`PlaterPresetComboBox`) still not painted — may well be
+  the same scaling problem rather than a separate paint bug; re-judge once the
+  geometry is right.

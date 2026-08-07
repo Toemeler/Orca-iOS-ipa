@@ -1,8 +1,8 @@
 diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
-index e7bc88dd5..d3f9ed3a3 100644
+index e7bc88dd5..f6cebca58 100644
 --- a/src/slic3r/GUI/GUI_App.cpp
 +++ b/src/slic3r/GUI/GUI_App.cpp
-@@ -791,6 +791,110 @@ std::vector<std::string> GUI_App::split_str(std::string src, std::string separat
+@@ -791,6 +791,122 @@ std::vector<std::string> GUI_App::split_str(std::string src, std::string separat
      return result;
  }
  
@@ -36,7 +36,7 @@ index e7bc88dd5..d3f9ed3a3 100644
 +//
 +//   <app>/Documents/orca-printer.json
 +//   { "dev_id": "...", "dev_ip": "192.168.0.171", "access_code": "...",
-+//     "dev_name": "A1", "dev_type": "3DPrinter-N2S-01" }
++//     "dev_name": "A1", "dev_type": "N2S" }
 +//
 +// which is the escape hatch for the field most likely to change: a DHCP lease
 +// moving the printer to another address.
@@ -49,7 +49,19 @@ index e7bc88dd5..d3f9ed3a3 100644
 +    std::string dev_ip      = "192.168.0.171";
 +    std::string access_code = "8c715b4c";
 +    std::string dev_name    = "Bambu Lab A1";
-+    std::string dev_type    = "3DPrinter-N2S-01"; // N2S is the A1
++    // "N2S", not "3DPrinter-N2S-01". DeviceManager::_parse_printer_type() hands
++    // anything it does not recognise to DevPrinterConfigUtil::get_printer_type(),
++    // which looks for resources/printers/<dev_type>.json - and the A1's file is
++    // N2S.json ("display_name": "Bambu Lab A1"). The first guess produced
++    //
++    //   _parse_printer_type Unsupported printer type: 3DPrinter-N2S-01
++    //   load_compatible_settings failed, file = .../printers/3DPrinter-N2S-01.json
++    //
++    // twelve times a launch, and a MachineObject with no recognised type has no
++    // capabilities: no bed model, no FTP folder to upload to, no camera config.
++    // That is why the printer appeared but the Device page, sending a print and
++    // the build-plate sync all did nothing.
++    std::string dev_type    = "N2S"; // the A1
 +
 +    if (const char *const ios_home = ::getenv("HOME")) {
 +        const boost::filesystem::path cfg_path = boost::filesystem::path(ios_home) / "Documents" / "orca-printer.json";
@@ -113,7 +125,7 @@ index e7bc88dd5..d3f9ed3a3 100644
  void GUI_App::post_init()
  {
      assert(initialized());
-@@ -1049,6 +1153,18 @@ void GUI_App::post_init()
+@@ -1049,6 +1165,18 @@ void GUI_App::post_init()
          m_agent->start_discovery(true, false);
      }
  

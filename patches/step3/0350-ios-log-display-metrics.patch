@@ -1,0 +1,63 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 76e190b1d..d1c915d61 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -2,6 +2,8 @@
+ 
+ #ifdef __WXOSX_IPHONE__
+ #include <wx/display.h>
++// src/slic3r/GUI/ios_webview_support.mm
++namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char *when); } }
+ #endif
+ 
+ #include <wx/panel.h>
+@@ -778,6 +780,10 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+         SetMinSize(wxSize(std::min(min_size.x, display_size.x),
+                           std::min(min_size.y, display_size.y)));
+         SetSize(display_size);
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-display (wx): wxDisplay client area "
++                                 << display_size.x << "x" << display_size.y
++                                 << ", content scale " << GetContentScaleFactor();
++        orca_ios_log_display_metrics("MainFrame");
+     }
+ #else
+     SetMinSize(min_size/*wxSize(760, 490)*/);
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 284ed2295..ae17b19a6 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -74,5 +74,34 @@ void WKWebView_setTransparentBackground(void *web)
+     webView.layer.backgroundColor = [UIColor clearColor].CGColor;
+ }
+ 
++// Display metrics, logged once, because the layout is wrong in a way that only
++// the numbers can explain. wx reports the top-level window as 1600x1200 points
++// (patch 0326 sets it from wxDisplay, whose iOS implementation is
++// [[UIScreen mainScreen] bounds]), while an iPad16,5 is documented as 1376x1032
++// points at 2x. 2752/1600 and 2064/1200 are both exactly 1.72, so the app is
++// being handed a non-native logical canvas and everything it draws is rescaled
++// by a non-integer factor - which is what "the text is stretched" looks like.
++//
++// The Info.plist already has UILaunchScreen, UIRequiresFullScreen and
++// UIDeviceFamily=2, so the usual causes are ruled out and guessing further is
++// not worth an hour of CI. Print what UIKit actually says instead.
++void orca_ios_log_display_metrics(const char *when)
++{
++    UIScreen *const screen = [UIScreen mainScreen];
++    const CGRect    b      = screen.bounds;
++    const CGRect    nb     = screen.nativeBounds;
++
++    CGRect wb = CGRectZero;
++    for (UIWindow *w in [UIApplication sharedApplication].windows) {
++        if (w.isKeyWindow) { wb = w.bounds; break; }
++    }
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-display (" << (when ? when : "?") << "): "
++        << "UIScreen.bounds " << b.size.width << "x" << b.size.height
++        << ", nativeBounds " << nb.size.width << "x" << nb.size.height
++        << ", scale " << screen.scale << ", nativeScale " << screen.nativeScale
++        << ", keyWindow " << wb.size.width << "x" << wb.size.height;
++}
++
+ } // namespace GUI
+ } // namespace Slic3r

@@ -1,0 +1,100 @@
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -57,6 +57,7 @@
+ #include <boost/beast/core/detail/base64.hpp>
+ 
+ #include <wx/stdpaths.h>
++#include <wx/dcmemory.h>
+ #include <wx/imagpng.h>
+ #include <wx/display.h>
+ #include <wx/menu.h>
+@@ -2927,6 +2928,35 @@
+     orca_ios_register_bundled_fonts();
+ #endif
+     ::Label::initSysFont();
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++    // What the fonts came out as, in the terms the layout code uses.
++    //
++    // Registering the files is not the same as getting the metrics right: the
++    // sizes in Label::sysFont are passed through unscaled on Apple, wxFont
++    // never reports a bad face name, and the widths in the window tree suggest
++    // several different fonts are in play at once. Measuring one fixed string
++    // with each of them settles it in a single line each - and if two sizes
++    // measure the same, that alone says SetFont is not reaching the peer.
++    {
++        wxBitmap probe(8, 8);
++        if (probe.IsOk()) {
++            wxMemoryDC dc(probe);
++            const std::pair<const char *, const wxFont *> fonts[] = {
++                {"Body_10", &::Label::Body_10}, {"Body_12", &::Label::Body_12},
++                {"Body_14", &::Label::Body_14}, {"Head_14", &::Label::Head_14},
++            };
++            for (auto const &f : fonts) {
++                dc.SetFont(*f.second);
++                const wxSize ext = dc.GetTextExtent("Stainless Steel");
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-font: " << f.first << " "
++                    << f.second->GetPointSize() << "pt '"
++                    << f.second->GetFaceName().utf8_string() << "'"
++                    << (f.second->IsOk() ? "" : " NOT OK")
++                    << " extent(\"Stainless Steel\") " << ext.x << "x" << ext.y;
++            }
++        }
++    }
++#endif
+ 
+     // Set initialization of image handlers before any UI actions - See GH issue #7469
+     wxInitAllImageHandlers();
+--- a/src/slic3r/GUI/Widgets/TextInput.cpp
++++ b/src/slic3r/GUI/Widgets/TextInput.cpp
+@@ -9,6 +9,9 @@
+ #include <wx/dcclient.h>
+ #include <wx/dcgraph.h>
+ 
++#include <map>
++#include <boost/log/trivial.hpp>
++
+ BEGIN_EVENT_TABLE(TextInput, StaticBox)
+ 
+ EVT_PAINT(TextInput::paintEvent)
+@@ -277,6 +280,41 @@
+     if (text.IsEmpty() && text_ctrl != nullptr && !text_ctrl->IsShown())
+         text = text_ctrl->GetValue();
+ #endif
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Three of the sidebar's combo boxes paint no text at all, and the numbers
++    // that decide where that text lands are all computed rather than stored:
++    // labelSize comes from a wxClientDC measurement, the draw position is
++    // derived from the hidden text control's width, and the colour comes from
++    // a StateColor. Any one of them can silently produce an invisible result -
++    // a zero extent, a position past the right edge, white on white - and the
++    // window tree cannot show which, because it only reports labels and sizes.
++    //
++    // Print the whole calculation for the first two paints of each widget.
++    // Bounded per instance because these repaint on every hover.
++    {
++        static std::map<const void *, int> counts;
++        int &n = counts[this];
++        if (n < 2) {
++            ++n;
++            const wxColour fg = label_color.colorForStates(states);
++            const wxFont   f  = align_right ? GetFont() : Label::Body_12;
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-textinput: " << this
++                << " size " << size.x << "x" << size.y
++                << " label '" << text.utf8_string() << "'"
++                << " labelSize " << labelSize.x << "x" << labelSize.y
++                << " tc " << (text_ctrl ? text_ctrl->GetSize().x : -1)
++                << "x" << (text_ctrl ? text_ctrl->GetSize().y : -1)
++                << (text_ctrl && text_ctrl->IsShown() ? " shown" : " hidden")
++                << " tcval '" << (text_ctrl ? text_ctrl->GetValue().utf8_string() : "")
++                << "' cursor " << pt.x << "," << pt.y
++                << " (left-aligned text starts at cursor.x + tc width)"
++                << " fg " << fg.GetAsString(wxC2S_HTML_SYNTAX).utf8_string()
++                << " font " << f.GetPointSize() << "pt "
++                << f.GetFaceName().utf8_string()
++                << (align_right ? " right" : align_center ? " center" : " left");
++        }
++    }
++#endif
+     if (!text.IsEmpty()) {
+         if (static_tips.IsEmpty()) {
+             wxSize textSize = text_ctrl->GetSize();

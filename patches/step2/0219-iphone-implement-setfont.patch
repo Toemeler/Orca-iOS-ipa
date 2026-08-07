@@ -1,0 +1,56 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 81e9fd0e85..10245163f4 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -19,8 +19,10 @@
+ #endif
+ 
+ #include "wx/textctrl.h"
++#include "wx/font.h"
+ 
+ #include <objc/runtime.h>
++#import <CoreText/CoreText.h>
+ 
+ #define TRACE_FOCUS "focus"
+ #define TRACE_KEYS  "keyevent"
+@@ -791,6 +793,40 @@ double wxWidgetIPhoneImpl::GetContentScaleFactor() const
+ 
+ void wxWidgetIPhoneImpl::SetFont(const wxFont & font)
+ {
++    // This used to be empty, which meant wxWindow::SetFont() did nothing at
++    // all on iOS: every UILabel, UITextField and UIButton kept the 17pt system
++    // font whatever the application asked for. A ported desktop application
++    // notices immediately - its labels come out half again too large, its
++    // controls report best sizes to match, and every layout built around the
++    // smaller fonts overflows. The Cocoa port has always done this; only the
++    // iPhone port left it unimplemented.
++    if ( !font.IsOk() )
++        return;
++
++    CTFontRef ctfont = font.OSXGetCTFont();
++    if ( ctfont == NULL )
++        return;
++
++    const CGFloat size = CTFontGetSize( ctfont );
++
++    // Go through the PostScript name rather than casting CTFontRef to UIFont.
++    // The two are toll-free bridged, but +fontWithName: also gives us a clean
++    // way to fall back when a private/registered face cannot be resolved.
++    UIFont* uifont = nil;
++    CFStringRef psname = CTFontCopyPostScriptName( ctfont );
++    if ( psname != NULL )
++    {
++        uifont = [UIFont fontWithName:(NSString*)psname size:size];
++        CFRelease( psname );
++    }
++    if ( uifont == nil )
++        uifont = [UIFont systemFontOfSize:size];
++
++    // UIButton has had no -setFont: since iOS 3; the font lives on its label.
++    if ( [m_osxView isKindOfClass:[UIButton class]] )
++        [[(UIButton*)m_osxView titleLabel] setFont:uifont];
++    else if ( [m_osxView respondsToSelector:@selector(setFont:)] )
++        [(id)m_osxView setFont:uifont];
+ }
+ 
+ void wxWidgetIPhoneImpl::InstallEventHandler( WXWidget control )

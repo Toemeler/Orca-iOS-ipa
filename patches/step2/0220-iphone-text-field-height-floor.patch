@@ -1,0 +1,25 @@
+diff --git a/src/osx/iphone/textctrl.mm b/src/osx/iphone/textctrl.mm
+index ec96cb1a18..6a21c22179 100644
+--- a/src/osx/iphone/textctrl.mm
++++ b/src/osx/iphone/textctrl.mm
+@@ -594,8 +594,18 @@ wxSize wxUITextFieldControl::GetBestSize() const
+ 
+     GetBestRect(&r);
+     wxSize sz = r.GetSize();
+-    if ( sz.y < 31 )
+-        sz.y = 31;
++    // 22 rather than 31. wxTextCtrl::DoGetSizeFromTextSize() adds 2 to
++    // whatever we return here, so 31 produced a 33pt tall entry field where
++    // the Cocoa port's NSTextField produces about 24 - and a ported desktop
++    // layout that reserves 26pt for a text row has no way to absorb the
++    // difference: the field overlaps its own caption. 22 is the height
++    // wxWINDOW_VARIANT_NORMAL is documented with in DoGetSizeFromTextSize()
++    // just below, so this makes the two ports agree instead of guessing.
++    //
++    // Keep a floor at all because -sizeToFit on an empty UITextField measures
++    // its text, not its frame, and that is what the original 31 was guarding.
++    if ( sz.y < 22 )
++        sz.y = 22;
+     return sz;
+ }
+ 

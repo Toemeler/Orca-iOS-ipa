@@ -3074,3 +3074,51 @@ under test.
 Checkboxes render correctly (`UIImageView` owned by the peer, 0353/this round).
 `orca-ios-toggle` had already shown the frame and image were both 18x18 @2x, so
 the fault was `UIButton`'s content rect, as suspected.
+
+## Run 82 on device: the tab fix worked, printing works, and two questions closed
+
+The user opened the Device tab for the first time, **sent a sliced model to the
+printer and it started printing.** Then the app crashed.
+
+**Closed: scenes are not the cause of the 1600x1200 canvas.**
+
+```
+orca-ios-variant: sceneManifest yes, UIRequiresFullScreen yes
+orca-ios-display: UIScreen.bounds 1600x1200, nativeBounds 2064x2752, nativeScale 1.72
+```
+
+The scene build genuinely ran and the canvas did not move. `UIApplicationSceneManifest`
+is ruled out. What has **not** been tested is dropping `UIRequiresFullScreen`,
+which iPadOS 26+ deprecated and which is documented to place an app in a
+compatibility mode — now the leading candidate, and now the default IPA
+(scene + no UIRequiresFullScreen, built as the `both` variant).
+
+**Closed: the Device tab veto is gone.** No `skipped tab switch` line anywhere.
+0355 was correct.
+
+## 0356: iOS kills the process for System V shared memory
+
+```
+exception: EXC_CRASH, signal SIGSYS, "Bad system call: 12"
+  0  shmget + 8
+  1  MediaPlayCtrl::get_stream_url(std::string*)
+  2  MediaPlayCtrl::SetMachineObject(MachineObject*)
+  3  MonitorPanel::update_all()
+  4  MonitorPanel::Show(bool)
+  5  wxBookCtrlBase::DoSetSelection(...)
+```
+
+`shmget` is not permitted in the iOS sandbox and does not fail politely — it
+raises **SIGSYS**, which no handler can decline. Note the shape of this: it
+became reachable *because* 0355 unblocked the tab. Showing the Device page
+updates the monitor, which sets the machine object, which asks for the camera
+stream URL over a shared-memory segment written by Bambu's camera tool — a
+companion process that does not exist here. So the first successful Device tab
+open killed the app immediately.
+
+0356 returns false on iOS: there is no stream, which is the truth, and the rest
+of the page is left alone.
+
+**Worth a sweep:** `shmget`/`shmat`/`shmctl`/`ftok` are a class, not an
+instance. This was the only one on a reachable path so far, but any other SysV
+IPC in the tree will behave the same way — silent until reached, then SIGSYS.

@@ -1,0 +1,44 @@
+diff --git a/src/slic3r/GUI/MediaPlayCtrl.cpp b/src/slic3r/GUI/MediaPlayCtrl.cpp
+index 8878d1f3a..91f311df8 100644
+--- a/src/slic3r/GUI/MediaPlayCtrl.cpp
++++ b/src/slic3r/GUI/MediaPlayCtrl.cpp
+@@ -1,4 +1,7 @@
+ #include "MediaPlayCtrl.h"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "Widgets/Button.hpp"
+ #include "Widgets/CheckBox.hpp"
+ #include "Widgets/Label.hpp"
+@@ -797,7 +800,30 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
+ 
+ bool MediaPlayCtrl::get_stream_url(std::string *url)
+ {
+-#ifdef __WIN32__
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // iOS kills the process for this. System V shared memory is not permitted
++    // in the sandbox, and shmget() does not fail - it raises SIGSYS, "Bad
++    // system call", which no handler in the app can decline:
++    //
++    //   0  shmget + 8
++    //   1  MediaPlayCtrl::get_stream_url(std::string*)
++    //   2  MediaPlayCtrl::SetMachineObject(MachineObject*)
++    //   3  MonitorPanel::update_all()
++    //   4  MonitorPanel::Show(bool)
++    //   5  wxBookCtrlBase::DoSetSelection(...)
++    //
++    // It became reachable the moment 0355 stopped the Device tab being vetoed:
++    // showing the page updates the monitor, which sets the machine object,
++    // which asks for the camera stream URL. So opening Device killed the app
++    // on the first try, every time.
++    //
++    // The segment is written by Bambu's camera tool, a companion process that
++    // does not exist here, so there is nothing to read even if the call were
++    // allowed. Report "no stream" - which is the truth - and leave the rest of
++    // the Device page alone.
++    (void) url;
++    return false;
++#elif defined(__WIN32__)
+     HANDLE shm = ::OpenFileMapping(FILE_MAP_READ, FALSE, L"bambu_stream_url");
+     if (shm == NULL) return false;
+     if (url) {

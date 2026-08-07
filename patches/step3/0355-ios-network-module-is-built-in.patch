@@ -1,0 +1,48 @@
+diff --git a/src/slic3r/Utils/NetworkAgent.cpp b/src/slic3r/Utils/NetworkAgent.cpp
+index 5073ac133..3772631ab 100644
+--- a/src/slic3r/Utils/NetworkAgent.cpp
++++ b/src/slic3r/Utils/NetworkAgent.cpp
+@@ -3,6 +3,9 @@
+ #include <set>
+ #include <algorithm>
+ 
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include <boost/log/trivial.hpp>
+ #include "libslic3r/Utils.hpp"
+ #include "NetworkAgent.hpp"
+@@ -61,7 +64,32 @@ int NetworkAgent::initialize_network_module(bool using_backup, const std::string
+ 
+ int NetworkAgent::unload_network_module() { return BBLNetworkPlugin::instance().unload(); }
+ 
+-bool NetworkAgent::is_network_module_loaded() { return BBLNetworkPlugin::instance().is_loaded(); }
++bool NetworkAgent::is_network_module_loaded()
++{
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // On iOS the network module is not a plugin to load - it is compiled in.
++    // BBLNetworkPlugin dlopen()s a dylib that Bambu distributes at runtime, and
++    // a sideloaded iOS app can neither download nor dlopen one; patch 0342
++    // removed the download attempt for that reason, and patch 0335 registered
++    // the native LAN agent under the same "bbl" slot instead. The agent is
++    // there, it connects, and the log says so:
++    //
++    //   BambuLanPrinterAgent: connected to 192.168.0.171 (03919D552413839)
++    //
++    // But this function answered "no module", and one caller turns that into
++    // two user-visible faults at once. Plater::priv::on_tab_selection_changing
++    // vetoes the switch to the Device tab and queues EVT_INSTALL_PLUGIN_HINT:
++    //
++    //   skipped tab switch from 2 to 3, lack of network plugins
++    //
++    // which is why tapping Device did nothing no matter how healthy the
++    // connection was, and why the "network plugin not detected" notice kept
++    // appearing. Report the truth for this build: the module is present.
++    return true;
++#else
++    return BBLNetworkPlugin::instance().is_loaded();
++#endif
++}
+ 
+ #if defined(_MSC_VER) || defined(_WIN32)
+ HMODULE NetworkAgent::get_bambu_source_entry() { return BBLNetworkPlugin::instance().get_bambu_source_entry(); }

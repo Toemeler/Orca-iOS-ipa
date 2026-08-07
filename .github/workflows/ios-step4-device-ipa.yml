@@ -561,7 +561,14 @@ jobs:
             echo "built variant $name"
           }
 
+          # The default-named IPA is the *scene* build, not the baseline.
+          # Three rounds in a row the baseline got installed and the canvas
+          # experiment never ran - "orca-ios-variant: sceneManifest no" each
+          # time. Whatever is easiest to tap should be the arm under test, and
+          # the untouched build stays available under an explicit name.
           make_variant scene    scene
+          cp "artifact/OrcaSlicer-iPad.ipa" "artifact/OrcaSlicer-iPad-baseline.ipa"
+          cp "artifact/OrcaSlicer-iPad-scene.ipa" "artifact/OrcaSlicer-iPad.ipa"
           # Rebuild the plist from the baseline before the second variant, so
           # the two changes are tested separately rather than stacking.
           cp /tmp/Info.plist.baseline "$APP/Info.plist"

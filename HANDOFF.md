@@ -3024,3 +3024,53 @@ insertion into the strip logs its position and the resulting button count. A tap
 that produces no line never reached the handler — a different bug from one that
 resolves to the wrong page — and the insert lines will show whether the Device
 button's index mapping is stale after `show_device()` rebuilds the strip.
+
+## Run 81: the Device tab and the plugin popup are ONE bug, and it is found
+
+The tab-button trace answered it immediately:
+
+```
+orca-ios-tabbtn: pressed ' Device', buttons 6     (x5)
+orca-ios-tabbtn: resolves to index 3              (x5)
+skipped tab switch from 2 to 3, lack of network plugins
+```
+
+The tap reaches the handler and resolves to the correct index. It is then
+**vetoed**, in `Plater::priv::on_tab_selection_changing` (Plater.cpp:5130):
+
+```cpp
+if (preset_bundle->use_bbl_device_tab() && new_sel == MainFrame::tpMonitor) {
+    if (!Slic3r::NetworkAgent::is_network_module_loaded()) {
+        e.Veto();
+        wxQueueEvent(q, new wxCommandEvent(EVT_INSTALL_PLUGIN_HINT));
+    }
+}
+```
+
+`is_network_module_loaded()` is `BBLNetworkPlugin::instance().is_loaded()` — a
+dylib Bambu distributes at runtime, which a sideloaded iOS app can neither
+download nor `dlopen`. Patch 0342 removed the download attempt; patch 0335
+registered the native LAN agent under the same `bbl` slot instead. So the module
+*is* present, it connects, and the log proves it — but this function said no.
+
+**That single false answer produced both open symptoms**: the Device tab doing
+nothing however healthy the connection, and the "network plugin not detected"
+notice (`EVT_INSTALL_PLUGIN_HINT`, queued right next to the veto).
+
+0355 makes `is_network_module_loaded()` return true on iOS. Note this is
+load-bearing beyond the tab: other call sites gate features on it, so more of
+the device UI may come alive at once.
+
+## The canvas experiment: the default IPA is now the scene build
+
+Three rounds running, `orca-ios-variant` reported `sceneManifest no` — the
+baseline was installed every time and the experiment never ran. The workflow now
+names the **scene** build `OrcaSlicer-iPad.ipa` and keeps the untouched one as
+`OrcaSlicer-iPad-baseline.ipa`. Whatever is easiest to tap should be the arm
+under test.
+
+## Confirmed fixed on device
+
+Checkboxes render correctly (`UIImageView` owned by the peer, 0353/this round).
+`orca-ios-toggle` had already shown the frame and image were both 18x18 @2x, so
+the fault was `UIButton`'s content rect, as suspected.

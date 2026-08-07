@@ -1,0 +1,66 @@
+1706-[290/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/TriangleMesh.cpp.o
+1707-[291/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/VariableWidth.cpp.o
+1708-[292/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/utils.cpp.o
+1709:FAILED: [code=1] src/libslic3r/CMakeFiles/libslic3r.dir/utils.cpp.o 
+1710-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_ATOMIC_NO_LIB -DBOOST_ATOMIC_STATIC_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_CHRONO_STATIC_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_CONTAINER_STATIC_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_DATE_TIME_STATIC_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_FILESYSTEM_STATIC_LINK=1 -DBOOST_IOSTREAMS_NO_LIB -DBOOST_IOSTREAMS_STATIC_LINK -DBOOST_LOCALE_NO_LIB -DBOOST_LOCALE_STATIC_LINK -DBOOST_LOG_NO_LIB -DBOOST_LOG_STATIC_LINK -DBOOST_NOWIDE_NO_LIB -DBOOST_NO_CXX98_FUNCTION_BASE -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_PROGRAM_OPTIONS_STATIC_LINK -DBOOST_RANDOM_NO_LIB -DBOOST_RANDOM_STATIC_LINK -DBOOST_SERIALIZATION_NO_LIB -DBOOST_SERIALIZATION_STATIC_LINK -DBOOST_THREAD_NO_LIB -DBOOST_THREAD_STATIC_LINK -DBOOST_THREAD_USE_LIB -DGIT_COMMIT_HASH=\"395e070a0e\" -DHAVE_FREETYPE -DHAVE_OPENGL_EXT -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DOCC_CONVERT_SIGNALS -DOPENVDB_OPENEXR_STATICLIB -DOPENVDB_STATICLIB -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/clipper2/Clipper2Lib/include -F/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/clipper -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/glu-libtess/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/semver -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/OpenEXR -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r/CMakeFiles/libslic3r.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r/CMakeFiles/libslic3r.dir/cmake_pch.hxx -MD -MT src/libslic3r/CMakeFiles/libslic3r.dir/utils.cpp.o -MF src/libslic3r/CMakeFiles/libslic3r.dir/utils.cpp.o.d -o src/libslic3r/CMakeFiles/libslic3r.dir/utils.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libslic3r/utils.cpp
+1711:../src/libslic3r/utils.cpp:516:4: error: expected unqualified-id
+1712-  516 |         ::sigemptyset(&sa.sa_mask);
+1713-      |           ^
+1714-/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/signal.h:125:26: note: expanded from macro 'sigemptyset'
+1715-  125 | #define sigemptyset(set)        (*(set) = 0, 0)
+1716-      |                                 ^
+1717-1 error generated.
+1718-[293/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/TriangleSelector.cpp.o
+1719-[294/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/Zipper.cpp.o
+1720-[295/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/GCode/ToolOrderUtils.cpp.o
+1721-[296/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FlushVolPredictor.cpp.o
+1722-[297/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FilamentGroupUtils.cpp.o
+1723-[298/659] Building CXX object src/libslic3r/CMakeFiles/libslic3r.dir/FilamentGroup.cpp.o
+1724-[299/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o
+1725-In file included from ../src/slic3r/GUI/Widgets/AnimaController.cpp:1:
+1726-../src/slic3r/GUI/Widgets/AnimaController.hpp:16:10: warning: 'AnimaIcon::Enable' hides overloaded virtual function [-Woverloaded-virtual]
+1727-   16 |     void Enable();
+1728-      |          ^
+1729-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/../../wx-prefix/include/wx-3.3/wx/window.h:646:18: note: hidden overloaded virtual function 'wxWindowBase::Enable' declared here: different number of parameters (1 vs 0)
+1730-  646 |     virtual bool Enable( bool enable = true );
+1731-      |                  ^
+1732-1 warning generated.
+1733-[300/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Version.cpp.o
+1734-[301/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Config/Snapshot.cpp.o
+1735-In file included from ../src/slic3r/Config/Snapshot.cpp:26:
+1736-In file included from ../src/slic3r/Config/../GUI/MainFrame.hpp:21:
+1737-In file included from ../src/slic3r/Config/../GUI/Monitor.hpp:4:
+1738-../src/slic3r/Config/../GUI/Tabbook.hpp:143:10: warning: 'Tabbook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+1739-  143 |     bool AddPage(wxWindow* page,
+1740-      |          ^
+1741-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/../../wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: type mismatch at 3rd parameter ('bool' vs 'const std::string &' (aka 'const basic_string<char> &'))
+1742-  177 |     virtual bool AddPage(wxWindow *page,
+1743-      |                  ^
+1744-In file included from ../src/slic3r/Config/Snapshot.cpp:26:
+1745-In file included from ../src/slic3r/Config/../GUI/MainFrame.hpp:21:
+1746-In file included from ../src/slic3r/Config/../GUI/Monitor.hpp:4:
+1747-../src/slic3r/Config/../GUI/Tabbook.hpp:187:10: warning: 'RemovePage' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+1748-  187 |     bool RemovePage(size_t n)
+1749-      |          ^
+1750-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/../../wx-prefix/include/wx-3.3/wx/bookctrl.h:161:18: note: overridden virtual function is here
+1751-  161 |     virtual bool RemovePage(size_t n)
+1752-      |                  ^
+1753-In file included from ../src/slic3r/Config/Snapshot.cpp:26:
+1754-In file included from ../src/slic3r/Config/../GUI/MainFrame.hpp:24:
+1755-In file included from ../src/slic3r/Config/../GUI/CalibrationPanel.hpp:4:
+1756-In file included from ../src/slic3r/Config/../GUI/CalibrationWizard.hpp:8:
+1757-../src/slic3r/Config/../GUI/CalibrationWizardStartPage.hpp:51:10: warning: 'on_reset_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+1758-   51 |     void on_reset_page();
+1759-      |          ^
+1760-../src/slic3r/GUI/CalibrationWizardPage.hpp:310:18: note: overridden virtual function is here
+1761-  310 |     virtual void on_reset_page() {}
+1762-      |                  ^
+1763-In file included from ../src/slic3r/Config/Snapshot.cpp:26:
+1764-In file included from ../src/slic3r/Config/../GUI/MainFrame.hpp:24:
+1765-In file included from ../src/slic3r/Config/../GUI/CalibrationPanel.hpp:4:
+1766-In file included from ../src/slic3r/Config/../GUI/CalibrationWizard.hpp:8:
+1767-../src/slic3r/Config/../GUI/CalibrationWizardStartPage.hpp:52:10: warning: 'on_device_connected' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+1768-   52 |     void on_device_connected(MachineObject* obj);
+1769-      |          ^
+1770-../src/slic3r/GUI/CalibrationWizardPage.hpp:308:18: note: overridden virtual function is here
+1771-  308 |     virtual void on_device_connected(MachineObject* obj) { curr_obj = obj; }

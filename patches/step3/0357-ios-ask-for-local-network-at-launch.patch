@@ -1,0 +1,65 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index f6cebca58..b8da70123 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -792,6 +792,9 @@ std::vector<std::string> GUI_App::split_str(std::string src, std::string separat
+ }
+ 
+ #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++// src/slic3r/GUI/ios_webview_support.mm
++void orca_ios_request_local_network_permission();
++
+ // A sideloaded iOS build cannot find a Bambu printer by itself.
+ //
+ // Discovery is SSDP: the printer announces itself to the multicast group
+@@ -1166,6 +1169,10 @@ void GUI_App::post_init()
+     }
+ 
+ #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++    // Raise the local-network prompt now, at launch, rather than leaving it to
++    // whenever something first happens to touch the LAN.
++    orca_ios_request_local_network_permission();
++
+     // Stand in for the SSDP announcements iOS will not let this app receive.
+     ios_announce_preconfigured_printer(app_config, m_device_manager, true);
+     {
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 59cc161f2..aa9f0020d 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -112,5 +112,35 @@ void orca_ios_log_display_metrics(const char *when)
+         << ", keyWindow " << wb.size.width << "x" << wb.size.height;
+ }
+ 
++// Ask for local-network permission at launch, rather than whenever something
++// happens to touch the LAN first.
++//
++// iOS gates every local-network connection behind a one-time prompt. Nothing in
++// the app raises it deliberately, so it appeared at some arbitrary later moment
++// - or not at all, in which case the printer simply never connects and the
++// failure is silent. A Bonjour browse for the service already declared in
++// NSBonjourServices is the documented way to trigger the prompt on demand; it
++// does not need to find anything, and the multicast entitlement is irrelevant
++// here because raising the prompt is the entire point.
++//
++// The browser is kept alive in a static and stopped a few seconds later: an
++// NSNetServiceBrowser released immediately can cancel the request before iOS
++// has put the alert on screen.
++void orca_ios_request_local_network_permission()
++{
++    static NSNetServiceBrowser *browser = nil;
++    if (browser != nil)
++        return; // once per launch
++
++    browser = [[NSNetServiceBrowser alloc] init];
++    [browser searchForServicesOfType:@"_bambulab._tcp" inDomain:@"local."];
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-lan: asked for local network permission (_bambulab._tcp)";
++
++    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(6 * NSEC_PER_SEC)),
++                   dispatch_get_main_queue(), ^{
++        [browser stop];
++    });
++}
++
+ } // namespace GUI
+ } // namespace Slic3r

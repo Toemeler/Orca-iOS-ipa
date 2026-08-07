@@ -3122,3 +3122,19 @@ of the page is left alone.
 **Worth a sweep:** `shmget`/`shmat`/`shmctl`/`ftok` are a class, not an
 instance. This was the only one on a reachable path so far, but any other SysV
 IPC in the tree will behave the same way — silent until reached, then SIGSYS.
+
+## 0357: ask for local-network permission at launch
+
+iOS gates every local-network connection behind a one-time prompt, and nothing
+in the app raised it deliberately — so it appeared at whatever arbitrary moment
+something first touched the LAN, or not at all, in which case the printer simply
+never connects and the failure is silent.
+
+`orca_ios_request_local_network_permission()` starts an `NSNetServiceBrowser`
+for `_bambulab._tcp` (already declared in `NSBonjourServices`) from
+`GUI_App::post_init`, immediately before the pre-configured printer is
+announced. A Bonjour browse is the documented way to raise the prompt on demand;
+it does not need to find anything, and the multicast entitlement is irrelevant
+because raising the prompt is the whole purpose. The browser is held in a static
+and stopped after six seconds — released immediately, it can cancel the request
+before iOS has drawn the alert. Logs `orca-ios-lan:` when it fires.

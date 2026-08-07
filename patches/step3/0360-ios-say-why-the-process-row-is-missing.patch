@@ -1,0 +1,35 @@
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -1,6 +1,9 @@
+ #include "Plater.hpp"
+ #include "libslic3r/Config.hpp"
+ #include "libslic3r_version.h"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ 
+ #include <cstddef>
+ #include <algorithm>
+@@ -2252,7 +2255,21 @@
+     {
+     //add project title
+     auto params_panel = ((MainFrame*)parent->GetParent())->m_param_panel;
+-    if (params_panel) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The whole "Process" row of the sidebar - the icon, the word Process, the
++    // Global/Objects switch and the mode switch - is this one reparented
++    // panel, and it is missing from the iPad. There are three ways for that to
++    // happen and the screenshot cannot tell them apart: MainFrame never built
++    // a ParamsPanel (it only does so for is_editor()), the panel exists but
++    // get_top_panel() is null (ParamsPanel only builds it when its parent is a
++    // Notebook, and ours is a patched one), or it is here and simply laid out
++    // at zero height. Say which.
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-params: params_panel "
++        << (params_panel ? "yes" : "NULL") << ", top_panel "
++        << (params_panel == nullptr ? "n/a"
++            : params_panel->get_top_panel() == nullptr ? "NULL" : "yes");
++#endif
++    if (params_panel && params_panel->get_top_panel()) {
+         params_panel->get_top_panel()->Reparent(p->scrolled);
+         auto spliter_1 = new ::StaticLine(p->scrolled);
+         spliter_1->SetLineColour("#A6A9AA");

@@ -24,7 +24,37 @@ index 8b038a2..9c1f4b3 100644
      m_webView = [[WXWKWebView alloc] initWithFrame:r configuration:webViewConfig];
      [(WXWKWebView*)m_webView setWebView:this];
  #if defined(__WXOSX_IPHONE__)
-@@ -677,8 +685,79 @@
+@@ -647,7 +655,29 @@
+     wxString js = wxString::Format("window.%s = window.webkit.messageHandlers.%s;",
+             name, name);
+     AddUserScript(js);
++
++#if defined(__WXOSX_IPHONE__)
++    // Not RunScript(js) here. wxWebView::RunScript is synchronous: it waits for
++    // the result by calling wxEventLoopBase::YieldFor, which pumps a nested
++    // CFRunLoop. This runs from a CallAfter inside a wxDialog::ShowModal loop
++    // (OrcaSlicer creates the setup wizard's webview that way), so the nested
++    // pump re-enters the modal loop and pops an autorelease pool underneath the
++    // one already in flight. That is a SIGSEGV in objc_release, and it took the
++    // app down on every launch after the first:
++    //
++    //   objc_release <- objc_autoreleasePoolPop <- CFRunLoop source0
++    //   wxCFEventLoop::DoYieldFor <- wxEventLoopBase::YieldFor
++    //   wxWebView::RunScript <- wxWebViewWebKit::AddScriptMessageHandler
++    //   WebView::CreateWebView <- GuideFrame::run <- config_wizard_startup
++    //
++    // The AddUserScript above already injects this alias at document start for
++    // every load, so the only thing the synchronous call adds is the alias in a
++    // document that is already loaded - and this is called while the webview is
++    // being built, before anything has loaded.
++#else
+     RunScript(js);
++#endif
++
+     return true;
+ }
+ 
+@@ -677,8 +707,79 @@
  
  void wxWebViewWebKit::LoadURL(const wxString& url)
  {
@@ -106,7 +136,7 @@ index 8b038a2..9c1f4b3 100644
  }
  
  wxString wxWebViewWebKit::GetCurrentURL() const
-@@ -1023,6 +1102,16 @@
+@@ -1023,6 +1124,16 @@
      if (webKitWindow){
          NSString *url = webView.URL.absoluteString;
  
@@ -123,7 +153,7 @@ index 8b038a2..9c1f4b3 100644
          wxWebViewNavigationError type;
          wxString description = nsErrorToWxHtmlError(error, &type);
          wxWebViewEvent event(wxEVT_WEBVIEW_ERROR,
-@@ -1046,6 +1135,16 @@
+@@ -1046,6 +1157,16 @@
      if (webKitWindow){
          NSString *url = webView.URL.absoluteString;
  
@@ -140,7 +170,7 @@ index 8b038a2..9c1f4b3 100644
          wxWebViewNavigationError type;
          wxString description = nsErrorToWxHtmlError(error, &type);
          wxWebViewEvent event(wxEVT_WEBVIEW_ERROR,
-@@ -1079,6 +1178,12 @@
+@@ -1079,6 +1200,12 @@
      if (webKitWindow && webKitWindow->GetEventHandler())
          webKitWindow->GetEventHandler()->ProcessEvent(event);
  
@@ -153,7 +183,7 @@ index 8b038a2..9c1f4b3 100644
      decisionHandler(event.IsAllowed() ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
  }
  
-@@ -1236,6 +1341,24 @@
+@@ -1236,6 +1363,24 @@
          wxWEBVIEW_NAV_ACTION_OTHER;
  
  

@@ -1,0 +1,51 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index e59cee0b..f1a2b3c4 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -1923,9 +1923,16 @@
+ 
+ int GUI_App::updating_bambu_networking()
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // See ShowDownNetPluginDlg below: there is nothing to download on iOS.
++    BOOST_LOG_TRIVIAL(info) << "updating_bambu_networking: skipped on iOS, "
++                               "the native LAN agent needs no plugin";
++    return 0;
++#else
+     DownloadProgressDialog dlg(_L("Downloading Bambu Network Plug-in"));
+     dlg.ShowModal();
+     return 0;
++#endif
+ }
+ 
+ bool GUI_App::check_networking_version()
+@@ -4309,6 +4316,21 @@
+ }
+ 
+ void GUI_App::ShowDownNetPluginDlg() {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Bambu's network plugin is a closed-source dylib downloaded at run time.
++    // There is no iOS build of it and iOS will not load a downloaded dylib in
++    // any case, so this can only ever end where it did on an iPad: the download
++    // succeeds, the load fails, and the user is told to restart into the same
++    // failure. Patch 0335 already replaced the agent it would provide with a
++    // native LAN one and switched off the load path in on_init_network, but not
++    // this: the download is also started by the embedded web pages, which post
++    // a begin_network_plugin_download command straight to
++    // GUI_App::handle_web_request. Guarding the two dialog entry points catches
++    // every caller, web or native.
++    BOOST_LOG_TRIVIAL(info) << "ShowDownNetPluginDlg: skipped on iOS, "
++                               "printers are reached by the native LAN agent";
++    return;
++#else
+     try {
+         auto iter = std::find_if(dialogStack.begin(), dialogStack.end(), [](auto dialog) {
+             return dynamic_cast<DownloadProgressDialog *>(dialog) != nullptr;
+@@ -4320,6 +4342,7 @@
+     } catch (std::exception &) {
+         ;
+     }
++#endif
+ }
+ 
+ void GUI_App::ShowUserLogin(bool show, const std::string& provider)

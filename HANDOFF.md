@@ -2294,3 +2294,114 @@ in this session — no CI run yet on these patches.
 - The 3D viewport / EAGL drawable bind — and note the plater has never had a
   valid printer preset for long enough to render, because of the crash above.
   Re-test once this build is on the device.
+
+
+# SESSION 2026-08-07 (later): confirmed fixed, and instrumentation for the next one
+
+## Confirmed on device: the second-launch crash is gone
+
+Run 68 (`851c679`, the 0343/0344/0345 build) installed on the iPad. Device log
+`debug_Fri_Aug_07_11_59_10_5753.log.0`, a **fresh container**
+(`3087EAD9-…`, so the old data dir was not reused):
+
+```
+[error] 11:59:10.320729 orca-ios-cwd: chdir to the log dir failed (errno 2); staying put, getcwd() works here
+```
+
+The wizard ran (`modal loop ENTER` 11:59:12.411 → `EXIT rc=5100` 11:59:26.546),
+and **no `current_path` exception followed it** — that is the exact point where
+every previous build threw. The sidebar came up with `Bambu Lab A1 0.4 nozzle`
+and `Bambu PLA Basic @BBL A1`.
+
+**What 0344 measured, and what is still unmeasured.** `getcwd()` works from the
+working directory the app is launched on. This log is a first launch, so
+`data_dir()/log` did not exist and the chdir failed with ENOENT — the revert
+path never ran. Patch 0337 creates that directory, so the *second* launch on
+this container will chdir into it successfully and exercise the revert. **Look
+for `orca-ios-cwd:` in the next second-or-later launch log**: if it says
+`getcwd() is refused inside the data dir`, that finally proves the sandbox is
+what breaks `current_path()`, and 0339/0341/0343 were three symptoms of it.
+
+## Open: the app dies on slice, and nothing says why
+
+Same log, last four lines before it stops dead:
+
+```
+11:59:40.117  TLW SHOW: wxDialog "Loading..." 376x152
+11:59:40.216  TLW HIDE: wxDialog "Loading..." 376x119
+11:59:40.537  evaluateJavaScript: window.postMessage({"command":"orca_useroffline"})
+              (the 2 s login timer never ticks again)
+```
+
+The `Loading...` dialog is the `ProgressDialog` in `Plater::priv::load_files`
+(Plater.cpp:5989) — a model import, up for 99 ms. The process died within ~2 s
+of it, with the user reporting they had pressed Slice.
+
+Nothing more can be said from this log, and that is the actual problem:
+
+- the log level is clamped to `warning` (0341), so `load_files`, `reslice`,
+  `BackgroundSlicingProcess` and the G-code export log nothing at all;
+- a SIGSEGV or a terminate leaves no line anywhere.
+
+Candidates not yet distinguished, in rough order of suspicion: the first real
+GLVolume upload on the GL ES path (the plater has never had geometry on it
+before — this is the same unresolved area as the empty viewport); the toolpath
+preview (libvgcode) build after slicing; TBB inside `Print::process`. Note
+`BackgroundSlicingProcess::thread_proc` catches `std::exception` and reports it,
+so a plain slicing exception should surface as an error dialog, not a death.
+
+## Added: two patches whose whole job is to make the next report conclusive
+
+- **0346-ios-crash-note-with-backtrace** — installs, from
+  `set_log_path_and_level()` (the earliest well-defined point on iOS), handlers
+  for SIGSEGV/SIGBUS/SIGILL/SIGFPE/SIGABRT/SIGTRAP plus a `std::terminate`
+  handler, writing **`Documents/orca-crash.txt`**: the signal or the
+  exception's `what()`, the pid, the main image's load-address slide, and a
+  `backtrace_symbols_fd` stack. Appends, so a crash loop is one file.
+  - Signal-handler rules throughout: `write`/`open`/`backtrace_symbols_fd`
+    only, no malloc, no stdio, no boost, no wx.
+  - `sigaltstack` with a static 128 KB stack, so a stack overflow can still
+    report itself. (A literal, not `SIGSTKSZ` — that is a `sysconf()` call on
+    some libcs and this array needs static storage.)
+  - The terminate handler is the important half: an exception thrown in a wx
+    event handler on iOS unwinds into UIKit and never reaches
+    `generic_exception_handle`. On the old build this would have printed
+    `terminate: boost::filesystem::current_path: Operation not permitted` on
+    launch two instead of nothing.
+  - Both paths were compiled and **run** standalone (`-Wall -Wextra`): a null
+    deref produced the report and still exited 139; a thrown
+    `std::runtime_error` produced `terminate: <what()>` and still exited 134.
+  - **To symbolicate:** `atos -o <the app binary from the run's artifact> -l
+    <slide> <frame address>`. Keep the IPA of whatever build produced the trace.
+- **0347-ios-log-level-override-file** — the clamp in `AppConfig::set_defaults`
+  now yields to a level named in **`Documents/orca-log-level.txt`**
+  (trace/debug/info/warning/error/fatal, case-insensitive). Drop the file in via
+  the Files app, relaunch, get full logs; delete it to go back to `warning`. No
+  rebuild, no 70-minute round trip. **Ask the user to set this to `info` before
+  reproducing the slice crash.**
+
+## What the window tree says about the left panel
+
+From the 11:59:31 dump, matched against the user's screenshot. The panel is
+built and populated — this is not a missing-widget problem, it is layout and
+custom-control painting:
+
+- **Preset combo text is not drawn.** `wxWindow "Bambu Lab A1"` (162x41, best
+  250x41) and `wxWindow " PLA Basic"` (264x41) exist with the right labels and
+  render blank. But a plain `ComboBox` in the settings area (`wxWindow
+  "Aligned"`) *does* draw its text, and so do `0.4` and `Stainless Steel`. So it
+  is `PlaterPresetComboBox` specifically, not Orca's `ComboBox` base.
+- **The filament row is clipped.** `wxScrolledWindow id=-2226 … size=390x34`
+  holds a 41 px tall combo. Same 30-vs-41 mismatch appears on several rows —
+  containers sized in one metric, contents in another. Suspect the content
+  scale / the app believing the screen is 1600x1200.
+- **The process preset combo is absent from the tree entirely.** `wxPanel
+  id=-2121` (the ParamsPanel, at y=220, 390x899, `best=0x0`) has exactly one
+  child, the settings scroll at y=90. The 90 px band above it — where the Tab's
+  header with the preset combo, save and delete buttons belongs — contains no
+  windows at all. That matches the empty white block under "Process" in the
+  screenshot.
+- `wxWindow "Smooth High Temp Plate"` is 18 px wide (best 18x41): the bed-type
+  combo is collapsed to nothing.
+
+Not investigated further — it needs the app, not a log.

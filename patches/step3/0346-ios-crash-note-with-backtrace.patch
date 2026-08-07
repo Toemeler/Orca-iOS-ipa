@@ -1,0 +1,186 @@
+diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
+index 521128e33..1e9e06c04 100644
+--- a/src/libslic3r/utils.cpp
++++ b/src/libslic3r/utils.cpp
+@@ -17,6 +17,15 @@
+ #include "MacUtils.hpp"
+ #include <TargetConditionals.h>
+ #include <cstdlib>     // getenv, for the iOS log path in set_log_path_and_level
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++#include <cstring>         // strlen, in the iOS crash note below
++#include <exception>       // std::set_terminate, std::current_exception
++#include <execinfo.h>      // backtrace, backtrace_symbols_fd
++#include <fcntl.h>         // open
++#include <mach-o/dyld.h>   // _dyld_get_image_vmaddr_slide
++#include <signal.h>
++#include <unistd.h>        // write, close
++#endif
+ #endif
+ 
+ #ifdef WIN32
+@@ -360,8 +369,165 @@ namespace src = boost::log::sources;
+ namespace expr = boost::log::expressions;
+ namespace keywords = boost::log::keywords;
+ namespace attrs = boost::log::attributes;
++
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++// Why this exists
++// ---------------
++// Three device crashes in a row have left no trace whatsoever. A C++ exception
++// that unwinds through a UIKit frame reaches no catch and no wx handler; a
++// SIGSEGV reaches nothing at all. Either way the process is gone, the log file
++// simply stops mid-stream, and the only evidence is which line it stopped after
++// - which has cost a full CI build and a round trip with the user every time.
++//
++// This writes $HOME/Documents/orca-crash.txt (Documents is the only directory
++// UIFileSharingEnabled exposes, so it is the only one the user can get a file
++// out of) containing the signal or the exception's what(), the main image's
++// load-address slide, and a raw backtrace.
++//
++// Everything below runs after the process is already dying, so it is written to
++// the rules for a signal handler: write(2), open(2) and backtrace_symbols_fd(3)
++// only. No malloc, no stdio, no boost, no wx, nothing that takes a lock the
++// dying thread might already hold.
++//
++// The backtrace names only exported symbols; a static function shows up as the
++// nearest one before it. The slide is printed so the frame addresses can be run
++// through `atos -o <the app binary> -l <slide>` against the build's binary for
++// exact lines.
++static char                     g_ios_crash_path[1024] = {0};
++static volatile sig_atomic_t    g_ios_in_crash         = 0;
++
++static void ios_crash_write(int fd, const char *s)
++{
++	if (s != nullptr && *s != '\0')
++		(void) ::write(fd, s, ::strlen(s));
++}
++
++static void ios_crash_write_num(int fd, unsigned long v, int base)
++{
++	char       buf[32];
++	int        i = int(sizeof(buf));
++	const char digits[] = "0123456789abcdef";
++	if (v == 0)
++		buf[--i] = '0';
++	while (v != 0 && i > 0) {
++		buf[--i] = digits[v % (unsigned long) base];
++		v /= (unsigned long) base;
++	}
++	(void) ::write(fd, buf + i, size_t(int(sizeof(buf)) - i));
++}
++
++static void ios_crash_write_report(const char *kind, const char *detail, unsigned long number)
++{
++	if (g_ios_crash_path[0] == '\0')
++		return;
++	// O_APPEND: one file across launches, so a crash loop arrives as one
++	// attachment with its history rather than as several files to correlate.
++	const int fd = ::open(g_ios_crash_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
++	if (fd < 0)
++		return;
++
++	ios_crash_write(fd, "\n--- orca ios crash: ");
++	ios_crash_write(fd, kind);
++	if (detail != nullptr) {
++		ios_crash_write(fd, ": ");
++		ios_crash_write(fd, detail);
++	} else {
++		ios_crash_write(fd, " ");
++		ios_crash_write_num(fd, number, 10);
++	}
++	ios_crash_write(fd, "\npid ");
++	ios_crash_write_num(fd, (unsigned long) ::getpid(), 10);
++	ios_crash_write(fd, " image slide 0x");
++	ios_crash_write_num(fd, (unsigned long) ::_dyld_get_image_vmaddr_slide(0), 16);
++	ios_crash_write(fd, "\n");
++
++	void     *frames[64];
++	const int n = ::backtrace(frames, 64);
++	::backtrace_symbols_fd(frames, n, fd);
++	ios_crash_write(fd, "--- end ---\n");
++
++	::close(fd);
++}
++
++extern "C" void ios_crash_signal_handler(int sig)
++{
++	if (g_ios_in_crash == 0) {
++		g_ios_in_crash = 1;
++		ios_crash_write_report("signal", nullptr, (unsigned long) sig);
++	}
++	// Hand the signal back to the default action so the OS still records its own
++	// crash report and the process dies the way it would have.
++	::signal(sig, SIG_DFL);
++	::raise(sig);
++}
++
++static void ios_crash_terminate_handler()
++{
++	if (g_ios_in_crash == 0) {
++		g_ios_in_crash = 1;
++		// Not a signal context, so the exception can be inspected. This is the
++		// case that matters most: an exception thrown in a wx event handler on
++		// iOS unwinds into UIKit and lands here instead of in
++		// GUI_App::generic_exception_handle.
++		const char *what = nullptr;
++		try {
++			if (std::exception_ptr ep = std::current_exception())
++				std::rethrow_exception(ep);
++		} catch (const std::exception &ex) {
++			what = ex.what();
++		} catch (...) {
++			what = "(not a std::exception)";
++		}
++		ios_crash_write_report("terminate", what != nullptr ? what : "(no current exception)", 0);
++	}
++	// abort() as usual, so the OS still writes its own crash report. It raises
++	// SIGABRT, which re-enters the handler above - g_ios_in_crash stops that
++	// from appending a second, less useful trace.
++	::abort();
++}
++
++static void ios_install_crash_handler()
++{
++	const char *const ios_home = ::getenv("HOME");
++	if (ios_home == nullptr || *ios_home == '\0')
++		return;
++	const size_t home_len = ::strlen(ios_home);
++	const char   tail[]   = "/Documents/orca-crash.txt";
++	if (home_len + sizeof(tail) > sizeof(g_ios_crash_path))
++		return;
++	::memcpy(g_ios_crash_path, ios_home, home_len);
++	::memcpy(g_ios_crash_path + home_len, tail, sizeof(tail));
++
++	// An alternate signal stack, because the handler has to survive the one
++	// crash it cannot otherwise report: a stack overflow, where there is no room
++	// left on the failing thread's stack to run anything at all.
++	// A literal rather than SIGSTKSZ: it is a constant on Darwin but a sysconf()
++	// call on some libcs, and this array has to have static storage.
++	static char alt_stack[128 * 1024];
++	stack_t     ss = {};
++	ss.ss_sp    = alt_stack;
++	ss.ss_size  = sizeof(alt_stack);
++	ss.ss_flags = 0;
++	(void) ::sigaltstack(&ss, nullptr);
++
++	struct sigaction sa = {};
++	sa.sa_handler = ios_crash_signal_handler;
++	sa.sa_flags   = SA_ONSTACK;
++	::sigemptyset(&sa.sa_mask);
++	static const int fatal_signals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGABRT, SIGTRAP};
++	for (size_t i = 0; i < sizeof(fatal_signals) / sizeof(fatal_signals[0]); ++i)
++		(void) ::sigaction(fatal_signals[i], &sa, nullptr);
++
++	std::set_terminate(ios_crash_terminate_handler);
++}
++#endif // TARGET_OS_IPHONE
++
+ void set_log_path_and_level(const std::string& file, unsigned int level)
+ {
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++	// First thing, before anything else in startup can go wrong.
++	ios_install_crash_handler();
++#endif
+ #if defined(__APPLE__) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+ 	//currently on old macos, the boost::log::add_file_log will crash
+ 	//TODO: need to be fixed

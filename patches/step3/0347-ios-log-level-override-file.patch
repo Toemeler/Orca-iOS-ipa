@@ -1,0 +1,63 @@
+diff --git a/src/libslic3r/AppConfig.cpp b/src/libslic3r/AppConfig.cpp
+index df8041676..96200d148 100644
+--- a/src/libslic3r/AppConfig.cpp
++++ b/src/libslic3r/AppConfig.cpp
+@@ -12,6 +12,10 @@
+ 
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
++#if !TARGET_OS_OSX
++#include <cctype>      // tolower, for the iOS log-level override file
++#include <cstdlib>     // getenv
++#endif
+ #endif
+ 
+ #include <algorithm>
+@@ -368,10 +372,44 @@ void AppConfig::set_defaults()
+     // "info" written to its config, and a default only applies to an empty
+     // value, so defaulting would fix nothing for anyone who already has the app.
+     // A quieter choice is left alone.
++    //
++    // The clamp is overridable without a rebuild, because the alternative has
++    // been a 70-minute CI round trip and a reinstall every time a device
++    // problem needed one more log line. Put a level - trace, debug, info,
++    // warning, error or fatal - in
++    //
++    //   <app>/Documents/orca-log-level.txt
++    //
++    // via the Files app, and the next launch uses it. Documents is the only
++    // directory file sharing exposes, which is why it lives there next to the
++    // log itself. Delete the file to go back to the clamp.
+     {
+-        const std::string lvl = get("log_severity_level");
+-        if (lvl.empty() || lvl == "info" || lvl == "debug" || lvl == "trace")
+-            set("log_severity_level", "warning");
++        std::string forced;
++        if (const char *const ios_home = ::getenv("HOME")) {
++            const boost::filesystem::path override_file =
++                boost::filesystem::path(ios_home) / "Documents" / "orca-log-level.txt";
++            boost::system::error_code ec;
++            if (boost::filesystem::exists(override_file, ec) && !ec) {
++                boost::nowide::ifstream in(override_file.string().c_str());
++                // operator>> takes the first whitespace-delimited word, so a
++                // trailing newline from whatever wrote the file is not a problem.
++                if (in.is_open() && (in >> forced)) {
++                    for (char &c : forced)
++                        c = char(std::tolower(static_cast<unsigned char>(c)));
++                    if (forced != "trace" && forced != "debug" && forced != "info" && forced != "warning" &&
++                        forced != "error" && forced != "fatal")
++                        forced.clear();
++                }
++            }
++        }
++
++        if (! forced.empty()) {
++            set("log_severity_level", forced);
++        } else {
++            const std::string lvl = get("log_severity_level");
++            if (lvl.empty() || lvl == "info" || lvl == "debug" || lvl == "trace")
++                set("log_severity_level", "warning");
++        }
+     }
+ #else
+     if (get("log_severity_level").empty())

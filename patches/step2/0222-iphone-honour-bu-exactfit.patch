@@ -1,0 +1,27 @@
+diff --git a/src/osx/iphone/anybutton.mm b/src/osx/iphone/anybutton.mm
+index f9182c3170..9eeb504fa2 100644
+--- a/src/osx/iphone/anybutton.mm
++++ b/src/osx/iphone/anybutton.mm
+@@ -38,9 +38,20 @@ wxSize wxAnyButton::DoGetBestSize() const
+     sz.x = r.GetWidth();
+     sz.y = r.GetHeight();
+ 
+-    int wBtn = 72;
++    // wxBU_EXACTFIT means "do not pad me out to the standard button width".
++    // The condition below used to read
++    //
++    //     if ((wBtn > sz.x) || ( GetWindowStyle() & wxBU_EXACTFIT))
++    //
++    // which does the exact opposite: asking for an exact fit *forced* the
++    // standard width. Every icon-only toolbar button in a ported application
++    // is created with wxBU_EXACTFIT, so every one of them came out 72pt wide
++    // instead of about 24, and a row of them overflowed its panel - the last
++    // buttons in the row ended up laid out at zero width and vanished. The
++    // Cocoa port has the condition the right way round; match it.
++    const int wBtn = 72;
+ 
+-    if ((wBtn > sz.x) || ( GetWindowStyle() & wxBU_EXACTFIT))
++    if ( sz.x < wBtn && !(GetWindowStyle() & wxBU_EXACTFIT) )
+         sz.x = wBtn;
+ 
+     return sz ;

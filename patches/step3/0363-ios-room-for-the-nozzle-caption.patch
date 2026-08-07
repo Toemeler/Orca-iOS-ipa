@@ -1,0 +1,20 @@
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -226,7 +226,17 @@
+ wxDEFINE_EVENT(EVT_NOTICE_CHILDE_SIZE_CHANGED, SimpleEvent);
+ wxDEFINE_EVENT(EVT_NOTICE_FULL_SCREEN_CHANGED, IntEvent);
+ #define PRINTER_THUMBNAIL_SIZE (wxSize(40, 40)) // ORCA
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// 66 rather than 60. The nozzle box stacks a 12pt caption, a combo box and a
++// second 12pt caption with 4 + 2 + 2 points of margin between them, which is
++// 64 - and iOS entry fields are a couple of points taller than the Cocoa ones
++// these numbers were chosen against, so "Stainless Steel" was being drawn
++// through the bottom border. Six points gives the stack room and keeps all
++// three boxes in the row the same height.
++#define PRINTER_PANEL_SIZE (    wxSize(70, 66)) // ORCA
++#else
+ #define PRINTER_PANEL_SIZE (    wxSize(70, 60)) // ORCA
++#endif
+ #define PRINTER_PANEL_RADIUS (6) // ORCA
+ #define BTN_SYNC_SIZE (wxSize(FromDIP(96), FromDIP(98)))
+ 

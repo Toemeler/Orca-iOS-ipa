@@ -1,0 +1,23 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 81e9fd0e85..6815f12e77 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -1245,6 +1245,18 @@ wxWidgetImpl* wxWidgetImpl::CreateUserPane( wxWindowMac* wxpeer, wxWindowMac* WX
+     v.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+     wxUIScrollViewDelegate *delegate = [[wxUIScrollViewDelegate alloc] init];
+     [v setDelegate: delegate];
++    // On the view being created, not only on its parent. The three lines
++    // below set these on sv - the *parent's* view - so the pane that is
++    // actually going to draw never gets UIViewContentModeRedraw and keeps
++    // UIKit's default, UIViewContentModeScaleToFill. A custom-drawn pane that
++    // is laid out after its first paint then has its cached layer stretched
++    // to the new size instead of being asked to redraw: a widget first
++    // painted one pixel wide and later resized shows a single column of
++    // pixels smeared across its whole width, which reads as a blank block of
++    // colour. It never corrects itself either, because nothing invalidates
++    // it - only touching the widget does, which is why such a control comes
++    // right permanently the first time it is used.
++    v.contentMode = UIViewContentModeRedraw;
+     sv.clipsToBounds = YES;
+     sv.contentMode =  UIViewContentModeRedraw;
+     sv.clearsContextBeforeDrawing = NO;

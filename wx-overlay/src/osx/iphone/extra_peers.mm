@@ -132,8 +132,29 @@ public:
         // wxAnyButton::DoSetBitmap funnels every bitmap change - the label,
         // the disabled and the hover variants - through the peer's SetBitmap,
         // so this one override keeps all of them in sync.
-        [b setImage:(bitmap.IsOk() ? wxOSXGetImageFromBundle( bitmap ) : nil)
-           forState:UIControlStateNormal];
+        UIImage* const im = bitmap.IsOk() ? wxOSXGetImageFromBundle( bitmap ) : nil;
+
+        // Not -setImage:forState:. A UIButton draws its image inside a content
+        // rect it computes itself, and on iOS 15+ that computation goes through
+        // UIButtonConfiguration, whose default insets are far larger than an
+        // 18x18 check box - so an 18pt image in an 18pt button was being
+        // aspect-fitted down to about 7pt. The measurement that proved it:
+        //
+        //   orca-ios-toggle: button frame 18x18, image 18x18 @2.0x
+        //
+        // both correct, and still drawn small. So bypass the button's content
+        // rect entirely and own the image view: one subview, pinned to the
+        // whole of bounds, autoresizing with it.
+        if ( m_imageView == nil ) {
+            m_imageView = [[UIImageView alloc] initWithFrame:b.bounds];
+            m_imageView.contentMode  = UIViewContentModeScaleAspectFit;
+            m_imageView.autoresizingMask =
+                UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            m_imageView.userInteractionEnabled = NO;
+            [b addSubview:m_imageView];
+        }
+        m_imageView.frame = b.bounds;
+        m_imageView.image = im;
 
         // A UIButton lays its image out inside the content rect, and a
         // UIImageView defaults to UIViewContentModeScaleToFill - so an 18x18
@@ -142,19 +163,12 @@ public:
         // slivers with no visible tick. Keep the aspect ratio and take the
         // insets out of the way, so a wrong content rect can only make the
         // artwork small, never squash it.
-        b.imageView.contentMode = UIViewContentModeScaleAspectFit;
-        b.contentEdgeInsets     = UIEdgeInsetsZero;
-        b.imageEdgeInsets       = UIEdgeInsetsZero;
-        b.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
-        b.contentVerticalAlignment   = UIControlContentVerticalAlignmentCenter;
-
         // And report what the geometry actually is, because wx believing the
         // control is 18x18 while it draws 13x6 is the whole question.
         // wxLogMessage, not NSLog: NSLog writes to the device console, which
         // cannot be retrieved from a sideloaded app. wx log messages are routed
         // into Orca's boost sink and land in Documents/log with everything else.
-        if ( bitmap.IsOk() ) {
-            UIImage* const im = wxOSXGetImageFromBundle( bitmap );
+        if ( im != nil ) {
             wxLogMessage( "orca-ios-toggle: button frame %.0fx%.0f, image %.0fx%.0f @%.1fx",
                           (double) b.frame.size.width, (double) b.frame.size.height,
                           (double) im.size.width, (double) im.size.height, (double) im.scale );
@@ -174,6 +188,7 @@ public:
 private:
     wxBitmapBundle m_bitmap;
     wxInt32        m_value = 0;
+    UIImageView*   m_imageView = nil;
 };
 
 static wxWidgetImplType* wxIPhoneMakeToggleButtonPeer( wxWindowMac* wxpeer,

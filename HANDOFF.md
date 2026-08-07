@@ -2987,3 +2987,40 @@ the checkboxes are square with a visible tick instead of ~13x6 slivers — the
 Unchanged: `UIScreen.bounds` is still 1600x1200 with `nativeScale` 1.72. Whether
 that means the variants do not help, or the baseline was the one installed, is
 exactly what the variant line will settle.
+
+## Run 80 on the device: three measurements, and what each settles
+
+```
+orca-ios-variant: sceneManifest no, UIRequiresFullScreen yes
+orca-ios-display: UIScreen.bounds 1600x1200, nativeBounds 2064x2752, scale 2, nativeScale 1.72
+orca-ios-toggle:  button frame 18x18, image 18x18 @2.0x        (x173)
+orca-ios-tab:     select_tab 0, current -1, target hidden false
+                  select_tab 1, current  0, target hidden true
+                  select_tab 0, current  1, target hidden true
+```
+
+1. **The canvas experiment still has not run.** `sceneManifest no` means the
+   *baseline* IPA was installed, twice now. The `-scene` and `-windowed`
+   variants remain untested. Until one of them is installed, 1600x1200 tells us
+   nothing new.
+2. **The checkbox geometry is correct and the smallness is elsewhere.** The
+   button is 18x18 pt and the image is 18x18 pt at @2x — both exactly right —
+   and it still draws at roughly 7 pt. That rules out the frame and the bitmap,
+   and leaves `UIButton`'s own content rect: on iOS 15+ that goes through
+   `UIButtonConfiguration`, whose default insets dwarf an 18 pt control, so
+   aspect-fit shrinks the image to fit what is left. 0353 therefore stops using
+   `-setImage:forState:` altogether and gives the peer its own `UIImageView`
+   pinned to `bounds`.
+3. **The Device tab break is upstream of `select_tab`.** There is no
+   `orca-ios-tab` line for the Device index at all — only 0 and 1, from
+   startup. So the fix in 0353 (`Notebook::SetSelection` showing a hidden page)
+   addressed a real defect but **not this one**: the tap never reaches
+   `select_tab`. `target hidden true` on the 0/1 switches does show that defect
+   was real and is now being corrected.
+
+0354 instruments the missing link: every tab-button press logs
+`orca-ios-tabbtn: pressed '<label>'` and the index it resolves to, and every
+insertion into the strip logs its position and the resulting button count. A tap
+that produces no line never reached the handler — a different bug from one that
+resolves to the wrong page — and the insert lines will show whether the Device
+button's index mapping is stale after `show_device()` rebuilds the strip.

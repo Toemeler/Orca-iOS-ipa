@@ -1,0 +1,36 @@
+diff --git a/src/slic3r/GUI/Notebook.cpp b/src/slic3r/GUI/Notebook.cpp
+index ceda3fc0d..7b4a77060 100644
+--- a/src/slic3r/GUI/Notebook.cpp
++++ b/src/slic3r/GUI/Notebook.cpp
+@@ -1,4 +1,5 @@
+ #include "Notebook.hpp"
++#include <boost/log/trivial.hpp>
+ 
+ //#ifdef _WIN32
+ 
+@@ -171,8 +172,16 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
+     btn->SetInactiveIcon(inactive_bmp_name);
+     btn->SetSelected(false);
+     btn->Bind(wxEVT_BUTTON, [this, btn](wxCommandEvent& event) {
++        // The Device tab does nothing when tapped, and MainFrame::select_tab is
++        // never reached - so the break is somewhere between the touch and this
++        // handler. Log every tab press with the index it resolves to: a tap
++        // that produces no line at all never got here, which is a different
++        // bug from one that resolves to the wrong page.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbtn: pressed '" << btn->GetLabel().utf8_string()
++                                 << "', buttons " << m_pageButtons.size();
+         if (auto it = std::find(m_pageButtons.begin(), m_pageButtons.end(), btn); it != m_pageButtons.end()) {
+             auto sel = it - m_pageButtons.begin();
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbtn: resolves to index " << sel;
+             //do it later
+             //SetSelection(sel);
+             
+@@ -182,6 +191,8 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
+         }
+     });
+     Slic3r::GUI::wxGetApp().UpdateDarkUI(btn);
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbtn: insert '" << text.utf8_string() << "' at " << n
++                             << " (was " << m_pageButtons.size() << " buttons)";
+     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
+     m_pageLabels.insert(m_pageLabels.begin() + n, text); // ORCA
+     m_buttons_sizer->Insert(n, new wxSizerItem(btn));

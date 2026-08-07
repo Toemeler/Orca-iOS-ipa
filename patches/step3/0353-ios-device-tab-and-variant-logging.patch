@@ -1,0 +1,72 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index df45bf30e..f8e4217cc 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -4223,7 +4223,16 @@ void MainFrame::select_tab(size_t tab/* = size_t(-1)*/)
+         //size_t new_selection = tab == (size_t)(-1) ? m_last_selected_tab : (m_layout == ESettingsLayout::Dlg && tab != 0) ? tab - 1 : tab;
+         size_t new_selection = tab == (size_t)(-1) ? m_last_selected_tab : tab;
+ 
+-        if (m_tabpanel->GetSelection() != (int)new_selection)
++        // The second half of the guard matters on iOS: a page can be the
++        // current selection and still be hidden (see Notebook::SetSelection),
++        // in which case skipping the call leaves the tab permanently dead.
++        const bool target_hidden = new_selection < m_tabpanel->GetPageCount() &&
++                                   m_tabpanel->GetPage(new_selection) != nullptr &&
++                                   !m_tabpanel->GetPage(new_selection)->IsShown();
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tab: select_tab " << new_selection
++                                 << ", current " << m_tabpanel->GetSelection()
++                                 << ", target hidden " << target_hidden;
++        if (m_tabpanel->GetSelection() != (int)new_selection || target_hidden)
+             m_tabpanel->SetSelection(new_selection);
+ #ifdef _MSW_DARK_MODE
+         /*if (wxGetApp().tabs_as_menu()) {
+diff --git a/src/slic3r/GUI/Notebook.hpp b/src/slic3r/GUI/Notebook.hpp
+index d33395656..a1a0c2bbd 100644
+--- a/src/slic3r/GUI/Notebook.hpp
++++ b/src/slic3r/GUI/Notebook.hpp
+@@ -193,6 +193,25 @@ public:
+         }
+         GetBtnsListCtrl()->SetSelection(n);
+ 
++        // Show the target page unconditionally.
++        //
++        // wxBookCtrlBase::DoSetSelection() only calls page->Show() when the
++        // index actually changes, and MainFrame::show_device() inserts the
++        // Device page with m_monitor->Show(false). So if the insertion leaves
++        // m_selection already pointing at that page, nothing ever shows it -
++        // and MainFrame::select_tab() then skips the call entirely because
++        // GetSelection() already equals the target. Tapping Device did
++        // nothing, permanently, while the page behind it was alive and
++        // reporting MONITOR_NORMAL.
++        //
++        // The visible highlight is a separate call (GetBtnsListCtrl()
++        // ->SetSelection just above), which is why the two could disagree
++        // without anything looking wrong.
++        if (wxWindow *target = GetPage(n)) {
++            target->SetSize(GetPageRect());
++            target->Show();
++        }
++
+         // check that only the selected page is visible and others are hidden:
+         for (size_t page = 0; page < m_pages.size(); page++) {
+             wxWindow* win_a = GetPage(page);
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index ae17b19a6..59cc161f2 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -96,6 +96,15 @@ void orca_ios_log_display_metrics(const char *when)
+         if (w.isKeyWindow) { wb = w.bounds; break; }
+     }
+ 
++    // Which Info.plist variant is installed. Without this there is no way to
++    // tell from a log whether the user ran the baseline, -scene or -windowed
++    // IPA, which made the last round of the canvas experiment unreadable.
++    NSDictionary *const info  = [[NSBundle mainBundle] infoDictionary];
++    const bool has_scene      = info[@"UIApplicationSceneManifest"] != nil;
++    const bool requires_full  = [info[@"UIRequiresFullScreen"] boolValue];
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-variant: sceneManifest " << (has_scene ? "yes" : "no")
++                             << ", UIRequiresFullScreen " << (requires_full ? "yes" : "no");
++
+     BOOST_LOG_TRIVIAL(error) << "orca-ios-display (" << (when ? when : "?") << "): "
+         << "UIScreen.bounds " << b.size.width << "x" << b.size.height
+         << ", nativeBounds " << nb.size.width << "x" << nb.size.height

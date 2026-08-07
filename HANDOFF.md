@@ -2940,3 +2940,50 @@ and both touch code that every widget in the app goes through; a wrong guess
 there is a worse regression than the current state. The canvas result decides
 which is even worth pursuing — if the app gets a native canvas, the font/metric
 mismatch may resolve with it.
+
+## 0353: the dead Device tab, and two instrumentation mistakes fixed
+
+**The Device tab.** `Notebook::SetSelection()` relies on
+`wxBookCtrlBase::DoSetSelection()` to show the page, and that only calls
+`page->Show()` when the index actually changes. `MainFrame::show_device()`
+inserts the Device page with `m_monitor->Show(false)`. If the insertion leaves
+`m_selection` already pointing at that page, nothing ever shows it — and
+`MainFrame::select_tab()` then skips the call entirely:
+
+```cpp
+if (m_tabpanel->GetSelection() != (int)new_selection)   // already equal
+    m_tabpanel->SetSelection(new_selection);            // never runs
+```
+
+so the tap does nothing, permanently, while the page behind it is alive and
+reporting `MONITOR_NORMAL`. The visible highlight never contradicts this because
+`GetBtnsListCtrl()->SetSelection()` is a separate call.
+
+Fixed on both sides: `Notebook::SetSelection` now shows the target page
+unconditionally, and `select_tab` no longer skips when the target page is not
+actually visible. It logs `orca-ios-tab:` with the requested index, the current
+one, and whether the target was hidden — so if this is not the mechanism, the
+next log says so immediately.
+
+**Two instrumentation mistakes from the previous round, both mine:**
+
+1. The toggle-geometry probe used `NSLog`, which writes to the device console —
+   unreachable from a sideloaded app. It never reached the log file, so the
+   round produced no measurement. Now `wxLogMessage`, which Orca routes into the
+   boost sink and therefore into `Documents/log`.
+2. Nothing recorded **which Info.plist variant was running**, which made the
+   three-IPA canvas experiment unreadable: run 79's log shows 1600x1200 but
+   there is no way to tell whether that was the baseline, `-scene` or
+   `-windowed`. Now every launch logs
+   `orca-ios-variant: sceneManifest yes/no, UIRequiresFullScreen yes/no`.
+
+## Status after run 79 on the device
+
+Confirmed changed: the settings tab labels (Quality/Strength/...) now draw, and
+the checkboxes are square with a visible tick instead of ~13x6 slivers — the
+`ScaleAspectFit` fix worked. They are still far too small (~6 pt against the
+18 pt the control claims), which the toggle probe will now quantify.
+
+Unchanged: `UIScreen.bounds` is still 1600x1200 with `nativeScale` 1.72. Whether
+that means the variants do not help, or the baseline was the one installed, is
+exactly what the variant line will settle.

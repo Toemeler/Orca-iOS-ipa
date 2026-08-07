@@ -9,6 +9,7 @@
 
 #include "wx/wxprec.h"
 
+#include "wx/log.h"
 #include "wx/window.h"
 #include "wx/nonownedwnd.h"
 #include "wx/statbox.h"
@@ -149,10 +150,14 @@ public:
 
         // And report what the geometry actually is, because wx believing the
         // control is 18x18 while it draws 13x6 is the whole question.
+        // wxLogMessage, not NSLog: NSLog writes to the device console, which
+        // cannot be retrieved from a sideloaded app. wx log messages are routed
+        // into Orca's boost sink and land in Documents/log with everything else.
         if ( bitmap.IsOk() ) {
-            const CGSize img = wxOSXGetImageFromBundle( bitmap ).size;
-            NSLog( @"orca-ios-toggle: button frame %.0fx%.0f, image %.0fx%.0f",
-                   b.frame.size.width, b.frame.size.height, img.width, img.height );
+            UIImage* const im = wxOSXGetImageFromBundle( bitmap );
+            wxLogMessage( "orca-ios-toggle: button frame %.0fx%.0f, image %.0fx%.0f @%.1fx",
+                          (double) b.frame.size.width, (double) b.frame.size.height,
+                          (double) im.size.width, (double) im.size.height, (double) im.scale );
         }
     }
 

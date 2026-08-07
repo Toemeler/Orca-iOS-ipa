@@ -2848,3 +2848,13 @@ grep; trust the `-k 0` run.
 Run 77 also proves 0350 and 0351 compile: the display-metrics call, the dialog
 logging, and `HAS_GLSAFE` being defined on iOS all went through the entire tree
 without a diagnostic.
+
+## Result: run 78 green, and the PCH hypothesis is confirmed
+
+`54e8271` built successfully in **25 minutes**, against ~60 for every previous
+device build. That is the ccache change paying off exactly as predicted: run 77
+populated the cache with PCH-off objects, and run 78 hit them. The precompiled
+header really was the cache-buster, and `SLIC3R_PCH=0` really is the fix.
+
+Cost of getting there: run 76 (superseded), run 77 (the two missing includes).
+Two builds to halve every build from here on.

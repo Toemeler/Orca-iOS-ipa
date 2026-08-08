@@ -1,0 +1,55 @@
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -312,6 +312,26 @@
+             gs_lastPointerButton = 0;
+             break ;
+ 
++        case UITouchPhaseCancelled :
++            // A cancelled touch is still a release, and has to be reported as
++            // one. iOS cancels rather than ends whenever something else claims
++            // the sequence - a system edge gesture, an alert, or a scroll view
++            // deciding the drag was meant for it. Falling through to default
++            // and reporting nothing leaves the application holding a button the
++            // user let go of: wxWidgets keeps the mouse captured, OrcaSlicer
++            // keeps m_mouse.dragging set, and the 3D view stops responding for
++            // good while still drawing happily. The counters showed exactly
++            // that - "render +123 mouse +125" while it worked, then
++            // "render +1 mouse +0" with the finger still moving.
++            switch ( gs_lastPointerButton )
++            {
++                case 1 : wxevent.SetEventType( wxEVT_RIGHT_UP );  wxevent.SetRightDown(false);  break ;
++                case 2 : wxevent.SetEventType( wxEVT_MIDDLE_UP ); wxevent.SetMiddleDown(false); break ;
++                default: wxevent.SetEventType( wxEVT_LEFT_UP );   wxevent.SetLeftDown(false);   break ;
++            }
++            gs_lastPointerButton = 0;
++            break ;
++
+         case UITouchPhaseMoved :
+             wxevent.SetEventType( wxEVT_MOTION );
+             switch ( gs_lastPointerButton )
+@@ -501,6 +521,10 @@
+     class_addMethod(c, @selector(touchesBegan:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(touchesMoved:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(touchesEnded:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
++    // Without this the phase above is never seen: UIKit sends touchesCancelled:
++    // instead of touchesEnded:, and an unregistered selector means wx is never
++    // told the sequence finished at all.
++    class_addMethod(c, @selector(touchesCancelled:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(becomeFirstResponder), (IMP) wxOSX_becomeFirstResponder, "c@:" );
+     class_addMethod(c, @selector(resignFirstResponder), (IMP) wxOSX_resignFirstResponder, "c@:" );
+ 
+@@ -1489,6 +1513,14 @@
+     // it - only touching the widget does, which is why such a control comes
+     // right permanently the first time it is used.
+     v.contentMode = UIViewContentModeRedraw;
++    // wxUIView is a UIScrollView, so it arrives with pan and pinch recognisers
++    // attached. Left alone, a drag across a 3D canvas eventually reads as a
++    // scroll, at which point the scroll view cancels the touches it had been
++    // passing to the canvas and keeps every one after that - the view carries
++    // on rendering and never hears the finger again. Nothing in this port
++    // scrolls a user pane by dragging its content.
++    v.canCancelContentTouches = NO;
++    v.delaysContentTouches    = NO;
+     sv.clipsToBounds = YES;
+     sv.contentMode =  UIViewContentModeRedraw;
+     sv.clearsContextBeforeDrawing = NO;

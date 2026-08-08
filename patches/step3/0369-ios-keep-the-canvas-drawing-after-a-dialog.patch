@@ -1,0 +1,52 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -5826,7 +5826,31 @@
+ 
+ bool GLCanvas3D::_is_shown_on_screen() const
+ {
+-    return (m_canvas != nullptr) ? m_canvas->IsShownOnScreen() : false;
++    if (m_canvas == nullptr)
++        return false;
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Walk the parents ourselves, and stop before the top-level window.
++    //
++    // This is the gate on all rendering: on_idle only draws through
++    // _refresh_if_shown_on_screen, which asks this first. wxWindow's own
++    // IsShownOnScreen() walks to the top-level window and includes its
++    // visibility - and on iOS that goes stale. Every modal dialog here is a
++    // separate top-level window presented over the main one, and after one is
++    // dismissed the frame stops reporting itself as visible, so this returns
++    // false for ever and the canvas never draws again. The counters show it
++    // exactly: idle events keep arriving in the hundreds while render stays at
++    // zero, until a tab switch rebuilds the panel and it recovers.
++    //
++    // What this gate is actually for is not drawing the panel that is not on
++    // top - Prepare while Preview is showing - and that is decided by the
++    // panels' own Show/Hide, below the frame. So walk exactly that far.
++    for (const wxWindow *w = m_canvas; w != nullptr && !w->IsTopLevel(); w = w->GetParent())
++        if (!w->IsShown())
++            return false;
++    return true;
++#else
++    return m_canvas->IsShownOnScreen();
++#endif
+ }
+ 
+ // Getter for the const char*[]
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -561,6 +561,14 @@
+     BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: " << out.string()
+                              << (rc == 0 ? std::string(" ok")
+                                          : " FAILED rc=" + std::to_string(rc));
++
++    // Put it on the home page too. Writing the file is only half of what
++    // "autosave" is worth - if it does not appear in the recent list with its
++    // thumbnail, there is no way back to it from inside the app. Silence keeps
++    // the export from taking over the project name; adding it here is separate
++    // and does not.
++    if (rc == 0 && wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->add_to_recent_projects(from_path(out));
+ }
+ #endif // __WXOSX_IPHONE__
+ 

@@ -1,0 +1,89 @@
+--- a/src/slic3r/GUI/DeviceManager.cpp
++++ b/src/slic3r/GUI/DeviceManager.cpp
+@@ -1,5 +1,8 @@
+ #include "libslic3r/libslic3r.h"
+ #include "DeviceManager.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "libslic3r/Time.hpp"
+ #include "libslic3r/Thread.hpp"
+ #include "slic3r/Utils/NetworkAgent.hpp"
+@@ -3097,6 +3100,31 @@
+                         if (jj["print_error"].is_number())
+                             print_error = jj["print_error"].get<int>();
+                     }
++#if defined(__APPLE__) && !TARGET_OS_OSX
++                    // Say out loud what the printer is complaining about.
++                    //
++                    // print_error and the hms array are everything the printer
++                    // sends about a fault, and both only become words through
++                    // tables this build may not have. When the device page has
++                    // no text to show, the log should still record that the
++                    // machine reported something and what its code was: the
++                    // difference between "nothing is wrong" and "something is
++                    // wrong and we cannot name it" is invisible otherwise.
++                    {
++                        static int last_print_error = 0;
++                        if (print_error != last_print_error) {
++                            last_print_error = print_error;
++                            if (print_error != 0) {
++                                char code[16];
++                                ::snprintf(code, sizeof(code), "%08X", print_error);
++                                BOOST_LOG_TRIVIAL(error) << "orca-ios-printer-error: print_error "
++                                    << code << " (dev " << dev_id << ")";
++                            } else {
++                                BOOST_LOG_TRIVIAL(error) << "orca-ios-printer-error: cleared";
++                            }
++                        }
++                    }
++#endif
+ 
+                      DevStorage::ParseV1_0(jj, m_storage);
+ 
+@@ -3697,6 +3725,17 @@
+ #pragma region hms
+                     if (!key_field_only && jj.contains("hms")) {
+                         m_hms_system->ParseHMSItems(jj["hms"]);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++                        {
++                            static std::string last_hms;
++                            const std::string now_hms = jj["hms"].dump();
++                            if (now_hms != last_hms) {
++                                last_hms = now_hms;
++                                if (!jj["hms"].empty())
++                                    BOOST_LOG_TRIVIAL(error) << "orca-ios-printer-error: hms " << now_hms;
++                            }
++                        }
++#endif
+                     }
+ #pragma endregion
+ 
+--- a/src/slic3r/GUI/HMS.cpp
++++ b/src/slic3r/GUI/HMS.cpp
+@@ -131,6 +131,12 @@
+     bool to_save_local = false;
+     json j;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // At error level on purpose: whether this request succeeds decides whether
++    // the device page can name a fault or only number it, and this build is
++    // the first that is allowed to make it at all.
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-hms: fetching " << url;
++#endif
+     BOOST_LOG_TRIVIAL(info) << "hms: download url = " << url;
+     Slic3r::Http http = Slic3r::Http::get(url);
+     http.on_complete([this, receive_json, hms_type, &to_save_local, &j, & local_version](std::string body, unsigned status) {
+@@ -172,7 +178,11 @@
+         }
+         })
+         .timeout_max(20)
+-        .on_error([](std::string body, std::string error, unsigned status) {
++        .on_error([url](std::string body, std::string error, unsigned status) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-hms: FAILED " << url << " status " << status
++                                     << " error " << error;
++#endif
+             BOOST_LOG_TRIVIAL(error) << "HMSQuery: update hms info error = " << error << ", body = " << body << ", status = " << status;
+         }).perform_sync();
+ 

@@ -1,0 +1,63 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -132,6 +132,12 @@
+ std::atomic<unsigned> orca_ios_canvas_idles{0};
+ std::atomic<unsigned> orca_ios_canvas_paints{0};
+ std::atomic<unsigned> orca_ios_canvas_renders{0};
++// Touches that reach the canvas. The render count alone cannot tell a viewport
++// that has stopped drawing from one that is drawing faithfully and simply never
++// hears the finger: both look like "frozen", and the counters showed 5 renders
++// per five seconds at the moment of the last freeze - one per second, which is
++// the status tick, not a camera being dragged.
++std::atomic<unsigned> orca_ios_canvas_mouse{0};
+ #endif
+ 
+ #ifdef __WXGTK3__
+@@ -4201,6 +4207,9 @@
+ 
+ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    ++orca_ios_canvas_mouse;
++#endif
+     if (!m_initialized || !_set_current())
+         return;
+ 
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -11,6 +11,7 @@
+ extern std::atomic<unsigned> orca_ios_canvas_idles;
+ extern std::atomic<unsigned> orca_ios_canvas_paints;
+ extern std::atomic<unsigned> orca_ios_canvas_renders;
++extern std::atomic<unsigned> orca_ios_canvas_mouse;
+ } }
+ #endif
+ 
+@@ -1136,13 +1137,25 @@
+     {
+         wxTimer *counters = new wxTimer(this);
+         this->Bind(wxEVT_TIMER, [this, counters](wxTimerEvent &) {
+-            static unsigned last_i = 0, last_p = 0, last_r = 0;
++            static unsigned last_i = 0, last_p = 0, last_r = 0, last_m = 0;
+             const unsigned i = orca_ios_canvas_idles.load();
+             const unsigned p = orca_ios_canvas_paints.load();
+             const unsigned r = orca_ios_canvas_renders.load();
++            const unsigned mo = orca_ios_canvas_mouse.load();
++            // The selection belongs on every line, not only on the ones with no
++            // renders at all. Reading "render +5" without knowing which page was
++            // up left the last freeze ambiguous, and guessing at that ambiguity
++            // has been the expensive part of this whole exercise.
++            const int cur_sel = (m_tabpanel != nullptr) ? m_tabpanel->GetSelection() : -1;
++            const bool plater_up = m_tabpanel != nullptr && cur_sel >= 0 &&
++                                   cur_sel < (int) m_tabpanel->GetPageCount() &&
++                                   m_tabpanel->GetPage(cur_sel) == m_plater;
+             BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: last 5s idle +" << (i - last_i)
+                 << " paint +" << (p - last_p) << " render +" << (r - last_r)
+-                << " (totals " << i << "/" << p << "/" << r << ")";
++                << " mouse +" << (mo - last_m)
++                << " (totals " << i << "/" << p << "/" << r << "/" << mo << ")"
++                << "; sel " << cur_sel << (plater_up ? " (plater)" : " (other page)");
++            last_m = mo;
+ 
+             // When idle keeps arriving and render does not, the gate is
+             // _is_shown_on_screen(), which is wxWindow::IsShownOnScreen() - a

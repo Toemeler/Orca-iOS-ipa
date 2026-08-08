@@ -508,7 +508,15 @@ int BambuLanPrinterAgent::start_local_print(PrintParams params, OnUpdateStatusFn
     if (publish_print_command(params, remote_name) != BAMBU_NETWORK_SUCCESS)
         return BAMBU_NETWORK_ERR_PRINT_LP_PUBLISH_MSG_FAILED;
 
+    // The upload and the command both go through, the printer acknowledges the
+    // project_file with "result":"success", and the print starts - but the
+    // progress dialog stays at 75% and PrintJob never logs "send ok", so
+    // something between here and the return is not completing. The only two
+    // candidates left are this notify, which runs Orca's status callback on
+    // this worker thread, and the return itself. Bracket both.
+    BOOST_LOG_TRIVIAL(error) << "BambuLanPrinterAgent: command published, reporting Finished";
     notify(update_fn, SendingPrintJobStage::PrintingStageFinished, 0, "");
+    BOOST_LOG_TRIVIAL(error) << "BambuLanPrinterAgent: Finished reported, returning success";
     return BAMBU_NETWORK_SUCCESS;
 }
 

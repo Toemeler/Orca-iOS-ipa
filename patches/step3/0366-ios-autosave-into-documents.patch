@@ -1,0 +1,94 @@
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -5,6 +5,7 @@
+ // src/slic3r/GUI/ios_webview_support.mm
+ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char *when); } }
+ #include <atomic>
++#include <chrono>
+ // src/slic3r/GUI/GLCanvas3D.cpp
+ namespace Slic3r { namespace GUI {
+ extern std::atomic<unsigned> orca_ios_canvas_idles;
+@@ -38,6 +39,7 @@
+ #endif
+ 
+ #include <boost/algorithm/string/predicate.hpp>
++#include <boost/filesystem.hpp>
+ #include <boost/log/trivial.hpp>
+ #include <boost/property_tree/ptree.hpp>
+ 
+@@ -503,6 +505,65 @@
+ }
+ #endif // __WXOSX_IPHONE__
+ 
++#ifdef __WXOSX_IPHONE__
++// Keep a copy of the project in Documents, without being asked.
++//
++// Saving on iOS means going through the document picker every time, and the
++// result lands somewhere only that one grant reaches. Documents is the app's
++// own directory and the only one file sharing exposes, so a copy written there
++// is both always writable and visible in the Files app under the app's name.
++//
++// This rides on Orca's own backup callback rather than a timer of its own, so
++// it inherits the change detection that already decides whether a backup is
++// worth taking: if nothing changed, nothing is written. The rate limit is
++// separate, because a full 3MF export regenerates the plate thumbnails and
++// that is far too much work to repeat on the ten-second backup interval.
++static void orca_ios_autosave_to_documents(Plater *plater)
++{
++    if (plater == nullptr || plater->model().objects.empty())
++        return;
++
++    const char *const home = ::getenv("HOME");
++    if (home == nullptr)
++        return;
++
++    static std::chrono::steady_clock::time_point last;
++    const auto now = std::chrono::steady_clock::now();
++    if (last != std::chrono::steady_clock::time_point() &&
++        std::chrono::duration_cast<std::chrono::seconds>(now - last).count() < 60)
++        return;
++
++    boost::system::error_code ec;
++    const boost::filesystem::path dir = boost::filesystem::path(home) / "Documents" / "Autosave";
++    boost::filesystem::create_directories(dir, ec);
++    if (ec) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: cannot create " << dir.string()
++                                 << ": " << ec.message();
++        return;
++    }
++
++    // The project name reaches this from the imported file's name, so it can
++    // contain anything - and a "/" in it would quietly write outside dir.
++    std::string stem = into_u8(plater->get_project_name());
++    if (stem.size() > 4 && stem.compare(stem.size() - 4, 4, ".3mf") == 0)
++        stem.erase(stem.size() - 4);
++    for (char &c : stem)
++        if (c == '/' || c == '\\' || c == ':')
++            c = '_';
++    if (stem.empty())
++        stem = "Untitled";
++
++    // Silence, so this does not take over the project name or clear the dirty
++    // state: an autosave is a copy, not the user saving their work.
++    const boost::filesystem::path out = dir / (stem + ".3mf");
++    const int rc = plater->export_3mf(out, SaveStrategy::Silence);
++    last = now;
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: " << out.string()
++                             << (rc == 0 ? std::string(" ok")
++                                         : " FAILED rc=" + std::to_string(rc));
++}
++#endif // __WXOSX_IPHONE__
++
+ MainFrame::MainFrame() :
+ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_STYLE, "mainframe")
+     , m_printhost_queue_dlg(new PrintHostQueueDialog(this))
+@@ -905,6 +966,9 @@
+             else if (action == 1) {
+                 if (!m_plater->up_to_date(false, true)) {
+                     m_plater->export_3mf(m_plater->model().get_backup_path() + "/.3mf", SaveStrategy::Backup);
++#ifdef __WXOSX_IPHONE__
++                    orca_ios_autosave_to_documents(m_plater);
++#endif
+                     m_plater->up_to_date(true, true);
+                 }
+             }

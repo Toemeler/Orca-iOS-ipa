@@ -1,0 +1,149 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -48,6 +48,8 @@
+ 
+ #include <glad/gl.h>
+ 
++#include <atomic>
++
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
+ #endif
+@@ -119,6 +121,19 @@
+ namespace Slic3r {
+ namespace GUI {
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// Is the canvas being asked to draw at all, and by whom?
++//
++// A frozen viewport has two very different causes that look identical on
++// screen - nobody is asking the canvas to draw, or it is asked and the draw
++// fails - and no screenshot can tell them apart. These are read and reported
++// by a timer in MainFrame, which is driven by the run loop rather than by idle
++// events, so it keeps reporting even if idle stops entirely.
++std::atomic<unsigned> orca_ios_canvas_idles{0};
++std::atomic<unsigned> orca_ios_canvas_paints{0};
++std::atomic<unsigned> orca_ios_canvas_renders{0};
++#endif
++
+ #ifdef __WXGTK3__
+ // wxGTK3 seems to simulate OSX behavior in regard to HiDPI scaling support.
+ RetinaHelper::RetinaHelper(wxWindow* window) : m_window(window), m_self(nullptr) {}
+@@ -1939,6 +1954,9 @@
+ 
+ void GLCanvas3D::render(bool only_init)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    ++orca_ios_canvas_renders;
++#endif
+     if (m_in_render) {
+         // if called recursively, return
+         m_dirty = true;
+@@ -3235,6 +3253,9 @@
+ 
+ void GLCanvas3D::on_idle(wxIdleEvent& evt)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    ++orca_ios_canvas_idles;
++#endif
+     if (!m_initialized)
+         return;
+ 
+@@ -4832,10 +4853,24 @@
+ 
+ void GLCanvas3D::on_paint(wxPaintEvent& evt)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    ++orca_ios_canvas_paints;
++#endif
+     if (m_initialized) {
+-#ifdef __WXMSW__
++#if defined(__WXMSW__) || (defined(__APPLE__) && !TARGET_OS_OSX)
+         // Idle events are not dispatched during the Windows resize modal loop,
+         // so render immediately to avoid blank frames.
++        //
++        // iOS has the same problem, only permanently rather than for the
++        // duration of a modal loop. Marking the canvas dirty and waiting for
++        // wxEVT_IDLE to do the drawing assumes idle events arrive steadily,
++        // which is true of AppKit and GTK and is what every other platform
++        // relies on here. Under UIApplicationMain they do not, so the paint
++        // handler returns without drawing anything: a GLKView whose drawRect:
++        // does not draw simply keeps whatever was in the renderbuffer, which
++        // is a viewport frozen on the last frame it managed to produce. An
++        // object added to the plate does not appear, and switching to another
++        // panel and back brings it up, because that path renders explicitly.
+         _refresh_if_shown_on_screen();
+         m_dirty = false;
+ #else
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -4,6 +4,13 @@
+ #include <wx/display.h>
+ // src/slic3r/GUI/ios_webview_support.mm
+ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char *when); } }
++#include <atomic>
++// src/slic3r/GUI/GLCanvas3D.cpp
++namespace Slic3r { namespace GUI {
++extern std::atomic<unsigned> orca_ios_canvas_idles;
++extern std::atomic<unsigned> orca_ios_canvas_paints;
++extern std::atomic<unsigned> orca_ios_canvas_renders;
++} }
+ #endif
+ 
+ #include <wx/panel.h>
+@@ -1046,6 +1053,28 @@
+         // 30 s ticks on a device: dumps at 30, 60 and 150 seconds.
+         timer->Start(driving ? 10000 : 30000, wxTIMER_CONTINUOUS);
+     }
++
++    // Report whether the 3D canvas is being asked to draw.
++    //
++    // Deliberately a wxTimer and not an idle handler: a run-loop timer keeps
++    // firing even if idle events have stopped, and "have idle events stopped"
++    // is precisely the question. Three counters, so the three ways a viewport
++    // can freeze are distinguishable - no idle events reaching the canvas, no
++    // paint events either, or both arriving and render() still not running.
++    {
++        wxTimer *counters = new wxTimer(this);
++        this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
++            static unsigned last_i = 0, last_p = 0, last_r = 0;
++            const unsigned i = orca_ios_canvas_idles.load();
++            const unsigned p = orca_ios_canvas_paints.load();
++            const unsigned r = orca_ios_canvas_renders.load();
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: last 5s idle +" << (i - last_i)
++                << " paint +" << (p - last_p) << " render +" << (r - last_r)
++                << " (totals " << i << "/" << p << "/" << r << ")";
++            last_i = i; last_p = p; last_r = r;
++        }, counters->GetId());
++        counters->Start(5000, wxTIMER_CONTINUOUS);
++    }
+ #endif // __WXOSX_IPHONE__
+ }
+ 
+--- a/src/slic3r/GUI/Widgets/SwitchButton.cpp
++++ b/src/slic3r/GUI/Widgets/SwitchButton.cpp
+@@ -1,4 +1,7 @@
+ #include "SwitchButton.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "Button.hpp"
+ #include "Label.hpp"
+ #include "StaticBox.hpp"
+@@ -202,7 +205,15 @@
+ 		}
+ 	}
+ 	update();
+-#ifdef __WXGTK__
++#if defined(__WXGTK__) || (defined(__APPLE__) && !TARGET_OS_OSX)
++	// iOS needs the minimum size too, for the same reason GTK does.
++	//
++	// SetSize alone is undone by the next Layout(), which asks the button for
++	// its best size - and on iOS that comes from -sizeToFit on a UIButton with
++	// no title, about 30x27. The switch then draws its own 106x22 artwork
++	// aspect-fitted into 30x27, which is a 30x6 sliver with unreadable text.
++	// It only survived this long because the port used to pad every button out
++	// to 72pt wide, which was wrong in the other direction and hid it.
+ 	wxSize bestSize = GetBestSize();
+ 	bestSize.IncTo(m_on.GetBmpSize());
+ 	SetSize(bestSize);

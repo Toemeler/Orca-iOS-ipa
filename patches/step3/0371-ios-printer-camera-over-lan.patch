@@ -1,0 +1,48 @@
+--- a/src/slic3r/GUI/ios_platform_stubs.cpp
++++ b/src/slic3r/GUI/ios_platform_stubs.cpp
+@@ -40,23 +40,9 @@
+ // The macOS/Win/Linux implementations both define this event; on iOS neither
+ // compiles, so define it here.
+ // ---------------------------------------------------------------------------
+-wxDEFINE_EVENT(EVT_MEDIA_CTRL_STAT, wxCommandEvent);
+-
+-wxMediaCtrl2::wxMediaCtrl2(wxWindow *parent)
+-    : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
+-{
+-    // No backing player yet (camera video is step 5). Inert, sized window.
+-}
+-
+-wxMediaCtrl2::~wxMediaCtrl2() {}
+-
+-void wxMediaCtrl2::Load(wxURI /*url*/) {}
+-void wxMediaCtrl2::Play() {}
+-void wxMediaCtrl2::Stop() {}
+-void wxMediaCtrl2::SetIdleImage(wxString const & /*image*/) {}
+-
+-wxMediaState wxMediaCtrl2::GetState() const { return wxMEDIASTATE_STOPPED; }
+-wxSize       wxMediaCtrl2::GetVideoSize() const { return m_video_size; }
++// wxMediaCtrl2 lives in ios_camera_view.cpp now - it is a real client for the
++// printer's camera rather than an inert window, so its definitions and
++// EVT_MEDIA_CTRL_STAT moved there with it.
+ 
+ // DoSetSize is deliberately NOT defined here. It is wxMediaCtrl2's key
+ // function, so whichever TU defines it emits the vtable -- but MediaPlayCtrl.cpp
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -725,6 +725,7 @@
+             GUI/ios_platform_stubs.cpp
+             GUI/ios_gl_compat.cpp
+             GUI/ios_webview_support.mm
++            GUI/ios_camera_view.cpp
+         )
+ endif ()
+ 
+@@ -748,6 +749,8 @@
+             Utils/BambuLanDiscovery.hpp
+             Utils/BambuLanPrintCommand.cpp
+             Utils/BambuLanPrintCommand.hpp
++            Utils/BambuLanCamera.cpp
++            Utils/BambuLanCamera.hpp
+             Utils/BambuLanPrinterAgent.cpp
+             Utils/BambuLanPrinterAgent.hpp
+         )

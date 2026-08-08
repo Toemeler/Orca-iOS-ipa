@@ -1,6 +1,14 @@
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
-@@ -1142,6 +1142,29 @@
+@@ -40,6 +40,7 @@
+ 
+ #include <boost/algorithm/string/predicate.hpp>
+ #include <boost/filesystem.hpp>
++#include <wx/glcanvas.h>
+ #include <boost/log/trivial.hpp>
+ #include <boost/property_tree/ptree.hpp>
+ 
+@@ -1142,6 +1143,28 @@
              BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: last 5s idle +" << (i - last_i)
                  << " paint +" << (p - last_p) << " render +" << (r - last_r)
                  << " (totals " << i << "/" << p << "/" << r << ")";
@@ -13,19 +21,18 @@
 +            // amount of reasoning from the outside settles that. Print the
 +            // chain whenever nothing rendered in the last five seconds.
 +            if (r == last_r && wxGetApp().plater() != nullptr) {
-+                wxWindow *const canvas = wxGetApp().plater()->get_current_canvas3D(false)
-+                                       ? wxGetApp().plater()->get_current_canvas3D(false)->get_wxglcanvas()
-+                                       : nullptr;
-+                std::string chain;
++                GLCanvas3D *const c3d = wxGetApp().plater()->get_current_canvas3D(false);
++                wxWindow *const canvas = (c3d != nullptr) ? c3d->get_wxglcanvas() : nullptr;
++                wxString chain;
 +                for (wxWindow *w = canvas; w != nullptr; w = w->GetParent()) {
-+                    chain += std::string(w->GetClassInfo()->GetClassName())
-+                          + (w->IsShown() ? "[shown" : "[HIDDEN")
-+                          + (w->IsTopLevel() ? ",top]" : "]") + " < ";
++                    chain << w->GetClassInfo()->GetClassName()
++                          << (w->IsShown() ? "[shown" : "[HIDDEN")
++                          << (w->IsTopLevel() ? ",top] < " : "] < ");
 +                    if (w->IsTopLevel()) break;
 +                }
 +                BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: no render; onscreen "
-+                    << (canvas && canvas->IsShownOnScreen() ? "yes" : "NO")
-+                    << "; chain " << chain;
++                    << (canvas != nullptr && canvas->IsShownOnScreen() ? "yes" : "NO")
++                    << "; chain " << chain.utf8_string();
 +            }
              last_i = i; last_p = p; last_r = r;
          }, counters->GetId());

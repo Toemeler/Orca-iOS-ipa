@@ -1,0 +1,16 @@
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -561,6 +561,13 @@
+     BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: " << out.string()
+                              << (rc == 0 ? std::string(" ok")
+                                          : " FAILED rc=" + std::to_string(rc));
++
++    // Put it on the home page too. Writing the file is only half of what
++    // "autosave" is worth - without an entry in the recent list, complete with
++    // its thumbnail, there is no way back to it from inside the app. Silence
++    // keeps the export from taking over the project name; this does not.
++    if (rc == 0 && wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->add_to_recent_projects(from_path(out));
+ }
+ #endif // __WXOSX_IPHONE__
+ 

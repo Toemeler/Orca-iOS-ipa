@@ -1,0 +1,32 @@
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -1142,6 +1142,29 @@
+             BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: last 5s idle +" << (i - last_i)
+                 << " paint +" << (p - last_p) << " render +" << (r - last_r)
+                 << " (totals " << i << "/" << p << "/" << r << ")";
++
++            // When idle keeps arriving and render does not, the gate is
++            // _is_shown_on_screen(), which is wxWindow::IsShownOnScreen() - a
++            // walk up the parents that stops at the first one reporting
++            // hidden. Knowing that it is false is not enough to fix anything;
++            // the useful fact is *which* window in the chain says so, and no
++            // amount of reasoning from the outside settles that. Print the
++            // chain whenever nothing rendered in the last five seconds.
++            if (r == last_r && wxGetApp().plater() != nullptr) {
++                wxWindow *const canvas = wxGetApp().plater()->get_current_canvas3D(false)
++                                       ? wxGetApp().plater()->get_current_canvas3D(false)->get_wxglcanvas()
++                                       : nullptr;
++                std::string chain;
++                for (wxWindow *w = canvas; w != nullptr; w = w->GetParent()) {
++                    chain += std::string(w->GetClassInfo()->GetClassName())
++                          + (w->IsShown() ? "[shown" : "[HIDDEN")
++                          + (w->IsTopLevel() ? ",top]" : "]") + " < ";
++                    if (w->IsTopLevel()) break;
++                }
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: no render; onscreen "
++                    << (canvas && canvas->IsShownOnScreen() ? "yes" : "NO")
++                    << "; chain " << chain;
++            }
+             last_i = i; last_p = p; last_r = r;
+         }, counters->GetId());
+         counters->Start(5000, wxTIMER_CONTINUOUS);

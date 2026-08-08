@@ -1,0 +1,59 @@
+--- a/src/slic3r/GUI/Notebook.hpp
++++ b/src/slic3r/GUI/Notebook.hpp
+@@ -6,6 +6,13 @@
+ #include <wx/bookctrl.h>
+ #include <wx/sizer.h>
+ 
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++#if defined(__APPLE__) && !TARGET_OS_OSX
++#include <boost/log/trivial.hpp>
++#endif
++
+ class ScalableButton;
+ class Button;
+ 
+@@ -184,8 +191,31 @@
+ 
+     virtual int SetSelection(size_t n) override
+     {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Which call leaves the page hidden.
++        //
++        // The Plater is inserted twice - as Prepare and again as Preview, the
++        // same wxWindow at two indices (MainFrame::init_tabpanel) - and the
++        // canvas chain log says it ends up hidden while the frame and every
++        // other ancestor is shown, so rendering stops for good. The hide loop
++        // below already compares windows rather than indices, and the Show()
++        // after DoSetSelection covers the no-change case, so on paper neither
++        // can be responsible. Something is, and reasoning has now cost two bad
++        // builds, so record the four states rather than guess a third time.
++        const size_t before_sel  = static_cast<size_t>(GetSelection());
++        wxWindow *const tgt      = (n < m_pages.size()) ? GetPage(n) : nullptr;
++        const bool shown_before  = tgt != nullptr && tgt->IsShown();
++#endif
+         int ret = DoSetSelection(n, SetSelection_SendEvent);
+         int new_sel = GetSelection();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-notebook: SetSelection " << n
++            << " from " << before_sel << " -> " << new_sel
++            << "; page " << tgt << (shown_before ? " shown" : " HIDDEN")
++            << " before, " << (tgt != nullptr && tgt->IsShown() ? "shown" : "HIDDEN")
++            << " after DoSetSelection"
++            << (new_sel != (int) n ? " (REFUSED, returning early)" : "");
++#endif
+         //check the new_sel firstly
+         if (new_sel != n) {
+             //not allowed, skip it
+@@ -221,6 +251,10 @@
+             }
+         }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-notebook: SetSelection " << n
++            << " done; page " << (tgt != nullptr && tgt->IsShown() ? "shown" : "HIDDEN");
++#endif
+         return ret;
+     }
+ 

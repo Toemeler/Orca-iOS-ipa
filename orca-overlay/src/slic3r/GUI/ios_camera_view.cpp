@@ -31,6 +31,8 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <wx/mediactrl.h>
+
 #include "wxMediaCtrl2.h"
 #include "../Utils/BambuLanCamera.hpp"
 
@@ -177,7 +179,22 @@ void wxMediaCtrl2::Load(wxURI url)
 
     BOOST_LOG_TRIVIAL(error) << "orca-ios-camera: load host=" << st->host
                              << " code=" << (st->access_code.empty() ? "MISSING" : "set");
-    Refresh(false);
+
+    // Load starts the stream. It is not obvious from the name, but it is what
+    // the macOS implementation does - its Load() calls [player open:] and the
+    // picture appears without Play() - and MediaPlayCtrl relies on exactly
+    // that: its worker posts either a URL or the literal "<play>", never both,
+    // so a control that waits for Play() after a Load() is never started at
+    // all. First attempt did precisely that: "load host=192.168.0.171
+    // code=set" and then nothing, no connection even attempted.
+    Play();
+
+    // Same event the macOS Load() posts, so MediaPlayCtrl's state machine sees
+    // the transition rather than having to poll for it.
+    wxMediaEvent event(wxEVT_MEDIA_STATECHANGED);
+    event.SetId(GetId());
+    event.SetEventObject(this);
+    wxPostEvent(this, event);
 }
 
 void wxMediaCtrl2::Play()

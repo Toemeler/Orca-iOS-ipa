@@ -1,5 +1,14 @@
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -1135,7 +1135,7 @@
+     // paint events either, or both arriving and render() still not running.
+     {
+         wxTimer *counters = new wxTimer(this);
+-        this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
++        this->Bind(wxEVT_TIMER, [this, counters](wxTimerEvent &) {
+             static unsigned last_i = 0, last_p = 0, last_r = 0;
+             const unsigned i = orca_ios_canvas_idles.load();
+             const unsigned p = orca_ios_canvas_paints.load();
 @@ -1151,18 +1151,37 @@
              // the useful fact is *which* window in the chain says so, and no
              // amount of reasoning from the outside settles that. Print the

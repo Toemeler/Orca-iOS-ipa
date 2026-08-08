@@ -1,0 +1,55 @@
++ grep -oE 'Result: .*' /Users/runner/ccache-step4.log
++ sort
++ uniq -c
++ sort -rn
++ head -20
+1270 Result: local_storage_read_hit
+ 635 Result: local_storage_hit
+ 635 Result: direct_cache_hit
+   2 Result: local_storage_read_miss
+   1 Result: preprocessed_cache_miss
+   1 Result: direct_cache_miss
+   1 Result: compile_failed
++ echo '--- sample miss context ---'
+--- sample miss context ---
++ grep -B60 -m1 'Result: cache_miss' /Users/runner/ccache-step4.log
++ tail -60
++ echo '--- reasons, ranked ---'
+--- reasons, ranked ---
++ grep -oE '(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)' /Users/runner/ccache-step4.log
++ sed -E 's#/Users/runner[^ ]*/##'
++ sort
++ uniq -c
++ sort -rn
++ head -25
+   1 [2026-08-08T10:37:52.998602 8496 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.998602 8496 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.994266 8495 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.994266 8495 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.989410 8494 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.989410 8494 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.974527 8493 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.974527 8493 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.971345 8492 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.971345 8492 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.960341 8491 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.960341 8491 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.934848 8490 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.934848 8490 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.930802 8489 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.930802 8489 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.921954 8488 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.921954 8488 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.912322 8487 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.912322 8487 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.902851 8486 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.902851 8486 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.895064 8485 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T10:37:52.895064 8485 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T10:37:52.886300 8484 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+sort: Broken pipe
++ echo '--- first compile command line (diff this against the previous run) ---'
+--- first compile command line (diff this against the previous run) ---
++ grep -m1 -A1 'Command line:' /Users/runner/ccache-step4.log
+[2026-08-08T10:37:46.228702 7555 ] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o.d -o deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/stl_io.cpp
+[2026-08-08T10:37:46.228702 7555 ] Hostname: sat12-dp154-1a09ae5d-29c3-469e-b6cd-c2a3007aeb42-F2539F1620F4.local

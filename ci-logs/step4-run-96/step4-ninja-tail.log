@@ -1,0 +1,200 @@
+../src/slic3r/GUI/Tab.hpp:484:8: note: overridden virtual function is here
+  484 |         void            reload_config() override;
+      |                         ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:56:
+../src/slic3r/GUI/PrintHostDialogs.hpp:166:48: warning: 'extendedInfo' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  166 |     virtual std::map<std::string, std::string> extendedInfo() const
+      |                                                ^
+../src/slic3r/GUI/PrintHostDialogs.hpp:47:48: note: overridden virtual function is here
+   47 |     virtual std::map<std::string, std::string> extendedInfo() const { return {}; }
+      |                                                ^
+../src/slic3r/GUI/PrintHostDialogs.hpp:203:48: warning: 'extendedInfo' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  203 |     virtual std::map<std::string, std::string> extendedInfo() const;
+      |                                                ^
+../src/slic3r/GUI/PrintHostDialogs.hpp:47:48: note: overridden virtual function is here
+   47 |     virtual std::map<std::string, std::string> extendedInfo() const { return {}; }
+      |                                                ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:70:
+In file included from ../src/slic3r/GUI/Preferences.hpp:16:
+../src/slic3r/GUI/Widgets/TabCtrl.hpp:66:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   66 |     virtual void DoSetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
+      |                  ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+  379 |     virtual void DoSetSize(int x, int y,
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:91:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:22:10: warning: 'Slic3r::GUI::FilamentMapManualPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   22 |     void Show();
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:91:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:45:10: warning: 'Slic3r::GUI::FilamentMapBtnPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   45 |     void Show();
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:91:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:75:21: warning: 'Slic3r::GUI::FilamentMapAutoPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   75 |     void            Show();
+      |                     ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:91:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:92:10: warning: 'Slic3r::GUI::FilamentMapDefaultPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   92 |     void Show();
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+../src/slic3r/GUI/MainFrame.cpp:1051:23: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 1051 |     Bind(wxEVT_SHOW, [this](wxShowEvent &evt) {
+      |                       ^~~~
+../src/slic3r/GUI/MainFrame.cpp:1154:33: error: cannot initialize a variable of type 'wxWindow *const' with an rvalue of type 'wxGLCanvas *'
+ 1154 |                 wxWindow *const canvas = wxGetApp().plater()->get_current_canvas3D(false)
+      |                                 ^        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1155 |                                        ? wxGetApp().plater()->get_current_canvas3D(false)->get_wxglcanvas()
+      |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1156 |                                        : nullptr;
+      |                                        ~~~~~~~~~
+../src/slic3r/GUI/GUI_Preview.hpp:16:7: note: 'wxGLCanvas' is not defined, but forward declared here; conversion would be valid if it was derived from 'wxWindow'
+   16 | class wxGLCanvas;
+      |       ^
+../src/slic3r/GUI/MainFrame.cpp:1159:30: error: no matching conversion for functional-style cast from 'const wxChar *' (aka 'const wchar_t *') to 'std::string' (aka 'basic_string<char>')
+ 1159 |                     chain += std::string(w->GetClassInfo()->GetClassName())
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:990:64: note: candidate constructor not viable: no known conversion from 'const wxChar *' (aka 'const wchar_t *') to 'const allocator_type' (aka 'const std::allocator<char>') for 1st argument
+  990 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 explicit basic_string(const allocator_type& __a)
+      |                                                                ^            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1000:71: note: candidate constructor not viable: no known conversion from 'const wxChar *' (aka 'const wchar_t *') to 'const string' for 1st argument
+ 1000 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_STRING_INTERNAL_MEMORY_ACCESS basic_string(const basic_string& __str)
+      |                                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1020:55: note: candidate constructor not viable: no known conversion from 'const wxChar *' (aka 'const wchar_t *') to 'string' for 1st argument
+ 1020 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(basic_string&& __str)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1059:55: note: candidate constructor template not viable: no known conversion from 'const wxChar *' (aka 'const wchar_t *') to 'const char *' for 1st argument
+ 1059 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(const _CharT* __s)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1199:55: note: candidate constructor not viable: no known conversion from 'const wxChar *' (aka 'const wchar_t *') to 'initializer_list<char>' for 1st argument
+ 1199 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(initializer_list<_CharT> __il)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1155:93: note: candidate template ignored: requirement '__can_be_converted_to_string_view<char, std::char_traits<char>, const wchar_t *>::value' was not satisfied [with _Tp = const wxChar *]
+ 1155 |   _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS _LIBCPP_CONSTEXPR_SINCE_CXX20 explicit basic_string(const _Tp& __t)
+      |                                                                                             ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:984:55: note: candidate constructor not viable: requires 0 arguments, but 1 was provided
+  984 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string()
+      |                                                       ^
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1010:3: note: candidate constructor not viable: requires 2 arguments, but 1 was provided
+ 1010 |   basic_string(const basic_string& __str, const allocator_type& __a)
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1040:55: note: candidate constructor not viable: requires 2 arguments, but 1 was provided
+ 1040 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(basic_string&& __str, const allocator_type& __a)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1066:55: note: candidate constructor template not viable: requires 2 arguments, but 1 was provided
+ 1066 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(const _CharT* __s, const _Allocator& __a)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1076:55: note: candidate constructor not viable: requires 2 arguments, but 1 was provided
+ 1076 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(const _CharT* __s, size_type __n)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1089:55: note: candidate constructor not viable: requires 2 arguments, but 1 was provided
+ 1089 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(size_type __n, _CharT __c)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1166:42: note: candidate constructor template not viable: requires 2 arguments, but 1 was provided
+ 1166 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 explicit basic_string(const _Tp& __t, const allocator_type& __a)
+      |                                          ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1173:55: note: candidate constructor template not viable: requires 2 arguments, but 1 was provided
+ 1173 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(_InputIterator __first, _InputIterator __last)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1204:55: note: candidate constructor not viable: requires 2 arguments, but 1 was provided
+ 1204 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(initializer_list<_CharT> __il, const _Allocator& __a)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:926:64: note: candidate constructor not viable: requires 3 arguments, but 1 was provided
+  926 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 explicit basic_string(
+      |                                                                ^
+  927 |       __uninitialized_size_tag, size_type __size, const allocator_type& __a)
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1083:3: note: candidate constructor not viable: requires 3 arguments, but 1 was provided
+ 1083 |   basic_string(const _CharT* __s, size_type __n, const _Allocator& __a)
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1116:55: note: candidate constructor template not viable: requires 3 arguments, but 1 was provided
+ 1116 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 basic_string(size_type __n, _CharT __c, const _Allocator& __a)
+      |                                                       ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1131:3: note: candidate constructor not viable: requires at least 2 arguments, but 1 was provided
+ 1131 |   basic_string(const basic_string& __str, size_type __pos, const _Allocator& __a = _Allocator())
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1180:3: note: candidate constructor template not viable: requires 3 arguments, but 1 was provided
+ 1180 |   basic_string(_InputIterator __first, _InputIterator __last, const allocator_type& __a)
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:947:3: note: candidate constructor template not viable: requires 4 arguments, but 1 was provided
+  947 |   basic_string(__init_with_sentinel_tag, _Iter __first, _Sent __last, const allocator_type& __a)
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1122:3: note: candidate constructor not viable: requires at least 3 arguments, but 1 was provided
+ 1122 |   basic_string(const basic_string& __str, size_type __pos, size_type __n, const _Allocator& __a = _Allocator())
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/usr/include/c++/v1/string:1144:3: note: candidate constructor template not viable: requires at least 3 arguments, but 1 was provided
+ 1144 |   basic_string(const _Tp& __t, size_type __pos, size_type __n, const allocator_type& __a = allocator_type())
+      |   ^            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../src/slic3r/GUI/MainFrame.cpp:1137:34: warning: lambda capture 'counters' is not used [-Wunused-lambda-capture]
+ 1137 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                  ^~~~~~~~
+../src/slic3r/GUI/MainFrame.cpp:3172:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3172 |             [this](){return true; }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3230:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3230 |             [this]() {
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3400:54: warning: lambda capture 'handle_key_event' is not used [-Wunused-lambda-capture]
+ 3400 |             _L("Duplicate the current plate"),[this, handle_key_event](wxCommandEvent&) {
+      |                                                    ~~^~~~~~~~~~~~~~~~
+../src/slic3r/GUI/MainFrame.cpp:3403:27: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3403 |             "", nullptr, [this](){return true;}, this);
+      |                           ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3467:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3467 |             [this](wxCommandEvent&) {
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3473:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3473 |             [this](wxCommandEvent&) {
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3489:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3489 |             [this]() { return wxGetApp().app_config->get_bool("auto_perspective"); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3498:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3498 |             [this]() { return wxGetApp().show_gcode_window(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3507:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3507 |             [this]() { return wxGetApp().show_3d_navigator(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3515:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3515 |             [this]() { return wxGetApp().show_plate_gridlines(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3545:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3545 |             [this]() { return wxGetApp().show_outline(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3671:10: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3671 |         [this](wxCommandEvent &) { Slic3r::GUI::about();},
+      |          ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3675:10: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3675 |         [this](wxCommandEvent &) {
+      |          ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3935:10: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3935 |         [this](wxCommandEvent&) { wxLaunchDefaultBrowser("https://www.orcaslicer.com/wiki/calibration_guide", wxBROWSER_NEW_WINDOW); }, "", nullptr,
+      |          ^~~~
+In file included from ../src/slic3r/GUI/MainFrame.cpp:1:
+In file included from ../src/slic3r/GUI/MainFrame.hpp:21:
+In file included from ../src/slic3r/GUI/Monitor.hpp:4:
+../src/slic3r/GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+      |                         ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:1:
+../src/slic3r/GUI/MainFrame.hpp:82:21: warning: private field 'm_main_frame' is not used [-Wunused-private-field]
+   82 |     MainFrame*      m_main_frame { nullptr };
+      |                     ^
+42 warnings and 2 errors generated.
+ninja: build stopped: cannot make progress due to previous errors.

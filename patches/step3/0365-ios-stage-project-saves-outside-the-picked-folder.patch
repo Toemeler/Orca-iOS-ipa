@@ -1,0 +1,64 @@
+--- a/src/libslic3r/Format/bbs_3mf.cpp
++++ b/src/libslic3r/Format/bbs_3mf.cpp
+@@ -3,6 +3,9 @@
+ #include "../Model.hpp"
+ #include "../Preset.hpp"
+ #include "../Utils.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "../LocalesUtils.hpp"
+ #include "../GCode.hpp"
+ #include "../Geometry.hpp"
+@@ -5950,17 +5953,47 @@
+         }
+         boost::system::error_code ec;
+         std::string filename = std::string(store_params.path);
+-        boost::filesystem::remove(filename + ".tmp", ec);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Stage the file in our own temp directory, not next to the target.
++        //
++        // A save destination on iOS comes from UIDocumentPickerViewController,
++        // and what the app is granted is that one file URL - not the folder it
++        // is in. Writing "<target>.3mf.tmp" is a different file in a directory
++        // the sandbox has no permission for, so the staging write itself fails
++        // before any of the model is serialised:
++        //
++        //   Unable to open the file /private/var/mobile/Containers/Shared/
++        //   AppGroup/.../File Provider Storage/3D Modells/1204 TOKA Base.3mf.tmp
++        //
++        // and the user sees "Failed to save the project." Stage somewhere the
++        // app owns and copy the finished file onto the one path iOS actually
++        // granted. It has to be a copy rather than a rename because the two are
++        // on different filesystems.
++        const std::string tmpname = (boost::filesystem::path(Slic3r::temporary_dir()) /
++            boost::filesystem::unique_path("orca-save-%%%%-%%%%-%%%%.3mf.tmp").string()).string();
++#else
++        const std::string tmpname = filename + ".tmp";
++#endif
++        boost::filesystem::remove(tmpname, ec);
+ 
+-        bool result = _save_model_to_file(filename + ".tmp", *store_params.model, store_params.plate_data_list, store_params.project_presets, store_params.config,
++        bool result = _save_model_to_file(tmpname, *store_params.model, store_params.plate_data_list, store_params.project_presets, store_params.config,
+                                           store_params.thumbnail_data, store_params.no_light_thumbnail_data, store_params.top_thumbnail_data, store_params.pick_thumbnail_data,
+                                           store_params.proFn,
+             store_params.calibration_thumbnail_data, store_params.id_bboxes, store_params.project, store_params.export_plate_idx);
+         if (result) {
+-            boost::filesystem::rename(filename + ".tmp", filename, ec);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            boost::filesystem::copy_file(tmpname, filename,
++                                         boost::filesystem::copy_option::overwrite_if_exists, ec);
++            if (!ec) {
++                boost::system::error_code ec2;
++                boost::filesystem::remove(tmpname, ec2);
++            }
++#else
++            boost::filesystem::rename(tmpname, filename, ec);
++#endif
+             if (ec) {
+                 add_error("Failed to rename file: " + ec.message());
+-                boost::filesystem::remove(filename + ".tmp", ec);
++                boost::filesystem::remove(tmpname, ec);
+                 return false;
+             }
+             if (!(store_params.strategy & SaveStrategy::Silence))

@@ -1,0 +1,206 @@
+--- a/src/slic3r/GUI/HMS.cpp
++++ b/src/slic3r/GUI/HMS.cpp
+@@ -1,4 +1,7 @@
+ #include "HMS.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ 
+ #include "GUI.hpp"
+ #include "DeviceManager.hpp"
+@@ -19,12 +22,49 @@
+ {
+     Slic3r::AppConfig* config = Slic3r::GUI::wxGetApp().app_config;
+     if (!config) return true;
+-    return config->get_stealth_mode() || !config->get_bool("installed_networking");
++    if (config->get_stealth_mode()) return true;
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Do not require the Bambu network plugin here.
++    //
++    // The HMS tables are what turn a printer's error codes into sentences, and
++    // without them the device page can only say that something is wrong, not
++    // what. This build has no plugin and never will, so "installed_networking"
++    // is false and the whole subsystem switched itself off - including the
++    // parts that need nothing from it.
++    //
++    // Nothing here goes through the plugin: GetVersion.php and query.php are
++    // public HTTPS endpoints fetched with Slic3r::Http, and the fallback path
++    // reads JSON that ships in resources/hms. Stealth mode is still honoured
++    // above, because that one is a deliberate "make no network requests"
++    // choice by the user rather than a missing component.
++    return false;
++#else
++    return !config->get_bool("installed_networking");
++#endif
+ }
+ 
+ namespace Slic3r {
+ namespace GUI {
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// Never swallow a real error just because its description is missing.
++//
++// Every lookup below returns an empty string when the tables have no entry for
++// the code, and the device page renders that as nothing at all - so a printer
++// that has genuinely stopped looks the same as one that is fine. The tables
++// only ship for four device types (093, 094, 22E and 239) and are otherwise
++// downloaded, so any other printer - an A1 reports 039 - has no text offline.
++// The code itself is still worth showing: it is what the wiki and the support
++// pages are indexed by.
++static wxString orca_ios_bare_code(const std::string& code)
++{
++    return wxString::Format(_L("Printer reported %s.\n\nNo description is available for this "
++                               "code - the message tables for this printer model could not be "
++                               "downloaded. Search the code on the Bambu Lab wiki for details."),
++                            wxString::FromUTF8(code));
++}
++#endif
++
+ int get_hms_info_version(std::string& version)
+ {
+     AppConfig* config = wxGetApp().app_config;
+@@ -307,7 +347,12 @@
+     AppConfig* config = wxGetApp().app_config;
+     if (!config) return wxEmptyString;
+     const std::string& lang_code = HMSQuery::hms_language_code();
+-    return _query_hms_msg(get_dev_id_type(obj),long_error_code, lang_code);
++    const wxString msg = _query_hms_msg(get_dev_id_type(obj), long_error_code, lang_code);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    if (msg.IsEmpty() && !long_error_code.empty())
++        return orca_ios_bare_code(long_error_code);
++#endif
++    return msg;
+ }
+ 
+ wxString HMSQuery::query_hms_msg(const std::string& dev_id, const std::string& long_error_code)
+@@ -315,7 +360,12 @@
+     AppConfig* config = wxGetApp().app_config;
+     if (!config) return wxEmptyString;
+     const std::string& lang_code = HMSQuery::hms_language_code();
+-    return _query_hms_msg(dev_id.substr(0, 3), long_error_code, lang_code);
++    const wxString msg = _query_hms_msg(dev_id.substr(0, 3), long_error_code, lang_code);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    if (msg.IsEmpty() && !long_error_code.empty())
++        return orca_ios_bare_code(long_error_code);
++#endif
++    return msg;
+ }
+ 
+ string HMSQuery::get_dev_id_type(const MachineObject* obj) const
+@@ -532,7 +582,12 @@
+     char buf[32];
+     ::sprintf(buf, "%08X", print_error);
+     std::string lang_code = HMSQuery::hms_language_code();
+-    return _query_error_msg(get_dev_id_type(obj), std::string(buf), lang_code);
++    const wxString msg = _query_error_msg(get_dev_id_type(obj), std::string(buf), lang_code);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    if (msg.IsEmpty() && print_error != 0)
++        return orca_ios_bare_code(std::string(buf));
++#endif
++    return msg;
+ }
+ 
+ wxString HMSQuery::query_print_error_msg(const std::string& dev_id, int print_error)
+@@ -540,7 +595,12 @@
+     char buf[32];
+     ::sprintf(buf, "%08X", print_error);
+     std::string lang_code = HMSQuery::hms_language_code();
+-    return _query_error_msg(dev_id.substr(0, 3), std::string(buf), lang_code);
++    const wxString msg = _query_error_msg(dev_id.substr(0, 3), std::string(buf), lang_code);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    if (msg.IsEmpty() && print_error != 0)
++        return orca_ios_bare_code(std::string(buf));
++#endif
++    return msg;
+ }
+ 
+ 
+--- a/src/slic3r/GUI/Jobs/BoostThreadWorker.hpp
++++ b/src/slic3r/GUI/Jobs/BoostThreadWorker.hpp
+@@ -10,6 +10,10 @@
+ 
+ #include "ThreadSafeQueue.hpp"
+ #include "slic3r/GUI/GUI.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#include <wx/app.h>
++#endif
+ 
+ namespace Slic3r { namespace GUI {
+ 
+@@ -133,14 +137,38 @@
+     void clear_percent() override
+     {
+         if (m_progress) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            // Onto the main thread. These two are the only Ctl methods that
++            // touch the progress indicator directly from the worker thread -
++            // update_status goes through m_output_queue and is drained on the
++            // main thread, as it should be. BBLStatusBarSend::clear_percent
++            // calls m_cancelbutton->Hide(), so this ends in -[UIView
++            // setHidden:] off the main thread, and UIKit is not thread-safe.
++            //
++            // That is where the send dialog stops. The printer takes the file
++            // and answers "result":"success", but the agent's very next call
++            // is the Finished notification that lands here, and it never
++            // returns - so PrintJob never reports success and the dialog sits
++            // at 75% for ever. The instrumented build made it exact: "command
++            // published, reporting Finished" is the last line in the log.
++            auto pri = m_progress;
++            wxTheApp->CallAfter([pri] { pri->clear_percent(); });
++#else
+             m_progress->clear_percent();
++#endif
+         }
+     }
+ 
+     void show_error_info(const std::string &msg, int code, const std::string &description, const std::string &extra) override
+     {
+         if (m_progress) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            auto pri = m_progress;
++            const wxString m = from_u8(msg), d = from_u8(description), e = from_u8(extra);
++            wxTheApp->CallAfter([pri, m, code, d, e] { pri->show_error_info(m, code, d, e); });
++#else
+             m_progress->show_error_info(from_u8(msg), code, from_u8(description), from_u8(extra));
++#endif
+         }
+     }
+ 
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -12389,6 +12389,34 @@
+     //if (up_to_date(false, false)) // should we always save
+     //    return;
+     auto filename = get_project_filename(".3mf");
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // A project with no path yet saves into Documents rather than asking.
++    //
++    // "Save" on a fresh project falls through to "Save as", which on iOS is
++    // the document picker - so every save, including the first, is a trip
++    // through Files to choose a folder. Documents is the app's own directory
++    // and the only one file sharing exposes, so defaulting there gives the
++    // project a real path; set_project_filename below then keeps subsequent
++    // saves going to the same file, and it shows up in the Files app and in
++    // the recent projects list. Save As still asks, which is the point of it.
++    if (!saveAs && filename.IsEmpty()) {
++        if (const char *const home = ::getenv("HOME")) {
++            std::string stem = into_u8(get_project_name());
++            if (stem.size() > 4 && stem.compare(stem.size() - 4, 4, ".3mf") == 0)
++                stem.erase(stem.size() - 4);
++            for (char &c : stem)
++                if (c == '/' || c == '\\' || c == ':')
++                    c = '_';
++            if (stem.empty())
++                stem = "Untitled";
++            boost::system::error_code ec;
++            const boost::filesystem::path dir = boost::filesystem::path(home) / "Documents";
++            boost::filesystem::create_directories(dir, ec);
++            if (!ec)
++                filename = from_path(dir / (stem + ".3mf"));
++        }
++    }
++#endif
+     if (!saveAs && filename.IsEmpty())
+         saveAs = true;
+     if (saveAs)

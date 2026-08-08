@@ -266,10 +266,19 @@ wxMediaState wxMediaCtrl2::GetState() const
     CameraState *const st = static_cast<CameraState *>(m_player);
     if (st == nullptr || !st->client.is_running())
         return wxMEDIASTATE_STOPPED;
-    // "Playing" only once a picture has actually arrived. MediaPlayCtrl uses
-    // this to decide whether the stream is up, and a connection that
-    // authenticated but produced nothing is not up.
-    return st->have_frame.load() ? wxMEDIASTATE_PLAYING : wxMEDIASTATE_STOPPED;
+    // Running counts as playing, even before the first frame.
+    //
+    // This used to wait for a picture, on the reasoning that a connection
+    // producing nothing is not really playing. MediaPlayCtrl disagrees: it
+    // reads this to decide whether the stream came up and tears it down when
+    // it has not, so the honest answer got the client killed mid-TLS-handshake
+    // and retried, over and over - four connect/stop cycles in one session,
+    // none of them lasting long enough to authenticate.
+    //
+    // The user-visible distinction it was there for is better made where it can
+    // be seen anyway: the canvas says "Connecting..." until a frame lands, and
+    // says what went wrong if it never does.
+    return wxMEDIASTATE_PLAYING;
 }
 
 wxSize wxMediaCtrl2::GetVideoSize() const

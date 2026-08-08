@@ -1,0 +1,41 @@
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -1151,18 +1151,37 @@
+             // the useful fact is *which* window in the chain says so, and no
+             // amount of reasoning from the outside settles that. Print the
+             // chain whenever nothing rendered in the last five seconds.
+-            if (r == last_r && wxGetApp().plater() != nullptr) {
++            // Only when not rendering is actually wrong.
++            //
++            // The first version of this logged the chain on any five seconds
++            // without a render, and I read the result as proof that the render
++            // gate was stuck - which sent two builds after the wrong thing. It
++            // is not proof of anything: a static scene does not render, and
++            // neither does the Plater while the Device page is up, and both are
++            // correct. What makes it wrong is the notebook having a Plater page
++            // selected while that page reports itself hidden, so print the
++            // selection and the pointers and let the two be compared instead of
++            // assumed.
++            if (r == last_r && wxGetApp().plater() != nullptr && m_tabpanel != nullptr) {
+                 GLCanvas3D *const c3d = wxGetApp().plater()->get_current_canvas3D(false);
+                 wxWindow *const canvas = (c3d != nullptr) ? c3d->get_wxglcanvas() : nullptr;
++                const int sel = m_tabpanel->GetSelection();
++                wxWindow *const sel_page = (sel >= 0 && sel < (int) m_tabpanel->GetPageCount())
++                                         ? m_tabpanel->GetPage(sel) : nullptr;
+                 wxString chain;
+                 for (wxWindow *w = canvas; w != nullptr; w = w->GetParent()) {
+                     chain << w->GetClassInfo()->GetClassName()
++                          << wxString::Format("@%p", (void *) w)
+                           << (w->IsShown() ? "[shown" : "[HIDDEN")
+                           << (w->IsTopLevel() ? ",top] < " : "] < ");
+                     if (w->IsTopLevel()) break;
+                 }
+                 BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: no render; onscreen "
+                     << (canvas != nullptr && canvas->IsShownOnScreen() ? "yes" : "NO")
++                    << "; notebook sel " << sel << " page " << (void *) sel_page
++                    << " plater " << (void *) m_plater
++                    << (sel_page == m_plater ? " (plater selected: not rendering is WRONG)"
++                                             : " (another page selected: not rendering is fine)")
+                     << "; chain " << chain.utf8_string();
+             }
+             last_i = i; last_p = p; last_r = r;

@@ -269,6 +269,11 @@ void CameraClient::run(Config cfg)
     const int64_t deadline = now_ms() + static_cast<int64_t>(cfg.connect_timeout_s) * 1000;
     for (;;) {
         if (m_stop.load()) {
+            // Worth a line: a stop during the handshake used to leave no trace
+            // at all, so "streaming from ..." followed by "stopped after 0
+            // frames" looked like the printer refusing us rather than the app
+            // pulling the plug.
+            BOOST_LOG_TRIVIAL(error) << "BambuLanCamera: stopped during the TLS handshake";
             m_impl->close_all();
             m_running.store(false);
             return;
@@ -306,6 +311,7 @@ void CameraClient::run(Config cfg)
     size_t sent = 0;
     while (sent < auth.size()) {
         if (m_stop.load()) {
+            BOOST_LOG_TRIVIAL(error) << "BambuLanCamera: stopped while sending the auth frame";
             m_impl->close_all();
             m_running.store(false);
             return;

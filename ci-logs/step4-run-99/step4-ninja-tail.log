@@ -1,0 +1,200 @@
+../../wx-prefix/include/wx-3.3/wx/osx/statbox.h:44:18: note: hidden overloaded virtual function 'wxStaticBox::SetFont' declared here: type mismatch at 1st parameter ('const wxFont &' vs 'wxFont')
+   44 |     virtual bool SetFont( const wxFont &font ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:53:
+In file included from ../src/slic3r/GUI/Tab.hpp:35:
+In file included from ../src/slic3r/GUI/ConfigManipulation.hpp:12:
+../src/slic3r/GUI/Field.hpp:385:18: warning: 'propagate_value' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  385 |     void                propagate_value() ;
+      |                         ^
+../src/slic3r/GUI/Field.hpp:193:18: note: overridden virtual function is here
+  193 |     virtual void propagate_value(){}
+      |                  ^
+../src/slic3r/GUI/Field.hpp:440:9: warning: 'propagate_value' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  440 |         void                    propagate_value();
+      |                                 ^
+../src/slic3r/GUI/Field.hpp:193:18: note: overridden virtual function is here
+  193 |     virtual void propagate_value(){}
+      |                  ^
+../src/slic3r/GUI/Field.hpp:522:21: warning: 'Slic3r::GUI::PointCtrl::propagate_value' hides overloaded virtual function [-Woverloaded-virtual]
+  522 |     void            propagate_value(wxTextCtrl* win);
+      |                     ^
+../src/slic3r/GUI/Field.hpp:193:18: note: hidden overloaded virtual function 'Slic3r::GUI::Field::propagate_value' declared here: different number of parameters (0 vs 1)
+  193 |     virtual void propagate_value(){}
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:53:
+In file included from ../src/slic3r/GUI/Tab.hpp:39:
+../src/slic3r/GUI/Notebook.hpp:146:10: warning: 'Notebook::AddPage' hides overloaded virtual function [-Woverloaded-virtual]
+  146 |     bool AddPage(wxWindow* page,
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/bookctrl.h:177:18: note: hidden overloaded virtual function 'wxBookCtrlBase::AddPage' declared here: different number of parameters (4 vs 5)
+  177 |     virtual bool AddPage(wxWindow *page,
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:53:
+../src/slic3r/GUI/Tab.hpp:516:18: warning: 'activate_selected_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  516 |         virtual void    activate_selected_page(std::function<void()> throw_if_canceled);
+      |                         ^
+../src/slic3r/GUI/Tab.hpp:350:21: note: overridden virtual function is here
+  350 |     virtual void    activate_selected_page(std::function<void()> throw_if_canceled);
+      |                     ^
+../src/slic3r/GUI/Tab.hpp:522:15: warning: 'reload_config' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  522 |         virtual void    reload_config();
+      |                         ^
+../src/slic3r/GUI/Tab.hpp:484:8: note: overridden virtual function is here
+  484 |         void            reload_config() override;
+      |                         ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:57:
+../src/slic3r/GUI/PrintHostDialogs.hpp:166:48: warning: 'extendedInfo' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  166 |     virtual std::map<std::string, std::string> extendedInfo() const
+      |                                                ^
+../src/slic3r/GUI/PrintHostDialogs.hpp:47:48: note: overridden virtual function is here
+   47 |     virtual std::map<std::string, std::string> extendedInfo() const { return {}; }
+      |                                                ^
+../src/slic3r/GUI/PrintHostDialogs.hpp:203:48: warning: 'extendedInfo' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  203 |     virtual std::map<std::string, std::string> extendedInfo() const;
+      |                                                ^
+../src/slic3r/GUI/PrintHostDialogs.hpp:47:48: note: overridden virtual function is here
+   47 |     virtual std::map<std::string, std::string> extendedInfo() const { return {}; }
+      |                                                ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:71:
+In file included from ../src/slic3r/GUI/Preferences.hpp:16:
+../src/slic3r/GUI/Widgets/TabCtrl.hpp:66:18: warning: 'DoSetSize' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   66 |     virtual void DoSetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
+      |                  ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:379:18: note: overridden virtual function is here
+  379 |     virtual void DoSetSize(int x, int y,
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:92:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:22:10: warning: 'Slic3r::GUI::FilamentMapManualPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   22 |     void Show();
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:92:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:45:10: warning: 'Slic3r::GUI::FilamentMapBtnPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   45 |     void Show();
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:92:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:75:21: warning: 'Slic3r::GUI::FilamentMapAutoPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   75 |     void            Show();
+      |                     ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:92:
+In file included from ../src/slic3r/GUI/FilamentMapDialog.hpp:4:
+../src/slic3r/GUI/FilamentMapPanel.hpp:92:10: warning: 'Slic3r::GUI::FilamentMapDefaultPanel::Show' hides overloaded virtual function [-Woverloaded-virtual]
+   92 |     void Show();
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:62:18: note: hidden overloaded virtual function 'wxWindow::Show' declared here: different number of parameters (1 vs 0)
+   62 |     virtual bool Show( bool show = true ) override;
+      |                  ^
+../src/slic3r/GUI/MainFrame.cpp:1052:23: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 1052 |     Bind(wxEVT_SHOW, [this](wxShowEvent &evt) {
+      |                       ^~~~
+../src/slic3r/GUI/MainFrame.cpp:1165:66: error: 'this' cannot be implicitly captured in this context
+ 1165 |             if (r == last_r && wxGetApp().plater() != nullptr && m_tabpanel != nullptr) {
+      |                                                                  ^
+../src/slic3r/GUI/MainFrame.cpp:1138:42: note: explicitly capture 'this'
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                          ^
+      |                                          , this
+../src/slic3r/GUI/MainFrame.cpp:1168:33: error: 'this' cannot be implicitly captured in this context
+ 1168 |                 const int sel = m_tabpanel->GetSelection();
+      |                                 ^
+../src/slic3r/GUI/MainFrame.cpp:1138:42: note: explicitly capture 'this'
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                          ^
+      |                                          , this
+../src/slic3r/GUI/MainFrame.cpp:1169:69: error: 'this' cannot be implicitly captured in this context
+ 1169 |                 wxWindow *const sel_page = (sel >= 0 && sel < (int) m_tabpanel->GetPageCount())
+      |                                                                     ^
+../src/slic3r/GUI/MainFrame.cpp:1138:42: note: explicitly capture 'this'
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                          ^
+      |                                          , this
+../src/slic3r/GUI/MainFrame.cpp:1170:44: error: 'this' cannot be implicitly captured in this context
+ 1170 |                                          ? m_tabpanel->GetPage(sel) : nullptr;
+      |                                            ^
+../src/slic3r/GUI/MainFrame.cpp:1138:42: note: explicitly capture 'this'
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                          ^
+      |                                          , this
+../src/slic3r/GUI/MainFrame.cpp:1182:47: error: 'this' cannot be implicitly captured in this context
+ 1182 |                     << " plater " << (void *) m_plater
+      |                                               ^
+../src/slic3r/GUI/MainFrame.cpp:1138:42: note: explicitly capture 'this'
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                          ^
+      |                                          , this
+../src/slic3r/GUI/MainFrame.cpp:1183:37: error: 'this' cannot be implicitly captured in this context
+ 1183 |                     << (sel_page == m_plater ? " (plater selected: not rendering is WRONG)"
+      |                                     ^
+../src/slic3r/GUI/MainFrame.cpp:1138:42: note: explicitly capture 'this'
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                          ^
+      |                                          , this
+../src/slic3r/GUI/MainFrame.cpp:1138:34: warning: lambda capture 'counters' is not used [-Wunused-lambda-capture]
+ 1138 |         this->Bind(wxEVT_TIMER, [counters](wxTimerEvent &) {
+      |                                  ^~~~~~~~
+../src/slic3r/GUI/MainFrame.cpp:3191:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3191 |             [this](){return true; }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3249:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3249 |             [this]() {
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3419:54: warning: lambda capture 'handle_key_event' is not used [-Wunused-lambda-capture]
+ 3419 |             _L("Duplicate the current plate"),[this, handle_key_event](wxCommandEvent&) {
+      |                                                    ~~^~~~~~~~~~~~~~~~
+../src/slic3r/GUI/MainFrame.cpp:3422:27: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3422 |             "", nullptr, [this](){return true;}, this);
+      |                           ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3486:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3486 |             [this](wxCommandEvent&) {
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3492:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3492 |             [this](wxCommandEvent&) {
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3508:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3508 |             [this]() { return wxGetApp().app_config->get_bool("auto_perspective"); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3517:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3517 |             [this]() { return wxGetApp().show_gcode_window(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3526:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3526 |             [this]() { return wxGetApp().show_3d_navigator(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3534:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3534 |             [this]() { return wxGetApp().show_plate_gridlines(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3564:14: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3564 |             [this]() { return wxGetApp().show_outline(); }, this);
+      |              ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3690:10: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3690 |         [this](wxCommandEvent &) { Slic3r::GUI::about();},
+      |          ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3694:10: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3694 |         [this](wxCommandEvent &) {
+      |          ^~~~
+../src/slic3r/GUI/MainFrame.cpp:3954:10: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 3954 |         [this](wxCommandEvent&) { wxLaunchDefaultBrowser("https://www.orcaslicer.com/wiki/calibration_guide", wxBROWSER_NEW_WINDOW); }, "", nullptr,
+      |          ^~~~
+In file included from ../src/slic3r/GUI/MainFrame.cpp:1:
+In file included from ../src/slic3r/GUI/MainFrame.hpp:21:
+In file included from ../src/slic3r/GUI/Monitor.hpp:4:
+../src/slic3r/GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+      |                         ^
+In file included from ../src/slic3r/GUI/MainFrame.cpp:1:
+../src/slic3r/GUI/MainFrame.hpp:82:21: warning: private field 'm_main_frame' is not used [-Wunused-private-field]
+   82 |     MainFrame*      m_main_frame { nullptr };
+      |                     ^
+42 warnings and 6 errors generated.
+ninja: build stopped: cannot make progress due to previous errors.

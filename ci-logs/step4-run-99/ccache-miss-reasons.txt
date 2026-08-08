@@ -1,0 +1,118 @@
++ grep -oE 'Result: .*' /Users/runner/ccache-step4.log
++ sort
++ uniq -c
++ sort -rn
++ head -20
+1270 Result: local_storage_read_hit
+ 635 Result: local_storage_hit
+ 635 Result: direct_cache_hit
+   6 Result: local_storage_read_miss
+   4 Result: local_storage_write
+   3 Result: preprocessed_cache_miss
+   3 Result: direct_cache_miss
+   2 Result: local_storage_miss
+   2 Result: cache_miss
+   1 Result: compile_failed
++ echo '--- sample miss context ---'
+--- sample miss context ---
++ grep -B60 -m1 'Result: cache_miss' /Users/runner/ccache-step4.log
++ tail -60
+[2026-08-08T12:36:15.227415 9293 ] Considering result entry 0 (ef5f80dae2388c25500cbffc384fe9ab768b47d2)
+[2026-08-08T12:36:15.227465 9293 ] Result entry 0 matched in manifest
+[2026-08-08T12:36:15.227471 9293 ] Got result key from manifest
+[2026-08-08T12:36:15.227475 9293 ] Result key: ef5f80dae2388c25500cbffc384fe9ab768b47d2
+[2026-08-08T12:36:15.227526 9293 ] Retrieved ef5f80dae2388c25500cbffc384fe9ab768b47d2 from local storage (/Users/runner/.ccache-step4/e/f/5f80dae2388c25500cbffc384fe9ab768b47d2)
+[2026-08-08T12:36:15.227783 9293 ] Reading embedded entry #0 .o (128016 bytes)
+[2026-08-08T12:36:15.227789 9293 ] Writing to src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrinterAgent.cpp.o
+[2026-08-08T12:36:15.227894 9293 ] Reading embedded entry #1 .d (256136 bytes)
+[2026-08-08T12:36:15.227900 9293 ] Writing to src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrinterAgent.cpp.o.d
+[2026-08-08T12:36:15.228050 9293 ] Succeeded getting cached result
+[2026-08-08T12:36:15.228069 9293 ] Result: direct_cache_hit
+[2026-08-08T12:36:15.228075 9293 ] Result: local_storage_hit
+[2026-08-08T12:36:15.228081 9293 ] Result: local_storage_read_hit
+[2026-08-08T12:36:15.228086 9293 ] Result: local_storage_read_hit
+[2026-08-08T12:36:15.228093 9293 ] Acquiring /Users/runner/.ccache-step4/4/d/stats.lock
+[2026-08-08T12:36:15.228154 9293 ] Acquired /Users/runner/.ccache-step4/4/d/stats.lock
+[2026-08-08T12:36:15.228160 9293 ] Creating /Users/runner/.ccache-step4/4/d/stats.alive
+[2026-08-08T12:36:15.228473 9293 ] Releasing /Users/runner/.ccache-step4/4/d/stats.lock
+[2026-08-08T12:36:15.228517 9293 ] Released /Users/runner/.ccache-step4/4/d/stats.lock
+[2026-08-08T12:36:15.228530 9293 ] Accumulated stats for inode cache: hits=0, misses=0, errors=0
+[2026-08-08T12:36:15.228544 9293 ] === CCACHE DONE ===
+[2026-08-08T12:36:15.489814 9284 ] Got result key from preprocessor with -arch arm64
+[2026-08-08T12:36:15.489842 9284 ] Result key: 11c6e793b279efc56c1d698f3b4add9d6654b0b7
+[2026-08-08T12:36:15.489893 9284 ] No 11c6e793b279efc56c1d698f3b4add9d6654b0b7 in local storage
+[2026-08-08T12:36:15.489907 9284 ] Running real compiler
+[2026-08-08T12:36:15.490049 9284 ] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I../src/slic3r/Utils -Isrc/slic3r -Isrc/libslic3r -I../src/libvgcode/glad/include -I../src/glad/include -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../../ios-prefix/usr/local/include/opencascade -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../deps_src/libigl -isystem ../deps_src/libnest2d/include -isystem ../../ios-prefix/usr/local/include -isystem ../deps_src/miniz -isystem ../../ios-prefix/usr/local/include/opencv4 -isystem ../deps_src/imgui -isystem ../deps_src/imguizmo -isystem ../deps_src/minilzo -isystem ../deps_src/hidapi/include -isystem ../deps_src/mdns -isystem ../../wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem ../../wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_camera_view.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_camera_view.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_camera_view.cpp.o ../src/slic3r/GUI/ios_camera_view.cpp
+[2026-08-08T12:36:15.515867 9291 ] Got result key from preprocessor with -arch arm64
+[2026-08-08T12:36:15.515916 9291 ] Result key: 1380c34aadebe9b973050dec7c35c9555a7cba86
+[2026-08-08T12:36:15.515963 9291 ] No 1380c34aadebe9b973050dec7c35c9555a7cba86 in local storage
+[2026-08-08T12:36:15.515981 9291 ] Running real compiler
+[2026-08-08T12:36:15.516137 9291 ] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I../src/slic3r/Utils -Isrc/slic3r -Isrc/libslic3r -I../src/libvgcode/glad/include -I../src/glad/include -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../../ios-prefix/usr/local/include/opencascade -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../deps_src/libigl -isystem ../deps_src/libnest2d/include -isystem ../../ios-prefix/usr/local/include -isystem ../deps_src/miniz -isystem ../../ios-prefix/usr/local/include/opencv4 -isystem ../deps_src/imgui -isystem ../deps_src/imguizmo -isystem ../deps_src/minilzo -isystem ../deps_src/hidapi/include -isystem ../deps_src/mdns -isystem ../../wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem ../../wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o ../src/slic3r/Utils/BambuLanCamera.cpp
+[2026-08-08T12:36:16.348993 9291 ] No paths in dependency file src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o.d made relative
+[2026-08-08T12:36:16.349072 9291 ] Using Zstandard with default compression level 1
+[2026-08-08T12:36:16.349087 9291 ] Storing embedded entry #0 .o (28384 bytes) from src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o
+[2026-08-08T12:36:16.349129 9291 ] Storing embedded entry #1 .d (163558 bytes) from src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o.d
+[2026-08-08T12:36:16.350216 9291 ] Acquiring /Users/runner/.ccache-step4/lock/subdir_13.lock
+[2026-08-08T12:36:16.350283 9291 ] Acquired /Users/runner/.ccache-step4/lock/subdir_13.lock
+[2026-08-08T12:36:16.350290 9291 ] Creating /Users/runner/.ccache-step4/lock/subdir_13.alive
+[2026-08-08T12:36:16.350483 9291 ] Stored 1380c34aadebe9b973050dec7c35c9555a7cba86 in local storage (/Users/runner/.ccache-step4/1/3/80c34aadebe9b973050dec7c35c9555a7cba86)
+[2026-08-08T12:36:16.350516 9291 ] Acquiring /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.350580 9291 ] Acquired /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.350590 9291 ] Creating /Users/runner/.ccache-step4/1/stats.alive
+[2026-08-08T12:36:16.351202 9291 ] Releasing /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.351313 9291 ] Released /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.351324 9291 ] Releasing /Users/runner/.ccache-step4/lock/subdir_13.lock
+[2026-08-08T12:36:16.351378 9291 ] Released /Users/runner/.ccache-step4/lock/subdir_13.lock
+[2026-08-08T12:36:16.351419 9291 ] Added result key to manifest 1c061b258633c93ce41f8ab927af3b6bfd64944d
+[2026-08-08T12:36:16.351426 9291 ] Using Zstandard with default compression level 1
+[2026-08-08T12:36:16.351597 9291 ] Acquiring /Users/runner/.ccache-step4/lock/subdir_1c.lock
+[2026-08-08T12:36:16.351646 9291 ] Acquired /Users/runner/.ccache-step4/lock/subdir_1c.lock
+[2026-08-08T12:36:16.351652 9291 ] Creating /Users/runner/.ccache-step4/lock/subdir_1c.alive
+[2026-08-08T12:36:16.351744 9291 ] Stored 1c061b258633c93ce41f8ab927af3b6bfd64944d in local storage (/Users/runner/.ccache-step4/1/c/061b258633c93ce41f8ab927af3b6bfd64944d)
+[2026-08-08T12:36:16.351757 9291 ] Acquiring /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.351794 9291 ] Acquired /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.351800 9291 ] Creating /Users/runner/.ccache-step4/1/stats.alive
+[2026-08-08T12:36:16.352006 9291 ] Releasing /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.352056 9291 ] Released /Users/runner/.ccache-step4/1/stats.lock
+[2026-08-08T12:36:16.352063 9291 ] Releasing /Users/runner/.ccache-step4/lock/subdir_1c.lock
+[2026-08-08T12:36:16.352170 9291 ] Released /Users/runner/.ccache-step4/lock/subdir_1c.lock
+[2026-08-08T12:36:16.352200 9291 ] Result: cache_miss
++ echo '--- reasons, ranked ---'
+--- reasons, ranked ---
++ grep -oE '(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)' /Users/runner/ccache-step4.log
++ sed -E 's#/Users/runner[^ ]*/##'
++ sort
++ uniq -c
++ sort -rn
++ head -25
+   1 [2026-08-08T12:36:15.226281 9293 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.226281 9293 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.211756 9291 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.211756 9291 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.209851 9289 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.209851 9289 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.209086 9288 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.209086 9288 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.192638 9286 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.192638 9286 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.186121 9285 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.186121 9285 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.180936 9284 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.180936 9284 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.175561 9283 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.175561 9283 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.163882 9282 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.163882 9282 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.162987 9281 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.162987 9281 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.157415 9280 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.157415 9280 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.149551 9279 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+   1 [2026-08-08T12:36:15.149551 9279 ] Config: (default) pch_external_checksum = false
+   1 [2026-08-08T12:36:15.144019 9278 ] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, system_headers, time_macros
+sort: Broken pipe
++ echo '--- first compile command line (diff this against the previous run) ---'
+--- first compile command line (diff this against the previous run) ---
++ grep -m1 -A1 'Command line:' /Users/runner/ccache-step4.log
+[2026-08-08T12:36:08.881798 8294 ] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o.d -o deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/stl_io.cpp
+[2026-08-08T12:36:08.881798 8294 ] Hostname: sat12-dp146-18d8c0c7-b966-48c9-b67a-2b3e5d947228-DA8D165B7CB0.local

@@ -1,0 +1,239 @@
+--- a/include/wx/osx/iphone/private.h
++++ b/include/wx/osx/iphone/private.h
+@@ -113,7 +113,11 @@
+     void                SetFont(const wxFont & font);
+ 
+     void                InstallEventHandler( WXWidget control = nullptr );
+-    bool                EnableTouchEvents(int WXUNUSED(eventsMask)) { return false; }
++    // Was `{ return false; }`, which silently disabled every wxEVT_GESTURE_*
++    // handler in every application built against this port. Implemented in
++    // src/osx/iphone/window.mm. Declaration only: no data member is added, so
++    // the object layout is unchanged.
++    virtual bool        EnableTouchEvents(int eventsMask) override;
+ 
+     virtual void        DoNotifyFocusEvent(bool receivedFocus, wxWidgetImpl* otherWindow);
+     virtual void        SetupKeyEvent(wxKeyEvent &wxevent, WXEvent event, UIPress* press, NSString* charString = nullptr);
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -513,10 +513,123 @@
+     peer->HandleWindowEvent(wxevent);
+ }
+ 
++// ---------------------------------------------------------------------------
++// Multi-touch gestures.
++//
++// wxWindow::EnableTouchEvents() is how an application asks for these, and on
++// this port it was a one-line stub in include/wx/osx/iphone/private.h:
++//
++//     bool EnableTouchEvents(int WXUNUSED(eventsMask)) { return false; }
++//
++// So every wxEVT_GESTURE_* handler in every application built against the
++// iPhone port has been dead code. OrcaSlicer binds all three and implements
++// pinch-zoom, two-finger rotate and pan against its camera in
++// GLCanvas3D::on_gesture; none of it has ever run on an iPad.
++//
++// The single-finger drag path is left exactly as it was - it is the pointer,
++// and it is what rotates the view and drags gizmos. These recognizers keep
++// cancelsTouchesInView at its default YES on purpose: when a second finger
++// lands and a gesture takes over, UIKit cancels the touches, which the
++// cancelled-touch handler above turns into a clean LEFT_UP. So a rotate in
++// progress ends properly instead of continuing underneath the pinch. That
++// interaction is the whole reason the two work together rather than fighting.
++
++static void wxOSXSendGestureEvent(UIView* self, wxGestureEvent& wxevent,
++                                  UIGestureRecognizer* gesture)
++{
++    wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
++    if ( impl == nullptr )
++        return;
++    wxWindowMac* peer = impl->GetWXPeer();
++    if ( peer == nullptr )
++        return;
++
++    const CGPoint where = [gesture locationInView:self];
++    wxevent.SetPosition(wxPoint((int) where.x, (int) where.y));
++    wxevent.SetGestureStart([gesture state] == UIGestureRecognizerStateBegan);
++    wxevent.SetGestureEnd([gesture state] == UIGestureRecognizerStateEnded ||
++                          [gesture state] == UIGestureRecognizerStateCancelled);
++    wxevent.SetEventObject(peer);
++    wxevent.SetId(peer->GetId());
++    peer->HandleWindowEvent(wxevent);
++}
++
++// Only these four states carry a usable value; Possible and Failed do not.
++static bool wxOSXGestureStateIsLive(UIGestureRecognizer* gesture)
++{
++    const UIGestureRecognizerState state = [gesture state];
++    return state == UIGestureRecognizerStateBegan ||
++           state == UIGestureRecognizerStateChanged ||
++           state == UIGestureRecognizerStateEnded ||
++           state == UIGestureRecognizerStateCancelled;
++}
++
++// Two fingers, deliberately. One finger is the pointer and must keep rotating
++// the view the way a left drag does on the desktop; requiring two here is what
++// makes "one finger orbits, two fingers slide the plate" the flow, which is
++// what every other 3D application on this hardware does.
++void wxOSX_panGesture(UIView* self, SEL _cmd, UIPanGestureRecognizer* gesture)
++{
++    if ( !wxOSXGestureStateIsLive(gesture) )
++        return;
++
++    // wx wants the delta since the last event, UIKit reports it cumulatively.
++    static CGPoint s_last = { 0, 0 };
++    const CGPoint translation = [gesture translationInView:self];
++    if ( [gesture state] == UIGestureRecognizerStateBegan )
++        s_last = CGPointZero;
++    const CGPoint delta = CGPointMake(translation.x - s_last.x, translation.y - s_last.y);
++    s_last = translation;
++
++    wxPanGestureEvent wxevent;
++    wxevent.SetDelta(wxPoint((int) delta.x, (int) delta.y));
++    wxOSXSendGestureEvent(self, wxevent, gesture);
++}
++
++void wxOSX_zoomGesture(UIView* self, SEL _cmd, UIPinchGestureRecognizer* gesture)
++{
++    if ( !wxOSXGestureStateIsLive(gesture) )
++        return;
++
++    // Cumulative scale since the gesture began, which is what wx documents and
++    // what applications expect: they latch their own starting value on
++    // IsGestureStart() and multiply by this.
++    wxZoomGestureEvent wxevent;
++    wxevent.SetZoomFactor([gesture scale]);
++    wxOSXSendGestureEvent(self, wxevent, gesture);
++}
++
++void wxOSX_rotateGesture(UIView* self, SEL _cmd, UIRotationGestureRecognizer* gesture)
++{
++    if ( !wxOSXGestureStateIsLive(gesture) )
++        return;
++
++    // Cumulative angle in radians, same convention as the zoom factor above.
++    wxRotateGestureEvent wxevent;
++    wxevent.SetRotationAngle([gesture rotation]);
++    wxOSXSendGestureEvent(self, wxevent, gesture);
++}
++
++// A press that stays put. UILongPressGestureRecognizer fails the moment the
++// finger travels more than allowableMovement, so a slow drag still orbits the
++// view rather than raising a menu under the user's hand.
++void wxOSX_longPressGesture(UIView* self, SEL _cmd, UILongPressGestureRecognizer* gesture)
++{
++    if ( !wxOSXGestureStateIsLive(gesture) )
++        return;
++
++    wxLongPressEvent wxevent;
++    wxOSXSendGestureEvent(self, wxevent, gesture);
++}
++
+ void wxOSXIPhoneClassAddWXMethods(Class c)
+ {
+     class_addMethod(c, @selector(WX_scrollGesture:), (IMP) wxOSX_scrollGesture, "v@:@");
+     class_addMethod(c, @selector(WX_hoverGesture:), (IMP) wxOSX_hoverGesture, "v@:@");
++    class_addMethod(c, @selector(WX_panGesture:), (IMP) wxOSX_panGesture, "v@:@");
++    class_addMethod(c, @selector(WX_zoomGesture:), (IMP) wxOSX_zoomGesture, "v@:@");
++    class_addMethod(c, @selector(WX_rotateGesture:), (IMP) wxOSX_rotateGesture, "v@:@");
++    class_addMethod(c, @selector(WX_longPressGesture:), (IMP) wxOSX_longPressGesture, "v@:@");
+ 
+     class_addMethod(c, @selector(touchesBegan:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(touchesMoved:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+@@ -1062,6 +1175,97 @@
+     }
+ }
+ 
++// The recognizers this call installed, so a second call replaces rather than
++// stacks them. Associated with the view because the peer can outlive none of
++// it and UIKit owns the view's recognizer array.
++static char wxOSXTouchGesturesKey;
++
++bool wxWidgetIPhoneImpl::EnableTouchEvents(int eventsMask)
++{
++    UIView* const view = m_osxView;
++    if ( view == nil )
++        return false;
++
++    NSMutableArray* installed = objc_getAssociatedObject(view, &wxOSXTouchGesturesKey);
++    for ( UIGestureRecognizer* g in installed )
++        [view removeGestureRecognizer:g];
++    objc_setAssociatedObject(view, &wxOSXTouchGesturesKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++
++    if ( eventsMask == wxTOUCH_NONE )
++        return true;
++
++    // Same reason as the scroll and hover recognizers below: the selector has
++    // to exist on the view's own class or UIKit's target dispatch aborts the
++    // process with "unrecognized selector sent to instance". wx's own view
++    // classes get these from wxOSXIPhoneClassAddWXMethods; a GLKView subclass
++    // or a WKWebView does not.
++    Class viewClass = object_getClass(view);
++    struct { SEL sel; IMP imp; } methods[] = {
++        { @selector(WX_panGesture:),       (IMP) wxOSX_panGesture },
++        { @selector(WX_zoomGesture:),      (IMP) wxOSX_zoomGesture },
++        { @selector(WX_rotateGesture:),    (IMP) wxOSX_rotateGesture },
++        { @selector(WX_longPressGesture:), (IMP) wxOSX_longPressGesture },
++    };
++    for ( size_t i = 0; i < WXSIZEOF(methods); ++i )
++    {
++        if ( ![view respondsToSelector:methods[i].sel] )
++            class_addMethod(viewClass, methods[i].sel, methods[i].imp, "v@:@");
++    }
++
++    installed = [NSMutableArray array];
++
++    if ( eventsMask & (wxTOUCH_VERTICAL_PAN_GESTURE | wxTOUCH_HORIZONTAL_PAN_GESTURE) )
++    {
++        UIPanGestureRecognizer* pan =
++            [[UIPanGestureRecognizer alloc] initWithTarget:view action:@selector(WX_panGesture:)];
++        // Two fingers exactly. One finger stays the pointer.
++        pan.minimumNumberOfTouches = 2;
++        pan.maximumNumberOfTouches = 2;
++        [view addGestureRecognizer:pan];
++        [installed addObject:pan];
++        [pan release];
++    }
++
++    if ( eventsMask & wxTOUCH_ZOOM_GESTURE )
++    {
++        UIPinchGestureRecognizer* pinch =
++            [[UIPinchGestureRecognizer alloc] initWithTarget:view action:@selector(WX_zoomGesture:)];
++        [view addGestureRecognizer:pinch];
++        [installed addObject:pinch];
++        [pinch release];
++    }
++
++    if ( eventsMask & wxTOUCH_ROTATE_GESTURE )
++    {
++        UIRotationGestureRecognizer* rotate =
++            [[UIRotationGestureRecognizer alloc] initWithTarget:view action:@selector(WX_rotateGesture:)];
++        [view addGestureRecognizer:rotate];
++        [installed addObject:rotate];
++        [rotate release];
++    }
++
++    if ( eventsMask & wxTOUCH_PRESS_GESTURES )
++    {
++        UILongPressGestureRecognizer* press =
++            [[UILongPressGestureRecognizer alloc] initWithTarget:view action:@selector(WX_longPressGesture:)];
++        // Cancel the touch when the press is recognised, which is what makes
++        // the flow come out right. The cancelled-touch handler turns it into a
++        // LEFT_UP, so the tap the finger already started completes - selecting
++        // whatever is under it, exactly as a desktop right click does before it
++        // opens a menu - and no second LEFT_UP arrives when the finger finally
++        // lifts. A press that fails because the finger moved cancels nothing,
++        // so dragging still orbits the view.
++        press.cancelsTouchesInView = YES;
++        [view addGestureRecognizer:press];
++        [installed addObject:press];
++        [press release];
++    }
++
++    objc_setAssociatedObject(view, &wxOSXTouchGesturesKey, installed,
++                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++    return true;
++}
++
+ void wxWidgetIPhoneImpl::DoNotifyFocusEvent(bool receivedFocus, wxWidgetImpl* otherWindow)
+ {
+     wxWindow* thisWindow = GetWXPeer();

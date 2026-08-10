@@ -1,0 +1,117 @@
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -221,5 +221,55 @@
+     });
+ }
+ 
++// Give a numeric field the number keyboard.
++//
++// iOS picks the keyboard per text field, and every field in this application
++// was getting the full QWERTY one - so entering a layer height meant a
++// full-size alphabetic keyboard covering half the screen, and hunting for the
++// digits row. UIKeyboardTypeNumbersAndPunctuation is the compact one, and it is
++// the right choice for Orca specifically rather than the pure number pad:
++//
++//   * it has a minus sign, which every position and offset field needs;
++//   * it has a decimal point AND a comma, so coPoints fields ("0.4,0.6") work;
++//   * it has a percent sign, for coFloatOrPercent;
++//   * it keeps a return key, so the keyboard can still be dismissed. The
++//     decimal pad has no return key at all, and adding one means an input
++//     accessory view on every field - a whole mechanism to avoid needing.
++//
++// The widget passed in is usually one of Orca's composites (::TextInput,
++// ::SpinInput, ::TempInput) rather than a bare wxTextCtrl, so this walks down
++// to the first UITextField rather than assuming the handle is one. That keeps
++// it working for all of them without knowing how any of them is built.
++static UITextField *orca_ios_find_text_field(UIView *view)
++{
++    if (view == nil)
++        return nil;
++    if ([view isKindOfClass:[UITextField class]])
++        return (UITextField *) view;
++    for (UIView *sub in view.subviews) {
++        UITextField *found = orca_ios_find_text_field(sub);
++        if (found != nil)
++            return found;
++    }
++    return nil;
++}
++
++void orca_ios_set_numeric_keyboard(wxWindow *win)
++{
++    if (win == nullptr)
++        return;
++    UITextField *field = orca_ios_find_text_field((UIView *) win->GetHandle());
++    if (field == nil)
++        return;
++
++    field.keyboardType            = UIKeyboardTypeNumbersAndPunctuation;
++    field.autocorrectionType      = UITextAutocorrectionTypeNo;
++    field.autocapitalizationType  = UITextAutocapitalizationTypeNone;
++    field.spellCheckingType       = UITextSpellCheckingTypeNo;
++    field.smartDashesType         = UITextSmartDashesTypeNo;
++    field.smartQuotesType         = UITextSmartQuotesTypeNo;
++    field.smartInsertDeleteType   = UITextSmartInsertDeleteTypeNo;
++}
++
+ } // namespace GUI
+ } // namespace Slic3r
+--- a/src/slic3r/GUI/Field.cpp
++++ b/src/slic3r/GUI/Field.cpp
+@@ -2,6 +2,11 @@
+ #include "GUI_App.hpp"
+ #include "I18N.hpp"
+ #include "Field.hpp"
++#ifdef __APPLE__
++// TARGET_OS_OSX is tested below. Undefined reads as zero in an #if, which would
++// compile the iOS-only calls into the macOS build and fail to link.
++#include <TargetConditionals.h>
++#endif
+ #include "libslic3r/GCode/Thumbnails.hpp"
+ #include "wxExtensions.hpp"
+ #include "Plater.hpp"
+@@ -39,6 +44,22 @@
+ 
+ namespace Slic3r { namespace GUI {
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_webview_support.mm
++void orca_ios_set_numeric_keyboard(wxWindow *win);
++// Every option type whose value is typed as a number. coString and friends keep
++// the ordinary keyboard - a filament name is not a number.
++static bool orca_ios_option_is_numeric(ConfigOptionType type)
++{
++    return type == coFloat  || type == coFloats  ||
++           type == coInt    || type == coInts    ||
++           type == coPercent|| type == coPercents||
++           type == coFloatOrPercent || type == coFloatsOrPercents ||
++           type == coPoint  || type == coPoints  || type == coPoint3;
++}
++#endif
++
++
+ wxString double_to_string(double const value, const int max_precision /*= 4*/)
+ {
+ // Style_NoTrailingZeroes does not work on OSX. It also does not work correctly with some locales on Windows.
+@@ -903,6 +924,10 @@
+ */
+     // recast as a wxWindow to fit the calling convention
+     window = dynamic_cast<wxWindow*>(temp);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    if (orca_ios_option_is_numeric(m_opt.type))
++        orca_ios_set_numeric_keyboard(window);
++#endif
+ }
+ 
+ bool TextCtrl::value_was_changed()
+@@ -1268,6 +1293,10 @@
+ 
+ 	// recast as a wxWindow to fit the calling convention
+ 	window = dynamic_cast<wxWindow*>(temp);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // A spin control is a number by definition; no type test needed.
++    orca_ios_set_numeric_keyboard(window);
++#endif
+ }
+ 
+ void SpinCtrl::propagate_value()

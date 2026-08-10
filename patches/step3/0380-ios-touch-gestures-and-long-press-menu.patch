@@ -1,0 +1,90 @@
+--- a/src/slic3r/GUI/GLCanvas3D.hpp
++++ b/src/slic3r/GUI/GLCanvas3D.hpp
+@@ -1039,6 +1039,14 @@
+     void on_set_color_timer(wxTimerEvent& evt);
+     void on_mouse(wxMouseEvent& evt);
+     void on_gesture(wxGestureEvent& evt);
++    // Deliberately NOT wrapped in a platform #if, even though only the iOS
++    // build binds it. This header has no TargetConditionals.h of its own, so a
++    // TARGET_OS_* test here would read as defined in some translation units and
++    // undefined - therefore zero - in others, and a class that is declared
++    // differently in different translation units is the bug that cost this port
++    // an evening. Declaring it everywhere costs a symbol nobody calls; nothing
++    // about the layout of this class can vary.
++    void on_long_press(wxLongPressEvent& evt);
+     void on_paint(wxPaintEvent& evt);
+     void on_set_focus(wxFocusEvent& evt);
+     void force_set_focus();
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -3233,7 +3233,20 @@
+         m_canvas->Bind(wxEVT_GESTURE_PAN, &GLCanvas3D::on_gesture, this);
+         m_canvas->Bind(wxEVT_GESTURE_ZOOM, &GLCanvas3D::on_gesture, this);
+         m_canvas->Bind(wxEVT_GESTURE_ROTATE, &GLCanvas3D::on_gesture, this);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Ask for the whole set on iOS.
++        //
++        // wxEVT_GESTURE_PAN is bound three lines up and on_gesture implements
++        // it, but pan was never requested, so on a touch device the handler
++        // could not fire. Two-finger pan is the natural way to slide the plate
++        // on a tablet and it costs nothing to turn on. The press gestures are
++        // for the long-press-to-context-menu binding below.
++        m_canvas->EnableTouchEvents(wxTOUCH_ZOOM_GESTURE | wxTOUCH_ROTATE_GESTURE |
++                                    wxTOUCH_PAN_GESTURES | wxTOUCH_PRESS_GESTURES);
++        m_canvas->Bind(wxEVT_LONG_PRESS, &GLCanvas3D::on_long_press, this);
++#else
+         m_canvas->EnableTouchEvents(wxTOUCH_ZOOM_GESTURE | wxTOUCH_ROTATE_GESTURE);
++#endif
+ #if __WXOSX__
+         initGestures(m_canvas->GetHandle(), m_canvas); // for UIPanGestureRecognizer allowedScrollTypesMask
+ #endif
+@@ -3270,6 +3283,9 @@
+         m_canvas->Unbind(wxEVT_GESTURE_PAN, &GLCanvas3D::on_gesture, this);
+         m_canvas->Unbind(wxEVT_GESTURE_ZOOM, &GLCanvas3D::on_gesture, this);
+         m_canvas->Unbind(wxEVT_GESTURE_ROTATE, &GLCanvas3D::on_gesture, this);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        m_canvas->Unbind(wxEVT_LONG_PRESS, &GLCanvas3D::on_long_press, this);
++#endif
+     }
+ }
+ 
+@@ -4221,6 +4237,39 @@
+     m_dirty = true;
+ }
+ 
++// Long press -> the right-click context menu.
++//
++// A tablet has no second mouse button, and the object menu is where deleting,
++// duplicating, "fill bed with copies" and per-object settings all live, so
++// without this a large part of the application is unreachable by finger.
++//
++// Synthesised into on_mouse() rather than reimplemented: everything that
++// decides whether a menu opens, and which one, already lives there and depends
++// on the hover state. That state is correct by the time this fires - the finger
++// has been resting on the same point for half a second, so the pointer path has
++// already reported it and several picking passes have run.
++//
++// The press recognizer cancels the touch when it recognises, which the port
++// turns into a LEFT_UP, so the tap that was already in progress completes and
++// selects whatever is under the finger - the same order a desktop right click
++// happens in - and no stray release arrives when the finger lifts.
++void GLCanvas3D::on_long_press(wxLongPressEvent& evt)
++{
++    if (!evt.IsGestureStart())
++        return;
++
++    const wxPoint pos = evt.GetPosition();
++    const wxEventType types[] = { wxEVT_RIGHT_DOWN, wxEVT_RIGHT_UP };
++    for (const wxEventType type : types) {
++        wxMouseEvent synth(type);
++        synth.SetPosition(pos);
++        synth.SetEventObject(m_canvas);
++        synth.SetId(m_canvas->GetId());
++        synth.SetRightDown(type == wxEVT_RIGHT_DOWN);
++        on_mouse(synth);
++    }
++}
++
+ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
+ {
+ #if defined(__APPLE__) && !TARGET_OS_OSX

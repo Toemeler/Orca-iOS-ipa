@@ -4201,3 +4201,99 @@ other, that is the answer in one round.
 * **Checked and clear:** `Notebook.hpp`'s three `TARGET_OS_OSX` guards all wrap
   code inside method bodies, not member declarations, so they cannot shift a
   layout. No second hazard of that kind in the tree.
+
+# SESSION 2026-08-10 (night): touch and Pencil, and the number keyboard
+
+Run 114 was confirmed on the device: the viewport freeze is fixed, the launch
+crash is gone, and MakerWorld's "Open in Bambu Studio" works from both a cold
+start and a running app.
+
+## ▲ `EnableTouchEvents` was a stub, exactly like `SetFont`
+
+`include/wx/osx/iphone/private.h`:
+
+```cpp
+bool EnableTouchEvents(int WXUNUSED(eventsMask)) { return false; }
+```
+
+One line, returns false. Every `wxEVT_GESTURE_*` handler in every application
+built against this port has therefore been dead code.
+
+OrcaSlicer is not missing touch support. `GLCanvas3D::bind_event_handlers()`
+already binds `wxEVT_GESTURE_PAN`, `wxEVT_GESTURE_ZOOM` and
+`wxEVT_GESTURE_ROTATE`, and `GLCanvas3D::on_gesture()` implements all three
+against the camera — pan moves the target, pinch multiplies the zoom latched at
+gesture start, rotation drives `rotate_on_sphere`. **None of it has ever run on
+an iPad.** This is the same shape as patch 0219: the application was right and
+the port's stub was silently eating it.
+
+`0226-iphone-implement-enabletouchevents.patch` implements it: pinch →
+`wxZoomGestureEvent`, rotation → `wxRotateGestureEvent`, a **two-finger**
+`UIPanGestureRecognizer` → `wxPanGestureEvent`, long press → `wxLongPressEvent`.
+Recognizers are tracked in an associated object so a second call replaces rather
+than stacks them, and the four selectors are added to the view's own class when
+missing — without that, UIKit's target dispatch aborts the process with
+"unrecognized selector", which is the trap the scroll and hover recognizers
+already document.
+
+### The flow, and why it holds together
+
+* **One finger** stays the pointer: orbit on empty space, drag a gizmo, tap to
+  select. Unchanged.
+* **Two fingers** pan, pinch and rotate. The pan recognizer sets
+  `minimumNumberOfTouches = 2` precisely so it cannot compete with the pointer.
+* **Long press** raises the object context menu — on a tablet there is no second
+  mouse button, and delete, duplicate, "fill bed with copies" and per-object
+  settings all live in that menu.
+* **Apple Pencil** needs nothing new: it arrives as an ordinary touch (so it is
+  the pointer, precisely), and hover already works through the
+  `UIHoverGestureRecognizer` added earlier, which is what drives Orca's toolbar
+  and gizmo highlighting.
+
+**The gesture and pointer paths cooperate through patch 0223.** The new
+recognizers keep `cancelsTouchesInView = YES`, so when a gesture recognises,
+UIKit cancels the in-flight touches and 0223 turns that into a clean `LEFT_UP`.
+An orbit in progress therefore ends properly instead of continuing underneath
+the pinch. The long press relies on the same thing in the other direction: the
+cancel completes the tap that was already under way, so the object is selected
+before its menu opens — the order a desktop right click happens in — and no
+stray release arrives when the finger lifts. A press that fails because the
+finger moved cancels nothing, so dragging still orbits.
+
+`0380-ios-touch-gestures-and-long-press-menu.patch` asks for the full mask on
+iOS (pan was bound but never requested) and maps `wxEVT_LONG_PRESS` into
+`on_mouse` as a synthesised right click, so every decision about which menu
+opens stays in the one place that already makes it.
+
+## The number keyboard
+
+`0381-ios-number-keyboard-for-numeric-fields.patch`.
+`UIKeyboardTypeNumbersAndPunctuation`, not the decimal pad, chosen for Orca
+specifically: it has a minus sign (positions and offsets), a decimal point and a
+comma (`coPoints` values like `0.4,0.6`), a percent sign (`coFloatOrPercent`),
+and **a return key** — the decimal pad has none, so it cannot be dismissed
+without building an input accessory view on every field.
+
+The helper walks down to the first `UITextField` rather than assuming the handle
+is one, because Orca's numeric fields are composites (`::TextInput`,
+`::SpinInput`, `::TempInput`), and it is wired into `TextCtrl::BUILD()` and
+`SpinCtrl::BUILD()` gated on the numeric `ConfigOptionType`s.
+
+## Two rules applied from the crash earlier today
+
+* `GLCanvas3D::on_long_press` is declared **unconditionally** in the header even
+  though only iOS binds it. `GLCanvas3D.hpp` has no `TargetConditionals.h`, so a
+  `TARGET_OS_*` test there would read as defined in some translation units and
+  zero in others — the exact divergence that cost an evening. A declaration
+  nobody calls costs nothing.
+* `Field.cpp` gained `#include <TargetConditionals.h>` because it now tests
+  `TARGET_OS_OSX`; without it the guard is true on macOS and the iOS-only call
+  fails to link.
+
+## Diagnostics: KEPT, on the user's instruction
+
+The plan was to strip the `orca-ios-canvas` counters, the boot breadcrumbs and
+the notebook/textinput tracing. The user asked to keep them while more bugs are
+being found, and they have earned it — `swap +N fail +0` is what confirmed the
+freeze fix, and the boot breadcrumbs turned a three-round launch-crash mystery
+into a five-minute answer. Strip them when the port stops changing, not before.

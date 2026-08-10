@@ -19,9 +19,15 @@ most Orca chrome is custom-drawn and portable) and lays out the stage-by-stage b
 |---|---|---|---|
 | 1. Slicing core on iOS | `ios-step1-core-cli.yml` | G-code sliced inside an iPad simulator | ✅ done |
 | 2. wxWidgets iPhone port | `ios-step2-wxwidgets.yml` | Screenshot of wx GLES canvas on iPad | ✅ done |
-| 3. Full GUI link-up | `ios-step3-gui.yml` | Orca launch screenshot | ▶️ in progress (linking) |
-| 4. Device IPA | `ios-device-ipa.yml` | unsigned `.ipa` release | ✅ pipeline proven |
-| 5. Feature parity | | webview/camera/export on device | planned |
+| 3. Full GUI link-up | `ios-step3-gui.yml` | Orca launch screenshot | ✅ done |
+| 4. Device IPA | `ios-step4-device-ipa.yml` | unsigned `.ipa` release | ✅ done |
+| 5. Feature parity | | webview/camera/export on device | ▶️ in progress |
+
+Stage 5 as it stands on a real iPad: slicing, sending a job over the LAN (it
+prints), the sidebar and its presets, project save and autosave, the Device page,
+HMS printer error codes and the printer's camera stream all work. The known-open
+items are listed at the end of [`HANDOFF.md`](HANDOFF.md) — read that file's last
+section before picking the work up.
 
 ## Printer connection (Bambu LAN mode)
 
@@ -48,11 +54,24 @@ temperatures, fans, light, job control, raw gcode/JSON, and upload-and-print a
 
 ## Sideloadable builds
 
-`ios-device-ipa.yml` builds against the **iphoneos** SDK and publishes an
-unsigned, sideloadable `.ipa` to [Releases](../../releases) — downloadable
-straight from the iPad. See [`docs/SIDELOADING.md`](docs/SIDELOADING.md).
+`ios-step4-device-ipa.yml` builds the full application against the **iphoneos**
+SDK and publishes an unsigned, sideloadable `.ipa` to [Releases](../../releases)
+— downloadable straight from the iPad. See
+[`docs/SIDELOADING.md`](docs/SIDELOADING.md).
 
-It runs against **stock, unpatched wxWidgets** on purpose: the app it ships only
+Every green run also publishes a SideStore/AltStore source and a flat manifest,
+so a build can be installed in two taps from a push notification:
+
+```
+https://github.com/Toemeler/Orca-iOS-ipa/releases/latest/download/source.json
+https://github.com/Toemeler/Orca-iOS-ipa/releases/latest/download/latest.json
+```
+
+[`docs/AUTOINSTALL.md`](docs/AUTOINSTALL.md) covers the Shortcut, the
+notification setup and why the second tap cannot be removed.
+
+The smaller `ios-device-ipa.yml` track is still there and still useful. It runs
+against **stock, unpatched wxWidgets** on purpose: the app it ships only
 needs widgets the iPhone port already provides, so this track stays green no
 matter what state the step-3 patch stack is in. That keeps a working install
 path on the iPad available at all times while the full GUI is still being linked.

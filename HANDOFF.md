@@ -3138,3 +3138,391 @@ it does not need to find anything, and the multicast entitlement is irrelevant
 because raising the prompt is the whole purpose. The browser is held in a static
 and stopped after six seconds — released immediately, it can cancel the request
 before iOS has drawn the alert. Logs `orca-ios-lan:` when it fires.
+
+---
+
+# SESSION 2026-08-08/10: the viewport freeze, the camera, saving, printer
+# errors, and the whole distribution chain
+
+**Everything in the repo is on `main` as of this section.** The working branch
+`claude/second-startup-crash-k0162l` was fast-forwarded into `main`; there is no
+divergence to reconcile. Four older branches (`basic-ipad-app-plan-pb0b4p`,
+`lan-backend-implementation-gxu2jr`, `merge-branches-to-main-78ua1g`,
+`step-4-ipa-parity-bkdym6`) belong to a **different root commit** — the history
+was restarted at `e2b55a7` — and are archaeology only. Checked: every path that
+exists on those branches also exists on `main`, so nothing is stranded there.
+Do not try to merge them; git reports no common ancestor.
+
+## Where the port actually stands
+
+**Confirmed working on the device** (the user drove each of these):
+
+* Slicing, and **sending a sliced model to the printer over the LAN, which
+  printed**.
+* The sidebar: printer name, filament name, process name, all five preset tabs,
+  the mode switch, correctly-sized checkboxes, distinct font sizes.
+* Project save, and autosave into the app's Documents directory.
+* The Device page, with the pre-configured A1 connected over the LAN.
+* HMS printer error codes reaching the UI (`print_error 05004003` observed).
+* **The printer's camera stream** (`BambuLanCamera: authenticated to
+  192.168.0.171:6000`).
+
+**Fixed but not yet confirmed on the device** — these are the first things to
+ask the user about:
+
+* The Prepare viewport freeze (wx patch 0223). See the next section; the
+  diagnosis is solid and the fix follows from it, but nobody has dragged a model
+  around on an iPad since it landed.
+* The 1600x1200 canvas (SDK metadata in the Info.plist, run 104). Unproven, and
+  frankly a guess — see "The canvas is still wrong".
+
+**Last builds:** runs 100-106 of `ios-step4-device-ipa` are all green. Run 106
+(`6928673`) is the newest IPA. Runs 96 and 99 failed to compile; both were
+trivial and are described under "Compile failures worth not repeating".
+
+## The viewport freeze: three wrong theories, then a measurement
+
+This cost six device round trips. **Read this before touching rendering.**
+
+Symptom, reported many times: a model loads, Prepare works for a few seconds,
+then the 3D view stops responding to the finger — while continuing to draw.
+
+**Wrong theory 1 — the render gate.** `_is_shown_on_screen()` was changed to
+walk parents and skip the TLW. This produced a **launch crash** (run 94:
+`Plater::priv` ctor → `update()` → `AssembleView::reload_scene()` → `render()` →
+`init()` → `on_change_color_mode` → SIGSEGV); the gate had been the only thing
+preventing rendering during Plater construction. A second attempt (a "latch",
+run 95) gave a black Preview and a frozen Prepare. **Both were reverted;
+`_is_shown_on_screen()` is upstream's `m_canvas->IsShownOnScreen()` and must
+stay that way.**
+
+**Wrong theory 2 — the framebuffer.** Kept anyway as 0374, because it is correct
+on its own terms: on iOS the default framebuffer is not 0, and code that
+restored 0 was unbinding GLKView's. It was not the freeze.
+
+**Wrong theory 3 — rendering driven from idle.** Kept as 0364 (render from the
+paint event). Also an improvement, also not the freeze.
+
+**My own diagnostic was lying to me**, which is the part worth internalising.
+The "no render in 5 s" report fired whenever the Plater was not the visible
+page — sitting on the Device tab produced `wxPanel[HIDDEN]`, which I read as the
+fault. 0373 made the report state its own verdict: `(plater selected: not
+rendering is WRONG)` versus `(another page selected: not rendering is fine)`.
+Every subsequent report said "fine". The render gate had never been stuck.
+
+**The measurement that settled it** (0375 added a mouse-event counter alongside
+the render counter, both printed every 5 s by `orca-ios-canvas:`):
+
+```
+render +123  mouse +125    <- working
+render +1    mouse +0      <- "frozen", finger still moving on the glass
+render +0    mouse +0
+```
+
+Zero mouse events. It was never a rendering bug — **the touches stopped
+arriving.** Two compounding gaps in the wx iPhone port:
+
+1. `touchesCancelled:withEvent:` was never registered on the view class, so
+   UIKit's cancellation was delivered to nothing. Even where the phase was
+   reachable, `UITouchPhaseCancelled` fell into `default:` and reported no
+   event — leaving wx holding a captured mouse and Orca holding
+   `m_mouse.dragging`.
+2. `wxUIView` — what *every* wx pane is made of — is a **UIScrollView
+   subclass**, so it ships with pan and pinch recognisers. A sustained drag
+   across the canvas eventually reads as a scroll to an ancestor, and the moment
+   it does, that ancestor cancels the touches it had been forwarding and keeps
+   every one afterwards. Permanently.
+
+`0223-iphone-cancelled-touches.patch` fixes both, in two files:
+
+* `src/osx/iphone/window.mm` — a real `case UITouchPhaseCancelled:` that maps to
+  LEFT/RIGHT/MIDDLE_UP by `gs_lastPointerButton` and clears it, plus the missing
+  `class_addMethod(c, @selector(touchesCancelled:withEvent:), …)`.
+* `src/osx/iphone/glcanvas.mm` — after `MacPostControlCreate`, walk the
+  superview chain and set `canCancelContentTouches = NO; delaysContentTouches =
+  NO;` on every UIScrollView ancestor.
+
+**The narrowing matters.** The first version did this in the generic pane
+constructor, which would have stopped every scrolled page in the application
+scrolling by drag. Doing it only for GL canvas ancestors keeps scrolling
+everywhere else. If a future change makes some other view stop responding to
+drags, this loop is the first suspect.
+
+**How to confirm:** load a model, drag continuously for 30+ seconds, then read
+`orca-ios-canvas:`. `mouse +N` staying non-zero throughout is the fix working.
+
+## wx patches added this session (step2, 0219-0223)
+
+**`0219-iphone-implement-setfont.patch` — the big one.**
+`wxWidgetIPhoneImpl::SetFont` had an **empty body**. Every `wxWindow::SetFont`
+call in the entire application did nothing; every control kept UIKit's 17 pt
+system font, while the layout code sized itself for the fonts it thought it had
+set. That single stub is the root of most of the "stretched / clipped /
+overlapping text" reports going back weeks. Implemented via
+`font.OSXGetCTFont()` → `CTFontCopyPostScriptName` → `[UIFont
+fontWithName:size:]`, routing UIButton through `titleLabel`. After it,
+Body_10/12/14 measure 66/79/92 px — distinct, and in HarmonyOS Sans SC.
+
+**`0220-iphone-text-field-height-floor.patch`** — `wxUITextFieldControl::
+GetBestSize()` floored height at 31 (33 after the `+2`), against Cocoa's ~24.
+Lowered to 22.
+
+**`0221-iphone-redraw-panes-on-resize.patch`** — `CreateUserPane` set
+`contentMode`/`clipsToBounds`/`clearsContextBeforeDrawing` on `sv`, the
+**parent**, and never on `v`, the pane being created. Added
+`v.contentMode = UIViewContentModeRedraw;`.
+
+**`0222-iphone-honour-bu-exactfit.patch`** — the condition was
+`if ((wBtn > sz.x) || (GetWindowStyle() & wxBU_EXACTFIT))`, i.e. `wxBU_EXACTFIT`
+*forced* the 72 pt minimum width it is supposed to waive. Now
+`if (sz.x < wBtn && !(GetWindowStyle() & wxBU_EXACTFIT))`.
+
+**`0223-iphone-cancelled-touches.patch`** — see above.
+
+## Orca patches added this session (step3, 0358-0375)
+
+Grouped by what they were for. Numbers are the filenames in `patches/step3/`.
+
+*Text and layout:* 0358 paint the preset combo text; 0359 register the bundled
+fonts through CoreText at launch (`orca_ios_register_bundled_fonts()` — iOS
+ignores `ATSApplicationFontsPath`, and `UIAppFonts` would not have found
+`orca-resources/fonts` either); 0360 log why the Process row is missing; 0361
+font metrics + TextInput paint logging; 0362 nozzle `wxGridSizer` →
+`wxBoxSizer` plus an Ellipsize guard; 0363 `PRINTER_PANEL_SIZE` 60 → 66 on iOS.
+
+*Rendering:* 0364 render from the paint event, canvas counters, SwitchButton
+minimum size; 0370 name the window that blocks rendering; 0373 make the stall
+report state its own verdict; 0374 restore the framebuffer that was actually
+bound; 0375 count touches reaching the canvas.
+
+*Saving:* 0365 stage 3MF saves outside the picked folder; 0366 autosave into
+Documents; 0369 put the autosave into recent projects.
+
+*Printer:* 0367 (three things: `BoostThreadWorker::clear_percent` via
+`CallAfter`, Ctrl+S straight to Documents, and enabling HMS on iOS); 0368
+surface printer error codes; 0371 build the camera view and drop its stub; 0372
+trace the notebook selection.
+
+Two of those deserve their own note.
+
+**0367 / the send dialog hang.** Sending to the printer hung at 75 %. The stack
+was `-[UIView setHidden:]` **off the main thread** —
+`BoostThreadWorker::clear_percent()` touched the progress dialog directly from
+its worker thread. On macOS AppKit tolerates this often enough to go unnoticed;
+UIKit does not. The fix marshals through `wxTheApp->CallAfter` on iOS only:
+
+```cpp
+void clear_percent() override {
+    if (m_progress) {
+#if defined(__APPLE__) && !TARGET_OS_OSX
+        auto pri = m_progress;
+        wxTheApp->CallAfter([pri] { pri->clear_percent(); });
+#else
+        m_progress->clear_percent();
+#endif
+    }
+}
+```
+
+**0367 / HMS.** Printer errors never displayed because HMS was gated on
+`installed_networking`, which is false on iOS and always will be — there is no
+network plugin to install. But the HMS description tables come from a plain
+public HTTPS endpoint (`query.php`) that needs no plugin at all:
+
+```cpp
+static bool should_disable_hms() {
+    if (!config) return true;
+    if (config->get_stealth_mode()) return true;
+#if defined(__APPLE__) && !TARGET_OS_OSX
+    return false;   // no plugin needed; query.php is public HTTPS
+#else
+    return !config->get_bool("installed_networking");
+#endif
+}
+```
+
+Confirmed: the tables for device type `039` (A1) **do** download, and error
+codes now reach the UI. There is also a bare-code fallback so an unknown code
+shows as a code rather than as nothing.
+
+## The camera, over the LAN
+
+Bambu's own client gets the stream URL through a System V shared-memory segment
+written by a companion process (`shmget` — which is why 0356 had to stub it out;
+SysV IPC raises **SIGSYS** in the iOS sandbox and no handler can decline it).
+There is no companion process here, so the protocol is spoken directly.
+
+**Protocol** (`orca-overlay/src/slic3r/Utils/BambuLanCamera.{hpp,cpp}`,
+`Slic3r::BambuLan::CameraClient`): TLS on TCP **6000**; the printer's
+certificate is self-signed and its handshake is old, so verification is off,
+`SSL_CTX_set_security_level(ctx, 0)` and cipher list `"ALL:@SECLEVEL=0"`. Then a
+fixed **80-byte** auth frame — `0x40`, `0x3000`, `0`, `0`, `username[32]`,
+`access_code[32]`, all little-endian — followed by a stream of **16-byte
+headers** (first 4 bytes = payload length) each introducing one complete JPEG.
+`MAX_FRAME_SIZE` 8 MB. Callbacks `OnFrameFn`/`OnErrorFn`, plus a frame counter.
+
+**The view** (`orca-overlay/src/slic3r/GUI/ios_camera_view.cpp`) implements
+`wxMediaCtrl2` for iOS: parses
+`bambu:///local/<ip>.?port=6000&user=bblp&passwd=<code>`, scales frames to fit,
+draws status or error text when there is no frame. Wired up in 0371.
+
+**Two failures on the way, both instructive:**
+
+1. Nothing connected, because `Load()` only parsed the URL. `MediaPlayCtrl`
+   posts *either* a URL *or* `"<play>"`, never both — so `Play()` was never
+   called. `Load()` now calls `Play()` itself.
+2. Then it was killed mid-handshake, four times in a row. `GetState()` withheld
+   `wxMEDIASTATE_PLAYING` until the first frame arrived; `MediaPlayCtrl` read
+   that as "the stream did not come up" and tore the client down before the TLS
+   handshake finished. `GetState()` now reports `PLAYING` whenever the client is
+   running.
+
+## Licensing, researched and settled
+
+OrcaSlicer is **AGPL-3.0**. Findings the user asked for, so they do not get
+re-derived:
+
+* A new native iOS UI on top of this codebase is a derivative work; AGPL applies
+  to the whole thing, and the network-use clause applies too.
+* Charging money is explicitly fine under the GPL family. **Distribution is the
+  problem**: Apple's App Store terms impose usage restrictions the (A)GPL
+  forbids adding, which is why VLC was pulled — the resolution there was
+  relicensing the engine to **LGPL** (not "LGPLv2.1+/MPL", as I said at one
+  point and had to correct).
+* App Store distribution is therefore **not** flatly impossible — it needs an
+  "additional permission" under GPLv3 §7 from *every* copyright holder, which
+  for a project the size of Orca is the real obstacle.
+* Free sideloading plus a paid App Store build is not a way around it: the App
+  Store copy is a distribution and must satisfy the licence on its own.
+
+## Distribution: releases, SideStore source, notifications
+
+Ported from `Toemeler/ipadprocad`, deliberately the same shape.
+
+**`ci/publish_release.sh`** — publishes on every green run: the IPA, a minimal
+IPA (executable + Info.plist, for install diagnosis), `source.json`
+(SideStore/AltStore source, last 10 builds) and `latest.json` (flat manifest for
+the Shortcut). Tag `orcaslicer-ipa-run<N>`, version `1.0.<N>`, bundle id
+`org.orca-ios.orcaslicer`, `minOSVersion 17.0`, last 15 releases kept. Still
+non-fatal on 403 — a release failure must not redden a build.
+
+Fixed entry points (GitHub redirects `latest` to the newest release):
+
+```
+https://github.com/Toemeler/Orca-iOS-ipa/releases/latest/download/source.json
+https://github.com/Toemeler/Orca-iOS-ipa/releases/latest/download/latest.json
+https://github.com/Toemeler/Orca-iOS-ipa/releases/latest/download/OrcaSlicer-iPad.ipa
+```
+
+**`ci/notify_build.sh`** — pushes a notification via Pushover and/or ntfy; every
+path exits 0. **Configured and confirmed working**: the repository secret
+`NTFY_TOPIC` is set to `orcaslicer-ipad-d663c75ff802` (28 characters — the test
+workflow prints the length, never the value), and the user received the
+notification on the iPad.
+
+**The notification's click URL is `shortcuts://run-shortcut?name=Install%20OrcaSlicer`
+and deliberately NOT the IPA URL.** An ntfy topic is public to anyone who knows
+its name, and ntfy's iOS client hands the click URL straight to
+`UIApplication.open` without inspecting it — a notification carrying a download
+URL would be a stranger's lever for feeding an arbitrary IPA into the install
+Shortcut. The Shortcut resolves `latest.json` itself, so a spoofed notification
+can at worst offer the genuine newest build. **Do not "simplify" this.**
+
+The iPad Shortcut is named exactly **`Install OrcaSlicer`** (the CI puts that
+name in the URL): fetch `latest.json` → take `ipaURL` → VPN on → wait 2 s → open
+`sidestore://install?url=…`. Two taps is the floor; SideStore has no install
+App Intent and `sidestore://install` always raises its Install/Cancel dialog.
+Full write-up in `docs/AUTOINSTALL.md`.
+
+**`.github/workflows/ntfy-test.yml`** — runs `notify_build.sh` on
+`ubuntu-latest` and nothing else; **11 seconds** versus a 16-minute device
+build. It fires on a push touching its own file (a new workflow is not
+dispatchable until it exists on the default branch — it does now, so
+`workflow_dispatch` works from `main`). Use it whenever the notification path or
+the secrets change.
+
+## The canvas is still wrong (1600x1200)
+
+`UIScreen.bounds` reports 1600x1200 where an iPad16,5 should be 1376x1032 at 2x.
+2752/1600 and 2064/1200 are both exactly **1.72**, so everything drawn is
+rescaled by a non-integer factor.
+
+**Ruled out by experiment, do not re-test:** `UIApplicationSceneManifest`
+(present — `orca-ios-variant: sceneManifest yes` — canvas unmoved); dropping
+`UIRequiresFullScreen`; both together. The default `OrcaSlicer-iPad.ipa` is the
+`both` variant; the untouched one is kept as `OrcaSlicer-iPad-baseline.ipa`.
+
+**Current untested candidate:** the bundle had **no SDK metadata at all**, which
+is one of the documented triggers for iPad compatibility mode. Run 104 added it
+to the Info.plist — `DTPlatformVersion 18.5`, `DTSDKName iphoneos18.5`,
+`DTSDKBuild 22F76`, `DTXcode 1604`, `DTXcodeBuild 16F6`, `DTCompiler
+com.apple.compilers.llvm.clang.1_0`, derived at build time from `xcrun
+--show-sdk-version` and `xcodebuild -version`. Verified present in the run-104
+IPA by range-fetching the zip's first entry. Whether it moves the canvas is
+unknown — read `orca-ios-display` from the next device log. 1376x1032 means
+solved; 1600x1200 means it did not.
+
+## Diagnostic logging that should come out
+
+Added to chase the freeze and never removed. Once the user confirms the viewport
+is fixed, strip: `orca-ios-canvas:` (0364/0373/0375), `orca-ios-textinput:`
+(0361), `orca-ios-notebook:` (0372). The `orca-ios-display`, `orca-ios-variant`,
+`orca-ios-font` and `orca-ios-lan` lines are cheap and fire once — keep them.
+
+## Compile failures worth not repeating
+
+* **Run 96:** `wxWindow *const canvas = … : nullptr` with `wxGLCanvas`
+  incomplete, and `std::string(w->GetClassInfo()->GetClassName())` — that
+  returns `const wxChar*`. Fix: include `<wx/glcanvas.h>`, build the chain as a
+  `wxString`.
+* **Run 99:** `'this' cannot be implicitly captured` — the counter timer's
+  lambda captured `[counters]` while the new code used `m_tabpanel`/`m_plater`.
+  Fix: `[this, counters]`.
+
+## Verifying patches before spending an hour of CI
+
+Unchanged, and it catches nearly everything:
+
+```bash
+cd scratchpad/full && git reset -q --hard 395e070a0e675fd4723f93967cefede730c482d9 && git clean -qfd
+for p in patches/step1/*.patch patches/step3/*.patch; do git apply "$p" || echo FAIL; done
+cd scratchpad/wx && git reset -q --hard HEAD && git clean -qfd
+for p in patches/step2/*.patch; do git apply "$p" || echo FAIL; done
+```
+
+To generate a patch: snapshot the base file **after the earlier patches in the
+series have been applied**, edit, then
+`diff -u --label a/<path> --label b/<path> base/<f> full/<path> > patch`. A
+`git diff` against pristine HEAD produces a patch containing every earlier
+change too — that mistake was made once this session with 0223 and cost a round.
+
+## Open, in the order I would take them
+
+1. **Confirm the freeze fix** (0223) on the device. Everything else is smaller.
+2. **Read `orca-ios-display`** from that same log for the canvas verdict.
+3. **Strip the diagnostic logging** once 1 is confirmed.
+4. **The Device page in portrait** — the Control panel lays out to ~1370 pt
+   against 1200 available. `StatusBasePanel` is already a `wxScrolledWindow`
+   with `wxHSCROLL | wxVSCROLL` and `SetScrollRate(25,25)`, so the scaffolding
+   exists; this may simply resolve once touches are delivered correctly, which
+   is a reason to do it after 1.
+5. **Bambu Studio-style error UI** — severity levels and illustrated recovery
+   steps. Feature-sized, and unblocked now that the `039` tables download.
+6. **Sweep for other SysV IPC** — `shmget`/`shmat`/`shmctl`/`ftok` are a class,
+   not an instance. Silent until reached, then SIGSYS.
+
+## Process notes for whoever is next
+
+* **Wait for the build to finish.** The user asked for this explicitly. Do not
+  hand back a build that is still running.
+* **Printer credentials are baked into this public repo by the user's explicit,
+  reaffirmed decision** (access code, IP and serial, patch 0348). It was flagged
+  and reaffirmed. Do not silently remove them; do not add more.
+* **The egress proxy in this environment blocks** `ntfy.sh`, `e.bambulab.com`,
+  `www.fsf.org`, `appfair.org`, `signal.org` and
+  `results-receiver.actions.githubusercontent.com`. A 403 from
+  `CONNECT tunnel failed` is the proxy, not the remote host — never work around
+  it by disabling TLS verification.
+* **`gh` is not available** in this environment; use the GitHub MCP tools. There
+  is no way to read repository secrets from here — a workflow that prints their
+  *length* is the only honest check.

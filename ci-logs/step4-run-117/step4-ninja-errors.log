@@ -1,0 +1,76 @@
+32343-[645/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_platform_stubs.cpp.o
+32344-[646/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_gl_compat.cpp.o
+32345-[647/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_webview_support.mm.o
+32346:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_webview_support.mm.o 
+32347-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_webview_support.mm.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_webview_support.mm.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_webview_support.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ios_webview_support.mm
+32348:../src/slic3r/GUI/ios_webview_support.mm:248:12: error: Objective-C declarations may only appear in global scope
+32349-  248 | @interface OrcaNumericAccessory : NSObject
+32350-      |            ^
+32351:../src/slic3r/GUI/ios_webview_support.mm:252:17: error: Objective-C declarations may only appear in global scope
+32352-  252 | @implementation OrcaNumericAccessory
+32353-      |                 ^
+32354-../src/slic3r/GUI/ios_webview_support.mm:271:11: warning: instance method '-notifyChanged' not found (return type defaults to 'id') [-Wobjc-method-access]
+32355-  271 |     [self notifyChanged];
+32356-      |           ^~~~~~~~~~~~~
+32357-../src/slic3r/GUI/ios_webview_support.mm:248:12: note: receiver is instance of class declared here
+32358-  248 | @interface OrcaNumericAccessory : NSObject
+32359-      |            ^
+32360-../src/slic3r/GUI/ios_webview_support.mm:274:61: warning: instance method '-notifyChanged' not found (return type defaults to 'id') [-Wobjc-method-access]
+32361-  274 | - (void)insertPercent { [self.field insertText:@"%"]; [self notifyChanged]; }
+32362-      |                                                             ^~~~~~~~~~~~~
+32363-../src/slic3r/GUI/ios_webview_support.mm:248:12: note: receiver is instance of class declared here
+32364-  248 | @interface OrcaNumericAccessory : NSObject
+32365-      |            ^
+32366-../src/slic3r/GUI/ios_webview_support.mm:275:61: warning: instance method '-notifyChanged' not found (return type defaults to 'id') [-Wobjc-method-access]
+32367-  275 | - (void)insertComma   { [self.field insertText:@","]; [self notifyChanged]; }
+32368-      |                                                             ^~~~~~~~~~~~~
+32369-../src/slic3r/GUI/ios_webview_support.mm:248:12: note: receiver is instance of class declared here
+32370-  248 | @interface OrcaNumericAccessory : NSObject
+32371-      |            ^
+32372:../src/slic3r/GUI/ios_webview_support.mm:302:65: error: member access into incomplete type 'wxWindow'
+32373-  302 |     UITextField *field = orca_ios_find_text_field((UIView *) win->GetHandle());
+32374-      |                                                                 ^
+32375-../../wx-prefix/include/wx-3.3/wx/utils.h:59:28: note: forward declaration of 'wxWindow'
+32376-   59 | class WXDLLIMPEXP_FWD_CORE wxWindow;
+32377-      |                            ^
+32378-3 warnings and 3 errors generated.
+32379-[648/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_camera_view.cpp.o
+32380-[649/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanMqtt.cpp.o
+32381-[650/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanFtps.cpp.o
+32382-[651/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanDiscovery.cpp.o
+32383-[652/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrintCommand.cpp.o
+32384-[653/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o
+32385-[654/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrinterAgent.cpp.o
+32386-[655/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevFilaBlackList.cpp.o
+32387-[656/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceTab/uiAmsHumidityPopup.cpp.o
+32388-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:6:2: warning: '/*' within block comment [-Wcomment]
+32389-    6 | //**********************************************************/
+32390-      |  ^
+32391-In file included from ../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+32392-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:6:2: warning: '/*' within block comment [-Wcomment]
+32393-    6 | //**********************************************************/
+32394-      |  ^
+32395-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:41:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+32396-   41 |     void Update(uiAmsHumidityInfo *info) { m_ams_id = info->ams_id; Update(info->humidity_display_idx, info->humidity_percent, info->left_dry_time, info->current_temperature); };
+32397-      |          ^
+32398-../../wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 1)
+32399-   74 |     virtual void Update() override;
+32400-      |                  ^
+32401-In file included from ../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+32402-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:48:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+32403-   48 |     void Update(int humidiy_level, int humidity_percent, int left_dry_time, float current_temperature);
+32404-      |          ^
+32405-../../wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 4)
+32406-   74 |     virtual void Update() override;
+32407-      |                  ^
+32408-4 warnings generated.
+32409-[657/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevManager.cpp.o
+32410-../src/slic3r/GUI/DeviceCore/DevManager.cpp:777:86: warning: loop variable 'pair' of type 'const std::pair<std::string, std::vector<std::string>> &' (aka 'const pair<basic_string<char>, vector<basic_string<char>>> &') binds to a temporary constructed from type 'reference' (aka 'pair<const std::string, std::vector<std::string, std::allocator<std::string>>> &') [-Wrange-loop-construct]
+32411-  777 |                         for (const std::pair<std::string, std::vector<std::string>> &pair : device_subseries) {
+32412-      |                                                                                      ^
+32413-../src/slic3r/GUI/DeviceCore/DevManager.cpp:777:30: note: use non-reference type 'std::pair<std::string, std::vector<std::string>>' (aka 'pair<basic_string<char>, vector<basic_string<char>>>') to make construction explicit or type 'const value_type &' (aka 'const pair<const std::string, std::vector<std::string, std::allocator<std::string>>> &') to prevent copying
+32414-  777 |                         for (const std::pair<std::string, std::vector<std::string>> &pair : device_subseries) {
+32415-      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+32416-1 warning generated.
+32417-[658/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/UndoRedo.cpp.o
+32418-ninja: build stopped: cannot make progress due to previous errors.

@@ -1,0 +1,7 @@
+=== FAILED targets ===
+GUI/ios_webview_support.mm
+
+=== undefined symbols (linker) ===
+
+total FAILED: 1
+undefined symbol count: 0

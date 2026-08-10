@@ -4147,3 +4147,57 @@ reason and I mis-diagnosed the second one *while holding the correct general
 theory*, because I reasoned about which objects would be stale instead of
 removing the possibility. When a cache can serve a wrong answer, throw the cache
 away; do not model it.
+
+## Where the launch crash stands (run 114 published, untested on device)
+
+**Run 114 is the first build carrying the fix that a device can actually
+install.** Runs 112 and 113 both failed to reach the iPad — 112 predated 0379,
+and 113 built it correctly and then lost the release to a 403. Three device
+round trips were spent on builds that could not have shown anything, which is
+the expensive lesson of this stretch.
+
+**Run 113 was genuinely cold** — `ci-logs/step4-run-113/ccache-restore.txt`
+reads `cache-matched-key:` empty, `files: 0`, and `[7/9]` took 80.4 min. Run
+114 changed no C++ at all (workflow, plist and publish script only), so its
+binary is assembled from run 113's freshly compiled objects. Testing 114 is the
+clean-build test, with no stale-object possibility anywhere in it.
+
+**If run 114 still crashes in `GUI_Run + 536`, the layout theory is dead.** The
+next step is not another theory: log the pointers. `(void*)this` and
+`(void*)app_config` at the end of `init_app_config()`, in `init_download_path()`
+and in `GUI_Run` before the dereference. If the constructor's `this` and
+`GUI_Run`'s `gui` differ, or `app_config` is non-null in one and null in the
+other, that is the answer in one round.
+
+### Three process holes closed
+
+* **A build could not say which build it was.** `CFBundleVersion` was hardcoded
+  `1` and `CFBundleShortVersionString` `1.0`, in every build ever made here, so
+  neither the log nor the `.ips` identified it. Both now carry the CI run
+  number. A crash report from run 112 arrived while run 113 was still
+  compiling and there was no way to tell from the report itself — that is what
+  this cost.
+* **A failed release looked exactly like a successful one.** `[9/9]` swallows
+  its own failure on purpose (correct — the IPA is a workflow artifact either
+  way), but the reason went to a job log, which cannot be downloaded through
+  this environment's proxy. It is now teed into
+  `ci-logs/step4-run-N/publish-release.log` on green runs. That is how run 113's
+  `HTTP 403: Resource not accessible by integration` was finally read.
+* **That 403 is intermittent and now retried.** Runs 109 and 113 hit it; 110,
+  111, 112 and 114 did not, with the same token, dispatcher and permissions.
+  `ci/publish_release.sh` now tries four times with backoff, deleting any
+  partial release between attempts.
+
+### Method notes worth keeping
+
+* **Ask for the `.ips`, not `orcacrash.txt`.** The app's own handler unwinds
+  badly — it printed `GUI_Run + 136` twice and stopped, three times running.
+  Apple's `.ips` gave a symbolicated frame (`AppConfig::get(...) const + 48`),
+  the exception type and the fault address (`KERN_INVALID_ADDRESS at 0x10`,
+  i.e. a null `this` plus 16). One `.ips` was worth more than four
+  `orcacrash.txt` files.
+* **Verify the release exists before saying a build is ready.** A green run is
+  not evidence. `curl .../releases/tags/orcaslicer-ipa-runN` is.
+* **Checked and clear:** `Notebook.hpp`'s three `TARGET_OS_OSX` guards all wrap
+  code inside method bodies, not member declarations, so they cannot shift a
+  layout. No second hazard of that kind in the tree.

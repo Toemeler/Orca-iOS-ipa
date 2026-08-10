@@ -1,0 +1,186 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -138,6 +138,16 @@
+ // per five seconds at the moment of the last freeze - one per second, which is
+ // the status tick, not a camera being dragged.
+ std::atomic<unsigned> orca_ios_canvas_mouse{0};
++// Frames handed to the window system, and frames the window system refused.
++//
++// The third way a viewport freezes, and the one that took longest to find: the
++// canvas draws every frame, hears every touch, and none of it is ever put on
++// the glass, because -presentRenderbuffer: had nothing bound to present. A
++// render count that keeps climbing says nothing about whether anything reached
++// the screen. This pair does, and it is the difference between "the app stopped
++// drawing" and "the app is drawing into the void".
++std::atomic<unsigned> orca_ios_canvas_swaps{0};
++std::atomic<unsigned> orca_ios_canvas_swap_failures{0};
+ #endif
+ 
+ #ifdef __WXGTK3__
+@@ -2278,7 +2288,13 @@
+     // On Wayland, eglSwapBuffers blocks when the canvas is hidden or
+     // occluded. Skip the swap to avoid stalling the render loop.
+     if (m_canvas->IsShownOnScreen()) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        ++orca_ios_canvas_swaps;
++        if (!m_canvas->SwapBuffers())
++            ++orca_ios_canvas_swap_failures;
++#else
+         m_canvas->SwapBuffers();
++#endif
+         m_render_stats.increment_fps_counter();
+     }
+ }
+@@ -6455,14 +6471,54 @@
+ // Asking GL what is bound and putting that back needs no remembered state and
+ // is correct on every platform, so it is not conditional on the failure path
+ // either - the incomplete-framebuffer case took the same broken restore.
++//
++// The renderbuffer binding has to be restored for the same reason, and it is
++// the one that actually froze the viewport. These passes generate a depth
++// renderbuffer, bind it, and delete it while it is still bound - and deleting a
++// bound renderbuffer reverts the binding to zero, per the spec. On iOS the
++// window system framebuffer is a GLKView drawable whose colour renderbuffer is
++// what -presentRenderbuffer: puts on the screen, and it puts up whatever is
++// bound at that moment. After the first plate thumbnail that is nothing at all,
++// so every later frame renders correctly and is then thrown away: Prepare holds
++// its last presented image for ever and Preview, which never presented one, is
++// black. That is the freeze the user sees a few seconds after importing a part,
++// because the few seconds are the first autosave.
+ struct OrcaIosFramebufferGuard
+ {
+     GLint prev = 0;
+-    OrcaIosFramebufferGuard() { ::glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev); }
+-    ~OrcaIosFramebufferGuard() { ::glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(prev)); }
++    GLint prev_renderbuffer = 0;
++    OrcaIosFramebufferGuard()
++    {
++        ::glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev);
++        ::glGetIntegerv(GL_RENDERBUFFER_BINDING, &prev_renderbuffer);
++    }
++    ~OrcaIosFramebufferGuard()
++    {
++        ::glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(prev));
++        ::glBindRenderbuffer(GL_RENDERBUFFER, static_cast<GLuint>(prev_renderbuffer));
++    }
+ };
+ #endif
+ 
++// The internal format for a plain (non-multisampled) depth renderbuffer.
++//
++// glRenderbufferStorage takes a *sized* internal format and OpenGL ES has no
++// unsized depth format at all, so GL_DEPTH_COMPONENT is simply not a legal
++// argument there: the call returns GL_INVALID_ENUM, allocates nothing, and the
++// framebuffer it was meant to complete comes back INCOMPLETE_ATTACHMENT. On the
++// device that is the "render_thumbnail prepare: GL_FRAMEBUFFER not complete"
++// line in the log, on the one thumbnail that takes this branch - the picking
++// one, which disables multisampling - so every 3mf this port has written so far
++// carries a blank pick thumbnail. GL_DEPTH_COMPONENT24 is a required
++// renderbuffer-renderable format in ES 3.0 and matches what the multisampled
++// branch alongside each of these calls already asks for.
++static constexpr GLenum ORCA_DEPTH_RENDERBUFFER_FORMAT =
++#if SLIC3R_OPENGL_ES
++    GL_DEPTH_COMPONENT24;
++#else
++    GL_DEPTH_COMPONENT;
++#endif
++
+ void GLCanvas3D::render_thumbnail_framebuffer(ThumbnailData& thumbnail_data, unsigned int w, unsigned int h, const ThumbnailsParams& thumbnail_params,
+     PartPlateList& partplate_list, ModelObjectPtrs& model_objects, const GLVolumeCollection& volumes, std::vector<ColorRGBA>& extruder_colors,
+                                               GLShaderProgram *                  shader,
+@@ -6518,7 +6574,7 @@
+     if (multisample)
+         glsafe(::glRenderbufferStorageMultisample(GL_RENDERBUFFER, num_samples, GL_DEPTH_COMPONENT24, w, h));
+     else
+-        glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h));
++        glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, ORCA_DEPTH_RENDERBUFFER_FORMAT, w, h));
+ 
+     glsafe(::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_depth));
+ 
+@@ -6634,7 +6690,7 @@
+     if (multisample)
+         glsafe(::glRenderbufferStorageMultisample(GL_RENDERBUFFER, num_samples, GL_DEPTH_COMPONENT24, w, h));
+     else
+-        glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h));
++        glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, ORCA_DEPTH_RENDERBUFFER_FORMAT, w, h));
+ 
+     glsafe(::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_depth));
+ 
+@@ -7443,6 +7499,16 @@
+ 
+ void GLCanvas3D::_rectangular_selection_picking_pass()
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Same offscreen shape as the thumbnails below, and the same need to hand
++    // back the bindings it found: this one generates a depth renderbuffer and
++    // deletes it while bound, which on iOS costs the drawable its place as the
++    // renderbuffer -presentRenderbuffer: puts on the screen. It runs mid-frame
++    // rather than from a save, so without this the very frame that performed a
++    // rectangle selection would be the last one the viewport ever showed.
++    const OrcaIosFramebufferGuard orca_ios_fb_guard;
++#endif
++
+     m_gizmos.set_hover_id(-1);
+ 
+     std::set<int> idxs;
+@@ -7476,14 +7542,14 @@
+                 glsafe(::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_tex, 0));
+                 glsafe(::glGenRenderbuffers(1, &render_depth));
+                 glsafe(::glBindRenderbuffer(GL_RENDERBUFFER, render_depth));
+-                glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height));
++                glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, ORCA_DEPTH_RENDERBUFFER_FORMAT, width, height));
+                 glsafe(::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_depth));
+             }
+             else {
+                 glsafe(::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_tex, 0));
+                 glsafe(::glGenRenderbuffers(1, &render_depth));
+                 glsafe(::glBindRenderbuffer(GL_RENDERBUFFER, render_depth));
+-                glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height));
++                glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, ORCA_DEPTH_RENDERBUFFER_FORMAT, width, height));
+                 glsafe(::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_depth));
+             }
+             const GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -12,6 +12,8 @@
+ extern std::atomic<unsigned> orca_ios_canvas_paints;
+ extern std::atomic<unsigned> orca_ios_canvas_renders;
+ extern std::atomic<unsigned> orca_ios_canvas_mouse;
++extern std::atomic<unsigned> orca_ios_canvas_swaps;
++extern std::atomic<unsigned> orca_ios_canvas_swap_failures;
+ } }
+ #endif
+ 
+@@ -1138,10 +1140,18 @@
+         wxTimer *counters = new wxTimer(this);
+         this->Bind(wxEVT_TIMER, [this, counters](wxTimerEvent &) {
+             static unsigned last_i = 0, last_p = 0, last_r = 0, last_m = 0;
++            static unsigned last_s = 0, last_sf = 0;
+             const unsigned i = orca_ios_canvas_idles.load();
+             const unsigned p = orca_ios_canvas_paints.load();
+             const unsigned r = orca_ios_canvas_renders.load();
+             const unsigned mo = orca_ios_canvas_mouse.load();
++            // Frames presented, and frames the window system would not take.
++            // "render +N" only says the canvas drew; it says nothing about
++            // whether any of it reached the screen, and a viewport that draws
++            // into a framebuffer nobody presents looks exactly like one that
++            // stopped drawing. "swap +N fail +N" separates them outright.
++            const unsigned sw = orca_ios_canvas_swaps.load();
++            const unsigned sf = orca_ios_canvas_swap_failures.load();
+             // The selection belongs on every line, not only on the ones with no
+             // renders at all. Reading "render +5" without knowing which page was
+             // up left the last freeze ambiguous, and guessing at that ambiguity
+@@ -1153,9 +1163,12 @@
+             BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: last 5s idle +" << (i - last_i)
+                 << " paint +" << (p - last_p) << " render +" << (r - last_r)
+                 << " mouse +" << (mo - last_m)
+-                << " (totals " << i << "/" << p << "/" << r << "/" << mo << ")"
++                << " swap +" << (sw - last_s) << " fail +" << (sf - last_sf)
++                << " (totals " << i << "/" << p << "/" << r << "/" << mo
++                << "/" << sw << "/" << sf << ")"
+                 << "; sel " << cur_sel << (plater_up ? " (plater)" : " (other page)");
+             last_m = mo;
++            last_s = sw; last_sf = sf;
+ 
+             // When idle keeps arriving and render does not, the gate is
+             // _is_shown_on_screen(), which is wxWindow::IsShownOnScreen() - a

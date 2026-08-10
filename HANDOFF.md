@@ -3526,3 +3526,183 @@ change too — that mistake was made once this session with 0223 and cost a roun
 * **`gh` is not available** in this environment; use the GitHub MCP tools. There
   is no way to read repository secrets from here — a workflow that prints their
   *length* is the only honest check.
+
+# SESSION 2026-08-10 (later): the viewport freeze, from a device log that
+# contradicts the previous session's answer
+
+## Headline
+
+The Prepare freeze is **not** a touch-delivery bug. It is
+`-presentRenderbuffer:` being handed nothing to present, so the canvas renders
+every frame and none of them ever reach the glass. Fixed by wx patch **0224**
+and Orca patch **0376**. The previous section's conclusion — that 0223
+(cancelled touches) was the fix — is not what the device shows, and the reason
+is written out below, because reading the counter line wrongly is what has cost
+this bug most of its round trips.
+
+## The log, read line by line
+
+User's report: *"I can import a part then move a bit and rotate and suddenly in
+prepare the viewport freezes and the preview viewport is just black."* The log
+is from run 106's IPA, so 0223, 0374 and 0375 were all in it.
+
+```
+13:35:40.945  take_snapshot  Import Objects: 1204 TOKA Base.stl
+13:35:44.797  _save_model_to_file  (autosave)
+13:35:44.800  render_thumbnail prepare: w 512, h 512, render_fbo 2   <- plate thumb
+13:35:44.818  render_thumbnail prepare: GL_FRAMEBUFFER not complete  <- pick thumb
+13:35:44.835  orca-ios-autosave: .../Autosave/1204 TOKA Base.3mf ok
+13:35:44.837  canvas: render +403 mouse +405     <- healthy
+13:35:44.937  select_plate_by_hover_id           <- user still clicking
+13:35:45.962  select_plate_by_hover_id           <- and again
+13:35:49.138  tabbtn: pressed ' Preview'         <- gives up, goes to Preview
+13:35:49.818  canvas: render +284 mouse +262     <- STILL rendering, STILL hearing touches
+13:35:50.105  tabbtn: pressed ' Device'
+13:35:52.046  tabbtn: pressed ' Prepare'
+13:35:52.780  tabbtn: pressed ' Preview'
+13:35:54.276  tabbtn: pressed ' Prepare'
+13:35:54.818  canvas: render +116 mouse +0
+```
+
+**`mouse +262` in the window that spans the freeze is the whole argument.**
+Touches were being delivered normally while the viewport was already dead, and
+two `select_plate_by_hover_id` lines *after* the autosave prove the application
+was acting on them. The `mouse +0` further down is a user who has stopped
+dragging a picture that will not move — not a canvas that stopped hearing. Do
+not read a zero mouse count as the cause again without checking whether anything
+was being touched during that window.
+
+The freeze starts inside the five seconds containing the **first autosave**,
+which is the "suddenly, a few seconds after importing" in every report of this
+going back weeks. The backup timer is what makes it feel spontaneous.
+
+## Root cause 1 (the freeze): deleting a bound renderbuffer unbinds the drawable
+
+On iOS a wx GL canvas is a `GLKView`. Its colour renderbuffer is what
+`-[EAGLContext presentRenderbuffer:]` puts on the screen, and that call presents
+**whatever is bound to `GL_RENDERBUFFER` at that instant** — nothing else
+identifies the target.
+
+`GLCanvas3D::render_thumbnail_framebuffer` (and `_ext`, and
+`_rectangular_selection_picking_pass`) do this:
+
+```cpp
+glGenRenderbuffers(1, &render_depth);
+glBindRenderbuffer(GL_RENDERBUFFER, render_depth);   // drawable's colour buffer displaced
+...
+glDeleteRenderbuffers(1, &render_depth);             // binding reverts to 0, per spec
+```
+
+After the first plate thumbnail, `GL_RENDERBUFFER_BINDING` is 0 for the rest of
+the process. `wxGLCanvas::SwapBuffers()` still runs, `presentRenderbuffer:`
+still returns — and does nothing. Every later frame is rendered correctly and
+thrown away.
+
+That is both symptoms at once, exactly as reported:
+
+* **Prepare** keeps showing the last frame it managed to present. Frozen.
+* **Preview**, which had never presented a frame before the thumbnail ran, has
+  never had anything in its layer. Black.
+
+`0374` guarded the *framebuffer* binding around these passes, which was right
+and not sufficient — the renderbuffer is the one that mattered.
+
+## Root cause 2 (latent, same symptoms): one drawable for two canvases
+
+`wxGLContext::SetCurrent` bound the canvas's drawable only when it had no size
+yet (`drawableWidth == 0`), so after the first frame it never rebound. A
+`wxGLContext` is *shared* between canvases — Prepare and Preview are two GLKViews
+on one `EAGLContext` — and the bound framebuffer is state of the context, not of
+the canvas. So whichever canvas drew last owned the binding, and the other one
+drew into it. `orca_ios_note_default_framebuffer()` then sampled that stale name
+at the top of `render()` and every `glBindFramebuffer(…, 0)` in the frame
+compounded it.
+
+This produces the identical pair — Prepare frozen, Preview black — and would
+have surfaced the moment root cause 1 was fixed. Both are fixed here.
+
+## Root cause 3 (visible in the log): `GL_DEPTH_COMPONENT` is not an ES format
+
+```
+render_thumbnail prepare: GL_FRAMEBUFFER not complete
+```
+
+`glRenderbufferStorage` takes a **sized** internal format and ES has no unsized
+depth format, so `GL_DEPTH_COMPONENT` is `GL_INVALID_ENUM` there: no storage,
+`INCOMPLETE_ATTACHMENT`. Only the picking thumbnail hits it, because that is the
+one branch that disables multisampling — the multisampled branch two lines above
+already asks for `GL_DEPTH_COMPONENT24`. Every 3mf this port has written so far
+carries a blank pick thumbnail.
+
+## The patches
+
+**`patches/step2/0224-iphone-present-this-canvas-drawable.patch`** —
+`src/osx/iphone/glcanvas.mm`:
+
+* `-swapBuffers` does `[self bindDrawable]` before `presentRenderbuffer:`, so
+  presentation stops depending on ambient GL state. This is what GLKit's own
+  `-display` does; an application that draws outside `-drawRect:` has to do it
+  itself.
+* `-swapBuffers` returns the `BOOL` from `presentRenderbuffer:`, and
+  `wxGLCanvas::SwapBuffers()` returns it instead of a hardcoded `true`.
+* `wxGLContext::SetCurrent` binds the drawable **every** time, not only the
+  first — root cause 2.
+
+**`patches/step3/0376-ios-offscreen-passes-must-give-the-drawable-back.patch`** —
+`GLCanvas3D.cpp`, `MainFrame.cpp`:
+
+* `OrcaIosFramebufferGuard` now saves and restores `GL_RENDERBUFFER_BINDING`
+  alongside the framebuffer, and is applied to
+  `_rectangular_selection_picking_pass` as well as the two thumbnail paths.
+* `ORCA_DEPTH_RENDERBUFFER_FORMAT` — `GL_DEPTH_COMPONENT24` under
+  `SLIC3R_OPENGL_ES`, `GL_DEPTH_COMPONENT` elsewhere — at all four
+  `glRenderbufferStorage` sites.
+* Two counters, `orca_ios_canvas_swaps` and `orca_ios_canvas_swap_failures`, on
+  the existing five-second line.
+
+## How to confirm on the device, and what each reading means
+
+The counter line now reads:
+
+```
+orca-ios-canvas: last 5s idle +N paint +N render +N mouse +N swap +N fail +N; sel S (plater)
+```
+
+* `render +N` with `swap +N` and `fail +0` — frames are reaching the screen.
+  A viewport that still looks frozen with this reading is a camera or a scene
+  problem, not a presentation one.
+* `render +N swap +N fail +N` — presentation is being refused. Back here.
+* `render +0` — nothing is drawing; that is the render gate, and the chain dump
+  below the counter line names the window responsible.
+
+Repro: import an STL, drag the view, wait for the first autosave (~4 s after the
+import; look for `orca-ios-autosave: … ok`), keep dragging. Then switch to
+Preview and back.
+
+## Corrections to the section above this one
+
+* **"It was never a rendering bug — the touches stopped arriving."** Not in this
+  log. Touches arrive throughout the freeze; `mouse +262` covers the moment it
+  starts. 0223 is kept — cancelled touches genuinely were unhandled, and the
+  scroll-view ancestors genuinely can steal a drag — but it is not the fix for
+  the freeze the user keeps reporting.
+* **"Wrong theory 2 — the framebuffer. It was not the freeze."** It was the
+  freeze; 0374 simply guarded the wrong binding of the two. Its own comment
+  predicted the exact symptom pair.
+
+## Open, in the order I would take them
+
+1. **Confirm 0224 + 0376 on the device** — import, drag past the first autosave,
+   then Preview and back. Read `swap`/`fail` on the counter line.
+2. **Read `orca-ios-display`** from that same log for the canvas verdict; run
+   106 still reported 1600x1200, so the SDK-metadata guess has not landed yet.
+3. **Strip the diagnostic logging** once 1 is confirmed — now including the
+   `swap`/`fail` counters.
+4. **The Device page in portrait** — the Control panel lays out to ~1370 pt
+   against 1200 available. `StatusBasePanel` is already a `wxScrolledWindow`
+   with `wxHSCROLL | wxVSCROLL` and `SetScrollRate(25,25)`, so the scaffolding
+   exists.
+5. **Bambu Studio-style error UI** — severity levels and illustrated recovery
+   steps. Feature-sized, and unblocked now that the `039` tables download.
+6. **Sweep for other SysV IPC** — `shmget`/`shmat`/`shmctl`/`ftok` are a class,
+   not an instance. Silent until reached, then SIGSYS.

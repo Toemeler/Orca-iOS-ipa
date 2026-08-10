@@ -1,0 +1,122 @@
+--- a/src/osx/iphone/glcanvas.mm
++++ b/src/osx/iphone/glcanvas.mm
+@@ -41,6 +41,11 @@
+ 
+ @property (retain) GLKViewController *viewController;
+ 
++// Declared here and not only defined below, so that every caller in this file
++// sees the return type rather than inferring it from the first message send
++// that happens to reach the method.
++- (BOOL) swapBuffers;
++
+ @end
+ 
+ @implementation wxUICustomOpenGLView
+@@ -55,8 +60,26 @@
+     }
+ }
+ 
+-- (void) swapBuffers {
+-    [self.context presentRenderbuffer:GL_RENDERBUFFER_OES];
++- (BOOL) swapBuffers {
++    // -presentRenderbuffer: presents whatever is bound to GL_RENDERBUFFER right
++    // now, and by the end of a frame that is very often not this view's colour
++    // buffer any more. Any pass that generates a renderbuffer, renders through
++    // it and deletes it - offscreen thumbnails, picking targets, anything with
++    // its own depth attachment - leaves the binding at zero, because deleting a
++    // bound renderbuffer reverts the binding to zero. The present after that
++    // silently does nothing at all: the view keeps showing the last frame it
++    // did manage to present, for ever, while the application carries on
++    // rendering into a framebuffer that is never shown. That is a viewport
++    // frozen for good, and a second canvas which has never presented anything
++    // is simply black - which is exactly the pair of symptoms OrcaSlicer showed
++    // the moment its first autosave rendered a plate thumbnail.
++    //
++    // GLKit's own -display binds the drawable immediately before presenting for
++    // this very reason. Drawing from outside -drawRect: - which is what a wx
++    // application does, because it draws when wx tells it to and not when GLKit
++    // asks - has to do the same thing for itself.
++    [self bindDrawable];
++    return [self.context presentRenderbuffer:GL_RENDERBUFFER_OES];
+ }
+ 
+ @end
+@@ -139,30 +162,39 @@
+     // early" and "wrong geometry" stops being a guess. wxLogTrace would be
+     // swallowed here - the app's own log sink is not up yet at this point, and
+     // NSLog is what the simulator console captures.
++    //
++    // Bind unconditionally, and not only while the drawable still reports no
++    // size. A wxGLContext is meant to be shared between canvases, and "which
++    // framebuffer is bound" is state of the context, not state of the canvas:
++    // binding once and never again leaves bound whatever the last canvas to
++    // draw put there. As soon as a second canvas goes live on the same context
++    // the two draw into each other's framebuffers and present each other's
++    // renderbuffers - in OrcaSlicer, the Prepare viewport stuck on its last
++    // good frame while Preview stays black, with the render loop running at
++    // full speed the whole time. -bindDrawable is what GLKit itself does before
++    // every frame it draws, so one call per SetCurrent is the ordinary cost of
++    // a frame rather than an extra one.
++    [v bindDrawable];
++
+     if ( v.drawableWidth == 0 || v.drawableHeight == 0 )
+     {
+-        [v bindDrawable];
+-
+-        if ( v.drawableWidth == 0 || v.drawableHeight == 0 )
++        static bool s_reported = false;
++        if ( !s_reported )
+         {
+-            static bool s_reported = false;
+-            if ( !s_reported )
+-            {
+-                s_reported = true;
+-                CGRect b = v.bounds;
+-                CGRect f = v.frame;
+-                NSLog(@"wxGLCanvas: drawable still 0 after bindDrawable. "
+-                       "bounds=%.1fx%.1f frame=(%.1f,%.1f %.1fx%.1f) scale=%.2f "
+-                       "window=%@ superview=%@ hidden=%d layer=%@ layerBounds=%.1fx%.1f",
+-                      b.size.width, b.size.height,
+-                      f.origin.x, f.origin.y, f.size.width, f.size.height,
+-                      v.contentScaleFactor,
+-                      v.window ? @"yes" : @"nil",
+-                      v.superview ? NSStringFromClass([v.superview class]) : @"nil",
+-                      (int) v.hidden,
+-                      NSStringFromClass([v.layer class]),
+-                      v.layer.bounds.size.width, v.layer.bounds.size.height);
+-            }
++            s_reported = true;
++            CGRect b = v.bounds;
++            CGRect f = v.frame;
++            NSLog(@"wxGLCanvas: drawable still 0 after bindDrawable. "
++                   "bounds=%.1fx%.1f frame=(%.1f,%.1f %.1fx%.1f) scale=%.2f "
++                   "window=%@ superview=%@ hidden=%d layer=%@ layerBounds=%.1fx%.1f",
++                  b.size.width, b.size.height,
++                  f.origin.x, f.origin.y, f.size.width, f.size.height,
++                  v.contentScaleFactor,
++                  v.window ? @"yes" : @"nil",
++                  v.superview ? NSStringFromClass([v.superview class]) : @"nil",
++                  (int) v.hidden,
++                  NSStringFromClass([v.layer class]),
++                  v.layer.bounds.size.width, v.layer.bounds.size.height);
+         }
+     }
+ 
+@@ -243,9 +275,14 @@
+     wxCHECK_MSG(context, false, wxT("should have current context"));
+ 
+     wxUICustomOpenGLView* v = (wxUICustomOpenGLView*) GetPeer()->GetWXWidget();
+-    if ( v != nil )
+-        [v swapBuffers];
+-    return true;
++    if ( v == nil )
++        return false;
++
++    // Report what the presentation actually did. Returning true unconditionally
++    // hid the one failure that matters: a frame that rendered and was never put
++    // on the glass is indistinguishable, from the application's side, from a
++    // frame that was never rendered at all.
++    return [v swapBuffers] ? true : false;
+ }
+ 
+ 

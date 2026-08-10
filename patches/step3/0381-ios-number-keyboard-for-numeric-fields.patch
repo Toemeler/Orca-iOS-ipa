@@ -1,6 +1,6 @@
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -13,6 +13,10 @@
+@@ -13,14 +13,99 @@
  
  #import <WebKit/WebKit.h>
  #import <UIKit/UIKit.h>
@@ -11,9 +11,13 @@
  #import <CoreText/CoreText.h>
  
  #include "libslic3r/libslic3r.h"
-@@ -221,5 +225,118 @@
-     });
- }
+ #include "libslic3r/Utils.hpp"
+ #include "slic3r/Utils/MacDarkMode.hpp"
+ #include <wx/osx/core/cfstring.h>
++// GetHandle() below needs the definition, not the forward declaration that
++// wx/utils.h supplies.
++#include <wx/window.h>
+ #include <boost/log/trivial.hpp>
  
 +// Give a numeric field the small number keypad.
 +//
@@ -37,6 +41,15 @@
 +// editing-changed notification fires and wxTextCtrl sees the new value.
 +@interface OrcaNumericAccessory : NSObject
 +@property (nonatomic, assign) UITextField *field;
++// Declared, not just defined below: a selector used before its definition in
++// the @implementation is only a warning ("method not found, return type
++// defaults to id"), and a warning is not what you want standing between a
++// toolbar button and a text field.
++- (void)notifyChanged;
++- (void)toggleSign;
++- (void)insertPercent;
++- (void)insertComma;
++- (void)done;
 +@end
 +
 +@implementation OrcaNumericAccessory
@@ -83,6 +96,14 @@
 +    return nil;
 +}
 +
++
+ namespace Slic3r {
+ namespace GUI {
+ 
+@@ -221,5 +306,50 @@
+     });
+ }
+ 
 +void orca_ios_set_numeric_keyboard(wxWindow *win)
 +{
 +    if (win == nullptr)

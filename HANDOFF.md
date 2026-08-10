@@ -4310,3 +4310,20 @@ the notebook/textinput tracing. The user asked to keep them while more bugs are
 being found, and they have earned it — `swap +N fail +0` is what confirmed the
 freeze fix, and the boot breadcrumbs turned a three-round launch-crash mystery
 into a five-minute answer. Strip them when the port stops changing, not before.
+
+## Compile failures worth not repeating (run 117)
+
+`ios_webview_support.mm`, both from the number-keypad accessory:
+
+* **`error: Objective-C declarations may only appear in global scope`** — the
+  `@interface`/`@implementation` were written inside
+  `namespace Slic3r { namespace GUI {`, which is where everything else in that
+  file lives. Objective-C class declarations cannot go in a C++ namespace. They
+  now sit above it; only the exported C++ function stays inside.
+* **`error: member access into incomplete type 'wxWindow'`** — the file reaches
+  `wxWindow` only through `wx/utils.h`, which forward-declares it, so
+  `win->GetHandle()` did not compile. Added `#include <wx/window.h>`.
+
+Both are ordinary and both cost a **50-minute build**, because the failure was
+in one late translation unit. Before adding Objective-C to a file that is mostly
+C++, check which side of the namespace it lands on.

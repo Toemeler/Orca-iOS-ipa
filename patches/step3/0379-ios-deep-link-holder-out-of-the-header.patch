@@ -1,0 +1,81 @@
+--- a/src/slic3r/GUI/GUI_App.hpp
++++ b/src/slic3r/GUI/GUI_App.hpp
+@@ -3,12 +3,6 @@
+ 
+ #include <memory>
+ #include <string>
+-#ifdef __APPLE__
+-// TARGET_OS_OSX is used below to tell the iOS build from the macOS one, and an
+-// undefined macro in an #if is silently zero - which would compile the iOS-only
+-// members into the desktop build.
+-#include <TargetConditionals.h>
+-#endif
+ #include "ImGuiWrapper.hpp"
+ #include "ConfigWizard.hpp"
+ #include "OpenGLManager.hpp"
+@@ -243,14 +237,6 @@
+ private:
+     bool            m_initialized { false };
+     bool            m_post_initialized { false };
+-#if defined(__APPLE__) && !TARGET_OS_OSX
+-    // A deep link that arrived before the Plater existed. On iOS the usual way
+-    // in is a cold start - the user taps "Open in Bambu Studio" on MakerWorld
+-    // in Safari and the app is launched by the URL - so the link is nearly
+-    // always ahead of the window it needs. Held here and replayed from
+-    // post_init().
+-    wxString        m_ios_pending_open_url;
+-#endif
+     bool            m_app_conf_exists{ false };
+     EAppMode        m_app_mode{ EAppMode::Editor };
+     bool            m_is_recreating_gui{ false };
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -219,6 +219,26 @@
+ #define ORCA_IOS_BOOT(what) do {} while (0)
+ #endif
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// A deep link that arrived before the Plater existed. On iOS the usual way in
++// is a cold start - the user taps "Open in Bambu Studio" on MakerWorld in
++// Safari and iOS launches the app for the URL - so the link is nearly always
++// ahead of the window it needs. Replayed from post_init().
++//
++// DELIBERATELY NOT A MEMBER OF GUI_App. It was one, for exactly one build, and
++// it crashed the application at launch. Adding a conditionally compiled member
++// to GUI_App.hpp shifts the offset of every member declared after it, and
++// `app_config` sits 450 lines further down that class. Any translation unit
++// that did not agree about the new layout then read `app_config` from the
++// wrong offset and got a garbage pointer - which is how
++// PresetUpdater::priv::set_download_prefs came to hand a junk AppConfig* to
++// version_check_url() and SIGSEGV inside it, in a subsystem with nothing
++// whatsoever to do with deep links. GUI_App.hpp is included by several hundred
++// translation units and a one-shot launch value has no business in it. A
++// file-static costs nothing and cannot change anyone's layout.
++static wxString gs_ios_pending_open_url;
++#endif
++
+ class MainFrame;
+ 
+ void start_ping_test()
+@@ -3580,9 +3600,9 @@
+             // start_download() puts up a modal progress dialog and switches
+             // tabs, and doing that from inside the idle handler that is still
+             // finishing initialisation is asking for a re-entrant layout.
+-            if (!m_ios_pending_open_url.empty()) {
+-                const wxString pending = m_ios_pending_open_url;
+-                m_ios_pending_open_url.clear();
++            if (!gs_ios_pending_open_url.empty()) {
++                const wxString pending = gs_ios_pending_open_url;
++                gs_ios_pending_open_url.clear();
+                 CallAfter([this, pending] { start_download(into_u8(pending)); });
+             }
+ #endif
+@@ -8984,7 +9004,7 @@
+     // not run yet. Hold it and let post_init() replay it rather than losing it
+     // to the "plater is nullptr" branch in start_download().
+     if (plater_ == nullptr || !m_post_initialized) {
+-        m_ios_pending_open_url = url;
++        gs_ios_pending_open_url = url;
+         return;
+     }
+ #endif

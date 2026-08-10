@@ -3978,3 +3978,71 @@ output is now teed into `ci-logs/step4-run-N/publish-release.log` on green runs,
 so a recurrence names itself instead of costing another build. **Check that a
 release actually exists before telling anyone a build is ready** — a green run
 is not sufficient evidence, which is the whole lesson here.
+
+## The launch SIGSEGV: a member added to GUI_App.hpp
+
+**Read this before adding anything to `GUI_App.hpp`.**
+
+Run 110 and 111 crashed at launch, three times each, signal 11. The first three
+crash reports were useless — the unwinder could not get past `GUI_Run`, printing
+`GUI_Run + 136` twice and stopping — and the device log ended after three lines,
+the last of which was new in that build. That combination sent me after two
+wrong theories in a row: first the working directory (`orca-ios-cwd` had changed
+its verdict for the first time ever), then the Info.plist (the default IPA had
+just gone back to the baseline, and every known-good build had shipped the
+`both` variant). **Both wrong.** The breadcrumbs added in 0378 produced a
+complete backtrace on the next launch:
+
+```
+AppConfig::version_check_url() const + 96        <- SIGSEGV
+PresetUpdater::priv::priv() + 440
+PresetUpdater::PresetUpdater() + 32
+GUI_App::on_init_inner() + 7680
+GUI_App::OnInit() + 220
+-[wxAppDelegate applicationDidFinishLaunching:]_block_invoke
+```
+
+`PresetUpdater::priv::priv()` calls
+`set_download_prefs(GUI::wxGetApp().app_config)`, and `set_download_prefs`
+dereferences that pointer. The pointer was garbage.
+
+**Cause.** Patch 0377 added a member to `GUI_App`:
+
+```cpp
+private:
+    bool            m_initialized { false };
+    bool            m_post_initialized { false };
+#if defined(__APPLE__) && !TARGET_OS_OSX
+    wxString        m_ios_pending_open_url;      // line 252
+#endif
+```
+
+`app_config` is declared at **line 693 of the same class**. Inserting a member
+above it moves its offset, and `GUI_App.hpp` is included by several hundred
+translation units. Any one of them that did not agree about the new layout read
+`app_config` from the old offset and got whatever happened to be there. Nothing
+about the crash pointed anywhere near deep links, which is exactly what makes
+this class of bug expensive.
+
+I could not prove *which* translation unit disagreed or why — no `SYSTEM`
+include directory covers `src/slic3r`, so ccache ought to have invalidated every
+object that includes the header, and job logs are not readable here. It does not
+matter: the design was wrong regardless.
+
+**Fix (0379): the holder is a file-static in `GUI_App.cpp`.** `GUI_App.hpp` is
+now byte-identical to upstream again — verified with
+`diff GUI_App.hpp <(git show <pinned-ref>:src/slic3r/GUI/GUI_App.hpp)`, which is
+worth running after any patch that touches it.
+
+**Rules that follow:**
+
+* **Do not add members to `GUI_App`** (or any widely-included class) for
+  iOS-only state. Use a file-static in the `.cpp`. A conditionally compiled
+  member is worse still, because the condition has to be visible identically in
+  every translation unit that includes the header.
+* **A launch crash whose backtrace stops at `GUI_Run` is not information.** Add
+  breadcrumbs and get a real one. 0378 costs one log line per milestone and
+  turned three wrong theories into a five-minute answer.
+* **The plist variants are innocent by construction** for anything that crashes
+  inside `on_init_inner`: all four IPAs come out of **one compile** and share the
+  binary. Only launch-time UIKit behaviour can differ between them.

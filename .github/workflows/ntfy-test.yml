@@ -1,0 +1,51 @@
+name: ntfy test
+
+# Exercises ci/notify_build.sh on its own, without a 16-minute device build
+# behind it. Fires on a push that touches this file (a new workflow is not
+# dispatchable until it exists on the default branch), so `touch`ing it and
+# pushing is the way to re-run the test.
+#
+# The step never fails the run: notify_build.sh always exits 0, exactly as it
+# does in ios-step4-device-ipa. Read the log line to see which path it took —
+# "notify: ntfy sent", "notify: ntfy failed (non-fatal)", or
+# "notify: no push service configured".
+
+on:
+  push:
+    paths:
+      - '.github/workflows/ntfy-test.yml'
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report which secrets are present
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+        run: |
+          # Length only — never the value. A secret would be masked as *** in
+          # the log anyway, but its length is enough to tell "unset" from "set
+          # to the wrong thing", which is the only question this test answers
+          # before the send.
+          for v in NTFY_TOPIC NTFY_URL PUSHOVER_TOKEN PUSHOVER_USER; do
+            value="${!v}"
+            printf '%s: %s chars\n' "$v" "${#value}"
+          done
+
+      - name: Send the notification
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+        run: |
+          bash ci/notify_build.sh \
+            "https://github.com/${{ github.repository }}/releases/latest/download/OrcaSlicer-iPad.ipa" \
+            "ntfy-test" \
+            "Test notification from ${{ github.workflow }} — tap to run the Install OrcaSlicer shortcut"

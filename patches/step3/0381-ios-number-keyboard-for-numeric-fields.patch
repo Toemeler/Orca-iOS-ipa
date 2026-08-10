@@ -1,12 +1,12 @@
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -13,14 +13,99 @@
+@@ -13,14 +13,150 @@
  
  #import <WebKit/WebKit.h>
  #import <UIKit/UIKit.h>
-+// objc_setAssociatedObject, used to give a text field ownership of its keyboard
-+// accessory target. This file is built WITHOUT ARC (no -fobjc-arc anywhere in
-+// the CMake), so the retain/release below is required, not optional.
++// objc_setAssociatedObject, so a text field owns its keypad. This file is built
++// WITHOUT ARC - there is no -fobjc-arc anywhere in the CMake - so the
++// retain/release below is required, not optional.
 +#import <objc/runtime.h>
  #import <CoreText/CoreText.h>
  
@@ -19,69 +19,120 @@
 +#include <wx/window.h>
  #include <boost/log/trivial.hpp>
  
-+// Give a numeric field the small number keypad.
++
++// A genuinely small number keypad for numeric fields.
 +//
-+// UIKeyboardTypeDecimalPad is the compact one - a 4x3 grid, a fraction of the
-+// screen. The full-width NumbersAndPunctuation keyboard was tried first and is
-+// simply too big on an iPad: entering a layer height should not cover half the
-+// plate.
++// THE THING TO KNOW: on iPad, UIKeyboardTypeDecimalPad is NOT the compact 4x3
++// pad it is on iPhone - iPadOS renders it as a full-width keyboard. The device
++// log settled this: 65 fields reported "decimal pad set", not one failure, and
++// the full keyboard came up anyway. Setting keyboardType cannot produce a small
++// keypad on this hardware. The only way is to supply the keyboard yourself as
++// an inputView, which is what this is.
 +//
-+// The keypad has only digits and the decimal separator, so the three things
-+// Orca's numeric fields need beyond that come from an accessory bar above it:
++// Sixteen keys, covering everything an Orca numeric field can hold:
 +//
-+//   +/-   sign toggle, for positions and offsets
-+//   %     for coFloatOrPercent ("40%")
-+//   ,     for coPoints ("0.4,0.6"), and for the decimal separator in locales
-+//         where the keypad offers a comma but the parser wants a point
-+//   Done  because the decimal pad has NO return key, so without this there is
-+//         no way to dismiss the keyboard at all
++//     7 8 9 <-     backspace
++//     4 5 6  -     minus, for positions and offsets
++//     1 2 3  .     decimal point
++//     0 , % OK     comma for coPoints, percent for coFloatOrPercent
 +//
-+// Every one of those edits goes through UITextInput (-insertText: and
-+// -replaceRange:withText:) rather than assigning .text, so the control's
-+// editing-changed notification fires and wxTextCtrl sees the new value.
-+@interface OrcaNumericAccessory : NSObject
++// OK lives on the pad, so no input accessory view is needed - the system
++// decimal pad having no return key was the only reason for one.
++@interface OrcaNumericKeypad : UIView
 +@property (nonatomic, assign) UITextField *field;
-+// Declared, not just defined below: a selector used before its definition in
-+// the @implementation is only a warning ("method not found, return type
-+// defaults to id"), and a warning is not what you want standing between a
-+// toolbar button and a text field.
-+- (void)notifyChanged;
-+- (void)toggleSign;
-+- (void)insertPercent;
-+- (void)insertComma;
-+- (void)done;
++- (instancetype)initWithField:(UITextField *)field;
++- (void)keyTapped:(UIButton *)sender;
 +@end
 +
-+@implementation OrcaNumericAccessory
-+
-+- (void)notifyChanged
++static NSArray<NSString *> *orca_ios_keypad_titles(void)
 +{
-+    [self.field sendActionsForControlEvents:UIControlEventEditingChanged];
++    return @[ @"7", @"8", @"9", @"⌫",
++              @"4", @"5", @"6", @"-",
++              @"1", @"2", @"3", @".",
++              @"0", @",", @"%", @"OK" ];
 +}
 +
-+- (void)toggleSign
++@implementation OrcaNumericKeypad {
++    NSMutableArray<UIButton *> *_keys;
++}
++
++- (instancetype)initWithField:(UITextField *)field
++{
++    // Four rows of roughly 48pt. About half the height of the alphabetic
++    // keyboard this replaces, which was the whole complaint.
++    self = [super initWithFrame:CGRectMake(0, 0, 320, 216)];
++    if (self == nil)
++        return nil;
++    _field = field;
++    _keys = [[NSMutableArray alloc] init];
++    self.backgroundColor = [UIColor colorWithWhite:0.82 alpha:1.0];
++
++    NSArray<NSString *> *titles = orca_ios_keypad_titles();
++    for (NSUInteger i = 0; i < titles.count; ++i) {
++        UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
++        [b setTitle:titles[i] forState:UIControlStateNormal];
++        b.titleLabel.font = [UIFont systemFontOfSize:22];
++        b.backgroundColor = [UIColor whiteColor];
++        b.layer.cornerRadius = 5;
++        b.tag = (NSInteger) i;
++        [b addTarget:self action:@selector(keyTapped:)
++            forControlEvents:UIControlEventTouchUpInside];
++        [self addSubview:b];
++        [_keys addObject:b];
++    }
++    return self;
++}
++
++- (void)dealloc
++{
++    [_keys release];
++    [super dealloc];
++}
++
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++    // Centred, and no wider than it needs to be: an inputView spans the screen,
++    // but the keys themselves should not.
++    const CGFloat pad = 6, cols = 4, rows = 4;
++    const CGFloat gridW = MIN(self.bounds.size.width, (CGFloat) 420);
++    const CGFloat originX = (self.bounds.size.width - gridW) / 2;
++    const CGFloat kw = (gridW - pad * (cols + 1)) / cols;
++    const CGFloat kh = (self.bounds.size.height - pad * (rows + 1)) / rows;
++    for (NSUInteger i = 0; i < _keys.count; ++i) {
++        const NSUInteger r = i / 4, c = i % 4;
++        [_keys objectAtIndex:i].frame =
++            CGRectMake(originX + pad + c * (kw + pad), pad + r * (kh + pad), kw, kh);
++    }
++}
++
++- (void)keyTapped:(UIButton *)sender
 +{
 +    UITextField *f = self.field;
 +    if (f == nil)
 +        return;
-+    NSString *text = f.text ?: @"";
-+    NSString *flipped = [text hasPrefix:@"-"] ? [text substringFromIndex:1]
-+                                              : [@"-" stringByAppendingString:text];
-+    UITextRange *all = [f textRangeFromPosition:f.beginningOfDocument
-+                                     toPosition:f.endOfDocument];
-+    if (all != nil)
-+        [f replaceRange:all withText:flipped];
-+    [self notifyChanged];
-+}
++    NSString *title = [orca_ios_keypad_titles() objectAtIndex:(NSUInteger) sender.tag];
 +
-+- (void)insertPercent { [self.field insertText:@"%"]; [self notifyChanged]; }
-+- (void)insertComma   { [self.field insertText:@","]; [self notifyChanged]; }
-+- (void)done          { [self.field resignFirstResponder]; }
++    if ([title isEqualToString:@"OK"]) {
++        [f resignFirstResponder];
++        return;
++    }
++    if ([title isEqualToString:@"⌫"])
++        [f deleteBackward];
++    else
++        [f insertText:title];
++
++    // wxTextCtrl listens for the control event, and a programmatic edit does not
++    // raise it on its own.
++    [f sendActionsForControlEvents:UIControlEventEditingChanged];
++}
 +
 +@end
 +
-+static char orca_ios_accessory_key;
++static char orca_ios_keypad_key;
 +
++// Orca's numeric fields are composites (::TextInput, ::SpinInput, ::TempInput),
++// so walk down rather than assuming the handle is the field itself.
 +static UITextField *orca_ios_find_text_field(UIView *view)
 +{
 +    if (view == nil)
@@ -100,17 +151,10 @@
  namespace Slic3r {
  namespace GUI {
  
-@@ -221,5 +306,75 @@
+@@ -221,5 +357,47 @@
      });
  }
  
-+// Apply, and say whether it applied.
-+//
-+// The first attempt at this silently did nothing on the device - the full
-+// QWERTY keyboard still came up - and there was no way to tell from outside
-+// whether the call never happened, the walk found no UITextField, or the field
-+// was found and iOS ignored the setting. One line each way settles it. The
-+// `where` string names the call site.
 +static bool orca_ios_apply_numeric_keyboard(wxWindow *win, const char *where)
 +{
 +    if (win == nullptr)
@@ -119,11 +163,12 @@
 +    UITextField *field = orca_ios_find_text_field(root);
 +    if (field == nil) {
 +        BOOST_LOG_TRIVIAL(error) << "orca-ios-keyboard: " << where << " no UITextField under "
-+                                 << (root ? [NSStringFromClass([root class]) UTF8String] : "(null handle)")
-+                                 << " (" << (root ? (int) root.subviews.count : -1) << " subviews)";
++                                 << (root ? [NSStringFromClass([root class]) UTF8String] : "(null handle)");
 +        return false;
 +    }
 +
++    // Still set, because it costs nothing and it is what a hardware keyboard and
++    // the autofill bar read. The inputView is what replaces the on-screen one.
 +    field.keyboardType           = UIKeyboardTypeDecimalPad;
 +    field.autocorrectionType     = UITextAutocorrectionTypeNo;
 +    field.autocapitalizationType = UITextAutocapitalizationTypeNone;
@@ -132,33 +177,13 @@
 +    field.smartQuotesType        = UITextSmartQuotesTypeNo;
 +    field.smartInsertDeleteType  = UITextSmartInsertDeleteTypeNo;
 +
-+    OrcaNumericAccessory *target = [[OrcaNumericAccessory alloc] init];
-+    target.field = field;
-+    // The toolbar holds only a weak reference to its target, so the accessory
-+    // has to be owned by the field or the first tap goes to a freed object.
-+    objc_setAssociatedObject(field, &orca_ios_accessory_key, target,
++    OrcaNumericKeypad *pad = [[OrcaNumericKeypad alloc] initWithField:field];
++    // The field owns the pad: a view does not retain its inputView's target.
++    objc_setAssociatedObject(field, &orca_ios_keypad_key, pad,
 +                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-+    [target release];
-+
-+    UIToolbar *bar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 320, 44)];
-+    bar.barStyle = UIBarStyleDefault;
-+    UIBarButtonItem *sign = [[UIBarButtonItem alloc] initWithTitle:@"+/-"
-+        style:UIBarButtonItemStylePlain target:target action:@selector(toggleSign)];
-+    UIBarButtonItem *pct = [[UIBarButtonItem alloc] initWithTitle:@"%"
-+        style:UIBarButtonItemStylePlain target:target action:@selector(insertPercent)];
-+    UIBarButtonItem *comma = [[UIBarButtonItem alloc] initWithTitle:@","
-+        style:UIBarButtonItemStylePlain target:target action:@selector(insertComma)];
-+    UIBarButtonItem *gap = [[UIBarButtonItem alloc]
-+        initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-+    UIBarButtonItem *done = [[UIBarButtonItem alloc]
-+        initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:target action:@selector(done)];
-+    bar.items = @[ sign, pct, comma, gap, done ];
-+    [bar sizeToFit];
-+    field.inputAccessoryView = bar;
-+    [sign release]; [pct release]; [comma release]; [gap release]; [done release];
-+    [bar release];
-+
-+    BOOST_LOG_TRIVIAL(error) << "orca-ios-keyboard: " << where << " decimal pad set";
++    field.inputView          = pad;
++    field.inputAccessoryView = nil;   // the pad carries its own OK key
++    [pad release];
 +    return true;
 +}
 +
@@ -167,10 +192,8 @@
 +    if (orca_ios_apply_numeric_keyboard(win, "build:"))
 +        return;
 +
-+    // Try again once the event loop has turned. Some of Orca's composite
-+    // widgets finish assembling their children after their constructor returns,
-+    // and a UITextField that does not exist yet cannot be configured. Retrying
-+    // costs one block; not retrying costs a device round trip to find out.
++    // Try again once the event loop has turned: some of Orca's composite widgets
++    // finish assembling their children after their constructor returns.
 +    win->CallAfter([win] { orca_ios_apply_numeric_keyboard(win, "deferred:"); });
 +}
 +
@@ -201,11 +224,11 @@
 +// the ordinary keyboard - a filament name is not a number.
 +static bool orca_ios_option_is_numeric(ConfigOptionType type)
 +{
-+    return type == coFloat  || type == coFloats  ||
-+           type == coInt    || type == coInts    ||
-+           type == coPercent|| type == coPercents||
++    return type == coFloat   || type == coFloats   ||
++           type == coInt     || type == coInts     ||
++           type == coPercent || type == coPercents ||
 +           type == coFloatOrPercent || type == coFloatsOrPercents ||
-+           type == coPoint  || type == coPoints  || type == coPoint3;
++           type == coPoint   || type == coPoints   || type == coPoint3;
 +}
 +#endif
 +

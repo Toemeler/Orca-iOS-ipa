@@ -4327,3 +4327,69 @@ into a five-minute answer. Strip them when the port stops changing, not before.
 Both are ordinary and both cost a **50-minute build**, because the failure was
 in one late translation unit. Before adding Objective-C to a file that is mostly
 C++, check which side of the namespace it lands on.
+
+## ▲ On iPad, `UIKeyboardTypeDecimalPad` is NOT a small keypad
+
+Worth knowing before anyone tries this again. Setting `keyboardType` on a
+`UITextField` **cannot** give you the compact 4x3 pad on an iPad — iPadOS
+renders both `UIKeyboardTypeNumberPad` and `UIKeyboardTypeDecimalPad` as a
+full-width keyboard. That is a platform behaviour, not a bug in the port.
+
+The device log settled it in one round, which is the point of having
+instrumented it rather than guessing a third time:
+
+```
+orca-ios-keyboard: build: decimal pad set     x65, zero failures
+```
+
+The type was being applied to every field, and the full keyboard came up anyway.
+
+**The fix is to supply the keyboard**: `OrcaNumericKeypad` is a `UIView` with
+sixteen keys assigned to `field.inputView`, so iOS shows it in place of the
+system keyboard. Roughly half the height of the alphabetic one.
+
+    7 8 9 <-      backspace
+    4 5 6  -      minus, for positions and offsets
+    1 2 3  .      decimal point
+    0 , % OK      comma for coPoints, percent for coFloatOrPercent
+
+`OK` lives on the pad, so there is no `inputAccessoryView` any more — the system
+decimal pad having no return key was the only reason for one. Key presses go
+through `-insertText:` / `-deleteBackward:` and then raise
+`UIControlEventEditingChanged` by hand, because a programmatic edit does not
+raise it and `wxTextCtrl` listens for exactly that.
+
+## ⚠ OPEN AND UNDIAGNOSED: slicing differs from the desktop
+
+Reported after run 119: *"every slice is kind of fucked up ... some models are
+only partly or just weird sliced"*. **This is the most important open item.**
+
+Ruled out already:
+
+* **Not an error path.** The log has no exception, no cancel, no failed step:
+  `thread_proc: process finished, state 4, print cancel_status 0`. It completes
+  and produces wrong geometry.
+* **Not our patches.** Every `patches/step1` patch is build plumbing — the only
+  two touching `libslic3r` are `utils.cpp` (executable path) and
+  `GCodeSender.cpp` (IOKit). Nothing touches geometry or the slicing pipeline.
+* **Not fast-math.** The device build is a plain `-DCMAKE_BUILD_TYPE=Release`;
+  there is no `-ffast-math`, `-Ofast` or `-ffp-contract` anywhere.
+
+Leading hypotheses, in the order I would test them:
+
+1. **Worker thread stack size.** Non-main threads on iOS default to 512 KB,
+   against 8 MB on desktop. Orca slices on a `boost::thread` and inside TBB
+   workers, and the geometry code recurses. A silent truncation is more likely
+   than a clean crash if anything catches it.
+2. **Memory pressure.** An earlier log recorded 1.06 GB resident, 1.2 GB peak.
+   iOS is far less forgiving than a PC, and a failed allocation mid-slice would
+   produce exactly "partly sliced".
+3. **A dependency built differently for the device slice** — the deps are
+   configured with `ORCA_DEPS_GUI=OFF` and `CMAKE_DISABLE_FIND_PACKAGE_JPEG=ON`;
+   worth confirming CGAL/Boost/TBB land on the same code paths as the desktop.
+
+**What would settle it fastest:** the same model sliced on PC and on the iPad
+with identical settings, plus both G-code files (or the exported 3mf). That
+turns "weird" into a diff. A screenshot of the Preview showing the bad region
+would narrow it to a stage - missing infill vs missing perimeters vs missing
+layers each point somewhere different.

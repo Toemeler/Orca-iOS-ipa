@@ -4375,18 +4375,45 @@ Ruled out already:
 * **Not fast-math.** The device build is a plain `-DCMAKE_BUILD_TYPE=Release`;
   there is no `-ffast-math`, `-Ofast` or `-ffp-contract` anywhere.
 
-Leading hypotheses, in the order I would test them:
+### ▲ Leading explanation: the iPad is set up for a 0.2 mm nozzle
 
-1. **Worker thread stack size.** Non-main threads on iOS default to 512 KB,
-   against 8 MB on desktop. Orca slices on a `boost::thread` and inside TBB
-   workers, and the geometry code recurses. A silent truncation is more likely
-   than a clean crash if anything catches it.
-2. **Memory pressure.** An earlier log recorded 1.06 GB resident, 1.2 GB peak.
-   iOS is far less forgiving than a PC, and a failed allocation mid-slice would
-   produce exactly "partly sliced".
-3. **A dependency built differently for the device slice** — the deps are
-   configured with `ORCA_DEPS_GUI=OFF` and `CMAKE_DISABLE_FIND_PACKAGE_JPEG=ON`;
-   worth confirming CGAL/Boost/TBB land on the same code paths as the desktop.
+The device log says what it is slicing with:
+
+```
+select_preset: machine ... name Bambu Lab A1 0.2 nozzle
+select_preset: process ... name 0.10mm Standard @BBL A1 0.2 nozzle
+select_preset: filament ... name Bambu PLA Basic @BBL A1 0.2 nozzle
+nozzle_diameter":"0.2"
+```
+
+Patch 0348 pre-configures the A1 for the LAN connection but never picks a
+**nozzle variant**, so Orca took the first A1 profile in the list — the 0.2 one
+(`m_idx_selected 1`). An A1 ships with a 0.4 mm nozzle. Slicing a model for 0.2
+at 0.10 mm layers halves every extrusion width: thin walls are dropped, small
+features do not generate, regions come out sparse — "only partly or just weird
+sliced", with no error anywhere and a clean `state 4` finish.
+
+**Check this before investigating anything else**, and if it is the cause, make
+the pre-configuration select the 0.4 variant rather than whatever sorts first.
+
+### Ruled out, with the evidence — do not re-run these
+
+* **Worker thread stack size.** I suggested it; it is wrong.
+  `libslic3r/Thread.hpp` sets **16 MB** explicitly in `create_thread`, with a
+  comment describing a CGAL `march_locate_2D` recursion that crashed at 4 MB.
+  The background slicing thread goes through that helper.
+* **Locale / decimal separator.** Plausible on the face of it — the user is in a
+  Swiss locale and the log carries `Cannot set locale to language "English
+  (Switzerland)"` — but `GCode.cpp` wraps export in `CNumericLocalesSetter`
+  (lines 2040 and 3738), so numeric formatting is guarded. TBB workers get
+  `newlocale(LC_ALL_MASK, "C")` on top of that.
+
+### Still open if the nozzle is not it
+
+1. **Memory pressure.** An earlier log recorded 1.06 GB resident, 1.2 GB peak.
+2. **A dependency built differently for the device slice** (`ORCA_DEPS_GUI=OFF`,
+   `CMAKE_DISABLE_FIND_PACKAGE_JPEG=ON`) — confirm CGAL/Boost/TBB take the same
+   code paths as the desktop.
 
 **What would settle it fastest:** the same model sliced on PC and on the iPad
 with identical settings, plus both G-code files (or the exported 3mf). That

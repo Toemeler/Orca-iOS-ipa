@@ -72,7 +72,7 @@ jobs:
         run: |
           set -euxo pipefail
           WXH=$({ find wx-overlay -type f | LC_ALL=C sort; cat $(find wx-overlay -type f | LC_ALL=C sort) patches/step2/*.patch; } | shasum | cut -c1-12)
-          echo "WX_KEY=ios-wxprefix-device-v3-$WXH" >> "$GITHUB_ENV"
+          echo "WX_KEY=ios-wxprefix-device-v4-$WXH" >> "$GITHUB_ENV"
 
       - name: "[2/9] Fetch Orca + apply step1+step3 patches"
         run: |
@@ -106,6 +106,7 @@ jobs:
             ios-deps-device-v1-
 
       - name: "[4/9] Build deps for the device slice"
+        id: depsbuild
         run: |
           set -euxo pipefail
           cd orca/deps
@@ -131,7 +132,13 @@ jobs:
           ninja $B 2>&1 | tee /tmp/deps-ninja.log
 
       - name: Save device deps cache
-        if: always()
+        # See the wx prefix save. The deps step does repair itself - it deletes
+        # any dep_*-prefix without an install stamp before building - and its key
+        # is stable, so a partial entry is less dangerous here. Still not worth
+        # writing one.
+        if: |
+          always() &&
+          (steps.depsbuild.outcome == 'success' || steps.depsbuild.outcome == 'skipped')
         uses: actions/cache/save@v4
         with:
           path: |
@@ -157,6 +164,7 @@ jobs:
           key: ${{ env.WX_KEY }}
 
       - name: "[5/9] Build wxWidgets iPhone port (device)"
+        id: wxbuild
         if: steps.wxcache.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
@@ -221,7 +229,20 @@ jobs:
           cp -R "$GITHUB_WORKSPACE"/wx/include/wx/private/. "$WXINC/wx/private/"
 
       - name: Save wx device prefix cache
-        if: always()
+        # Only when the build ran to completion, or was skipped because the
+        # cache already had it.
+        #
+        # `if: always()` runs on cancellation, and the concurrency group cancels
+        # the previous run every time a new one is dispatched. Run 115 was killed
+        # 0.9 min into [5/9] and saved a wx-prefix containing almost nothing
+        # under a brand new WX_KEY - wx installs its headers and libraries at the
+        # END of its build, so a prefix captured part way through is empty. The
+        # next run restores that, skips [5/9] entirely, and links against a
+        # prefix with no libraries in it. Same trap as the ccache save; this is
+        # the one that had not been shut.
+        if: |
+          always() &&
+          (steps.wxbuild.outcome == 'success' || steps.wxbuild.outcome == 'skipped')
         uses: actions/cache/save@v4
         with:
           path: wx-prefix

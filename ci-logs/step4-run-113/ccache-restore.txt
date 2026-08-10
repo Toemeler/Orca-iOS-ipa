@@ -1,0 +1,8 @@
+cache-hit:         
+cache-matched-key: 
+dir:               /Users/runner/.ccache-step4
+  (no directory)
+files:                    0
+=== ccache -s before the build ===
+Local storage:
+  Cache size (GB): 0.0 / 1.5 ( 0.00%)

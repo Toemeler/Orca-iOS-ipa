@@ -3929,3 +3929,52 @@ their own copy, and `actions/cache/save` warns rather than fails when a save is
 rejected, which shows up as a green step. `ccache-stats.txt` from the next green
 run settles it: a `cache-matched-key` naming run 109's entry means saves land
 and something else is wrong; an empty one means they do not.
+
+## ccache on step 4, settled with numbers (run 110)
+
+`ci-logs/step4-run-110/` now carries the report, and it closes the "still open"
+question above: **saves land, restores work, and `main` is at parity with the
+old branch.**
+
+```
+cache-hit:         false
+cache-matched-key: ccache-step4-31406517823      <- run 109's entry
+dir:               96M, 1715 files
+```
+
+`cache-hit: false` is not a miss. The key is `ccache-step4-<run_id>` and is
+unique per run by design, so an exact hit is impossible; the entry always
+arrives through the `ccache-step4-` restore-key prefix, and
+**`cache-matched-key` is the only field that says whether anything came back.**
+
+ccache's own cumulative counters, read across the three runs:
+
+| Run | calls | hits | misses | `[7/9]` |
+|---|---|---|---|---|
+| 108 | 639 | 0 | 639 | 75.9 min |
+| 109 | 639 | 492 (77%) | 147 | 41.9 min |
+| 110 | 639 | **639 (100%)** | 0 | **0.2 min** |
+
+**Run 109 was 77% cached, not the ~50% its wall time suggests.** The 147 misses
+were the expensive translation units — `GUI_App.cpp`, `Plater.cpp`,
+`GLCanvas3D.cpp` are each enormous — and `[7/9]` also links a 146 MB binary,
+which ccache does not cache at all. Do not convert `[7/9]` minutes into a hit
+rate; they are not proportional.
+
+The cache is 96 MB against a 1.5 G limit (6%), so eviction pressure inside
+ccache is not a factor, and the 10 GB repository quota theory for run 108 is
+dead: run 109's entry was saved and served.
+
+**`Restore ccache` duration carries no information.** It read 0.0 min on run 108
+(total miss, 76 minutes of compiling) and 0.0 min on run 110 (100% hit, twelve
+seconds). Read `ci-logs/step4-run-N/ccache-restore.txt` instead.
+
+## The run-109 release failure was a one-off
+
+Run 109 was green and published nothing; run 110, same code path and same
+dispatcher, published normally and pruned run 90 as designed. No explanation,
+and the job log that had one is not reachable through the proxy. The publish
+output is now teed into `ci-logs/step4-run-N/publish-release.log` on green runs,
+so a recurrence names itself instead of costing another build. **Check that a
+release actually exists before telling anyone a build is ready** — a green run
+is not sufficient evidence, which is the whole lesson here.

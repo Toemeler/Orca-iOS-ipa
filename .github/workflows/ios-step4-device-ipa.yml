@@ -483,8 +483,16 @@ jobs:
             <key>CFBundleIdentifier</key><string>org.orca-ios.orcaslicer</string>
             <key>CFBundleName</key><string>OrcaSlicer</string>
             <key>CFBundleDisplayName</key><string>OrcaSlicer</string>
-            <key>CFBundleVersion</key><string>1</string>
-            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <!-- The CI run number, so a build can identify itself.
+                 These were hardcoded 1 / 1.0, which meant nothing in the app,
+                 the log or a crash report ever said WHICH build it was. That
+                 cost a full round: a crash report arrived from run 112 while
+                 run 113 - the build with the fix - was still compiling, and
+                 there was no way to tell from the report itself. The .ips
+                 prints CFBundleVersion verbatim, and SideStore shows it, so
+                 this is the cheapest possible identification. -->
+            <key>CFBundleVersion</key><string>${GITHUB_RUN_NUMBER}</string>
+            <key>CFBundleShortVersionString</key><string>1.0.${GITHUB_RUN_NUMBER}</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
             <key>CFBundleDevelopmentRegion</key><string>en</string>

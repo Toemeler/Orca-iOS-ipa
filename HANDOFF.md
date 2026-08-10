@@ -3884,3 +3884,48 @@ this order:
 A header change is a legitimate long build with a warm cache: `GUI_App.hpp` and
 anything else included across `libslic3r_gui` invalidates a large slice of the
 639 objects on its own.
+
+## The ccache on step 4 is instrumented now, because durations cannot answer it
+
+`Restore ccache` read **0.0 min on run 108 and again on run 109**, and that
+number cannot distinguish the two cases that matter. A populated ~640-object
+ccache restores in about six seconds (run 106: 0.1 min, 635 hits) and an absent
+one in zero. Both round to something indistinguishable, and in this environment
+there is no second opinion: **job log downloads and the Actions cache API are
+both blocked by the egress proxy** (`/actions/runs/<id>/logs` and
+`/actions/caches` return 403 `Access to this GitHub Actions path is not
+permitted through this proxy`). So a green run has left no ccache statistic
+behind, ever — the publisher is `if: failure()`, and the step that prints
+`ccache -s` prints it somewhere unreadable.
+
+Three changes, so the next run answers this outright instead of being inferred:
+
+* **`ccache restore report`** records `cache-hit`, `cache-matched-key`, the
+  directory size and the file count *before* anything compiles.
+  `cache-matched-key` names the entry that was served, or is empty when there
+  was none. That is the fact that has been missing.
+* **`Publish ccache stats to repo (ci-logs/)`**, `if: success()`, commits that
+  plus `ccache -s -v` and the ranked results to
+  `ci-logs/step4-run-N/ccache-stats.txt`. Separate step from the failure
+  publisher, so the two can never race to commit.
+* **`Save ccache` is now gated on the build step having run**
+  (`steps.orcabuild.outcome != 'skipped'`).
+
+That last one is a bug with evidence, not a precaution. The concurrency group
+cancels the running build whenever a new one is dispatched, `if: always()` runs
+on cancellation, and a run cancelled before `[7/9]` therefore **saves an empty
+ccache under a brand new key**. Restore matches the prefix `ccache-step4-` and
+takes the most recent entry, so that empty one outranks every good cache on the
+branch. Run 107 was cancelled 21 minutes into the deps step and its `Save
+ccache` reported success in 0.0 min — that is exactly the shape. It did not
+cause run 108's cold build (main had no ccache at all either way), but on a
+branch with a warm cache it would silently cost an hour, and the same trap for
+the *deps* cache is already documented further up this file.
+
+**Still open:** whether run 108's ccache save actually landed. The candidate
+that does not need the cache API is the **10 GB repository cache quota** — the
+device deps entry is multi-GB, it is written on every run, several branches have
+their own copy, and `actions/cache/save` warns rather than fails when a save is
+rejected, which shows up as a green step. `ccache-stats.txt` from the next green
+run settles it: a `cache-matched-key` naming run 109's entry means saves land
+and something else is wrong; an empty one means they do not.

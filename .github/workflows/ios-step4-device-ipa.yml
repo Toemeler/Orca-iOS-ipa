@@ -244,12 +244,37 @@ jobs:
           echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
 
       - name: Restore ccache
+        id: ccache_restore
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache-step4
           key: ccache-step4-${{ github.run_id }}
           restore-keys: |
             ccache-step4-
+
+      # What the restore actually found, recorded before anything compiles.
+      #
+      # Step durations are the only thing readable from outside this runner in
+      # the environment these builds are driven from - job log downloads and the
+      # cache API are both blocked - and they cannot tell a hit from a miss: a
+      # populated ccache restores in about six seconds and an absent one in
+      # zero, which round to 0.1 and 0.0 minutes. That ambiguity has now cost
+      # two rounds of guessing. cache-matched-key names the entry, or is empty
+      # when there was none, and the size says whether what came back has
+      # anything in it.
+      - name: "ccache restore report"
+        if: always()
+        run: |
+          set +e
+          {
+            echo "cache-hit:         ${{ steps.ccache_restore.outputs.cache-hit }}"
+            echo "cache-matched-key: ${{ steps.ccache_restore.outputs.cache-matched-key }}"
+            echo "dir:               $HOME/.ccache-step4"
+            du -sh "$HOME/.ccache-step4" 2>/dev/null || echo "  (no directory)"
+            echo "files:             $(find "$HOME/.ccache-step4" -type f 2>/dev/null | wc -l)"
+            echo "=== ccache -s before the build ==="
+            ccache -s 2>/dev/null
+          } | tee /tmp/ccache-restore.txt
 
       - name: "[6/9] Configure Orca GUI build (device)"
         run: |
@@ -298,6 +323,7 @@ jobs:
       # If the hit rate does not move, put the PCH back: a genuinely cold TU
       # is slower without it.
       - name: "[7/9] Build + link OrcaSlicer (device)"
+        id: orcabuild
         run: |
           set -euxo pipefail
           cd orca/build
@@ -338,7 +364,22 @@ jobs:
           fi
 
       - name: Save ccache
-        if: always()
+        # Only when the build actually ran.
+        #
+        # The concurrency group cancels the previous run every time a new one is
+        # dispatched, and `if: always()` runs on cancellation too - so a run
+        # killed during the deps step, which never compiles a line, still saved
+        # an EMPTY ccache under a brand new key. Restore matches on the prefix
+        # `ccache-step4-` and takes the most recent entry, so that empty one
+        # then outranks every good cache on the branch and the next run compiles
+        # all 639 objects cold. Run 107 was cancelled 21 minutes into the deps
+        # step and its Save ccache reported success in 0.0 minutes; that is the
+        # shape of the bug.
+        #
+        # `!= 'skipped'` rather than `== 'success'` on purpose: a build that
+        # failed or was cancelled part way through still has real objects in the
+        # cache and they are worth keeping.
+        if: always() && steps.orcabuild.outcome != 'skipped'
         uses: actions/cache/save@v4
         with:
           path: ~/.ccache-step4
@@ -765,6 +806,43 @@ jobs:
           name: orcaslicer-device-ipa
           path: artifact/
           if-no-files-found: ignore
+
+      # The ccache numbers, on a run that WORKED.
+      #
+      # The step above already prints them, and the comment on it says they
+      # "must be visible on a SUCCESSFUL run - straight to the job log". That
+      # is not true in the environment these builds are actually driven from:
+      # job log downloads and the Actions cache API are both blocked by the
+      # egress proxy, so the only channel out of a green run is a commit. The
+      # publisher below is `if: failure()`, which is why a green run has never
+      # left a single ccache statistic behind, and why "did the cache come
+      # back" has had to be inferred from step durations twice.
+      #
+      # Deliberately a separate step from that publisher rather than relaxing
+      # its condition: the two are mutually exclusive, so they can never race
+      # to commit in the same run, and this one stays small.
+      - name: "Publish ccache stats to repo (ci-logs/)"
+        if: success()
+        run: |
+          set -ux
+          D="ci-logs/step4-run-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$D"
+          [ -f /tmp/ccache-restore.txt ] && cp /tmp/ccache-restore.txt "$D/ccache-restore.txt"
+          {
+            echo "=== ccache -s after the build ==="
+            ccache -s -v 2>/dev/null || ccache -s
+            if [ -f "$HOME/ccache-step4.log" ]; then
+              echo "=== results, ranked ==="
+              grep -oE "Result: .*" "$HOME/ccache-step4.log" | sort | uniq -c | sort -rn | head -20
+              echo "=== miss reasons, ranked ==="
+              grep -oE "(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)" "$HOME/ccache-step4.log" \
+                | sed -E "s#/Users/runner[^ ]*/##" | sort | uniq -c | sort -rn | head -25
+            fi
+          } > "$D/ccache-stats.txt" 2>&1 || true
+          git config user.name "ci-bot" && git config user.email "ci@users.noreply.github.com"
+          git add -A ci-logs || true
+          git commit -m "step4 ccache stats run ${GITHUB_RUN_NUMBER}" || exit 0
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" || true; git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done
 
       - name: "Publish failure logs to repo (ci-logs/)"
         if: failure()

@@ -4046,3 +4046,62 @@ worth running after any patch that touches it.
 * **The plist variants are innocent by construction** for anything that crashes
   inside `on_init_inner`: all four IPAs come out of **one compile** and share the
   binary. Only launch-time UIKit behaviour can differ between them.
+
+## ⚠ ROOT CAUSE BEHIND THE LAUNCH CRASH: ccache ignored every Orca header
+
+The member added to `GUI_App.hpp` was the trigger. **This is why it was able to
+do damage**, and it is a build-correctness bug that predates it and would have
+bitten any header change.
+
+Orca's root `CMakeLists.txt`:
+
+```cmake
+set(LIBDIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories(SYSTEM ${LIBDIR})
+```
+
+`src/` is a **SYSTEM** include directory, so `#include "slic3r/GUI/GUI_App.hpp"`
+resolves through `-isystem` and every OrcaSlicer header is, to the compiler and
+therefore to ccache, a *system header*.
+
+All three workflows set:
+
+```
+CCACHE_SLOPPINESS=...,system_headers
+```
+
+`system_headers` means **do not hash system headers when computing the cache
+key**. Together those two facts mean: **editing any header under `src/` changed
+no cache key at all.** Only translation units whose own `.cpp` changed were
+recompiled; every other object came back from the cache still compiled against
+the *previous* version of the header, and the link put both in one binary.
+
+That is exactly what happened. `GUI_App.cpp` changed, so it recompiled with the
+new `GUI_App` layout. `PresetUpdater.cpp` did not change, so its object came
+back from run 108's cache with the old layout, read `app_config` from the old
+offset, and handed a garbage `AppConfig*` to `version_check_url()`.
+
+It also explains the run-109 numbers that looked odd at the time: **147 misses
+out of 639** for a commit that edited a header included across the GUI. 147 is
+the count of changed `.cpp` files and their command-line neighbours — the header
+dependents never missed, because the header was invisible.
+
+**Fixed:** `system_headers` removed from `CCACHE_SLOPPINESS` in
+`ios-step3-gui.yml`, `ios-step3-fast.yml` and `ios-step4-device-ipa.yml`. The
+SDK now gets hashed, which is what the setting was avoiding; a runner image
+whose SDK changes will invalidate the cache wholesale. That is correct, and far
+cheaper than shipping a binary assembled from two different definitions of a
+class.
+
+**Consequences worth knowing:**
+
+* **Every green build before this change is suspect if its commit edited a
+  header.** Most changes in this port are `.cpp`-only or add new files, which is
+  why this survived so long. But a "the fix didn't work on device" report from
+  any earlier session could have been this and nothing else.
+* **Run 112 is safe by accident**, and it is worth understanding why. 0379
+  returned `GUI_App.hpp` to byte-identical with upstream, so the cached objects
+  from run 108 — compiled against exactly that header — agree with the freshly
+  compiled `GUI_App.cpp`. Everything in that binary shares one layout.
+* The first run after this change pays a full recompile, because every cache key
+  moves. One ~75 minute run, once.

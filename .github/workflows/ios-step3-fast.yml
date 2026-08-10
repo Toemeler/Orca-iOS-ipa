@@ -131,7 +131,27 @@ jobs:
           # iOS cross-compiles embed the SDK path; slop keeps cache hits across
           # runner image updates that only move the SDK. system_headers stops
           # the whole SDK being hashed into every single object.
-          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,system_headers,locale" >> "$GITHUB_ENV"
+                    # NOTE: no `system_headers`. It was here as a speed measure - "so the
+          # SDK does not get hashed into every object" - and it silently turned
+          # off cache invalidation for OrcaSlicer's OWN headers. Orca's root
+          # CMakeLists.txt does:
+          #
+          #     set(LIBDIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+          #     include_directories(SYSTEM ${LIBDIR})
+          #
+          # so `#include "slic3r/GUI/GUI_App.hpp"` resolves through -isystem and
+          # every project header IS a system header as far as ccache is
+          # concerned. With this sloppiness set, editing a header changed
+          # nothing about any cache key: only translation units whose own .cpp
+          # changed were recompiled, and everything else was served from cache
+          # still compiled against the OLD header. Mixed layouts in one binary.
+          #
+          # That is not theoretical. Adding one member to GUI_App shifted
+          # app_config's offset, PresetUpdater.cpp.o came back from the cache
+          # with the old offset, and the app SIGSEGVd at launch inside
+          # AppConfig::version_check_url - three device round trips away from
+          # the change that caused it. Hashing the SDK is the cheaper problem.
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,locale" >> "$GITHUB_ENV"
           # Run 6 hit only 76 of 639, and 563 of those misses failed the
           # preprocessed lookup too - meaning the preprocessed output itself
           # differs between runs. Rather than keep guessing at which input is

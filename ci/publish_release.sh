@@ -153,14 +153,46 @@ Unsigned — SideStore signs it on the device. Install: \`sidestore://install?ur
 EOF
 )"
 
-gh release create "$TAG" \
-  "$WORKDIR/$ASSET_NAME" "$WORKDIR/source.json" "$WORKDIR/latest.json" \
-  "${EXTRA_ASSETS[@]}" \
-  --repo "$REPO" \
-  --target "$SHA" \
-  --title "OrcaSlicer for iPad (run ${RUN}) — ${SUBJECT}" \
-  --notes "$NOTES" \
-  --latest
+# Retry the release call.
+#
+# "HTTP 403: Resource not accessible by integration" comes back from this
+# endpoint intermittently - runs 109 and 113 got it while 110, 111 and 112 went
+# through with the same token, the same dispatcher and the same permissions
+# block. A green build that publishes nothing is the worst possible outcome:
+# the IPA exists only as a workflow artifact, which needs a GitHub login and
+# cannot be installed from an iPad, so the round trip is simply lost. Run 113
+# cost exactly that.
+#
+# Deliberately not `set -e`-fatal on the first failure: try, wait, try again.
+# If every attempt fails the function returns non-zero and the caller warns,
+# which is the behaviour that was there before.
+publish_attempt() {
+  gh release create "$TAG" \
+    "$WORKDIR/$ASSET_NAME" "$WORKDIR/source.json" "$WORKDIR/latest.json" \
+    "${EXTRA_ASSETS[@]}" \
+    --repo "$REPO" \
+    --target "$SHA" \
+    --title "OrcaSlicer for iPad (run ${RUN}) — ${SUBJECT}" \
+    --notes "$NOTES" \
+    --latest
+}
+
+published=0
+for attempt in 1 2 3 4; do
+  if publish_attempt; then
+    published=1
+    break
+  fi
+  # A partially created release would make the next attempt fail with "already
+  # exists", so clear it before retrying.
+  gh release delete "$TAG" --repo "$REPO" --cleanup-tag --yes >/dev/null 2>&1 || true
+  echo "publish_release: attempt ${attempt} failed, retrying in $((attempt * 10))s" >&2
+  sleep $((attempt * 10))
+done
+if [ "$published" -ne 1 ]; then
+  echo "publish_release: could not create ${TAG} after 4 attempts" >&2
+  exit 1
+fi
 
 # ---------------------------------------------------------------------- prune
 # 15 builds ≈ 400 MB. Older ones go, tag and all — the rollback window that

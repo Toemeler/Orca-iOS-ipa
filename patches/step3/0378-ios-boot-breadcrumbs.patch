@@ -1,0 +1,134 @@
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -209,6 +209,16 @@
+ namespace Slic3r {
+ namespace GUI {
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// See the identical macro in GUI_Init.cpp. A launch SIGSEGV produces a crash
++// report whose unwinder stops at GUI_Run, so the last line in the device log is
++// the only evidence of how far startup got - and the stretch between GUI_App's
++// constructor and the first font registration logs nothing at all.
++#define ORCA_IOS_BOOT(what) BOOST_LOG_TRIVIAL(error) << "orca-ios-boot: " << what
++#else
++#define ORCA_IOS_BOOT(what) do {} while (0)
++#endif
++
+ class MainFrame;
+ 
+ void start_ping_test()
+@@ -1255,14 +1265,18 @@
+ 	, m_other_instance_message_handler(std::make_unique<OtherInstanceMessageHandler>())
+ {
+ 	//app config initializes early becasuse it is used in instance checking in OrcaSlicer.cpp
++    ORCA_IOS_BOOT("ctor: init_app_config");
+     this->init_app_config();
++    ORCA_IOS_BOOT("ctor: init_download_path");
+     this->init_download_path();
++    ORCA_IOS_BOOT("ctor: reset_to_active");
+     // Note: the WebView2 runtime check (init_webview_runtime) used to run here, but
+     // the constructor executes before wxWidgets is fully initialized and before the
+     // event loop starts, so its modal prompt/installer could silently fail to appear.
+     // It now runs in post_init(), before the first WebView (the setup wizard) is created.
+ 
+     reset_to_active();
++    ORCA_IOS_BOOT("ctor: done");
+ }
+ 
+ void GUI_App::shutdown()
+@@ -2827,6 +2841,7 @@
+ bool GUI_App::OnInit()
+ {
+     try {
++        ORCA_IOS_BOOT("OnInit: entering on_init_inner");
+         return on_init_inner();
+     } catch (const std::exception& e) {
+         BOOST_LOG_TRIVIAL(fatal) << "OnInit Got Fatal error: " << e.what();
+@@ -2938,13 +2953,16 @@
+ 
+ bool GUI_App::on_init_inner()
+ {
++    ORCA_IOS_BOOT("on_init_inner: entered");
+     wxLog::SetActiveTarget(new wxBoostLog());
++    ORCA_IOS_BOOT("on_init_inner: wxBoostLog installed");
+ 
+ #ifdef __APPLE__
+     // Override wxWidgets' kAEGetURL handler so orcaslicer:// deep links keep
+     // working after the wxWidgets 3.3.2 upgrade on macOS (#13119).
+     register_mac_deep_link_handler();
+ #endif
++    ORCA_IOS_BOOT("on_init_inner: deep link handler done");
+ #if BBL_RELEASE_TO_PUBLIC
+     wxLog::SetLogLevel(wxLOG_Message);
+ #endif
+@@ -2954,7 +2972,9 @@
+     // a face that is not registered yet is silently replaced by Helvetica.
+     orca_ios_register_bundled_fonts();
+ #endif
++    ORCA_IOS_BOOT("on_init_inner: fonts registered, initSysFont next");
+     ::Label::initSysFont();
++    ORCA_IOS_BOOT("on_init_inner: initSysFont done");
+ #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+     // What the fonts came out as, in the terms the layout code uses.
+     //
+--- a/src/slic3r/GUI/GUI_Init.cpp
++++ b/src/slic3r/GUI/GUI_Init.cpp
+@@ -1,5 +1,25 @@
+ #include "GUI_Init.hpp"
+ 
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++#if defined(__APPLE__) && !TARGET_OS_OSX
++#include <boost/log/trivial.hpp>
++// Breadcrumbs through the part of startup that runs before anything else
++// logs.
++//
++// A launch SIGSEGV here produces a crash report whose unwinder cannot get past
++// GUI_Run - it prints "GUI_Run + 136" twice and stops - so the backtrace names
++// the caller and never the callee. The last line in the device log is then the
++// only evidence of how far the process got, and between GUI_App's constructor
++// and the first font registration there are several hundred lines of startup
++// that say nothing at all. These cost one log line each and turn "somewhere in
++// startup" into a specific call.
++#define ORCA_IOS_BOOT(what) BOOST_LOG_TRIVIAL(error) << "orca-ios-boot: " << what
++#else
++#define ORCA_IOS_BOOT(what) do {} while (0)
++#endif
++
+ #include "libslic3r/AppConfig.hpp"
+ 
+ #include "slic3r/GUI/GUI.hpp"
+@@ -41,10 +61,13 @@
+     //BBS: remove the try-catch and let exception goto above
+     try {
+         //GUI::GUI_App* gui = new GUI::GUI_App(params.start_as_gcodeviewer ? GUI::GUI_App::EAppMode::GCodeViewer : GUI::GUI_App::EAppMode::Editor);
++        ORCA_IOS_BOOT("GUI_Run: constructing GUI_App");
+         GUI::GUI_App* gui = new GUI::GUI_App();
++        ORCA_IOS_BOOT("GUI_Run: GUI_App constructed");
+         //if (gui->get_app_mode() != GUI::GUI_App::EAppMode::GCodeViewer) {
+             // G-code viewer is currently not performing instance check, a new G-code viewer is started every time.
+             bool gui_single_instance_setting = gui->app_config->get("app", "single_instance") == "true";
++            ORCA_IOS_BOOT("GUI_Run: instance_check");
+             if (Slic3r::instance_check(params.argc, params.argv, gui_single_instance_setting)) {
+                 //TODO: do we have delete gui and other stuff?
+                 return -1;
+@@ -52,6 +75,7 @@
+         //}
+ 
+ //      gui->autosave = m_config.opt_string("autosave");
++        ORCA_IOS_BOOT("GUI_Run: instance_check done");
+         GUI::GUI_App::SetInstance(gui);
+         gui->init_params = &params;
+ 
+@@ -61,8 +85,10 @@
+             int                 argc = 1;
+             std::vector<char *> argv;
+             argv.push_back(params.argv[0]);
++            ORCA_IOS_BOOT("GUI_Run: wxEntry (argv trimmed)");
+             return wxEntry(argc, argv.data());
+         } else {
++            ORCA_IOS_BOOT("GUI_Run: wxEntry");
+             return wxEntry(params.argc, params.argv);
+         }
+     } catch (const Slic3r::Exception &ex) {

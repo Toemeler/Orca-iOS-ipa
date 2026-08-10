@@ -781,9 +781,21 @@ jobs:
           # and the reason was in a job log that cannot be downloaded through
           # the egress proxy this repo is driven from. The publisher below picks
           # this file up, so the next failure names itself in ci-logs/.
+          # The plist variants go in the release too, not just the artifact.
+          #
+          # The default IPA changed from the "both" arm to the baseline in the
+          # same commit that added the deep links, and when the next build
+          # crashed at launch there was no way to tell those two apart without
+          # another hour of CI - the variants existed only as workflow
+          # artifacts, which need a GitHub login to fetch and cannot be
+          # installed from the iPad in two taps. A re-zip already produced them;
+          # attaching them costs upload time and settles that class of question
+          # with one tap instead of one build.
           if bash ci/publish_release.sh \
               artifact/OrcaSlicer-iPad.ipa \
-              artifact/OrcaSlicer-iPad-minimal.ipa 2>&1 | tee /tmp/publish-release.log; then
+              artifact/OrcaSlicer-iPad-minimal.ipa \
+              artifact/OrcaSlicer-iPad-baseline.ipa \
+              artifact/OrcaSlicer-iPad-both.ipa 2>&1 | tee /tmp/publish-release.log; then
             echo "published release orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
           else
             echo "::warning::could not create release; download the OrcaSlicer-iPad.ipa workflow artifact instead"

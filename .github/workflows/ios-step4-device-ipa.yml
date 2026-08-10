@@ -668,27 +668,46 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
+          ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
         run: |
           set -uxo pipefail
-          TAG="orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
-          # Not fatal. Run 24 built, linked and packaged a clean device IPA and
-          # was then marked failed because this call returned
+          # ci/publish_release.sh, taken from Toemeler/ipadprocad. Beyond the
+          # IPA it writes source.json - an AltStore/SideStore source listing the
+          # last ten builds - and latest.json, the flat manifest the iPad
+          # Shortcut reads. Both go in the release, so the device side needs no
+          # login and no artifact download. See docs/AUTOINSTALL.md.
+          #
+          # Still not fatal. Run 24 built, linked and packaged a clean device
+          # IPA and was then marked failed because the release call returned
           # "HTTP 403: Resource not accessible by integration" - the token a
           # workflow_dispatch from an app integration gets cannot always create
           # a release, even with contents: write, though the same token pushes
           # ci-logs in the same job. The IPA is uploaded as a workflow artifact
-          # either way, and that is the deliverable; losing the release is a
-          # distribution inconvenience, not a broken build.
-          if gh release create "$TAG" \
-            --target "$GITHUB_SHA" \
-            --title "OrcaSlicer for iPad (run ${GITHUB_RUN_NUMBER})" \
-            --notes "Unsigned arm64 iphoneos build of OrcaSlicer, min iOS ${IOS_MIN}. See docs/SIDELOADING.md." \
-            artifact/OrcaSlicer-iPad.ipa \
-            artifact/OrcaSlicer-iPad-minimal.ipa; then
-            echo "published release $TAG"
+          # either way, and that is the deliverable.
+          if bash ci/publish_release.sh \
+              artifact/OrcaSlicer-iPad.ipa \
+              artifact/OrcaSlicer-iPad-minimal.ipa; then
+            echo "published release orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
           else
-            echo "::warning::could not create release $TAG; download the OrcaSlicer-iPad.ipa workflow artifact instead"
+            echo "::warning::could not create release; download the OrcaSlicer-iPad.ipa workflow artifact instead"
           fi
+
+      # The nudge to the iPad. A no-op without secrets - the build stays green,
+      # the release is there regardless, and the Shortcut finds it on its own.
+      # continue-on-error as well, because a push service being down must never
+      # turn a good build red.
+      - name: Notify iPad
+        if: success()
+        continue-on-error: true
+        env:
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          bash ci/notify_build.sh \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/orcaslicer-ipa-run${GITHUB_RUN_NUMBER}/OrcaSlicer-iPad.ipa" \
+            "${GITHUB_RUN_NUMBER}" \
+            "$(git log -1 --pretty=%s)"
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -775,12 +775,19 @@ jobs:
           # a release, even with contents: write, though the same token pushes
           # ci-logs in the same job. The IPA is uploaded as a workflow artifact
           # either way, and that is the deliverable.
+          # Keep the output. Being non-fatal is right - the IPA is uploaded as a
+          # workflow artifact either way - but it also made the failure
+          # invisible: run 109 was green from end to end and published nothing,
+          # and the reason was in a job log that cannot be downloaded through
+          # the egress proxy this repo is driven from. The publisher below picks
+          # this file up, so the next failure names itself in ci-logs/.
           if bash ci/publish_release.sh \
               artifact/OrcaSlicer-iPad.ipa \
-              artifact/OrcaSlicer-iPad-minimal.ipa; then
+              artifact/OrcaSlicer-iPad-minimal.ipa 2>&1 | tee /tmp/publish-release.log; then
             echo "published release orcaslicer-ipa-run${GITHUB_RUN_NUMBER}"
           else
             echo "::warning::could not create release; download the OrcaSlicer-iPad.ipa workflow artifact instead"
+            echo "PUBLISH FAILED - see ci-logs/step4-run-${GITHUB_RUN_NUMBER}/publish-release.log"
           fi
 
       # The nudge to the iPad. A no-op without secrets - the build stays green,
@@ -828,6 +835,10 @@ jobs:
           D="ci-logs/step4-run-${GITHUB_RUN_NUMBER}"
           mkdir -p "$D"
           [ -f /tmp/ccache-restore.txt ] && cp /tmp/ccache-restore.txt "$D/ccache-restore.txt"
+          # Why the release did or did not appear. This step runs on a GREEN
+          # run, which is exactly when a failed publish is invisible: the step
+          # that creates the release swallows its own failure on purpose.
+          [ -f /tmp/publish-release.log ] && cp /tmp/publish-release.log "$D/publish-release.log"
           {
             echo "=== ccache -s after the build ==="
             ccache -s -v 2>/dev/null || ccache -s

@@ -1,0 +1,123 @@
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -2495,6 +2495,33 @@
+ 
+ void GUI_App::init_download_path()
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // iOS has no Downloads folder, and wxStandardPaths has no iPhone override
++    // for Dir_Downloads at all - wxStandardPathsBase::GetUserDir ignores its
++    // argument and hands back the home directory, which here is the app
++    // container root. Writing downloaded models there would put them somewhere
++    // the user cannot reach: only Documents/ is exported, through
++    // UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace, which the
++    // bundle already sets.
++    //
++    // This matters beyond tidiness. Downloader::start_download() and
++    // Plater::import_model_id() both give up when download_path is not an
++    // existing directory, so without this a MakerWorld "Open in Bambu Studio"
++    // link fails with "Destination folder is not set" and nothing else.
++    if (const char *const ios_home = ::getenv("HOME")) {
++        const fs::path down_dir = fs::path(ios_home) / "Documents" / "Downloads";
++        boost::system::error_code ec;
++        fs::create_directories(down_dir, ec);
++        if (!ec || fs::is_directory(down_dir)) {
++            app_config->set("download_path", down_dir.string());
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-deeplink: download_path " << down_dir.string();
++            return;
++        }
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-deeplink: could not create " << down_dir.string()
++                                 << " (" << ec.message() << "); downloads will fail";
++    }
++#endif
++
+     std::string down_path = app_config->get("download_path");
+ 
+     if (down_path.empty()) {
+@@ -3526,6 +3553,19 @@
+             this->post_init();
+ 
+             update_publish_status();
++
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            // Replay a deep link that arrived during launch, now that there is
++            // a Plater to open it into. CallAfter rather than a direct call:
++            // start_download() puts up a modal progress dialog and switches
++            // tabs, and doing that from inside the idle handler that is still
++            // finishing initialisation is asking for a re-entrant layout.
++            if (!m_ios_pending_open_url.empty()) {
++                const wxString pending = m_ios_pending_open_url;
++                m_ios_pending_open_url.clear();
++                CallAfter([this, pending] { start_download(into_u8(pending)); });
++            }
++#endif
+         }
+ 
+         if (m_post_initialized && app_config->dirty())
+@@ -8899,6 +8939,36 @@
+ {
+     if (url.empty())
+         return;
++
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Logged at error level so it survives the release log level. Whether the
++    // link even reached the application is the first thing anyone will want to
++    // know when a MakerWorld button appears to do nothing, and no other line
++    // says it.
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-deeplink: " << into_u8(url);
++
++    // Anything that is not one of the slicer open protocols would reach
++    // Downloader::start_download only to fail its URL check and put up "Could
++    // not start download due to malformed URL". iOS hands this callback more
++    // than deep links - a file:// URL for a document opened from Files, for
++    // one - so say what was ignored instead of blaming the link. Opening a
++    // local 3mf this way needs security-scoped resource access and is a
++    // separate piece of work.
++    if (!is_supported_open_protocol(into_u8(url))) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-deeplink: not a slicer open protocol, ignored";
++        return;
++    }
++
++    // On iOS the link almost always arrives at launch, ahead of the Plater it
++    // needs: Safari opens the URL, iOS starts the app for it, and OnInit has
++    // not run yet. Hold it and let post_init() replay it rather than losing it
++    // to the "plater is nullptr" branch in start_download().
++    if (plater_ == nullptr || !m_post_initialized) {
++        m_ios_pending_open_url = url;
++        return;
++    }
++#endif
++
+     start_download(into_u8(url));
+ }
+ 
+--- a/src/slic3r/GUI/GUI_App.hpp
++++ b/src/slic3r/GUI/GUI_App.hpp
+@@ -3,6 +3,12 @@
+ 
+ #include <memory>
+ #include <string>
++#ifdef __APPLE__
++// TARGET_OS_OSX is used below to tell the iOS build from the macOS one, and an
++// undefined macro in an #if is silently zero - which would compile the iOS-only
++// members into the desktop build.
++#include <TargetConditionals.h>
++#endif
+ #include "ImGuiWrapper.hpp"
+ #include "ConfigWizard.hpp"
+ #include "OpenGLManager.hpp"
+@@ -237,6 +243,14 @@
+ private:
+     bool            m_initialized { false };
+     bool            m_post_initialized { false };
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // A deep link that arrived before the Plater existed. On iOS the usual way
++    // in is a cold start - the user taps "Open in Bambu Studio" on MakerWorld
++    // in Safari and the app is launched by the URL - so the link is nearly
++    // always ahead of the window it needs. Held here and replayed from
++    // post_init().
++    wxString        m_ios_pending_open_url;
++#endif
+     bool            m_app_conf_exists{ false };
+     EAppMode        m_app_mode{ EAppMode::Editor };
+     bool            m_is_recreating_gui{ false };

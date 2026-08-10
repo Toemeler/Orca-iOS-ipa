@@ -1,0 +1,89 @@
+--- a/src/osx/iphone/utils.mm
++++ b/src/osx/iphone/utils.mm
+@@ -48,16 +48,64 @@
+ 
+ @end
+ 
++// A URL that arrived before there was an application to give it to, and whether
++// there is one yet.
++//
++// Two things make this necessary. A cold start puts the URL in the launch
++// options, and OnInit does not run until the next turn of the run loop (see
++// -applicationDidFinishLaunching: below), so the link is always ahead of the
++// window it needs. And iOS announces a launch URL *twice* - once in the launch
++// options and again through -application:openURL:options: after launching
++// finishes - so a handler that acts on both opens the same document twice.
++// Holding one URL and replacing rather than queueing collapses the pair.
++static NSURL* gs_pendingURL = nil;
++static bool   gs_didFinishLaunching = false;
++
++static void wxOSXQueueOrDeliverOpenURL(NSURL* url)
++{
++    if ( url == nil )
++        return;
++
++    if ( !gs_didFinishLaunching )
++    {
++        [url retain];
++        [gs_pendingURL release];
++        gs_pendingURL = url;
++        return;
++    }
++
++    if ( wxTheApp != NULL )
++        wxTheApp->MacOpenURL( wxCFStringRef::AsString([url absoluteString]) );
++}
++
+ @implementation wxAppDelegate
+ 
+ - (BOOL)application:(UIApplication *)application willFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+ {
+     wxUnusedVar(application);
+-    wxUnusedVar(launchOptions);
++    wxOSXQueueOrDeliverOpenURL([launchOptions objectForKey:UIApplicationLaunchOptionsURLKey]);
+     wxTheApp->OSXOnWillFinishLaunching();
+     return YES;
+ }
+ 
++// A deep link into a running application: custom scheme, universal link opened
++// as a URL, or a document handed over by another app. wxApp::MacOpenURL is the
++// same entry point the macOS port reaches through an Apple Event, so an
++// application that already handles URLs on the desktop needs nothing new here.
++- (BOOL)application:(UIApplication *)application
++            openURL:(NSURL *)url
++            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options
++{
++    wxUnusedVar(application);
++    wxUnusedVar(options);
++
++    if ( url == nil )
++        return NO;
++
++    wxOSXQueueOrDeliverOpenURL(url);
++    return YES;
++}
++
+ - (void)applicationDidFinishLaunching:(UIApplication *)application
+ {
+     wxUnusedVar(application);
+@@ -73,6 +121,20 @@
+     // the way they do on every other port.
+     dispatch_async(dispatch_get_main_queue(), ^{
+         wxTheApp->OSXOnDidFinishLaunching();
++
++        // Only now is there an application to hand a URL to. Delivering one any
++        // earlier means delivering it to an OnInit that has not run, and an
++        // application whose URL handler needs its own main window - which is
++        // every application that opens a document from a link - would take the
++        // link and drop it.
++        gs_didFinishLaunching = true;
++        if ( gs_pendingURL != nil )
++        {
++            NSURL* const url = gs_pendingURL;
++            gs_pendingURL = nil;
++            wxOSXQueueOrDeliverOpenURL(url);
++            [url release];
++        }
+     });
+ }
+ 

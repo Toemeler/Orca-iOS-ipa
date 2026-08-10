@@ -3706,3 +3706,112 @@ Preview and back.
    steps. Feature-sized, and unblocked now that the `039` tables download.
 6. **Sweep for other SysV IPC** — `shmget`/`shmat`/`shmctl`/`ftok` are a class,
    not an instance. Silent until reached, then SIGSYS.
+
+# SESSION 2026-08-10 (later still): MakerWorld deep links, and the canvas
+# experiment closed out
+
+## The canvas question is answered, and the answer is no
+
+Open item 2 from the section above is settled by the same device log. Run 106
+shipped the **`both`** arm as the default IPA, and it reported:
+
+```
+orca-ios-variant: sceneManifest yes, UIRequiresFullScreen no
+orca-ios-display (MainFrame): UIScreen.bounds 1600x1200, nativeBounds 2064x2752,
+                              scale 2, nativeScale 1.72
+```
+
+Identical to the baseline. With `scene` already dead in run 82, **all three arms
+are ruled out**: `UIApplicationSceneManifest`, dropping `UIRequiresFullScreen`,
+and both together. The 1600x1200 canvas is not a bundle key. Do not spend
+another round on Info.plist for it; whatever is next has to come from how wx
+creates its `UIWindow` (`src/osx/iphone/nonownedwnd.mm`), which builds one
+directly against `UIScreen` with no `UIWindowScene` at all.
+
+**The default IPA is the baseline again**, and that is now load-bearing rather
+than tidy — see below.
+
+## MakerWorld "Open in Bambu Studio"
+
+The button navigates to `bambustudio://open?file=<3mf url>&name=<name>` (older
+pages use `bambustudioopen://<url>`). Orca's `Downloader::start_download`
+already accepts both, plus `orcaslicer://`, `prusaslicer://` and `cura://`, and
+routes a Bambu-style link to `Plater::request_model_download` →
+`import_model_id`, which downloads the 3mf and loads it. **None of that needed
+changing.** What was missing was every step before it.
+
+**1. The bundle never claimed the schemes.** No `CFBundleURLTypes`, so iOS did
+not know the app handles them and Safari called the address invalid. Added to
+the Info.plist in `ios-step4-device-ipa.yml`, with a verify assertion next to
+the icon and dSYM ones, because a lost URL type fails in a way nobody would
+trace back to the bundle.
+
+**2. wx's iPhone port never received a URL.** `wxAppDelegate` in
+`src/osx/iphone/utils.mm` implements `willFinishLaunching`,
+`applicationDidFinishLaunching` and `applicationWillTerminate` and nothing else;
+there is no `-application:openURL:options:`, so the callback UIKit makes went
+nowhere. `wxApp::MacOpenURL` — the same entry point the macOS port reaches
+through an Apple Event, and the one `GUI_App` already overrides — was
+unreachable on iOS. **`0225-iphone-deliver-open-url.patch`.**
+
+Two traps in that patch worth keeping:
+
+* **A cold start delivers the URL before OnInit.** `0208` defers
+  `OSXOnDidFinishLaunching()` to the next run-loop turn, so a link that launches
+  the app arrives while there is no `Plater`. The URL is held and delivered
+  after OnInit returns.
+* **iOS announces a launch URL twice** — once in `launchOptions`, once through
+  `-application:openURL:options:` after launching finishes. Acting on both
+  downloads the model twice. One slot, replaced rather than queued, collapses
+  the pair.
+
+**3. `UIApplicationSceneManifest` would have broken it anyway.** With a scene
+manifest, URL delivery moves to `-scene:openURLContexts:` on a scene delegate,
+and wx 3.3.2's iPhone port has no `UIScene` support at all — so the link would
+be handed to a delegate that does not exist. That is why the default IPA going
+back to the baseline is load-bearing, and why the workflow now asserts the
+default has no scene manifest.
+
+**4. There was nowhere to download to.** `wxStandardPathsBase::GetUserDir`
+ignores its argument and returns the home directory, and there is no iPhone
+override for `Dir_Downloads`, so `download_path` pointed at the app container
+root. Both `Downloader::start_download` and `Plater::import_model_id` give up
+when it is not an existing directory, so the link would have failed with
+"Destination folder is not set". `init_download_path()` now uses
+`$HOME/Documents/Downloads` on iOS and creates it — `Documents/` because that is
+the only directory the bundle exports, through `UIFileSharingEnabled` and
+`LSSupportsOpeningDocumentsInPlace`, so downloaded models show up in Files.
+
+**`0377-ios-makerworld-open-in-slicer-deep-links.patch`** carries 2 and 4, plus
+an `orca-ios-deeplink:` log line at error level — whether the link reached the
+application at all is the first thing anyone will want to know — and a guard
+that ignores non-slicer URLs instead of reporting them as malformed.
+
+## What this does NOT do
+
+Opening a local `.3mf` from Files or from a Safari download. That arrives as a
+`file://` URL and is deliberately ignored with a log line rather than shown as a
+malformed link: reading a file outside the container needs
+`startAccessingSecurityScopedResource`, and it wants `CFBundleDocumentTypes` and
+`UTExportedTypeDeclarations` in the bundle to appear in the share sheet at all.
+Separate piece of work, and worth doing.
+
+## How to test it
+
+Safari on the iPad → any MakerWorld model page → **Open in Bambu Studio**. iOS
+should offer to open OrcaSlicer. Then read the log:
+
+```
+orca-ios-deeplink: download_path /var/mobile/.../Documents/Downloads
+orca-ios-deeplink: bambustudio://open?file=...
+```
+
+Both lines present and the model loads = working. First line only = the link
+never reached the app, which is the bundle (schemes) or wx (delivery). Second
+line followed by "not a slicer open protocol" = the button sent something the
+regex in `Downloader::start_download` does not match, and that regex is the
+place to look.
+
+Try it twice: once with OrcaSlicer **not** running (cold start, the launch-URL
+path) and once with it already open (the `openURL` path). They are different
+code paths and only the cold one goes through the deferred delivery.

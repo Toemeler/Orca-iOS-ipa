@@ -474,6 +474,29 @@ jobs:
             <key>UIViewControllerBasedStatusBarAppearance</key><false/>
             <key>UIFileSharingEnabled</key><true/>
             <key>LSSupportsOpeningDocumentsInPlace</key><true/>
+            <!-- Deep links. MakerWorld's "Open in Bambu Studio" button navigates
+                 to bambustudio://open?file=<3mf url>&amp;name=<name>, and older
+                 pages use bambustudioopen://<url>; Orca's Downloader accepts
+                 both already, along with its own orcaslicer:// and the
+                 prusaslicer:// and cura:// aliases. Without CFBundleURLTypes iOS
+                 does not know this app claims those schemes, and Safari reports
+                 the address as invalid rather than launching anything. There is
+                 no Bambu Studio on iPadOS to compete for the scheme.
+                 Delivery of the URL is wx patch 0225; what happens next is
+                 Orca patch 0377. -->
+            <key>CFBundleURLTypes</key><array>
+              <dict>
+                <key>CFBundleURLName</key><string>org.orca-ios.orcaslicer.open</string>
+                <key>CFBundleTypeRole</key><string>Viewer</string>
+                <key>CFBundleURLSchemes</key><array>
+                  <string>orcaslicer</string>
+                  <string>bambustudio</string>
+                  <string>bambustudioopen</string>
+                  <string>prusaslicer</string>
+                  <string>cura</string>
+                </array>
+              </dict>
+            </array>
             <key>UISupportedInterfaceOrientations</key><array>
               <string>UIInterfaceOrientationLandscapeLeft</string>
               <string>UIInterfaceOrientationLandscapeRight</string>
@@ -611,21 +634,37 @@ jobs:
             echo "built variant $name"
           }
 
-          # The default-named IPA is the *scene* build, not the baseline.
-          # Three rounds in a row the baseline got installed and the canvas
-          # experiment never ran - "orca-ios-variant: sceneManifest no" each
-          # time. Whatever is easiest to tap should be the arm under test, and
-          # the untouched build stays available under an explicit name.
+          # ALL THREE ARMS ARE NOW RULED OUT, and the default IPA is the
+          # baseline again.
+          #
+          # Run 106 shipped the "both" arm as the default and the device log
+          # from it says:
+          #
+          #   orca-ios-variant: sceneManifest yes, UIRequiresFullScreen no
+          #   orca-ios-display (MainFrame): UIScreen.bounds 1600x1200,
+          #     nativeBounds 2064x2752, scale 2, nativeScale 1.72
+          #
+          # unchanged from the baseline. Scenes alone died in run 82, and the
+          # two together died in run 106, so the canvas is not a bundle key and
+          # the variants have nothing left to answer.
+          #
+          # Shipping the scene arm by default now costs something concrete:
+          # UIApplicationSceneManifest moves URL delivery from
+          # -application:openURL:options: on the app delegate to
+          # -scene:openURLContexts: on a scene delegate, and wx 3.3.2's iPhone
+          # port has no UIScene support at all - so a MakerWorld deep link would
+          # be handed to a delegate that does not exist. The baseline has no
+          # manifest and gets the app-delegate callback, which is what patch
+          # 0225 implements.
+          #
+          # The variants are still built, because they cost a re-zip and the
+          # canvas question may yet come back with a different candidate.
           make_variant scene    scene
           cp /tmp/Info.plist.baseline "$APP/Info.plist"
           make_variant both     both
-          # The default-named IPA is the current best candidate: scene manifest
-          # AND no UIRequiresFullScreen. Scenes on their own were tested in run
-          # 82 and did not move the canvas.
           cp "artifact/OrcaSlicer-iPad.ipa" "artifact/OrcaSlicer-iPad-baseline.ipa"
-          cp "artifact/OrcaSlicer-iPad-both.ipa" "artifact/OrcaSlicer-iPad.ipa"
-          # Rebuild the plist from the baseline before the second variant, so
-          # the two changes are tested separately rather than stacking.
+          # Rebuild the plist from the baseline before the last variant, so the
+          # two changes are tested separately rather than stacking.
           cp /tmp/Info.plist.baseline "$APP/Info.plist"
           make_variant windowed windowed
 
@@ -643,6 +682,17 @@ jobs:
           exe = d.get('CFBundleExecutable')
           assert bid and exe, 'Info.plist is missing CFBundleIdentifier/CFBundleExecutable'
           print('IPA verified: bundle id %s, executable %s' % (bid, exe))
+          # Deep links fail in a way nobody would connect to the bundle: Safari
+          # just says the address is invalid. Check the schemes are actually in
+          # the plist an installer reads, the same way the icon is checked.
+          schemes = [s for t in d.get('CFBundleURLTypes', []) for s in t.get('CFBundleURLSchemes', [])]
+          for want in ('bambustudio', 'bambustudioopen', 'orcaslicer'):
+              assert want in schemes, 'Info.plist does not claim %s:// (has %s)' % (want, schemes)
+          print('URL schemes verified: %s' % ', '.join(schemes))
+          # The default IPA must NOT carry a scene manifest: it would route
+          # openURL to a scene delegate the wx iPhone port does not have.
+          assert 'UIApplicationSceneManifest' not in d, \
+              'the default IPA has a scene manifest; deep links will not be delivered'
           VERIFY
           unzip -l "$OUT" | head -6
 

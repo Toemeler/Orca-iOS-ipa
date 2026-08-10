@@ -100,19 +100,29 @@
  namespace Slic3r {
  namespace GUI {
  
-@@ -221,5 +306,50 @@
+@@ -221,5 +306,75 @@
      });
  }
  
-+void orca_ios_set_numeric_keyboard(wxWindow *win)
++// Apply, and say whether it applied.
++//
++// The first attempt at this silently did nothing on the device - the full
++// QWERTY keyboard still came up - and there was no way to tell from outside
++// whether the call never happened, the walk found no UITextField, or the field
++// was found and iOS ignored the setting. One line each way settles it. The
++// `where` string names the call site.
++static bool orca_ios_apply_numeric_keyboard(wxWindow *win, const char *where)
 +{
 +    if (win == nullptr)
-+        return;
-+    // Orca's numeric fields are composites (::TextInput, ::SpinInput,
-+    // ::TempInput), so walk down rather than assuming the handle is the field.
-+    UITextField *field = orca_ios_find_text_field((UIView *) win->GetHandle());
-+    if (field == nil)
-+        return;
++        return false;
++    UIView *root = (UIView *) win->GetHandle();
++    UITextField *field = orca_ios_find_text_field(root);
++    if (field == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-keyboard: " << where << " no UITextField under "
++                                 << (root ? [NSStringFromClass([root class]) UTF8String] : "(null handle)")
++                                 << " (" << (root ? (int) root.subviews.count : -1) << " subviews)";
++        return false;
++    }
 +
 +    field.keyboardType           = UIKeyboardTypeDecimalPad;
 +    field.autocorrectionType     = UITextAutocorrectionTypeNo;
@@ -147,6 +157,21 @@
 +    field.inputAccessoryView = bar;
 +    [sign release]; [pct release]; [comma release]; [gap release]; [done release];
 +    [bar release];
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-keyboard: " << where << " decimal pad set";
++    return true;
++}
++
++void orca_ios_set_numeric_keyboard(wxWindow *win)
++{
++    if (orca_ios_apply_numeric_keyboard(win, "build:"))
++        return;
++
++    // Try again once the event loop has turned. Some of Orca's composite
++    // widgets finish assembling their children after their constructor returns,
++    // and a UITextField that does not exist yet cannot be configured. Retrying
++    // costs one block; not retrying costs a device round trip to find out.
++    win->CallAfter([win] { orca_ios_apply_numeric_keyboard(win, "deferred:"); });
 +}
 +
  } // namespace GUI

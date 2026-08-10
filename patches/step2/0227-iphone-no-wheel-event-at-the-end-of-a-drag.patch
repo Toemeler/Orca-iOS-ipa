@@ -1,0 +1,42 @@
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -429,15 +429,35 @@
+     wxWindowMac* peer = impl->GetWXPeer();
+     if ( peer == nullptr )
+         return;
++    static CGPoint s_lastTranslation = { 0, 0 };
++
++    // Order matters here, and getting it wrong produced a very visible bug.
++    //
++    // The touch-count guard below is what keeps a finger drag out of the scroll
++    // path. It works for Began and Changed - but by the time UIKit reports
++    // Ended the count has ALREADY dropped to zero, so the guard stops
++    // protecting at exactly the wrong moment. A finger drag therefore bailed
++    // out of every Began and Changed without ever updating s_lastTranslation,
++    // and then the single Ended sailed straight through carrying the entire
++    // drag distance as one delta. On a 3D canvas, where the wheel is zoom, that
++    // is a zoom jump at the end of every orbit - which is exactly what the
++    // device showed.
++    //
++    // Ended and Cancelled carry no scroll that Changed has not already
++    // delivered, so ignore them outright. The Began reset stays above the
++    // return so a later trackpad scroll still starts from zero.
++    const UIGestureRecognizerState state = [gesture state];
++    if ( state == UIGestureRecognizerStateBegan )
++        s_lastTranslation = CGPointZero;
++    if ( state != UIGestureRecognizerStateBegan &&
++         state != UIGestureRecognizerStateChanged )
++        return;
++
+     if ( [gesture numberOfTouches] > 0 )
+         return;     // a real drag, already handled as touches
+ 
+-    static CGPoint s_lastTranslation = { 0, 0 };
+     const CGPoint translation = [gesture translationInView:self];
+ 
+-    if ( [gesture state] == UIGestureRecognizerStateBegan )
+-        s_lastTranslation = CGPointZero;
+-
+     const CGFloat dx = translation.x - s_lastTranslation.x;
+     const CGFloat dy = translation.y - s_lastTranslation.y;
+     s_lastTranslation = translation;

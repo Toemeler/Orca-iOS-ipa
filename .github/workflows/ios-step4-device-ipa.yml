@@ -391,6 +391,29 @@ jobs:
             echo "::error::$APP has a top-level resources directory; installers will reject it"
             exit 1
           fi
+          # SDK build metadata. Every Xcode-built app carries these, and this
+          # plist is written by hand, so it never had them - it has
+          # DTPlatformName and nothing else.
+          #
+          # They are not decoration. iOS reads DTPlatformVersion and DTSDKName
+          # to decide which SDK an app was built against, and an app it cannot
+          # place gets treated as an old one: rendered on a compatibility canvas
+          # and downsampled to the panel. That is exactly what this build has
+          # been doing - UIScreen reports 1600x1200 at scale 2 on a display
+          # whose native size is 2064x2752, a ratio of 1.72 in both directions.
+          #
+          # Three Info.plist candidates have been tried against that already
+          # (UIApplicationSceneManifest, dropping UIRequiresFullScreen, and both
+          # together) and none moved it. This is the remaining difference
+          # between this bundle and one Xcode would have produced.
+          SDK_VERSION=$(xcrun --sdk "$SDK" --show-sdk-version)
+          SDK_BUILD=$(xcrun --sdk "$SDK" --show-sdk-build-version)
+          XCODE_BUILD=$(xcodebuild -version | awk '/Build version/ {print $3}')
+          # DTXcode is the version without dots, zero padded to four: 16.2 -> 1620.
+          XCODE_VER=$(xcodebuild -version | awk 'NR==1 {print $2}')
+          DTXCODE=$(printf '%02d%02d' "${XCODE_VER%%.*}" "$(echo "$XCODE_VER" | cut -d. -f2)")
+          echo "SDK $SDK_VERSION ($SDK_BUILD), Xcode $XCODE_VER ($XCODE_BUILD) -> DTXcode $DTXCODE"
+
           cat > "$APP/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -407,6 +430,13 @@ jobs:
             <key>CFBundleSignature</key><string>????</string>
             <key>CFBundleSupportedPlatforms</key><array><string>iPhoneOS</string></array>
             <key>DTPlatformName</key><string>iphoneos</string>
+            <key>DTPlatformVersion</key><string>${SDK_VERSION}</string>
+            <key>DTPlatformBuild</key><string>${SDK_BUILD}</string>
+            <key>DTSDKName</key><string>iphoneos${SDK_VERSION}</string>
+            <key>DTSDKBuild</key><string>${SDK_BUILD}</string>
+            <key>DTXcode</key><string>${DTXCODE}</string>
+            <key>DTXcodeBuild</key><string>${XCODE_BUILD}</string>
+            <key>DTCompiler</key><string>com.apple.compilers.llvm.clang.1_0</string>
             <key>MinimumOSVersion</key><string>${IOS_MIN}</string>
             <key>LSRequiresIPhoneOS</key><true/>
             <key>UIDeviceFamily</key><array><integer>2</integer></array>

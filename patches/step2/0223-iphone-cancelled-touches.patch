@@ -38,18 +38,37 @@
      class_addMethod(c, @selector(becomeFirstResponder), (IMP) wxOSX_becomeFirstResponder, "c@:" );
      class_addMethod(c, @selector(resignFirstResponder), (IMP) wxOSX_resignFirstResponder, "c@:" );
  
-@@ -1489,6 +1513,14 @@
-     // it - only touching the widget does, which is why such a control comes
-     // right permanently the first time it is used.
-     v.contentMode = UIViewContentModeRedraw;
-+    // wxUIView is a UIScrollView, so it arrives with pan and pinch recognisers
-+    // attached. Left alone, a drag across a 3D canvas eventually reads as a
-+    // scroll, at which point the scroll view cancels the touches it had been
-+    // passing to the canvas and keeps every one after that - the view carries
-+    // on rendering and never hears the finger again. Nothing in this port
-+    // scrolls a user pane by dragging its content.
-+    v.canCancelContentTouches = NO;
-+    v.delaysContentTouches    = NO;
-     sv.clipsToBounds = YES;
-     sv.contentMode =  UIViewContentModeRedraw;
-     sv.clearsContextBeforeDrawing = NO;
+--- a/src/osx/iphone/glcanvas.mm
++++ b/src/osx/iphone/glcanvas.mm
+@@ -203,6 +203,31 @@
+     SetPeer(c);
+     MacPostControlCreate(pos, size) ;
+ 
++    // Keep a drag on this canvas out of the scroll views above it.
++    //
++    // wxUIView - what every wx pane is made of - is a UIScrollView subclass, so
++    // it comes with pan and pinch recognisers. A sustained drag across a GL
++    // canvas eventually reads as a scroll to one of the ancestors, and the
++    // moment it does that ancestor cancels the touches it had been forwarding
++    // and keeps every one after it. The canvas carries on rendering and never
++    // hears the finger again, which is a 3D view frozen for good.
++    //
++    // Only the ancestors of a GL canvas are treated this way, and only for
++    // touches that started inside one: a scrolled page still scrolls when
++    // dragged, because nothing here disables scrolling itself. Doing this in
++    // the generic pane constructor instead would have stopped every scrolled
++    // page in the application scrolling by drag, which is not a trade worth
++    // making for a fix aimed at the canvas.
++    for ( UIView* a = [v superview]; a != nil; a = [a superview] )
++    {
++        if ( [a isKindOfClass:[UIScrollView class]] )
++        {
++            UIScrollView* sv = (UIScrollView*) a;
++            sv.canCancelContentTouches = NO;
++            sv.delaysContentTouches    = NO;
++        }
++    }
++
+     return true;
+ }
+ 

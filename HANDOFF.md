@@ -4268,11 +4268,24 @@ opens stays in the one place that already makes it.
 ## The number keyboard
 
 `0381-ios-number-keyboard-for-numeric-fields.patch`.
-`UIKeyboardTypeNumbersAndPunctuation`, not the decimal pad, chosen for Orca
-specifically: it has a minus sign (positions and offsets), a decimal point and a
-comma (`coPoints` values like `0.4,0.6`), a percent sign (`coFloatOrPercent`),
-and **a return key** — the decimal pad has none, so it cannot be dismissed
-without building an input accessory view on every field.
+**`UIKeyboardTypeDecimalPad`** — the compact 4x3 keypad.
+`UIKeyboardTypeNumbersAndPunctuation` was tried first and rejected by the user
+on sight: it is still a full-width keyboard on an iPad, and entering a layer
+height should not cover half the plate.
+
+The keypad has only digits and the decimal separator, so an input accessory bar
+supplies the rest: **+/-** (sign toggle, for positions and offsets), **%** (for
+`coFloatOrPercent`), **,** (for `coPoints` like `0.4,0.6`, and for locales where
+the keypad offers a comma but the parser wants a point) and **Done** — which is
+not optional, because the decimal pad has no return key and the keyboard could
+otherwise never be dismissed. Every edit goes through UITextInput
+(`-insertText:`, `-replaceRange:withText:`) so the editing-changed notification
+fires and wxTextCtrl sees the value.
+
+The accessory target is owned by the field through `objc_setAssociatedObject`,
+because a UIToolbar holds only a weak reference to its target. **This file is
+built without ARC** — there is no `-fobjc-arc` anywhere in the CMake — so the
+retain/release in it is required.
 
 The helper walks down to the first `UITextField` rather than assuming the handle
 is one, because Orca's numeric fields are composites (`::TextInput`,

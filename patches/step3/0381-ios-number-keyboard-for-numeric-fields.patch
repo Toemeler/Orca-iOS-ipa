@@ -1,28 +1,74 @@
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -221,5 +221,55 @@
+@@ -13,6 +13,10 @@
+ 
+ #import <WebKit/WebKit.h>
+ #import <UIKit/UIKit.h>
++// objc_setAssociatedObject, used to give a text field ownership of its keyboard
++// accessory target. This file is built WITHOUT ARC (no -fobjc-arc anywhere in
++// the CMake), so the retain/release below is required, not optional.
++#import <objc/runtime.h>
+ #import <CoreText/CoreText.h>
+ 
+ #include "libslic3r/libslic3r.h"
+@@ -221,5 +225,118 @@
      });
  }
  
-+// Give a numeric field the number keyboard.
++// Give a numeric field the small number keypad.
 +//
-+// iOS picks the keyboard per text field, and every field in this application
-+// was getting the full QWERTY one - so entering a layer height meant a
-+// full-size alphabetic keyboard covering half the screen, and hunting for the
-+// digits row. UIKeyboardTypeNumbersAndPunctuation is the compact one, and it is
-+// the right choice for Orca specifically rather than the pure number pad:
++// UIKeyboardTypeDecimalPad is the compact one - a 4x3 grid, a fraction of the
++// screen. The full-width NumbersAndPunctuation keyboard was tried first and is
++// simply too big on an iPad: entering a layer height should not cover half the
++// plate.
 +//
-+//   * it has a minus sign, which every position and offset field needs;
-+//   * it has a decimal point AND a comma, so coPoints fields ("0.4,0.6") work;
-+//   * it has a percent sign, for coFloatOrPercent;
-+//   * it keeps a return key, so the keyboard can still be dismissed. The
-+//     decimal pad has no return key at all, and adding one means an input
-+//     accessory view on every field - a whole mechanism to avoid needing.
++// The keypad has only digits and the decimal separator, so the three things
++// Orca's numeric fields need beyond that come from an accessory bar above it:
 +//
-+// The widget passed in is usually one of Orca's composites (::TextInput,
-+// ::SpinInput, ::TempInput) rather than a bare wxTextCtrl, so this walks down
-+// to the first UITextField rather than assuming the handle is one. That keeps
-+// it working for all of them without knowing how any of them is built.
++//   +/-   sign toggle, for positions and offsets
++//   %     for coFloatOrPercent ("40%")
++//   ,     for coPoints ("0.4,0.6"), and for the decimal separator in locales
++//         where the keypad offers a comma but the parser wants a point
++//   Done  because the decimal pad has NO return key, so without this there is
++//         no way to dismiss the keyboard at all
++//
++// Every one of those edits goes through UITextInput (-insertText: and
++// -replaceRange:withText:) rather than assigning .text, so the control's
++// editing-changed notification fires and wxTextCtrl sees the new value.
++@interface OrcaNumericAccessory : NSObject
++@property (nonatomic, assign) UITextField *field;
++@end
++
++@implementation OrcaNumericAccessory
++
++- (void)notifyChanged
++{
++    [self.field sendActionsForControlEvents:UIControlEventEditingChanged];
++}
++
++- (void)toggleSign
++{
++    UITextField *f = self.field;
++    if (f == nil)
++        return;
++    NSString *text = f.text ?: @"";
++    NSString *flipped = [text hasPrefix:@"-"] ? [text substringFromIndex:1]
++                                              : [@"-" stringByAppendingString:text];
++    UITextRange *all = [f textRangeFromPosition:f.beginningOfDocument
++                                     toPosition:f.endOfDocument];
++    if (all != nil)
++        [f replaceRange:all withText:flipped];
++    [self notifyChanged];
++}
++
++- (void)insertPercent { [self.field insertText:@"%"]; [self notifyChanged]; }
++- (void)insertComma   { [self.field insertText:@","]; [self notifyChanged]; }
++- (void)done          { [self.field resignFirstResponder]; }
++
++@end
++
++static char orca_ios_accessory_key;
++
 +static UITextField *orca_ios_find_text_field(UIView *view)
 +{
 +    if (view == nil)
@@ -41,17 +87,45 @@
 +{
 +    if (win == nullptr)
 +        return;
++    // Orca's numeric fields are composites (::TextInput, ::SpinInput,
++    // ::TempInput), so walk down rather than assuming the handle is the field.
 +    UITextField *field = orca_ios_find_text_field((UIView *) win->GetHandle());
 +    if (field == nil)
 +        return;
 +
-+    field.keyboardType            = UIKeyboardTypeNumbersAndPunctuation;
-+    field.autocorrectionType      = UITextAutocorrectionTypeNo;
-+    field.autocapitalizationType  = UITextAutocapitalizationTypeNone;
-+    field.spellCheckingType       = UITextSpellCheckingTypeNo;
-+    field.smartDashesType         = UITextSmartDashesTypeNo;
-+    field.smartQuotesType         = UITextSmartQuotesTypeNo;
-+    field.smartInsertDeleteType   = UITextSmartInsertDeleteTypeNo;
++    field.keyboardType           = UIKeyboardTypeDecimalPad;
++    field.autocorrectionType     = UITextAutocorrectionTypeNo;
++    field.autocapitalizationType = UITextAutocapitalizationTypeNone;
++    field.spellCheckingType      = UITextSpellCheckingTypeNo;
++    field.smartDashesType        = UITextSmartDashesTypeNo;
++    field.smartQuotesType        = UITextSmartQuotesTypeNo;
++    field.smartInsertDeleteType  = UITextSmartInsertDeleteTypeNo;
++
++    OrcaNumericAccessory *target = [[OrcaNumericAccessory alloc] init];
++    target.field = field;
++    // The toolbar holds only a weak reference to its target, so the accessory
++    // has to be owned by the field or the first tap goes to a freed object.
++    objc_setAssociatedObject(field, &orca_ios_accessory_key, target,
++                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++    [target release];
++
++    UIToolbar *bar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 320, 44)];
++    bar.barStyle = UIBarStyleDefault;
++    UIBarButtonItem *sign = [[UIBarButtonItem alloc] initWithTitle:@"+/-"
++        style:UIBarButtonItemStylePlain target:target action:@selector(toggleSign)];
++    UIBarButtonItem *pct = [[UIBarButtonItem alloc] initWithTitle:@"%"
++        style:UIBarButtonItemStylePlain target:target action:@selector(insertPercent)];
++    UIBarButtonItem *comma = [[UIBarButtonItem alloc] initWithTitle:@","
++        style:UIBarButtonItemStylePlain target:target action:@selector(insertComma)];
++    UIBarButtonItem *gap = [[UIBarButtonItem alloc]
++        initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
++    UIBarButtonItem *done = [[UIBarButtonItem alloc]
++        initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:target action:@selector(done)];
++    bar.items = @[ sign, pct, comma, gap, done ];
++    [bar sizeToFit];
++    field.inputAccessoryView = bar;
++    [sign release]; [pct release]; [comma release]; [gap release]; [done release];
++    [bar release];
 +}
 +
  } // namespace GUI

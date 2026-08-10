@@ -1252,6 +1252,13 @@ MainFrame builds web-view panels).
 
 ### Build speed: root cause found, fix in but unverified
 
+> **VERIFIED (2026-08-10), and step 4 took the fallback.** The step-4 workflow
+> builds with the PCH **off**, which is the fallback named at the end of this
+> section, and it works: runs 96 and 99 report 635 `direct_cache_hit` against
+> 1-3 misses out of ~636 objects. Nothing was exposed by removing the
+> FORCEINCLUDE. The mtime-pinning approach in `ios-step3-fast.yml` was not what
+> settled it.
+
 ccache hits 76 of 639 objects, run after run. The 76 are exactly the
 targets that do **not** use a precompiled header (deps_src, imgui,
 libvgcode, libslic3r_cgal, the ObjC shims, `OrcaSlicer.cpp`). The 563
@@ -1722,7 +1729,16 @@ is the harness, not the app. Do not read a step-3 launch verdict as evidence
 about the app until `sim-install.log` is non-empty. The device is the ground
 truth now; the simulator is the thing that needs fixing.
 
-## ccache is missing on step 4 (open, costs ~65 min a run)
+## ccache is missing on step 4 (~~open, costs ~65 min a run~~ CLOSED)
+
+> **CLOSED (2026-08-10).** Fixed by turning the PCH off (`-DSLIC3R_PCH=OFF`) —
+> see "Build speed: root cause found" above, and the measurement in the
+> 2026-08-10 section at the end of this file. Runs 96 and 99 both report
+> **635 `direct_cache_hit` against 1-3 misses**, and run 106's
+> `[7/9] Build + link` took **0.1 min**. A step-4 run that still compiles for an
+> hour has an empty cache, not a broken one — check whether
+> `Restore ccache` took 0.0 min, which means no entry existed in that branch's
+> cache scope at all.
 
 Run 26 restored `ccache-step4-` in 5 s and then spent 64 min compiling, same as
 the cold run 25. Every step-4 iteration therefore costs ~75 min end to end even
@@ -3815,3 +3831,56 @@ place to look.
 Try it twice: once with OrcaSlicer **not** running (cold start, the launch-URL
 path) and once with it already open (the `openURL` path). They are different
 code paths and only the cold one goes through the deferred delivery.
+
+## Correction: ccache on step 4 is not broken, and main's cache scope was empty
+
+Written down because I got this wrong once in this session and the same wrong
+conclusion is one glance at a slow run away.
+
+**The claim "ccache is missing on step 4" is out of date.** It dates from run
+26. The PCH was turned off afterwards and the published reports from runs 96 and
+99 — both on `claude/second-startup-crash-k0162l`, 2026-08-08/10 — say:
+
+```
+635 Result: direct_cache_hit
+  3 Result: direct_cache_miss
+```
+
+99.8%. That is why `[7/9] Build + link` on run 106 took **0.1 min** and the
+whole run took 7 minutes.
+
+**Run 108 took 113 minutes for an unrelated reason: `main` had no caches.**
+Its steps read
+
+```
+[3/9] Restore device deps cache    0.0 min   <- MISS
+[4/9] Build deps                  26.4 min
+Restore wx prefix cache            0.0 min   <- MISS
+[5/9] Build wxWidgets              5.0 min
+Restore ccache                     0.0 min   <- MISS
+[7/9] Build + link                75.9 min
+```
+
+Three straight misses. GitHub Actions caches are readable only from the branch
+that wrote them and from the default branch, and every step-4 run from 84 to 106
+ran on `claude/second-startup-crash-k0162l`, so all of it — deps, wx prefix,
+ccache — lived in that branch's scope and none of it was visible to `main`. The
+workflow file is byte-identical between the two; **nothing was missing from
+`main` except cache data, which is not in git**. Verified with
+`git diff <branch> main -- .github/workflows/ios-step4-device-ipa.yml`: empty.
+
+Run 108 paid that bill once and populated all three on `main`. Because `main`
+is the default branch, every branch now inherits them.
+
+**Reading a slow run correctly.** The three restore steps are the diagnosis, in
+this order:
+
+| Reading | Meaning |
+|---|---|
+| `Restore ccache` 0.0 min | no entry in this branch's scope — cold, and nothing is wrong |
+| restores hit, `[7/9]` still long | a widely-included header changed, or `ccache -s` shows real misses |
+| restores hit, `[7/9]` ~0.1 min | fully warm |
+
+A header change is a legitimate long build with a warm cache: `GUI_App.hpp` and
+anything else included across `libslic3r_gui` invalidates a large slice of the
+639 objects on its own.

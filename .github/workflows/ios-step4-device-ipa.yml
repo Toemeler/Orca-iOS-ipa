@@ -268,9 +268,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache-step4
-          key: ccache-step4-${{ github.run_id }}
+          key: ccache-step4-v2-${{ github.run_id }}
           restore-keys: |
-            ccache-step4-
+            ccache-step4-v2-
 
       # What the restore actually found, recorded before anything compiles.
       #
@@ -390,7 +390,7 @@ jobs:
         # dispatched, and `if: always()` runs on cancellation too - so a run
         # killed during the deps step, which never compiles a line, still saved
         # an EMPTY ccache under a brand new key. Restore matches on the prefix
-        # `ccache-step4-` and takes the most recent entry, so that empty one
+        # `ccache-step4-v2-` and takes the most recent entry, so that empty one
         # then outranks every good cache on the branch and the next run compiles
         # all 639 objects cold. Run 107 was cancelled 21 minutes into the deps
         # step and its Save ccache reported success in 0.0 minutes; that is the
@@ -403,7 +403,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.ccache-step4
-          key: ccache-step4-${{ github.run_id }}
+          key: ccache-step4-v2-${{ github.run_id }}
 
       - name: "[8/9] Assemble unsigned OrcaSlicer.ipa"
         run: |

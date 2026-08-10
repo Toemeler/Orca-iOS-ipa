@@ -163,9 +163,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache-step3
-          key: ccache-step3-${{ github.run_id }}
+          key: ccache-step3-v2-${{ github.run_id }}
           restore-keys: |
-            ccache-step3-
+            ccache-step3-v2-
 
       - name: Configure Orca GUI
         run: |
@@ -224,7 +224,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.ccache-step3
-          key: ccache-step3-${{ github.run_id }}
+          key: ccache-step3-v2-${{ github.run_id }}
 
 
       # The binary, on its own, so the launch loop does not need the compile.

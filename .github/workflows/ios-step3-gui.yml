@@ -291,9 +291,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache-step3
-          key: ccache-step3-${{ github.run_id }}
+          key: ccache-step3-v2-${{ github.run_id }}
           restore-keys: |
-            ccache-step3-
+            ccache-step3-v2-
 
       - name: "[6/8] Configure Orca GUI build"
         run: |
@@ -362,7 +362,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.ccache-step3
-          key: ccache-step3-${{ github.run_id }}
+          key: ccache-step3-v2-${{ github.run_id }}
 
       - name: "[7b/8] Launch in iPad simulator + screenshot (milestone 3)"
         id: launch

@@ -4105,3 +4105,45 @@ class.
   compiled `GUI_App.cpp`. Everything in that binary shares one layout.
 * The first run after this change pays a full recompile, because every cache key
   moves. One ~75 minute run, once.
+
+## Run 112 proved the ccache theory by crashing again, the other way round
+
+I claimed run 112 was "safe by accident" because 0379 restored `GUI_App.hpp` to
+upstream and run 108's cached objects were compiled against exactly that header.
+**That was wrong**, and the way it was wrong is the cleanest possible
+demonstration of the `system_headers` bug.
+
+The breadcrumbs from 0378 put the crash between two adjacent log lines, with one
+statement between them:
+
+```
+orca-ios-boot: GUI_Run: GUI_App constructed
+        bool gui_single_instance_setting = gui->app_config->get("app", "single_instance") == "true";   <- SIGSEGV, GUI_Run + 536
+orca-ios-boot: GUI_Run: instance_check        (never printed)
+```
+
+`gui->app_config` again, read from the wrong offset — but this time the stale
+object is **`GUI_Init.cpp`**, and the direction is reversed:
+
+| object | compiled in | against | `app_config` at |
+|---|---|---|---|
+| `GUI_Init.cpp.o` | run 111 (served from cache in 112) | 0377 header, **with** the extra member | offset + sizeof(wxString) |
+| `GUI_App.cpp.o` | run 112 (its `.cpp` changed) | upstream header, **without** it | offset |
+
+`GUI_Init.cpp` was last edited by 0378 in run 111, so its content — and
+therefore its cache key, with the header invisible — was identical in run 112.
+ccache handed back run 111's object. Reverting the header could not help,
+because the poisoned object had already been *written* under a key that does not
+mention the header.
+
+**This is why bumping the key matters and removing the sloppiness alone does
+not.** The existing `ccache-step4-*` entries contain objects built against two
+different definitions of `GUI_App`, and the prefix restore-key will happily
+serve them. The keys are now `ccache-step4-v2-` / `ccache-step3-v2-`, so the
+poisoned generation is abandoned rather than reasoned about.
+
+**Method note.** Two consecutive builds failed at launch for the same underlying
+reason and I mis-diagnosed the second one *while holding the correct general
+theory*, because I reasoned about which objects would be stale instead of
+removing the possibility. When a cache can serve a wrong answer, throw the cache
+away; do not model it.

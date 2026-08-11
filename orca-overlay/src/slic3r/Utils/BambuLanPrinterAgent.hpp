@@ -92,6 +92,10 @@ public:
     // without anyone asking for it.
     FilamentSyncMode get_filament_sync_mode() const override { return FilamentSyncMode::subscription; }
 
+    // Session state, for bambu_lan_agent_is_connected()/is_connecting() below.
+    bool mqtt_is_connected() const { return m_mqtt.is_connected(); }
+    bool mqtt_is_connecting() const { return m_connecting.load(); }
+
 private:
     // Uploads params.filename and returns the name it was stored under.
     int  upload_print_file(const PrintParams& params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, std::string& remote_name);
@@ -135,6 +139,16 @@ private:
     QueueOnMainFn        m_queue_on_main_fn;
     OnServerErrFn        m_on_server_err_fn;
 };
+
+// The state of the one LAN session in this process.
+//
+// Free functions rather than methods on NetworkAgent: every call site above
+// this holds the agent as a NetworkAgent, which has no notion of a LAN session,
+// and MachineObject::is_connected() answers `true` unconditionally for a
+// LAN-mode printer - which is no use to something deciding whether to dial
+// again. Used by the iOS auto-reconnect in GUI_App.
+bool bambu_lan_agent_is_connected();
+bool bambu_lan_agent_is_connecting();
 
 } // namespace Slic3r
 

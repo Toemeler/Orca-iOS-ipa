@@ -4567,3 +4567,61 @@ run redid a 40-minute rebuild it was never allowed to save. Run 121 paid exactly
 that. The wx key deliberately does not include it: static archives built against
 an older SDK link into a newer one, and only the final link decides which SDK
 the app reports.
+
+## Auto-connect, and the camera being already on
+
+Two complaints, one shared root: the app only did these things when the Device
+tab was opened.
+
+### Why it "only connected when I went to the Device tab"
+
+`ios_announce_preconfigured_printer()` (patch 0348) selected the machine exactly
+once, at launch — and *selecting is what dials*. The call sits a few
+milliseconds after `orca_ios_request_local_network_permission()` raises the iOS
+local-network prompt, so on a fresh install the only connect attempt ever made
+is the one made while the prompt is still on screen. It cannot succeed. Nothing
+retried it: the 5-second beacon re-announced the machine (so Orca would not age
+it out) but deliberately passed `select_it = false`, because re-selecting a LAN
+machine tears the session down and starts over.
+
+The connection therefore appeared only when something *else* selected the
+machine — and opening the Device tab is precisely that.
+
+Patch 0383 makes the beacon ask whether the session is actually up, and dial
+again when it is not:
+
+* `bambu_lan_agent_is_connected()` / `bambu_lan_agent_is_connecting()` are new
+  free functions in `BambuLanPrinterAgent.cpp`, backed by an atomic pointer to
+  the one agent in the process. **Do not** reach for
+  `MachineObject::is_connected()` here — for a LAN-mode printer it returns
+  `true` unconditionally, which tells you nothing.
+* A dial is skipped while a connect is in flight (they run on a worker with a
+  6-second timeout) and never repeats inside 6 seconds. So after the user taps
+  Allow, the session comes up within about one beacon.
+* Session up/down transitions are logged once each, not every 5 seconds.
+
+### Why the camera was never already playing
+
+`MediaPlayCtrl::Play()` returns immediately unless `m_next_retry.IsValid()`, and
+the only two things that ever make it valid are the play button and the
+IP-address dialog — upstream's autoplay line is commented out on purpose:
+
+```cpp
+//#if BBL_RELEASE_TO_PUBLIC
+//    m_next_retry = wxDateTime::Now();
+//#endif
+```
+
+so this build never auto-started the stream at all. On top of that `Play()`
+bails on `!IsShownOnScreen()`, and `on_show_hide()` calls `Stop()` on the way
+out of the tab. Three iOS-only changes in 0383: set `m_next_retry` in the
+constructor, drop the `IsShownOnScreen()` gate, and keep playing when the page
+is hidden. `SetMachineObject()` already calls `Play()` on every status update
+while the state is idle, so the stream now starts as soon as the printer is
+connected and pushing status — which is what `Enable()` keys off.
+
+Worth knowing: the stream now runs while the user is on Prepare. That is the
+point (returning to the tab is instant instead of paying for a TLS handshake and
+a first frame every time), but it is continuous WiFi and JPEG decoding. If
+battery becomes a complaint, stop on `UIApplicationDidEnterBackground` rather
+than on tab change.

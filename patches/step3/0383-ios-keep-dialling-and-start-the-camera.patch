@@ -1,0 +1,148 @@
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -838,6 +838,15 @@
+ void orca_ios_request_local_network_permission();
+ void orca_ios_register_bundled_fonts();
+ 
++// src/slic3r/Utils/BambuLanPrinterAgent.cpp, declared rather than included: the
++// header drags in the whole agent interface for two predicates. Closing GUI to
++// declare them is not decoration - they live in Slic3r, and a namespace block
++// written here would nest a second Slic3r inside GUI.
++} // namespace GUI
++bool bambu_lan_agent_is_connected();
++bool bambu_lan_agent_is_connecting();
++namespace GUI {
++
+ // A sideloaded iOS build cannot find a Bambu printer by itself.
+ //
+ // Discovery is SSDP: the printer announces itself to the multicast group
+@@ -871,7 +880,7 @@
+ //
+ // which is the escape hatch for the field most likely to change: a DHCP lease
+ // moving the printer to another address.
+-static void ios_announce_preconfigured_printer(AppConfig *app_config, Slic3r::DeviceManager *device_manager, bool select_it)
++static void ios_announce_preconfigured_printer(AppConfig *app_config, Slic3r::DeviceManager *device_manager)
+ {
+     if (device_manager == nullptr)
+         return;
+@@ -941,15 +950,40 @@
+     alive["sec_link"]     = "secure";
+     device_manager->on_machine_alive(alive.dump());
+ 
+-    // Selecting is what dials the printer, and re-selecting a LAN machine tears
+-    // the session down and dials again - so it happens once, not on every
+-    // beacon. The beacon exists because Orca ages out machines that stop
+-    // announcing themselves.
+-    if (select_it) {
+-        device_manager->set_selected_machine(dev_id);
+-        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: selected " << dev_name << " (" << dev_id << ") at " << dev_ip
+-                                 << ", access code " << (access_code.empty() ? "MISSING - it will not connect" : "set");
+-    }
++    // Dial the printer, and keep dialling until the session is actually up.
++    //
++    // Selecting is what dials, and re-selecting a LAN machine tears the session
++    // down and starts over - which is why this used to happen exactly once. But
++    // that once was at launch, a few milliseconds after the local-network
++    // prompt went up: on a fresh install the only attempt ever made is the one
++    // made before the user has tapped Allow, and it cannot succeed. Nothing
++    // retried it, so the connection only appeared when something else selected
++    // the machine - and opening the Device tab is exactly that. Hence "it only
++    // connects when I go to the device tab".
++    //
++    // So ask the LAN agent whether the session is up, and dial again when it is
++    // not. Never on top of an attempt already in flight, and never twice inside
++    // six seconds: a connect runs on its own thread with a six second timeout,
++    // against a printer that may be asleep.
++    static wxDateTime s_last_dial;              // invalid until the first attempt
++    static bool       s_was_connected = false;
++
++    const bool connected  = bambu_lan_agent_is_connected();
++    const bool connecting = bambu_lan_agent_is_connecting();
++    if (connected != s_was_connected) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: LAN session " << (connected ? "up" : "down");
++        s_was_connected = connected;
++    }
++
++    const wxDateTime now = wxDateTime::Now();
++    if (s_last_dial.IsValid() &&
++        (connected || connecting || now < s_last_dial + wxTimeSpan::Seconds(6)))
++        return;
++
++    s_last_dial = now;
++    device_manager->set_selected_machine(dev_id);
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-printer: dialling " << dev_name << " (" << dev_id << ") at " << dev_ip
++                             << ", access code " << (access_code.empty() ? "MISSING - it will not connect" : "set");
+ }
+ #endif // TARGET_OS_IPHONE
+ 
+@@ -1217,11 +1251,15 @@
+     orca_ios_request_local_network_permission();
+ 
+     // Stand in for the SSDP announcements iOS will not let this app receive.
+-    ios_announce_preconfigured_printer(app_config, m_device_manager, true);
++    // The beacon exists because Orca ages out machines that stop announcing
++    // themselves; it now also re-dials whenever the session is down, which is
++    // what makes the connection come up on its own once the user has answered
++    // the local-network prompt.
++    ios_announce_preconfigured_printer(app_config, m_device_manager);
+     {
+         wxTimer *const beacon = new wxTimer(this);
+         this->Bind(wxEVT_TIMER, [this](wxTimerEvent &) {
+-            ios_announce_preconfigured_printer(app_config, m_device_manager, false);
++            ios_announce_preconfigured_printer(app_config, m_device_manager);
+         }, beacon->GetId());
+         beacon->Start(5000, wxTIMER_CONTINUOUS);
+     }
+--- a/src/slic3r/GUI/MediaPlayCtrl.cpp
++++ b/src/slic3r/GUI/MediaPlayCtrl.cpp
+@@ -129,6 +129,18 @@
+ //    m_next_retry = wxDateTime::Now();
+ //#endif
+ 
++#ifdef __WXOSX_IPHONE__
++    // Start the camera by itself.
++    //
++    // Play() does nothing at all while m_next_retry is invalid, and the only
++    // two things that ever make it valid are the play button and the IP-address
++    // dialog - the autoplay just above is commented out upstream on purpose. On
++    // a tablet whose Device tab is mostly the camera, waiting to be asked is
++    // the wrong default: the picture should already be there when the tab is
++    // opened, not start loading once it is.
++    m_next_retry = wxDateTime::Now();
++#endif
++
+     parent->Bind(wxEVT_SHOW, &MediaPlayCtrl::on_show_hide, this);
+     parent->GetParent()->GetParent()->Bind(wxEVT_SHOW, &MediaPlayCtrl::on_show_hide, this);
+ 
+@@ -262,8 +274,15 @@
+ {
+     if (!m_next_retry.IsValid() || wxDateTime::Now() < m_next_retry)
+         return;
++#ifndef __WXOSX_IPHONE__
++    // Not on iOS: the whole point there is that the stream is already running
++    // before the Device tab is looked at, and this control is never on screen
++    // until it is. Everything else that guards Play() - the machine, the retry
++    // clock, IsEnabled(), which needs a live session pushing status - still
++    // applies, so this does not start a stream that has nowhere to come from.
+     if (!IsShownOnScreen())
+         return;
++#endif
+     if (m_last_state != MEDIASTATE_IDLE) {
+         return;
+     }
+@@ -694,7 +713,15 @@
+     m_failed_retry = 0;
+     if (m_next_retry.IsValid()) // Try open 2 seconds later, to avoid quick play/stop
+         m_next_retry = wxDateTime::Now() + wxTimeSpan::Seconds(2);
++#ifdef __WXOSX_IPHONE__
++    // Leaving the Device tab does not stop the camera. Tearing the stream down
++    // on the way out means paying for the TLS handshake and the first frame
++    // again on the way back in, every time - and the return trip is the one the
++    // user notices.
++    Play();
++#else
+     IsShownOnScreen() ? Play() : Stop();
++#endif
+ }
+ 
+ void MediaPlayCtrl::media_proc()

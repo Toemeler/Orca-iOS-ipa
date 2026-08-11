@@ -63,10 +63,38 @@ void notify(const OnUpdateStatusFn& fn, int stage, int code, const std::string& 
 
 bool cancelled(const WasCancelledFn& fn) { return fn && fn(); }
 
+// The live agent, for bambu_lan_agent_is_connected() below. There is exactly
+// one in a process - GUI_App creates it and holds it for the run - but it is
+// reached everywhere else as a NetworkAgent, which knows nothing about LAN
+// sessions, and the iOS auto-reconnect needs to ask specifically whether the
+// MQTT session to the printer is up.
+std::atomic<BambuLanPrinterAgent *> g_lan_agent{nullptr};
+
 } // namespace
+
+// Whether the LAN agent currently holds an MQTT session to the printer.
+//
+// Deliberately not MachineObject::is_connected(): for a LAN-mode printer that
+// one returns true unconditionally, which is no use to something deciding
+// whether to dial again.
+bool bambu_lan_agent_is_connected()
+{
+    BambuLanPrinterAgent *const agent = g_lan_agent.load();
+    return agent != nullptr && agent->mqtt_is_connected();
+}
+
+// Whether a connect attempt is in flight. A connect runs on its own thread and
+// can take a TLS handshake against a printer that is asleep, so "not connected"
+// on its own is not a reason to start over.
+bool bambu_lan_agent_is_connecting()
+{
+    BambuLanPrinterAgent *const agent = g_lan_agent.load();
+    return agent != nullptr && agent->mqtt_is_connecting();
+}
 
 BambuLanPrinterAgent::BambuLanPrinterAgent(std::string log_dir) : m_log_dir(std::move(log_dir))
 {
+    g_lan_agent.store(this);
     m_mqtt.set_message_fn([this](const std::string& topic, const std::string& payload) { on_mqtt_message(topic, payload); });
     m_mqtt.set_lost_fn([this](const std::string& reason) { on_mqtt_lost(reason); });
     m_ssdp.set_printer_fn([this](const std::string& json_str) {
@@ -78,6 +106,8 @@ BambuLanPrinterAgent::BambuLanPrinterAgent(std::string log_dir) : m_log_dir(std:
 
 BambuLanPrinterAgent::~BambuLanPrinterAgent()
 {
+    BambuLanPrinterAgent *self = this;
+    g_lan_agent.compare_exchange_strong(self, nullptr);
     m_ssdp.stop();
     // disconnect() joins the receive thread and suppresses the lost callback,
     // so no thread is left to reach back into a half-destroyed agent. Clearing

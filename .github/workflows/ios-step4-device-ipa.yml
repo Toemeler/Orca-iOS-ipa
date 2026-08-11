@@ -27,7 +27,12 @@ on:
         default: "v3.3.2"
       ios_min:
         required: false
-        default: "17.0"
+        default: "26.0"
+      # Only needed if the default image stops carrying an Xcode with the iOS 26
+      # SDK; the "Select Xcode" step below fails loudly and names this input.
+      runner:
+        required: false
+        default: "macos-15"
 
 permissions:
   contents: write
@@ -49,18 +54,46 @@ concurrency:
 jobs:
   device:
     name: OrcaSlicer for iPad (device)
-    runs-on: macos-15
+    runs-on: ${{ github.event.inputs.runner || 'macos-15' }}
     timeout-minutes: 360
 
     env:
       ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
       WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
-      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      # 26.0, because the keypad in patch 0381 uses UIGlassEffect - the real
+      # Liquid Glass material - unguarded, and clang rejects an API newer than
+      # the deployment target. Linking against the iOS 26 SDK is also what tells
+      # iOS to give the whole app the new design language rather than running it
+      # in compatibility mode.
+      IOS_MIN: ${{ github.event.inputs.ios_min || '26.0' }}
       PREFIX: ${{ github.workspace }}/ios-prefix
       WXPREFIX: ${{ github.workspace }}/wx-prefix
       SDK: iphoneos
 
     steps:
+      # First, and before anything expensive: the runner images carry several
+      # Xcodes and default to one that is not necessarily the newest. UIGlassEffect
+      # only exists in the iOS 26 SDK, so without this the build gets forty
+      # minutes in and then fails on an unknown class - or, worse, links against
+      # an older SDK and iOS quietly renders the app in compatibility mode.
+      #
+      # Fails in under a minute if no such Xcode is installed, and prints what
+      # there is so the next dispatch can pick a runner image with `runner:`.
+      - name: Select Xcode with the iOS 26 SDK
+        run: |
+          set -euo pipefail
+          echo "Installed Xcodes:"
+          ls -d /Applications/Xcode*.app
+          NEWEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          xcodebuild -version
+          SDK_VER=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "selected $NEWEST, iOS SDK $SDK_VER"
+          if [ "${SDK_VER%%.*}" -lt 26 ]; then
+            echo "::error::Newest Xcode here has iOS SDK $SDK_VER; Liquid Glass needs 26 or newer. Re-dispatch with runner: macos-26."
+            exit 1
+          fi
+
       - name: "[1/9] Checkout + tools"
         uses: actions/checkout@v4
       - run: |

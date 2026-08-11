@@ -37,12 +37,28 @@ jobs:
     env:
       ORCA_REF: ${{ github.event.inputs.orca_ref || '395e070a0e675fd4723f93967cefede730c482d9' }}
       WX_REF: ${{ github.event.inputs.wx_ref || 'v3.3.2' }}
-      IOS_MIN: ${{ github.event.inputs.ios_min || '17.0' }}
+      # 26.0 and the newest Xcode, for the same reason as step4: patch 0381 uses
+      # UIGlassEffect unguarded, so an older SDK or deployment target does not
+      # compile at all.
+      IOS_MIN: ${{ github.event.inputs.ios_min || '26.0' }}
       PREFIX: ${{ github.workspace }}/ios-prefix
       WXPREFIX: ${{ github.workspace }}/wx-prefix
       SDK: iphonesimulator
 
     steps:
+      - name: Select Xcode with the iOS 26 SDK
+        run: |
+          set -euo pipefail
+          ls -d /Applications/Xcode*.app
+          NEWEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          SDK_VER=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "selected $NEWEST, iOS SDK $SDK_VER"
+          if [ "${SDK_VER%%.*}" -lt 26 ]; then
+            echo "::error::Newest Xcode here has iOS SDK $SDK_VER; Liquid Glass needs 26 or newer."
+            exit 1
+          fi
+
       - name: "[1/8] Checkout + tools"
         uses: actions/checkout@v4
       - run: |

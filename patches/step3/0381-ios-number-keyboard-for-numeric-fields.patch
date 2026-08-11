@@ -1,12 +1,13 @@
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -13,14 +13,150 @@
+@@ -13,14 +13,401 @@
  
  #import <WebKit/WebKit.h>
  #import <UIKit/UIKit.h>
-+// objc_setAssociatedObject, so a text field owns its keypad. This file is built
-+// WITHOUT ARC - there is no -fobjc-arc anywhere in the CMake - so the
-+// retain/release below is required, not optional.
++#import <QuartzCore/QuartzCore.h>
++// objc_setAssociatedObject, so a text field owns its keypad. This file is
++// built WITHOUT ARC - there is no -fobjc-arc anywhere in the CMake - so the
++// retain/release in the keypad is required, not optional.
 +#import <objc/runtime.h>
  #import <CoreText/CoreText.h>
  
@@ -20,91 +21,333 @@
  #include <boost/log/trivial.hpp>
  
 +
-+// A genuinely small number keypad for numeric fields.
++// A small number keypad, in Liquid Glass, floating directly under the field
++// being edited.
 +//
-+// THE THING TO KNOW: on iPad, UIKeyboardTypeDecimalPad is NOT the compact 4x3
-+// pad it is on iPhone - iPadOS renders it as a full-width keyboard. The device
-+// log settled this: 65 fields reported "decimal pad set", not one failure, and
-+// the full keyboard came up anyway. Setting keyboardType cannot produce a small
-+// keypad on this hardware. The only way is to supply the keyboard yourself as
-+// an inputView, which is what this is.
++// THREE THINGS TO KNOW.
 +//
-+// Sixteen keys, covering everything an Orca numeric field can hold:
++// One: on iPad, UIKeyboardTypeDecimalPad is NOT the compact 4x3 pad it is on
++// iPhone - iPadOS renders it as a full-width keyboard. The device log settled
++// that: 65 fields reported "decimal pad set", not one failure, and the full
++// keyboard came up anyway. Setting keyboardType cannot produce a small keypad
++// on this hardware, so the keypad has to be supplied.
 +//
-+//     7 8 9 <-     backspace
-+//     4 5 6  -     minus, for positions and offsets
-+//     1 2 3  .     decimal point
-+//     0 , % OK     comma for coPoints, percent for coFloatOrPercent
++// Two: an inputView is docked to the bottom of the screen by UIKit whatever its
++// size, so supplying it that way still leaves the keys a long way from the
++// field, with the sidebar's own value hidden behind them half the time. The
++// field therefore gets an *empty* inputView - which suppresses the system
++// keyboard while leaving the caret, the selection and the edit menu alone - and
++// the pad is put into the window, right below the field.
++//
++// Three: the material is UIGlassEffect, the real iOS 26 Liquid Glass, not a
++// blur that resembles it. That is a hard requirement rather than something to
++// fall back from, hence the #error below: a UIBlurEffect stand-in is the thing
++// this is deliberately not. It also means no pointer/arrow on the panel - the
++// new design language dropped popover arrows, and a masked layer is exactly
++// what stops glass from shaping and lighting its own edges - so the pad is
++// aligned to the field's leading edge and sits right under it instead.
++//
++//     7 8 9 <-    backspace
++//     4 5 6 +-    sign toggle, for positions and offsets
++//     1 2 3  .    decimal point
++//     % 0 ,  OK   percent for coFloatOrPercent, comma for coPoints
 +//
 +// OK lives on the pad, so no input accessory view is needed - the system
 +// decimal pad having no return key was the only reason for one.
-+@interface OrcaNumericKeypad : UIView
-+@property (nonatomic, assign) UITextField *field;
-+- (instancetype)initWithField:(UITextField *)field;
-+- (void)keyTapped:(UIButton *)sender;
-+@end
++
++#if !defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || __IPHONE_OS_VERSION_MAX_ALLOWED < 260000
++#error "Liquid Glass needs the iOS 26 SDK (Xcode 26 or newer). Select it with xcode-select before building; see the 'Select Xcode' step in .github/workflows/ios-step4-device-ipa.yml."
++#endif
++
++static const CGFloat kOrcaKeyW      = 58;
++static const CGFloat kOrcaKeyH      = 46;
++static const CGFloat kOrcaKeyGap    = 7;
++static const CGFloat kOrcaPadInset  = 10;
++static const CGFloat kOrcaCorner    = 20;
++static const CGFloat kOrcaMargin    = 8;   // keep off the screen edges
++static const CGFloat kOrcaFieldGap  = 6;   // field to panel
++
++static CGFloat orca_ios_keypad_width(void)
++{
++    return 4 * kOrcaKeyW + 3 * kOrcaKeyGap + 2 * kOrcaPadInset;
++}
++
++static CGFloat orca_ios_keypad_height(void)
++{
++    return 4 * kOrcaKeyH + 3 * kOrcaKeyGap + 2 * kOrcaPadInset;
++}
 +
 +static NSArray<NSString *> *orca_ios_keypad_titles(void)
 +{
 +    return @[ @"7", @"8", @"9", @"⌫",
-+              @"4", @"5", @"6", @"-",
++              @"4", @"5", @"6", @"±",
 +              @"1", @"2", @"3", @".",
-+              @"0", @",", @"%", @"OK" ];
++              @"%", @"0", @",", @"OK" ];
 +}
++
++@interface OrcaNumericKeypad : UIView <UIGestureRecognizerDelegate>
++// Not retained: the field owns the pad (associated object), not the reverse.
++@property (nonatomic, assign) UITextField *field;
++- (instancetype)initWithField:(UITextField *)field;
++@end
 +
 +@implementation OrcaNumericKeypad {
 +    NSMutableArray<UIButton *> *_keys;
++    UIVisualEffectView         *_glass;
++    UITapGestureRecognizer     *_outsideTap;
 +}
 +
 +- (instancetype)initWithField:(UITextField *)field
 +{
-+    // Four rows of roughly 48pt. About half the height of the alphabetic
-+    // keyboard this replaces, which was the whole complaint.
-+    self = [super initWithFrame:CGRectMake(0, 0, 320, 216)];
++    self = [super initWithFrame:CGRectMake(0, 0, orca_ios_keypad_width(),
++                                           orca_ios_keypad_height())];
 +    if (self == nil)
 +        return nil;
-+    _field = field;
-+    _keys = [[NSMutableArray alloc] init];
-+    self.backgroundColor = [UIColor colorWithWhite:0.82 alpha:1.0];
 +
++    _field = field;
++
++    // The glass view clips itself to its corner radius, so the shadow has to
++    // live on an unclipped view outside it.
++    self.backgroundColor     = [UIColor clearColor];
++    self.clipsToBounds       = NO;
++    self.layer.shadowColor   = [UIColor blackColor].CGColor;
++    self.layer.shadowOpacity = 0.22f;
++    self.layer.shadowRadius  = 16;
++    self.layer.shadowOffset  = CGSizeMake(0, 6);
++
++    UIGlassEffect *glass = [[[UIGlassEffect alloc] init] autorelease];
++    // Interactive glass tracks touches and pointer the way the system's own
++    // glass controls do, which is most of what makes it read as Liquid Glass
++    // rather than as a frosted rectangle.
++    glass.interactive = YES;
++
++    _glass = [[UIVisualEffectView alloc] initWithEffect:glass];
++    _glass.frame                 = self.bounds;
++    _glass.layer.cornerRadius    = kOrcaCorner;
++    _glass.layer.cornerCurve     = kCACornerCurveContinuous;
++    _glass.clipsToBounds         = YES;
++    _glass.autoresizingMask      = UIViewAutoresizingFlexibleWidth |
++                                   UIViewAutoresizingFlexibleHeight;
++    [self addSubview:_glass];
++
++    _keys = [[NSMutableArray alloc] init];
 +    NSArray<NSString *> *titles = orca_ios_keypad_titles();
 +    for (NSUInteger i = 0; i < titles.count; ++i) {
++        NSString *title = [titles objectAtIndex:i];
++        const BOOL isOK = [title isEqualToString:@"OK"];
++
 +        UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
-+        [b setTitle:titles[i] forState:UIControlStateNormal];
-+        b.titleLabel.font = [UIFont systemFontOfSize:22];
-+        b.backgroundColor = [UIColor whiteColor];
-+        b.layer.cornerRadius = 5;
++        [b setTitle:title forState:UIControlStateNormal];
++        b.titleLabel.font = isOK ? [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold]
++                                 : [UIFont monospacedDigitSystemFontOfSize:22
++                                                                    weight:UIFontWeightRegular];
++        [b setTitleColor:(isOK ? [UIColor whiteColor] : [UIColor labelColor])
++                forState:UIControlStateNormal];
++        // Glass is the panel, not the keys: Liquid Glass is not meant to be
++        // stacked on itself, so the keys are the content that sits on it.
++        b.backgroundColor    = isOK ? [UIColor systemBlueColor]
++                                    : [UIColor colorWithWhite:0.5 alpha:0.14];
++        b.layer.cornerRadius = 12;
++        b.layer.cornerCurve  = kCACornerCurveContinuous;
 +        b.tag = (NSInteger) i;
 +        [b addTarget:self action:@selector(keyTapped:)
 +            forControlEvents:UIControlEventTouchUpInside];
-+        [self addSubview:b];
++        [_glass.contentView addSubview:b];
 +        [_keys addObject:b];
 +    }
++
++    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
++    [nc addObserver:self selector:@selector(fieldDidBeginEditing:)
++               name:UITextFieldTextDidBeginEditingNotification object:field];
++    [nc addObserver:self selector:@selector(fieldDidEndEditing:)
++               name:UITextFieldTextDidEndEditingNotification object:field];
++    // Named by string because the constant is deprecated; the notification is
++    // still posted, and a rotation moves the field out from under the pad.
++    [nc addObserver:self selector:@selector(dismissFromNotification:)
++               name:@"UIApplicationDidChangeStatusBarOrientationNotification" object:nil];
++
 +    return self;
 +}
 +
 +- (void)dealloc
 +{
++    [[NSNotificationCenter defaultCenter] removeObserver:self];
++    [_outsideTap.view removeGestureRecognizer:_outsideTap];
++    [_outsideTap release];
 +    [_keys release];
++    [_glass release];
 +    [super dealloc];
++}
++
++// -- placement ------------------------------------------------------------
++
++- (void)reposition
++{
++    UITextField *f = self.field;
++    UIWindow    *w = f.window;
++    if (w == nil)
++        return;
++
++    const CGRect fr          = [f convertRect:f.bounds toView:w];
++    const CGRect wb          = w.bounds;
++    const UIEdgeInsets safe  = w.safeAreaInsets;
++    const CGFloat panelW     = orca_ios_keypad_width();
++    const CGFloat panelH     = orca_ios_keypad_height();
++
++    // Leading edge aligned with the field, the way a menu hangs off its
++    // control, then pushed back on screen if the field is near the edge.
++    CGFloat minX = safe.left + kOrcaMargin;
++    CGFloat maxX = wb.size.width - safe.right - kOrcaMargin - panelW;
++    if (maxX < minX)
++        maxX = minX;
++    const CGFloat x = MAX(minX, MIN(CGRectGetMinX(fr), maxX));
++
++    const CGFloat lowest = wb.size.height - safe.bottom - kOrcaMargin - panelH;
++    CGFloat y = CGRectGetMaxY(fr) + kOrcaFieldGap;
++    if (y > lowest) {
++        // No room below: hang it above the field instead.
++        const CGFloat above = CGRectGetMinY(fr) - kOrcaFieldGap - panelH;
++        y = above >= safe.top + kOrcaMargin ? above : MAX(safe.top + kOrcaMargin, lowest);
++    }
++
++    // -frame is only meaningful with an identity transform, and the corrective
++    // call in -showUnderField can land while the present animation still has
++    // one.
++    const CGAffineTransform t = self.transform;
++    self.transform = CGAffineTransformIdentity;
++    self.frame     = CGRectMake(x, y, panelW, panelH);
++    self.transform = t;
++    [self setNeedsLayout];
 +}
 +
 +- (void)layoutSubviews
 +{
 +    [super layoutSubviews];
-+    // Centred, and no wider than it needs to be: an inputView spans the screen,
-+    // but the keys themselves should not.
-+    const CGFloat pad = 6, cols = 4, rows = 4;
-+    const CGFloat gridW = MIN(self.bounds.size.width, (CGFloat) 420);
-+    const CGFloat originX = (self.bounds.size.width - gridW) / 2;
-+    const CGFloat kw = (gridW - pad * (cols + 1)) / cols;
-+    const CGFloat kh = (self.bounds.size.height - pad * (rows + 1)) / rows;
++
++    self.layer.shadowPath =
++        [UIBezierPath bezierPathWithRoundedRect:self.bounds
++                                   cornerRadius:kOrcaCorner].CGPath;
++
++    const CGFloat kw = (self.bounds.size.width  - 2 * kOrcaPadInset - 3 * kOrcaKeyGap) / 4;
++    const CGFloat kh = (self.bounds.size.height - 2 * kOrcaPadInset - 3 * kOrcaKeyGap) / 4;
 +    for (NSUInteger i = 0; i < _keys.count; ++i) {
 +        const NSUInteger r = i / 4, c = i % 4;
 +        [_keys objectAtIndex:i].frame =
-+            CGRectMake(originX + pad + c * (kw + pad), pad + r * (kh + pad), kw, kh);
++            CGRectMake(kOrcaPadInset + c * (kw + kOrcaKeyGap),
++                       kOrcaPadInset + r * (kh + kOrcaKeyGap),
++                       kw, kh);
 +    }
 +}
++
++// -- showing and hiding ---------------------------------------------------
++
++- (void)showUnderField
++{
++    UIWindow *w = self.field.window;
++    if (w == nil)
++        return;
++
++    // Identity first: -reposition sets a frame, and setting a frame under a
++    // non-identity transform is meaningless. A dismissal that is still
++    // animating out can leave the shrunk transform in place.
++    self.transform = CGAffineTransformIdentity;
++    self.alpha     = 0;
++    [w addSubview:self];
++    [self reposition];
++    [self layoutIfNeeded];
++
++    if (_outsideTap == nil) {
++        // A tap anywhere else finishes the edit. cancelsTouchesInView stays NO
++        // so this never eats a touch meant for the canvas or another control -
++        // it only observes.
++        _outsideTap = [[UITapGestureRecognizer alloc] initWithTarget:self
++                                                              action:@selector(windowTapped:)];
++        _outsideTap.cancelsTouchesInView = NO;
++        _outsideTap.delaysTouchesBegan   = NO;
++        _outsideTap.delaysTouchesEnded   = NO;
++        _outsideTap.delegate             = self;
++        [w addGestureRecognizer:_outsideTap];
++    }
++
++    self.transform = CGAffineTransformMakeScale(0.92f, 0.92f);
++    [UIView animateWithDuration:0.18 delay:0
++         usingSpringWithDamping:0.85f initialSpringVelocity:0
++                        options:UIViewAnimationOptionCurveEaseOut
++                     animations:^{
++        self.alpha     = 1;
++        self.transform = CGAffineTransformIdentity;
++    } completion:nil];
++
++    // Anything that moves the field in response to the edit starting - a
++    // scroll-to-reveal in the sidebar, a layout pass wx runs on focus - has
++    // happened by the next turn of the run loop.
++    dispatch_async(dispatch_get_main_queue(), ^{
++        if (self.superview != nil)
++            [self reposition];
++    });
++}
++
++- (void)hide
++{
++    if (_outsideTap != nil) {
++        [_outsideTap.view removeGestureRecognizer:_outsideTap];
++        [_outsideTap release];
++        _outsideTap = nil;
++    }
++    if (self.superview == nil)
++        return;
++    [UIView animateWithDuration:0.12 animations:^{
++        self.alpha = 0;
++    } completion:^(BOOL finished) {
++        (void) finished;
++        // Tapping straight from one numeric field to another can re-show this
++        // pad before the fade finishes; only the fade that is still the current
++        // state gets to take the view out of the window.
++        if (self.alpha == 0)
++            [self removeFromSuperview];
++    }];
++}
++
++- (void)fieldDidBeginEditing:(NSNotification *)note
++{
++    (void) note;
++    [self showUnderField];
++}
++
++- (void)fieldDidEndEditing:(NSNotification *)note
++{
++    (void) note;
++    [self hide];
++}
++
++- (void)dismissFromNotification:(NSNotification *)note
++{
++    (void) note;
++    if (self.superview != nil)
++        [self.field resignFirstResponder];
++}
++
++- (void)windowTapped:(UITapGestureRecognizer *)gesture
++{
++    if (self.superview == nil)
++        return;
++    const CGPoint p = [gesture locationInView:self.superview];
++    if (CGRectContainsPoint(self.frame, p))
++        return;
++    UITextField *f = self.field;
++    if (f != nil && CGRectContainsPoint([f convertRect:f.bounds toView:self.superview], p))
++        return;
++    [f resignFirstResponder];
++}
++
++- (BOOL)gestureRecognizer:(UIGestureRecognizer *)a
++        shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)b
++{
++    (void) a; (void) b;
++    return YES;   // never take a gesture away from anything else
++}
++
++// -- keys -----------------------------------------------------------------
 +
 +- (void)keyTapped:(UIButton *)sender
 +{
@@ -117,10 +360,18 @@
 +        [f resignFirstResponder];
 +        return;
 +    }
-+    if ([title isEqualToString:@"⌫"])
++    if ([title isEqualToString:@"⌫"]) {
 +        [f deleteBackward];
-+    else
++    } else if ([title isEqualToString:@"±"]) {
++        // A sign toggle rather than a minus key: a minus is only ever valid in
++        // front of the number, and reaching column 0 with the caret to type it
++        // is exactly the fiddling this pad exists to avoid.
++        NSString *t = f.text != nil ? f.text : @"";
++        f.text = [t hasPrefix:@"-"] ? [t substringFromIndex:1]
++                                    : [@"-" stringByAppendingString:t];
++    } else {
 +        [f insertText:title];
++    }
 +
 +    // wxTextCtrl listens for the control event, and a programmatic edit does not
 +    // raise it on its own.
@@ -151,7 +402,7 @@
  namespace Slic3r {
  namespace GUI {
  
-@@ -221,5 +357,47 @@
+@@ -221,5 +608,58 @@
      });
  }
  
@@ -167,8 +418,8 @@
 +        return false;
 +    }
 +
-+    // Still set, because it costs nothing and it is what a hardware keyboard and
-+    // the autofill bar read. The inputView is what replaces the on-screen one.
++    // Still set, because it costs nothing and it is what a hardware keyboard
++    // reads. The empty inputView below is what stops the on-screen one.
 +    field.keyboardType           = UIKeyboardTypeDecimalPad;
 +    field.autocorrectionType     = UITextAutocorrectionTypeNo;
 +    field.autocapitalizationType = UITextAutocapitalizationTypeNone;
@@ -177,12 +428,23 @@
 +    field.smartQuotesType        = UITextSmartQuotesTypeNo;
 +    field.smartInsertDeleteType  = UITextSmartInsertDeleteTypeNo;
 +
++    // An empty inputView is the supported way to say "no on-screen keyboard,
++    // but still a first responder with a caret". Zero height, so nothing is
++    // docked at the bottom of the screen; the shortcuts bar that iPadOS would
++    // otherwise float above it is emptied out as well.
++    field.inputView          = [[[UIView alloc] initWithFrame:CGRectZero] autorelease];
++    field.inputAccessoryView = nil;
++    field.inputAssistantItem.leadingBarButtonGroups  = @[];
++    field.inputAssistantItem.trailingBarButtonGroups = @[];
++
 +    OrcaNumericKeypad *pad = [[OrcaNumericKeypad alloc] initWithField:field];
-+    // The field owns the pad: a view does not retain its inputView's target.
++    // The field owns the pad; the pad only ever points back at the field.
 +    objc_setAssociatedObject(field, &orca_ios_keypad_key, pad,
 +                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-+    field.inputView          = pad;
-+    field.inputAccessoryView = nil;   // the pad carries its own OK key
++    // The begin-editing notification has already been and gone if the field was
++    // focused before we got here, which the deferred pass can hit.
++    if ([field isFirstResponder])
++        [pad showUnderField];
 +    [pad release];
 +    return true;
 +}

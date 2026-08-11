@@ -4420,3 +4420,73 @@ with identical settings, plus both G-code files (or the exported 3mf). That
 turns "weird" into a diff. A screenshot of the Preview showing the bad region
 would narrow it to a stage - missing infill vs missing perimeters vs missing
 layers each point somewhere different.
+
+## The numeric keypad, second cut: real Liquid Glass under the field
+
+Run 120 shipped the keypad as `field.inputView`. That works, but UIKit docks an
+inputView to the bottom of the screen no matter how small it is, so the keys sat
+a long way from the field they edit. The follow-up asked for two things: the pad
+under the input field, and native Liquid Glass — "actual native iOS 26 / 27
+Liquid Glass, change the whole app to iOS 26 if necessary".
+
+### What the pad is now
+
+`OrcaNumericKeypad` in `patches/step3/0381-…` no longer goes through
+`inputView`. The field gets an **empty** `inputView` — a zero-size `UIView`,
+which is the supported way to say "first responder, caret, selection, edit menu,
+but no system keyboard" — plus emptied `inputAssistantItem` bar groups so
+iPadOS does not float its shortcuts bar. The pad itself is added to the
+`UIWindow`, positioned with its leading edge on the field's and its top 6pt
+below the field's bottom, flipping above the field when there is no room below.
+A tap recogniser on the window (`cancelsTouchesInView = NO`, so it only
+observes) ends the edit when something else is touched; `OK` and the
+begin/end-editing notifications do the rest.
+
+### The API facts worth not rediscovering
+
+Checked against Apple's docs rather than guessed, because a wrong selector costs
+a 50-minute build:
+
+* `UIGlassEffect` is `c:objc(cs)UIGlassEffect` — a real ObjC class, iOS 26.0,
+  inherits `UIVisualEffect`. `[[UIGlassEffect alloc] init]` is the regular
+  style.
+* Its interactive flag is `c:objc(cs)UIGlassEffect(py)interactive`, so from ObjC
+  it is `glass.interactive = YES` — **not** `isInteractive`, which is only the
+  Swift spelling.
+* `UIGlassContainerEffect` is also ObjC (`spacing` property). Not used here:
+  glass is not meant to be stacked on glass, so the panel is the glass and the
+  keys are ordinary content sitting on it.
+* `UICornerConfiguration` is `s:5UIKit21UICornerConfigurationV` — a **Swift
+  struct**, so `view.cornerConfiguration` is unreachable from Objective-C. The
+  shape therefore comes from `layer.cornerRadius` + `clipsToBounds`, which is
+  exactly what Apple's own "Implementing Liquid Glass" UIKit guidance shows.
+* `UIButton.Configuration.glass()` / `.prominentGlass()` exist but resolve to
+  Swift-overlay symbols (`s:So8UIButtonC5UIKitE…`); no ObjC factory name was
+  verifiable, so the keys do not use them.
+
+That last point is also why the panel has **no pointer/arrow**. An arrow needs a
+`layer.mask`, and a mask is what stops glass shaping and lighting its own edge.
+iOS 26 dropped popover arrows anyway; anchoring to the field's leading edge is
+the current idiom.
+
+### The build now requires the iOS 26 SDK
+
+`UIGlassEffect` is referenced directly — no `NSClassFromString` probe, no
+`UIBlurEffect` fallback — so:
+
+* `IOS_MIN` is **26.0** in step3-fast, step3-gui and step4 (clang errors on an
+  API newer than the deployment target, and linking against the iOS 26 SDK is
+  also what makes iOS give the whole app the new design language instead of
+  compatibility mode).
+* Every one of those workflows starts with a **Select Xcode** step that picks
+  the newest `/Applications/Xcode*.app` and **fails in under a minute** if its
+  iOS SDK is older than 26, printing what is installed. Step 4 takes a `runner:`
+  dispatch input (default `macos-15`) so the retry can move to `macos-26`
+  without editing the file.
+* The source carries a matching `#error` on
+  `__IPHONE_OS_VERSION_MAX_ALLOWED < 260000`, so a local build says why rather
+  than reporting an unknown class.
+
+Expect this run to miss ccache completely: a different compiler is a different
+cache key. The deps and wx prefixes still hit — static archives built with an
+older minimum link into a newer one fine.

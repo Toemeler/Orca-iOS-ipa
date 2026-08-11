@@ -1,0 +1,147 @@
+diff --git a/src/slic3r/GUI/GCodeViewer.cpp b/src/slic3r/GUI/GCodeViewer.cpp
+index c6d0f65c..32e4ad99 100644
+--- a/src/slic3r/GUI/GCodeViewer.cpp
++++ b/src/slic3r/GUI/GCodeViewer.cpp
+@@ -43,6 +43,7 @@
+ 
+ #include <array>
+ #include <algorithm>
++#include <atomic>
+ #include <cmath>
+ #include <chrono>
+ 
+@@ -50,6 +51,28 @@
+ namespace Slic3r {
+ namespace GUI {
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/GLCanvas3D.cpp - true while the view is being orbited,
++// panned, zoomed or scrubbed, and for 250 ms after it stops.
++extern bool orca_ios_is_interacting();
++// Where the phases of this function go, in microseconds, read by the canvas
++// report in MainFrame. gcode_ms said the whole preview frame was inside
++// GCodeViewer::render() and that none of it was a libvgcode rebuild; these say
++// which of its six phases it actually is.
++std::atomic<uint64_t> orca_ios_gcv_shells_us{0};
++std::atomic<uint64_t> orca_ios_gcv_toolpaths_us{0};
++std::atomic<uint64_t> orca_ios_gcv_legend_us{0};
++std::atomic<uint64_t> orca_ios_gcv_sequential_us{0};
++std::atomic<uint64_t> orca_ios_gcv_slider_us{0};
++// What the draw actually did, for the same report: the stride it used (1 is
++// every segment) and whether the view was being moved at the time, so a frame
++// cost can be read against what the user was doing.
++std::atomic<unsigned> orca_ios_gcv_stride{1};
++std::atomic<unsigned> orca_ios_gcv_budget{0};
++std::atomic<unsigned> orca_ios_gcv_moving{0};
++
++#endif // __APPLE__ && !TARGET_OS_OSX
++
+ //BBS translation of EViewType
+ //const std::string EViewType_Map[(int) GCodeViewer::EViewType::Count] = {
+ //        _u8L("Line Type"),
+@@ -1611,18 +1634,75 @@ void GCodeViewer::reset()
+ }
+ 
+ //BBS: GUI refactor: add canvas width and height
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// Adds its own lifetime to a counter, so that the six phases of the frame below
++// can be timed without a return path being able to skip one.
++namespace {
++struct OrcaIosPhaseTimer
++{
++    std::atomic<uint64_t> &total;
++    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
++    explicit OrcaIosPhaseTimer(std::atomic<uint64_t> &t) : total(t) {}
++    uint64_t elapsed_us() const
++    {
++        return (uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
++            std::chrono::steady_clock::now() - t0).count();
++    }
++    ~OrcaIosPhaseTimer() { total += elapsed_us(); }
++};
++} // namespace
++
++#endif // __APPLE__ && !TARGET_OS_OSX
++
+ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+ {
+     glsafe(::glEnable(GL_DEPTH_TEST));
+-    render_shells(canvas_width, canvas_height);
++    {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        OrcaIosPhaseTimer shells_timer(orca_ios_gcv_shells_us);
++#endif
++        render_shells(canvas_width, canvas_height);
++    }
+ 
+     if (m_viewer.get_extrusion_roles().empty())
+         return;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Every segment, every frame, moving or not.
++    //
++    // Two rounds were spent drawing fewer of them and both were wrong for the
++    // same reason: a preview that is not the picture the desktop draws is not a
++    // preview. What a decimated toolpath actually looks like is a scatter of
++    // disconnected dots with no lines in it, and no budget makes that
++    // acceptable - the lines are what the view is for.
++    //
++    // So the draw does not get smaller. It gets cheaper: a third of the vertex
++    // shader invocations (indexed templates), no integer divides in the
++    // addressing (power-of-two texture widths), half the varying traffic
++    // (mediump colour). Same triangles, same pixels, less work per pixel.
++    //
++    // The budget mechanism stays in libvgcode, set to zero, because it is the
++    // measurement that decides whether any of this was enough - and because a
++    // machine that has to draw ten million segments one day will want it.
++    m_viewer.set_detail_budget(0);
++    orca_ios_gcv_budget.store(0);
++    {
++        OrcaIosPhaseTimer toolpaths_timer(orca_ios_gcv_toolpaths_us);
++        render_toolpaths();
++    }
++    orca_ios_gcv_stride.store(m_viewer.get_last_segments_stride());
++    orca_ios_gcv_moving.store(orca_ios_is_interacting() ? 1u : 0u);
++#else
+     render_toolpaths();
++#endif
+ 
+     float legend_height = 0.0f;
+-    render_legend(legend_height, canvas_width, canvas_height, right_margin);
++    {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        OrcaIosPhaseTimer legend_timer(orca_ios_gcv_legend_us);
++#endif
++        render_legend(legend_height, canvas_width, canvas_height, right_margin);
++    }
+ 
+     if (m_user_mode != wxGetApp().get_mode()) {
+         update_by_mode(wxGetApp().get_mode());
+@@ -1638,7 +1718,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+     m_sequential_view.marker.set_world_position(libvgcode::convert(curr_vertex.position));
+     m_sequential_view.marker.set_z_offset(m_z_offset + 0.5f);
+     // BBS fixed buttom margin. m_moves_slider.pos_y
+-    m_sequential_view.render(!m_no_render_path, legend_height, &m_viewer, m_viewer.get_current_vertex().gcode_id, canvas_width, canvas_height - bottom_margin * m_scale, right_margin * m_scale, m_viewer.get_view_type());
++    {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        OrcaIosPhaseTimer sequential_timer(orca_ios_gcv_sequential_us);
++#endif
++        m_sequential_view.render(!m_no_render_path, legend_height, &m_viewer, m_viewer.get_current_vertex().gcode_id, canvas_width, canvas_height - bottom_margin * m_scale, right_margin * m_scale, m_viewer.get_view_type());
++    }
+ 
+ #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+     if (is_legend_shown()) {
+@@ -1676,7 +1761,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+ #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+ 
+     //BBS render slider
+-    render_slider(canvas_width, canvas_height);
++    {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        OrcaIosPhaseTimer slider_timer(orca_ios_gcv_slider_us);
++#endif
++        render_slider(canvas_width, canvas_height);
++    }
+ }
+ 
+ #define ENABLE_CALIBRATION_THUMBNAIL_OUTPUT 0

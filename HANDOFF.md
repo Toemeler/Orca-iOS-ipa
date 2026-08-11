@@ -5057,7 +5057,7 @@ Two other things had to be true first, and only one of them was:
   app. 120 fps in battery saver is not achievable on iOS and never will be. The
   honest target there is 60 held solidly, which the same work delivers.
 
-### Level of detail, applied by the draw call
+### Level of detail, applied by the draw call — SUPERSEDED, see "Draw the same picture, cheaper" below
 
 Patch **0392**. `gl_InstanceID` indexes the enabled-segments texture directly,
 so instance *i* can just as easily read entry *i × stride*: adding an
@@ -5236,3 +5236,102 @@ next touch is answered immediately.
 it, which would mean something called `set_as_dirty()` or `request_extra_frame()`
 outside the handler — patch 0390's slider path does exactly that, so it is worth
 being able to see.
+
+## Draw the same picture, cheaper
+
+Two rounds were spent drawing fewer segments and both looked wrong, for the same
+reason each time. The instruction that closed it is the right one: *make the
+normal view insanely more efficient*. A preview that is not the picture the
+desktop draws is not a preview, so the draw does not get smaller — it gets
+cheaper.
+
+Decimation is gone from the default path. `set_detail_budget` stays in
+libvgcode, set to zero, because it is how the measurement is expressed and
+because a ten-million-segment model will want it one day. Seams are shown again:
+the desktop shows them, so the tablet shows them.
+
+### Where the cost actually is, counted rather than guessed
+
+One `glDrawArraysInstanced(GL_TRIANGLES, 0, 24, 2401216)`. Per **vertex**, the
+segments shader:
+
+* unfolds a linear index into a texel coordinate **six times** — the segment
+  index, both endpoint positions, two height/width/angle triples and the colour;
+* each unfold was `ivec2(id % w, id / w)` with `w` read back from
+  `textureSize()`;
+* then builds the view-aligned box and lights it.
+
+Three structural costs came out of that, and none of them is the drawing:
+
+**1. 24 vertex shader invocations per segment, for 8 corners.** The template is
+a triangle list naming eight corners 24 times. 57.6 million invocations a frame,
+and 57.6 million post-transform vertices for the tiler to bin — which is several
+times what an Apple GPU takes in one pass, so the parameter buffer overruns and
+the driver splits the frame into partial renders of a 4 megapixel target. That
+is where seconds-per-frame comes from, and it is why the block lands *inside*
+the draw call with `swap_ms` at zero.
+
+Patch **0393** draws both templates indexed. Eight distinct indices per
+instance, so the post-transform cache shades each corner once: **8 invocations
+instead of 24**, and one third of the data to bin. Same triangles, same winding,
+same pixels. The option marker gets the same treatment — a cone of `3 *
+resolution` listed vertices has only `resolution + 1` distinct ones, so 48
+becomes 17, and an option is two cones against a segment's one box.
+
+**2. Twelve integer divisions per vertex.** Apple's GPUs have no integer divide
+instruction; each `%` and each `/` is a synthesised sequence. Six of each, per
+vertex, 57.6 million times a frame — plausibly more than everything else the
+shader does put together.
+
+Patch **0392** makes every texture width a power of two and hands the shader
+`log2(width)` as a uniform, so the unfold is `ivec2(id & mask, id >> shift)`.
+Two instructions instead of two dozen. The widths were *already* powers of two
+for any model big enough to matter (the width saturates at
+`GL_MAX_TEXTURE_SIZE`); the shader simply had no way to know it.
+
+Rounding the width up meant the upload's last-row arithmetic had to be made
+honest as well. It computed the tail as `remaining % w`, which is **zero when
+the data fills its rows exactly** — and then uploaded nothing and recorded a
+count of zero. That was survivable when `w` was the data's own length; with
+power-of-two widths it stops being a remote case. All five upload paths now
+count complete rows and tail separately.
+
+**3. The varying.** `out vec3 color` at highp is 12 bytes of tiler traffic per
+vertex on top of `gl_Position`. The colour arrives as three 8-bit channels and
+leaves through an 8-bit framebuffer, so `mediump` carries it exactly and halves
+that.
+
+Two smaller ones in the same patch: the 16-entry sign table moved from inside
+`main()` to file scope, because a dynamically indexed const array declared in a
+function can land in per-invocation scratch memory rather than in constant
+memory once; and `textureSize()` is gone entirely, six calls per vertex with it.
+
+### What this is expected to be worth, and how to check
+
+Vertex invocations: **57.6M → 19.2M**. Per-invocation work: six `textureSize`
+and twelve integer divides removed. Tiler traffic: a third of the vertices, each
+with half the varying.
+
+That is a large multiple, not a small one, and the step change — if there is one
+— comes from dropping under the parameter-buffer cliff rather than from the
+arithmetic. Below that cliff the frame should scale with the work again.
+
+`paths_ms` with `lod_stride 1` is the number. It is now measuring the same
+picture the desktop draws, so it is comparable to the 2.4 seconds run 132
+measured, and to nothing that happened in between.
+
+### If it is not enough
+
+The remaining levers, in the order they are worth trying:
+
+1. **Stop redrawing a still preview.** The `dirty` counters added in the last
+   round name what keeps `m_dirty` true; whatever it is, a still preview should
+   render once. This is worth doing whatever `paths_ms` says.
+2. **Halve the drawable while moving.** 2070x1959 is 4 megapixels on a panel of
+   2752x2064 — already more pixels than the display has. `patches/step2`, so a
+   wx rebuild.
+3. **A CADisplayLink instead of wxIdle pacing.** Prepare gets 40 fps out of
+   16 ms frames, so the pacing becomes the ceiling once frames are cheap.
+
+None of the three changes a single pixel of the toolpath, which is now the
+constraint every option has to satisfy.

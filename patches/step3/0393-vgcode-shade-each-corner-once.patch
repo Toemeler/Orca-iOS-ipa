@@ -1,0 +1,248 @@
+diff --git a/src/libvgcode/src/OptionTemplate.cpp b/src/libvgcode/src/OptionTemplate.cpp
+index 316897ad..a7c6c11c 100644
+--- a/src/libvgcode/src/OptionTemplate.cpp
++++ b/src/libvgcode/src/OptionTemplate.cpp
+@@ -21,40 +21,61 @@ void OptionTemplate::init(uint8_t resolution)
+         return;
+ 
+     m_resolution = std::clamp<uint8_t>(resolution, 3, 85);
+-    m_vertices_count = static_cast<uint8_t>(3 * m_resolution);
++    m_indices_count = static_cast<uint16_t>(3 * m_resolution);
+     const float step = 2.0f * PI / float(m_resolution);
+ 
+     //
+     // top and bottom cones (paired wedges)
+     //
++    // Indexed, for the same reason as SegmentTemplate: the ring vertices are
++    // each shared by two wedges and the apex by all of them, so a triangle list
++    // names 3 * resolution vertices where only resolution + 1 are distinct. At
++    // the resolution used that is 48 shaded vertices per marker where 17 will
++    // do, and an option marker is already four times a toolpath segment - two
++    // of these cones against one box. Same triangles, same winding, same
++    // result.
++    //
+     std::vector<float> top_vertices;
+-    top_vertices.reserve(6 * m_vertices_count);
++    top_vertices.reserve(6 * (m_resolution + 1));
+     std::vector<float> bottom_vertices;
+-    bottom_vertices.reserve(6 * m_vertices_count);
++    bottom_vertices.reserve(6 * (m_resolution + 1));
++    std::vector<uint8_t> top_indices;
++    top_indices.reserve(m_indices_count);
++    std::vector<uint8_t> bottom_indices;
++    bottom_indices.reserve(m_indices_count);
+ 
+     const Vec3 top_apex = { 0.0f, 0.0f, 0.5f };
+     const Vec3 top_apex_normal = { 0.0f, 0.0f, 1.0f };
+     const Vec3 bottom_apex = { 0.0f, 0.0f, -0.5f };
+     const Vec3 bottom_apex_normal = { 0.0f, 0.0f, -1.0f };
++
++    // index 0 is the apex, 1 + i is ring vertex i
++    add_vertex(top_apex, top_apex_normal, top_vertices);
++    add_vertex(bottom_apex, bottom_apex_normal, bottom_vertices);
++    for (uint8_t i = 0; i < m_resolution; ++i) {
++        const float angle = float(i) * step;
++        const Vec3 pos = { 0.5f * std::cos(angle), 0.5f * std::sin(angle), 0.0f };
++        const Vec3 norm = normalize(pos);
++        add_vertex(pos, norm, top_vertices);
++        add_vertex(pos, norm, bottom_vertices);
++    }
+     for (uint8_t i = 0; i < m_resolution; ++i) {
+-        const float curr_angle = float(i) * step;
+-        const float next_angle = float(i + 1) * step;
+-        const Vec3 curr_pos = { 0.5f * std::cos(curr_angle), 0.5f * std::sin(curr_angle), 0.0f };
+-        const Vec3 next_pos = { 0.5f * std::cos(next_angle), 0.5f * std::sin(next_angle), 0.0f };
+-        const Vec3 curr_norm = normalize(curr_pos);
+-        const Vec3 next_norm = normalize(next_pos);
+-
+-        add_vertex(top_apex, top_apex_normal, top_vertices);
+-        add_vertex(curr_pos, curr_norm, top_vertices);
+-        add_vertex(next_pos, next_norm, top_vertices);
+-
+-        add_vertex(bottom_apex, bottom_apex_normal, bottom_vertices);
+-        add_vertex(next_pos, next_norm, bottom_vertices);
+-        add_vertex(curr_pos, curr_norm, bottom_vertices);
++        const uint8_t curr = static_cast<uint8_t>(1 + i);
++        const uint8_t next = static_cast<uint8_t>(1 + ((i + 1) % m_resolution));
++        // apex, curr, next - as the triangle list had it
++        top_indices.push_back(0);
++        top_indices.push_back(curr);
++        top_indices.push_back(next);
++        // apex, next, curr - the bottom cone wound the other way
++        bottom_indices.push_back(0);
++        bottom_indices.push_back(next);
++        bottom_indices.push_back(curr);
+     }
+ 
+     m_size_in_bytes_gpu += top_vertices.size() * sizeof(float);
+     m_size_in_bytes_gpu += bottom_vertices.size() * sizeof(float);
++    m_size_in_bytes_gpu += top_indices.size() * sizeof(uint8_t);
++    m_size_in_bytes_gpu += bottom_indices.size() * sizeof(uint8_t);
+ 
+     const size_t vertex_stride = 6 * sizeof(float);
+     const size_t position_offset = 0;
+@@ -74,6 +95,9 @@ void OptionTemplate::init(uint8_t resolution)
+     glsafe(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, (const void*)position_offset));
+     glsafe(glEnableVertexAttribArray(1));
+     glsafe(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertex_stride, (const void*)normal_offset));
++    glsafe(glGenBuffers(1, &m_top_ibo_id));
++    glsafe(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_top_ibo_id));
++    glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, top_indices.size() * sizeof(uint8_t), top_indices.data(), GL_STATIC_DRAW));
+ 
+     glsafe(glGenVertexArrays(1, &m_bottom_vao_id));
+     glsafe(glBindVertexArray(m_bottom_vao_id));
+@@ -84,6 +108,9 @@ void OptionTemplate::init(uint8_t resolution)
+     glsafe(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, (const void*)position_offset));
+     glsafe(glEnableVertexAttribArray(1));
+     glsafe(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertex_stride, (const void*)normal_offset));
++    glsafe(glGenBuffers(1, &m_bottom_ibo_id));
++    glsafe(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_bottom_ibo_id));
++    glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, bottom_indices.size() * sizeof(uint8_t), bottom_indices.data(), GL_STATIC_DRAW));
+ 
+     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
+     glsafe(glBindVertexArray(curr_vertex_array));
+@@ -91,6 +118,14 @@ void OptionTemplate::init(uint8_t resolution)
+ 
+ void OptionTemplate::shutdown()
+ {
++    if (m_bottom_ibo_id != 0) {
++        glsafe(glDeleteBuffers(1, &m_bottom_ibo_id));
++        m_bottom_ibo_id = 0;
++    }
++    if (m_top_ibo_id != 0) {
++        glsafe(glDeleteBuffers(1, &m_top_ibo_id));
++        m_top_ibo_id = 0;
++    }
+     if (m_bottom_vbo_id != 0) {
+         glsafe(glDeleteBuffers(1, &m_bottom_vbo_id));
+         m_bottom_vbo_id = 0;
+@@ -120,9 +155,11 @@ void OptionTemplate::render(size_t count)
+     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
+ 
+     glsafe(glBindVertexArray(m_top_vao_id));
+-    glsafe(glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(m_vertices_count), static_cast<GLsizei>(count)));
++    glsafe(glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_indices_count), GL_UNSIGNED_BYTE,
++                                   (const void*)0, static_cast<GLsizei>(count)));
+     glsafe(glBindVertexArray(m_bottom_vao_id));
+-    glsafe(glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(m_vertices_count), static_cast<GLsizei>(count)));
++    glsafe(glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_indices_count), GL_UNSIGNED_BYTE,
++                                   (const void*)0, static_cast<GLsizei>(count)));
+     glsafe(glBindVertexArray(curr_vertex_array));
+ }
+ 
+diff --git a/src/libvgcode/src/OptionTemplate.hpp b/src/libvgcode/src/OptionTemplate.hpp
+index e51c9e55..67308115 100644
+--- a/src/libvgcode/src/OptionTemplate.hpp
++++ b/src/libvgcode/src/OptionTemplate.hpp
+@@ -37,14 +37,18 @@ public:
+ 
+ private:
+     uint8_t m_resolution{ 0 };
+-    uint8_t m_vertices_count{ 0 };
++    // 3 * resolution, so it does not fit in a uint8_t once the resolution is
++    // above 85 - and the clamp in init() allows exactly that.
++    uint16_t m_indices_count{ 0 };
+     //
+     // gpu buffers ids.
+     //
+     unsigned int m_top_vao_id{ 0 };
+     unsigned int m_top_vbo_id{ 0 };
++    unsigned int m_top_ibo_id{ 0 };
+     unsigned int m_bottom_vao_id{ 0 };
+     unsigned int m_bottom_vbo_id{ 0 };
++    unsigned int m_bottom_ibo_id{ 0 };
+     //
+     // Size of the data sent to gpu, in bytes.
+     //
+diff --git a/src/libvgcode/src/SegmentTemplate.cpp b/src/libvgcode/src/SegmentTemplate.cpp
+index 4e692d5b..bb653417 100644
+--- a/src/libvgcode/src/SegmentTemplate.cpp
++++ b/src/libvgcode/src/SegmentTemplate.cpp
+@@ -15,7 +15,25 @@ namespace libvgcode {
+ //|   2--0-------5--7   |
+ //|    \ |       | /    |
+ //|      3-------4      | 
+-static constexpr const std::array<uint8_t, 24> VERTEX_DATA = {
++// Drawn indexed, and that is a performance decision rather than a tidiness one.
++//
++// Eight corners describe this shape, but the triangle list names them 24 times.
++// Drawn with glDrawArraysInstanced that is 24 vertex shader invocations per
++// segment, and this shader is not cheap - it reads the segment index, both
++// endpoint positions, two height/width/angle triples and a colour out of
++// textures, then builds a view-aligned box. On a 2.4 million segment preview
++// that is 57.6 million invocations a frame, which is several times what a
++// tile-based GPU will bin in one pass: the parameter buffer overruns, the
++// driver splits the frame into partial renders, and the draw call blocks for
++// seconds.
++//
++// Indexed, the post-transform cache sees eight distinct indices per instance
++// and shades each corner once: 8 invocations instead of 24, and one third of
++// the post-transform data to bin. The rasterised result is identical - same
++// triangles, same order, same vertices - so this costs nothing in quality.
++static constexpr const std::array<uint8_t, 8> VERTEX_DATA = { 0, 1, 2, 3, 4, 5, 6, 7 };
++
++static constexpr const std::array<uint8_t, 24> INDEX_DATA = {
+     0, 1, 2, // front spike
+     0, 2, 3, // front spike
+     0, 3, 4, // right/bottom body 
+@@ -32,6 +50,7 @@ void SegmentTemplate::init()
+         return;
+ 
+     m_size_in_bytes_gpu += VERTEX_DATA.size() * sizeof(uint8_t);
++    m_size_in_bytes_gpu += INDEX_DATA.size() * sizeof(uint8_t);
+ 
+     int curr_vertex_array;
+     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
+@@ -51,12 +70,22 @@ void SegmentTemplate::init()
+     glsafe(glVertexAttribIPointer(0, 1, GL_UNSIGNED_BYTE, 0, (const void*)0));
+ #endif // ENABLE_OPENGL_ES
+ 
++    // The element buffer binding is part of the vertex array object, so it is
++    // bound while the VAO is and needs no restoring of its own.
++    glsafe(glGenBuffers(1, &m_ibo_id));
++    glsafe(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo_id));
++    glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDEX_DATA.size() * sizeof(uint8_t), INDEX_DATA.data(), GL_STATIC_DRAW));
++
+     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
+     glsafe(glBindVertexArray(curr_vertex_array));
+ }
+ 
+ void SegmentTemplate::shutdown()
+ {
++    if (m_ibo_id != 0) {
++        glsafe(glDeleteBuffers(1, &m_ibo_id));
++        m_ibo_id = 0;
++    }
+     if (m_vbo_id != 0) {
+         glsafe(glDeleteBuffers(1, &m_vbo_id));
+         m_vbo_id = 0;
+@@ -71,14 +100,15 @@ void SegmentTemplate::shutdown()
+ 
+ void SegmentTemplate::render(size_t count)
+ {
+-    if (m_vao_id == 0 || m_vbo_id == 0 || count == 0)
++    if (m_vao_id == 0 || m_vbo_id == 0 || m_ibo_id == 0 || count == 0)
+         return;
+ 
+     int curr_vertex_array;
+     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
+ 
+     glsafe(glBindVertexArray(m_vao_id));
+-    glsafe(glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(VERTEX_DATA.size()), static_cast<GLsizei>(count)));
++    glsafe(glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(INDEX_DATA.size()), GL_UNSIGNED_BYTE,
++                                   (const void*)0, static_cast<GLsizei>(count)));
+     glsafe(glBindVertexArray(curr_vertex_array));
+ }
+ 
+diff --git a/src/libvgcode/src/SegmentTemplate.hpp b/src/libvgcode/src/SegmentTemplate.hpp
+index f104eef5..117ed2b6 100644
+--- a/src/libvgcode/src/SegmentTemplate.hpp
++++ b/src/libvgcode/src/SegmentTemplate.hpp
+@@ -40,6 +40,7 @@ private:
+     //
+     unsigned int m_vao_id{ 0 };
+     unsigned int m_vbo_id{ 0 };
++    unsigned int m_ibo_id{ 0 };
+     //
+     // Size of the data sent to gpu, in bytes.
+     //

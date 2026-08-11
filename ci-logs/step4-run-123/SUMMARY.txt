@@ -1,0 +1,8 @@
+=== FAILED targets ===
+GUI/Plater.cpp
+src/ViewerImpl.cpp
+
+=== undefined symbols (linker) ===
+
+total FAILED: 2
+undefined symbol count: 0

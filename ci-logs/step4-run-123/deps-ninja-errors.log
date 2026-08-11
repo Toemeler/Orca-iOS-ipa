@@ -1,0 +1,129 @@
+979-checking for otool... otool
+980-checking for aarch64-apple-darwin-otool64... no
+981-checking for otool64... no
+982:checking for -single_module linker flag... ld: warning: -single_module is obsolete
+983-no
+984-checking for -exported_symbols_list linker flag... yes
+985-checking for -force_load linker flag... yes
+986-checking for ANSI C header files... yes
+987-checking for sys/types.h... yes
+988-checking for sys/stat.h... yes
+989-checking for stdlib.h... yes
+990-checking for string.h... yes
+991-checking for memory.h... yes
+992-checking for strings.h... yes
+993-checking for inttypes.h... yes
+994-checking for stdint.h... yes
+995-checking for unistd.h... yes
+996-checking for dlfcn.h... yes
+997-checking for objdir... .libs
+998-checking if /usr/bin/cc supports -fno-rtti -fno-exceptions... yes
+999-checking for /usr/bin/cc option to produce PIC... -fno-common -DPIC
+1000-checking if /usr/bin/cc PIC flag -fno-common -DPIC works... yes
+1001-checking if /usr/bin/cc static flag -static works... no
+1002-checking if /usr/bin/cc supports -c -o file.o... yes
+1003-checking if /usr/bin/cc supports -c -o file.o... (cached) yes
+1004-checking whether the /usr/bin/cc linker (/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld) supports shared libraries... yes
+1005-checking dynamic linker characteristics... darwin dyld
+1006-checking how to hardcode library paths into programs... immediate
+1007-checking whether stripping libraries is possible... yes
+1008-checking if libtool supports shared libraries... yes
+1009-checking whether to build shared libraries... no
+1010-checking whether to build static libraries... yes
+1011-checking how to run the C++ preprocessor... /usr/bin/c++ -E
+1012-checking for ld used by /usr/bin/c++... /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
+1013-checking if the linker (/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld) is GNU ld... no
+1014-checking whether the /usr/bin/c++ linker (/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld) supports shared libraries... yes
+1015-checking for /usr/bin/c++ option to produce PIC... -fno-common -DPIC
+1016-checking if /usr/bin/c++ PIC flag -fno-common -DPIC works... yes
+1017-checking if /usr/bin/c++ static flag -static works... no
+1018-checking if /usr/bin/c++ supports -c -o file.o... yes
+1019-checking if /usr/bin/c++ supports -c -o file.o... (cached) yes
+1020-checking whether the /usr/bin/c++ linker (/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld) supports shared libraries... yes
+1021-checking dynamic linker characteristics... darwin dyld
+1022-checking how to hardcode library paths into programs... immediate
+1023-checking for ANSI C header files... (cached) yes
+1024-checking whether time.h and sys/time.h may both be included... yes
+1025-checking fcntl.h usability... yes
+1026-checking fcntl.h presence... yes
+1027-checking for fcntl.h... yes
+1028-checking float.h usability... yes
+1029-checking float.h presence... yes
+1030-checking for float.h... yes
+1031-checking invent.h usability... no
+1032-checking invent.h presence... no
+1033-checking for invent.h... no
+1034-checking langinfo.h usability... yes
+1035-checking langinfo.h presence... yes
+1036-checking for langinfo.h... yes
+1037-checking locale.h usability... yes
+1038-checking locale.h presence... yes
+1039-checking for locale.h... yes
+1040-checking nl_types.h usability... yes
+1041-checking nl_types.h presence... yes
+1042-checking for nl_types.h... yes
+--
+3517-checking for otool... otool
+3518-checking for aarch64-apple-darwin-otool64... no
+3519-checking for otool64... no
+3520:checking for -single_module linker flag... ld: warning: -single_module is obsolete
+3521-no
+3522-checking for -no_fixup_chains linker flag... yes
+3523-checking for -exported_symbols_list linker flag... yes
+3524-checking for -force_load linker flag... yes
+3525-checking for stdio.h... yes
+3526-checking for stdlib.h... yes
+3527-checking for string.h... yes
+3528-checking for inttypes.h... yes
+3529-checking for stdint.h... yes
+3530-checking for strings.h... yes
+3531-checking for sys/stat.h... yes
+3532-checking for sys/types.h... yes
+3533-checking for unistd.h... yes
+3534-checking for dlfcn.h... yes
+3535-checking which variant of shared library versioning to provide... (default) aix
+3536-checking for objdir... .libs
+3537-checking if /usr/bin/cc -std=gnu23 supports -fno-rtti -fno-exceptions... yes
+3538-checking for /usr/bin/cc -std=gnu23 option to produce PIC... -fno-common -DPIC
+3539-checking if /usr/bin/cc -std=gnu23 PIC flag -fno-common -DPIC works... yes
+3540-checking if /usr/bin/cc -std=gnu23 static flag -static works... no
+3541-checking if /usr/bin/cc -std=gnu23 supports -c -o file.o... yes
+3542-checking if /usr/bin/cc -std=gnu23 supports -c -o file.o... (cached) yes
+3543-checking whether the /usr/bin/cc -std=gnu23 linker (/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld) supports shared libraries... yes
+3544-checking dynamic linker characteristics... darwin dyld
+3545-checking how to hardcode library paths into programs... immediate
+3546-checking whether stripping libraries is possible... yes
+3547-checking if libtool supports shared libraries... yes
+3548-checking whether to build shared libraries... no
+3549-checking whether to build static libraries... yes
+3550-checking for non-MS-Windows ICC... no
+3551-checking if the compiler understands -Wl,-search_paths_first... yes
+3552-checking for an ANSI C-conforming const... yes
+3553-checking for working volatile... yes
+3554-checking whether byte ordering is bigendian... no
+3555-checking for library containing clock_gettime... none required
+3556-checking for egrep -e... (cached) /usr/bin/grep -E
+3557-checking for size_t... yes
+3558-checking for limits.h... yes
+3559-checking for float.h... yes
+3560-checking for string.h... (cached) yes
+3561-checking for locale.h... yes
+3562-checking for wchar.h... yes
+3563-checking for stdarg.h... yes
+3564-checking for sys/fpu.h... no
+3565-checking for struct lconv.decimal_point... yes
+3566-checking for struct lconv.thousands_sep... yes
+3567-checking for working alloca.h... yes
+3568-checking for alloca... yes
+3569-checking for uintptr_t... yes
+3570-checking how to copy va_list... va_copy
+3571-checking for setlocale... yes
+3572-checking for gettimeofday... yes
+3573-checking for signal... yes
+3574-checking for sigaction and its associated structure... yes
+3575-checking for long long int... yes
+3576-checking for intmax_t... yes
+3577-checking for working INTMAX_MAX... yes
+3578-checking for union fpc_csr... no
+3579-checking for _Noreturn... yes
+3580-checking for __builtin_unreachable... yes

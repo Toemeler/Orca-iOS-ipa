@@ -1,0 +1,116 @@
++ grep -oE 'Result: .*' /Users/runner/ccache-step4.log
++ sort
++ uniq -c
++ sort -rn
++ head -20
+1275 Result: local_storage_read_miss
+1272 Result: local_storage_write
+ 638 Result: direct_cache_miss
+ 637 Result: preprocessed_cache_miss
+ 636 Result: local_storage_miss
+ 636 Result: cache_miss
+   1 Result: preprocessor_error
+   1 Result: compile_failed
++ echo '--- sample miss context ---'
+--- sample miss context ---
++ grep -B60 -m1 'Result: cache_miss' /Users/runner/ccache-step4.log
++ tail -60
+[2026-08-11T10:30:57.165092 14422] Object file: deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o
+[2026-08-11T10:30:57.165406 14422] Trying direct lookup
+[2026-08-11T10:30:57.165533 14422] Manifest key: f5de9b02cb8e252898177307f8427cdf76873ee9
+[2026-08-11T10:30:57.165804 14422] No f5de9b02cb8e252898177307f8427cdf76873ee9 in local storage
+[2026-08-11T10:30:57.166796 14422] Running preprocessor
+[2026-08-11T10:30:57.166899 14422] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../../ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -arch arm64 -E -o /Users/runner/.ccache-step4/tmp/cpp_stdout.tmp.DoEc9M.ii ../deps_src/admesh/stlinit.cpp
+[2026-08-11T10:30:57.977393 14418] Got result key from preprocessor with -arch arm64
+[2026-08-11T10:30:57.977434 14418] Result key: 0ab5cc1e061ea16e711641337ce7ca1708957e0a
+[2026-08-11T10:30:57.977889 14418] No 0ab5cc1e061ea16e711641337ce7ca1708957e0a in local storage
+[2026-08-11T10:30:57.977911 14418] Running real compiler
+[2026-08-11T10:30:57.977957 14420] Got result key from preprocessor with -arch arm64
+[2026-08-11T10:30:57.977977 14420] Result key: 7d2f74e908aa27840ccfca52a1c6275a7fb917ad
+[2026-08-11T10:30:57.978059 14418] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../../ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/connect.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/connect.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o deps_src/admesh/CMakeFiles/admesh.dir/connect.cpp.o ../deps_src/admesh/connect.cpp
+[2026-08-11T10:30:57.978279 14420] No 7d2f74e908aa27840ccfca52a1c6275a7fb917ad in local storage
+[2026-08-11T10:30:57.978306 14420] Running real compiler
+[2026-08-11T10:30:57.978420 14420] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../../ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/shared.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/shared.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o deps_src/admesh/CMakeFiles/admesh.dir/shared.cpp.o ../deps_src/admesh/shared.cpp
+[2026-08-11T10:30:57.979099 14421] Got result key from preprocessor with -arch arm64
+[2026-08-11T10:30:57.979136 14421] Result key: 4606ff07349c8ced457d4f228e989d89ecf93353
+[2026-08-11T10:30:57.979530 14421] No 4606ff07349c8ced457d4f228e989d89ecf93353 in local storage
+[2026-08-11T10:30:57.979564 14421] Running real compiler
+[2026-08-11T10:30:57.979734 14421] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../../ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o deps_src/admesh/CMakeFiles/admesh.dir/stl_io.cpp.o ../deps_src/admesh/stl_io.cpp
+[2026-08-11T10:30:58.045595 14422] Got result key from preprocessor with -arch arm64
+[2026-08-11T10:30:58.045637 14422] Result key: 0c12922e8ba9fcd275c7c6c1df53cfde6da4c638
+[2026-08-11T10:30:58.046002 14422] No 0c12922e8ba9fcd275c7c6c1df53cfde6da4c638 in local storage
+[2026-08-11T10:30:58.046031 14422] Running real compiler
+[2026-08-11T10:30:58.046181 14422] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../../ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o deps_src/admesh/CMakeFiles/admesh.dir/stlinit.cpp.o ../deps_src/admesh/stlinit.cpp
+[2026-08-11T10:30:58.052765 14419] Got result key from preprocessor with -arch arm64
+[2026-08-11T10:30:58.052802 14419] Result key: d1d46b2ea12c3111dfcee7a364502ce20d4a9c35
+[2026-08-11T10:30:58.053319 14419] No d1d46b2ea12c3111dfcee7a364502ce20d4a9c35 in local storage
+[2026-08-11T10:30:58.053351 14419] Running real compiler
+[2026-08-11T10:30:58.053498 14419] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../../ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/normals.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/normals.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o deps_src/admesh/CMakeFiles/admesh.dir/normals.cpp.o ../deps_src/admesh/normals.cpp
+[2026-08-11T10:30:59.977221 14419] No paths in dependency file deps_src/admesh/CMakeFiles/admesh.dir/normals.cpp.o.d made relative
+[2026-08-11T10:30:59.977848 14419] Using Zstandard with default compression level 1
+[2026-08-11T10:30:59.977874 14419] Storing embedded entry #0 .o (8528 bytes) from deps_src/admesh/CMakeFiles/admesh.dir/normals.cpp.o
+[2026-08-11T10:30:59.977905 14419] Storing embedded entry #1 .d (140459 bytes) from deps_src/admesh/CMakeFiles/admesh.dir/normals.cpp.o.d
+[2026-08-11T10:30:59.980371 14419] Acquiring /Users/runner/.ccache-step4/lock/subdir_d1.lock
+[2026-08-11T10:30:59.980520 14419] Acquired /Users/runner/.ccache-step4/lock/subdir_d1.lock
+[2026-08-11T10:30:59.980529 14419] Creating /Users/runner/.ccache-step4/lock/subdir_d1.alive
+[2026-08-11T10:30:59.980731 14419] Stored d1d46b2ea12c3111dfcee7a364502ce20d4a9c35 in local storage (/Users/runner/.ccache-step4/d/1/d46b2ea12c3111dfcee7a364502ce20d4a9c35)
+[2026-08-11T10:30:59.980771 14419] Acquiring /Users/runner/.ccache-step4/d/stats.lock
+[2026-08-11T10:30:59.981085 14419] Acquired /Users/runner/.ccache-step4/d/stats.lock
+[2026-08-11T10:30:59.981097 14419] Creating /Users/runner/.ccache-step4/d/stats.alive
+[2026-08-11T10:30:59.982636 14419] Releasing /Users/runner/.ccache-step4/d/stats.lock
+[2026-08-11T10:30:59.982843 14419] Released /Users/runner/.ccache-step4/d/stats.lock
+[2026-08-11T10:30:59.982853 14419] Releasing /Users/runner/.ccache-step4/lock/subdir_d1.lock
+[2026-08-11T10:30:59.982987 14419] Released /Users/runner/.ccache-step4/lock/subdir_d1.lock
+[2026-08-11T10:31:00.096093 14419] Added result key to manifest 648a05b7a168790e66c5e1aca0958a249a24d030
+[2026-08-11T10:31:00.096139 14419] Using Zstandard with default compression level 1
+[2026-08-11T10:31:00.096848 14419] Acquiring /Users/runner/.ccache-step4/lock/subdir_64.lock
+[2026-08-11T10:31:00.096904 14419] Acquired /Users/runner/.ccache-step4/lock/subdir_64.lock
+[2026-08-11T10:31:00.096910 14419] Creating /Users/runner/.ccache-step4/lock/subdir_64.alive
+[2026-08-11T10:31:00.097056 14419] Stored 648a05b7a168790e66c5e1aca0958a249a24d030 in local storage (/Users/runner/.ccache-step4/6/4/8a05b7a168790e66c5e1aca0958a249a24d030)
+[2026-08-11T10:31:00.097077 14419] Acquiring /Users/runner/.ccache-step4/6/stats.lock
+[2026-08-11T10:31:00.097397 14419] Acquired /Users/runner/.ccache-step4/6/stats.lock
+[2026-08-11T10:31:00.097411 14419] Creating /Users/runner/.ccache-step4/6/stats.alive
+[2026-08-11T10:31:00.098062 14419] Releasing /Users/runner/.ccache-step4/6/stats.lock
+[2026-08-11T10:31:00.098131 14419] Released /Users/runner/.ccache-step4/6/stats.lock
+[2026-08-11T10:31:00.098139 14419] Releasing /Users/runner/.ccache-step4/lock/subdir_64.lock
+[2026-08-11T10:31:00.098181 14419] Released /Users/runner/.ccache-step4/lock/subdir_64.lock
+[2026-08-11T10:31:00.098221 14419] Result: cache_miss
++ echo '--- reasons, ranked ---'
+--- reasons, ranked ---
++ grep -oE '(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)' /Users/runner/ccache-step4.log
++ sed -E 's#/Users/runner[^ ]*/##'
++ sort
++ uniq -c
++ sort -rn
++ head -25
+   1 [2026-08-11T12:03:39.556544 80443] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:39.556544 80443] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:37.315353 80434] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:37.315353 80434] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:36.511348 80427] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:36.511348 80427] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:35.526721 80417] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:35.526721 80417] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:35.416976 80414] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:35.416976 80414] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:33.407409 80403] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:33.407409 80403] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:32.392120 80392] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:32.392120 80392] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:30.642999 80339] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:30.642999 80339] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:28.523287 80154] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:28.523287 80154] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:23.720727 80133] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:23.720727 80133] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:11.324682 79403] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:11.324682 79403] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:08.630002 79190] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-11T12:03:08.630002 79190] Config: (default) pch_external_checksum = false
+   1 [2026-08-11T12:03:05.144226 78933] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+sort: Broken pipe
++ echo '--- first compile command line (diff this against the previous run) ---'
+--- first compile command line (diff this against the previous run) ---
++ grep -m1 -A1 'Command line:' /Users/runner/ccache-step4.log
+[2026-08-11T10:30:57.157937 14418] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/connect.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/connect.cpp.o.d -o deps_src/admesh/CMakeFiles/admesh.dir/connect.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/connect.cpp
+[2026-08-11T10:30:57.157937 14418] Hostname: iad20-fj923-6da86827-0c82-41db-b2dc-89635d33f8e4-46C27CB5EDCD.local

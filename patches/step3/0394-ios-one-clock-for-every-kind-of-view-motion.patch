@@ -1,0 +1,93 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index 2216da7c..32afa6e7 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -158,6 +158,40 @@ std::atomic<uint64_t> orca_ios_canvas_render_max_us{0};
+ std::atomic<uint64_t> orca_ios_canvas_gcode_us{0};
+ std::atomic<uint64_t> orca_ios_canvas_swap_us{0};
+ 
++// Is the user moving the view right now?
++//
++// Patch 0390 answered this for the layer and moves sliders only, because at the
++// time the slider was the only thing known to make a frame expensive. It is not:
++// the toolpath draw costs the same whether the camera is being orbited, the
++// scene panned or a slider dragged, and all three want the same answer - draw
++// something cheaper until the motion stops, then draw it properly.
++//
++// So there is one clock for all of them. Anything that changes what the frame
++// looks like stamps it; anyone deciding how much detail to draw asks whether it
++// was stamped recently. 250 ms of quiet is "stopped" - long enough that a drag
++// with a pause in it does not flicker between detail levels, short enough that
++// letting go feels immediate.
++static std::atomic<uint64_t> orca_ios_last_interaction_us{0};
++
++static uint64_t orca_ios_steady_us()
++{
++    return (uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
++        std::chrono::steady_clock::now().time_since_epoch()).count();
++}
++
++void orca_ios_note_interaction()
++{
++    orca_ios_last_interaction_us.store(orca_ios_steady_us());
++}
++
++bool orca_ios_is_interacting()
++{
++    const uint64_t last = orca_ios_last_interaction_us.load();
++    if (last == 0)
++        return false;
++    return orca_ios_steady_us() - last < 250000;
++}
++
+ namespace {
+ // Adds its own lifetime to a counter. A scope guard rather than a pair of
+ // calls because GLCanvas3D::render() has several early returns.
+@@ -4066,6 +4100,11 @@ void GLCanvas3D::on_mouse_wheel(wxMouseEvent& evt)
+     if (evt.MiddleIsDown())
+         return;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // A wheel is a zoom, and a trackpad's discrete scroll arrives here too.
++    orca_ios_note_interaction();
++#endif
++
+ #if ENABLE_RETINA_GL
+     const float scale = m_retina_helper->get_scale_factor();
+     evt.SetX(evt.GetX() * scale);
+@@ -4264,6 +4303,12 @@ void GLCanvas3D::on_gesture(wxGestureEvent &evt)
+     if (!m_initialized || !_set_current())
+         return;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Every gesture this handler acts on moves the camera - pan, pinch, rotate.
++    // On a tablet these, not the mouse, are how the view is moved at all.
++    orca_ios_note_interaction();
++#endif
++
+     auto & camera = wxGetApp().plater()->get_camera();
+     if (evt.GetEventType() == wxEVT_GESTURE_PAN) {
+         auto p = evt.GetPosition();
+@@ -4331,6 +4376,10 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
+ {
+ #if defined(__APPLE__) && !TARGET_OS_OSX
+     ++orca_ios_canvas_mouse;
++    // Motion on its own is a pointer hovering and must not cost detail; a drag,
++    // a button or a wheel is the user moving the view.
++    if (evt.Dragging() || evt.ButtonDown() || evt.ButtonUp() || evt.GetWheelRotation() != 0)
++        orca_ios_note_interaction();
+ #endif
+     if (!m_initialized || !_set_current())
+         return;
+@@ -8564,6 +8613,11 @@ static bool orca_ios_slider_settled(int slot, double low, double high)
+         s.high    = high;
+         s.since   = now;
+         s.applied = false;
++        // A slider that just moved is the view being moved, so the toolpaths
++        // should drop to interaction detail for the same reason an orbit does.
++        // This is the one place that knows a slider is mid-drag: the drag
++        // itself is handled inside ImGui and never reaches an event handler.
++        orca_ios_note_interaction();
+         return false;
+     }
+     if (s.applied)

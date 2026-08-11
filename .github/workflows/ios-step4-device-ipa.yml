@@ -595,6 +595,18 @@ jobs:
             <key>NSAppTransportSecurity</key><dict>
               <key>NSAllowsLocalNetworking</key><true/>
             </dict>
+            <!-- Let the display run at its real refresh rate.
+                 iPad Pro panels are 120 Hz, but UIKit clamps every app to 60
+                 unless this key is present: without it CADisplayLink and the
+                 GLKView draw cycle are both held to a 16.67 ms minimum frame
+                 duration, so no amount of making frames cheaper can produce
+                 more than 60 of them a second. Nothing else in the app has to
+                 change to opt in - the cap is on the frame duration, not on the
+                 drawing.
+                 Low Power Mode still pins the panel to 60 Hz; that is a system
+                 policy no app can override, and it is the honest ceiling
+                 there. -->
+            <key>CADisableMinimumFrameDuration</key><true/>
             <key>UIRequiresFullScreen</key><true/>
             <!-- Genuinely full screen. UIRequiresFullScreen alone only stops
                  Split View and Slide Over; the status bar still takes a strip

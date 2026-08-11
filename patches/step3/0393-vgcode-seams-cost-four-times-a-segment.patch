@@ -1,0 +1,26 @@
+diff --git a/src/libvgcode/src/Settings.hpp b/src/libvgcode/src/Settings.hpp
+index 37ddb5a8..3b9ab040 100644
+--- a/src/libvgcode/src/Settings.hpp
++++ b/src/libvgcode/src/Settings.hpp
+@@ -35,7 +35,21 @@ struct Settings
+ 				false, // Wipes
+ 				false, // Retractions
+ 				false, // Unretractions
++#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
++				// Seams are the one option shown by default, and an option is
++				// four times the cost of a toolpath segment: 96 vertices for the
++				// pair of cones against 24 for a segment's box. A 500 layer model
++				// has a seam per perimeter loop per layer, so on the preview that
++				// measured at 2.4 seconds a frame the seam markers were a
++				// comparable share of it to the toolpaths themselves.
++				//
++				// They are also decoration - a print is not judged by them on a
++				// tablet - and the legend's eye icon turns them back on for
++				// anyone who does want them.
++				false, // Seams
++#else
+ 				true,  // Seams
++#endif
+ 				false, // ToolChanges
+ 				false, // ColorChanges
+ 				false, // PausePrints

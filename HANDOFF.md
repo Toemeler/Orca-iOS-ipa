@@ -4993,3 +4993,165 @@ and sideload. So that log says nothing about whether settling the slider helped.
    drawing: worth splitting `_render_gcode()` into shells / toolpaths / legend /
    sliders once the rebuilds are gone, because 35 ms of CPU for one instanced
    draw call is far too much and something in there is still iterating.
+
+## The rebuild is gone, and the frame is still 2.4 seconds
+
+Run 132's log, the 2.4M segment preview, at rest:
+
+```
+sel 2 (plater); render +2  render_ms 4838  gcode_ms 4815  swap_ms 9
+                vg_range_ms 0  vg_enabled_ms 0  vg_colors_ms 0
+```
+
+Two frames in five seconds — **2407 ms each, 0.4 fps**. Read it line by line,
+because between them these numbers close the question that 0388 and 0391 were
+built to answer:
+
+* **`vg_* = 0`.** None of the three `O(vertices)` rebuilds ran. 0390 worked, and
+  the "something sets a flag every frame" hypothesis from the last round is
+  dead. It was a real cause and it is fixed; it was not this one.
+* **`swap_ms` 9 for two frames.** Nothing is waiting on the present.
+* **`render_ms - gcode_ms` = 23 ms for two frames.** The bed, the objects, ImGui
+  and the overlays cost ~11 ms a frame. Not the problem — but note that 11 ms is
+  already a 90 fps ceiling on its own, so it does not get to stay either.
+* **`gcode_ms` is the frame.** All 2.4 seconds of it are inside
+  `GCodeViewer::render()`, and none of it is a rebuild.
+
+The preview size line says what is being drawn:
+
+```
+orca-ios-preview: vertices 2401216, layers 500, cpu 183 MB, gpu 87 MB, load 254 ms
+```
+
+`render_segments()` on the ES path issues **one**
+`glDrawArraysInstanced(GL_TRIANGLES, 0, 24, enabled_segments)`. At 2.4M enabled
+that is **57.6 million vertices per frame**, each doing four dependent
+`texelFetch`es out of RGBA32F textures. `render_options()` then draws the seams,
+and `Settings.hpp` ships `true, // Seams` — at **96 vertices per seam**, two
+48-vertex cones, which is four times what a segment costs. A 500 layer model has
+a seam per perimeter loop per layer.
+
+That is past what a tile-based GPU accepts in one pass: the parameter buffer
+overruns, the driver splits the frame into partial renders of a 4 megapixel
+target, and the block lands **inside the draw call** while it waits for memory
+to drain. Which is exactly the signature — `gcode_ms` enormous, `swap_ms` zero.
+A frame that is slow to draw, at last, rather than one that is being rebuilt.
+
+For comparison, Prepare on the same drawable: 201 frames in five seconds, 16 ms
+each. Same canvas, same device, a scene of a few hundred thousand triangles.
+
+### Why this one cannot be tuned
+
+120 Hz is an 8333 us frame. 57.6M vertices needs ≥190 ms even at a generous
+300M vertices/s. There is no version of "draw the same thing faster" that closes
+a gap of that size. The scene has to get smaller while it is moving, which is
+what every CAD viewport does and what the preview has never done.
+
+Two other things had to be true first, and only one of them was:
+
+* **The app is capped at 60 fps and always has been.** `Info.plist` had no
+  `CADisableMinimumFrameDuration`. Without that key UIKit holds every app to a
+  16.67 ms minimum frame duration on a ProMotion panel, so no amount of cheaper
+  frames could ever have produced more than 60 of them. Added.
+* **Low Power Mode pins ProMotion to 60 Hz**, at the system level, for every
+  app. 120 fps in battery saver is not achievable on iOS and never will be. The
+  honest target there is 60 held solidly, which the same work delivers.
+
+### Level of detail, applied by the draw call
+
+Patch **0392**. `gl_InstanceID` indexes the enabled-segments texture directly,
+so instance *i* can just as easily read entry *i × stride*: adding an
+`instance_stride` uniform to the two ES vertex shaders and drawing `count /
+stride` instances samples the whole model uniformly at any density. One uniform.
+No new memory, no new buffer, and above all **no rebuild** — every other way of
+making this scene cheaper (narrowing the range, hiding roles, hiding options)
+goes through `update_enabled_entities()`, the `O(vertices)` walk that made
+dragging unusable in the first place. This one changes per frame for free.
+
+A `width_scale` uniform widens what survives by `sqrt(stride)`, so the toolpath
+keeps its visual mass instead of thinning into a dotted line. Both uniforms are
+read through `max(x, 1)` in the shader, so a uniform that somehow never got set
+means full detail rather than stride 0 — which would put every instance on
+segment 0 and draw the model as a single smear.
+
+Patch **0393** turns seams off by default on iOS. They are the one option shown
+by default, they cost four times a segment each, and they are decoration on a
+tablet. The legend's eye icon turns them back on.
+
+### One clock, and a controller that measures instead of guessing
+
+Patch **0394** generalises 0390's slider-only `settled` into a single
+interaction clock. Orbiting, panning, pinching, zooming, scrubbing either
+slider — all of them make the same frame expensive and all of them want the same
+answer. Anything that moves the view stamps the clock; 250 ms of quiet is
+"stopped". The slider stamp lives inside `orca_ios_slider_settled()` because
+that is the only place that knows a slider is mid-drag: the drag is handled
+inside ImGui and never reaches an event handler.
+
+Patch **0395** decides how much detail to draw, and it **measures rather than
+chooses**. Nothing about the cost of this draw is predictable — it depends on
+the model, the device, how much of the screen the scene covers, and it is badly
+non-linear because of the partial renders. So each frame reports what it drew
+and how long it took, and:
+
+* a frame that fitted its target while leaving detail undrawn doubles its budget
+  — reaching any level in a few frames, overshooting by at most one frame;
+* a frame that overran gets no averaging: its own cost per instance says how
+  many would have fitted, and that is the budget, applied at once.
+
+The climb stops when the stride reaches 1 and everything is drawn. The stopping
+test is against the **enabled count**, not against the budget: a stride is a
+whole number, so at budget 100000 and 2401216 enabled the stride is 25 and the
+frame draws 96049 — forever just under its own budget, never asking for more.
+That bug was written, and caught by the arithmetic before it was built.
+
+Both states are budgeted, at targets twelve times apart — 4 ms moving, 50 ms
+settled. **Neither is ever unbounded**, and that is deliberate: the main thread
+sits inside the draw call for its whole duration, so a 2.4 second still frame is
+2.4 seconds in which the first touch of the next drag is not being read. A
+still frame is allowed to be heavy. It is not allowed to be deaf.
+
+Against a cost model calibrated to the measured 2.4 s, the controller settles at
+stride 10 / 240k instances / 3.6 ms while moving and stride 4 / 600k / 33 ms at
+rest; models of ordinary size reach stride 1 and are untouched. Those numbers
+are a simulation of a curve we have not measured yet — the point is not the
+numbers, it is that the loop finds whatever the real curve turns out to be.
+
+### What the next log will say
+
+Patch **0396** splits `gcode_ms` into the six phases it is made of and reports
+the detail the controller chose:
+
+```
+shells_ms  paths_ms  legend_ms  seq_ms  slider_ms  lod_stride  lod_budget
+```
+
+`paths_ms` is the draw this whole round is about, and `lod_stride` says how much
+was skipped to get it. The five sum to `gcode_ms`, so whatever is missing is the
+slider handling in `_render_gcode()` itself, and nothing is left unaccounted for
+a third time.
+
+Read it in this order:
+
+1. **`paths_ms` while dragging.** Should be ~4 ms with `lod_stride` above 1. If
+   it is not, the controller is not converging and the numbers say which way.
+2. **`legend_ms` + `seq_ms` + `slider_ms`.** This is the 11 ms of ImGui that
+   `render_ms - gcode_ms` could not see into. At 120 Hz it has 4 ms to live in.
+3. **`shells_ms`.** Transparent object meshes, drawn every preview frame.
+
+### Still on the shelf, deliberately
+
+**Halving the drawable while moving.** The canvas is 2070x1959 — 4 megapixels at
+`contentScaleFactor` 2 — on a panel that is 2752x2064, so we already draw ~1.35x
+more pixels than the display can show (`scale 2`, `nativeScale 1.72`). Dropping
+the GL view to scale 1 during interaction quarters fragment and tile-store cost.
+It needs a `wxGLCanvas` setter, so it is a `patches/step2` change and a 25 minute
+wx rebuild. Held until the phase numbers say whether it is needed — if
+`paths_ms` lands on target and the ImGui phases are what is left, it is the
+wrong lever.
+
+**Driving frames from a CADisplayLink.** Rendering is paced by wxIdle's
+`RequestMore()` loop, which gave Prepare 40 fps out of 16 ms frames — 62 fps
+worth of work delivered at 40. Once frames are cheap that pacing becomes the
+ceiling. Also step2, also held: it is worth nothing until the frames themselves
+fit, and it is the riskiest change on the list.

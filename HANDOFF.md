@@ -4490,3 +4490,80 @@ the current idiom.
 Expect this run to miss ccache completely: a different compiler is a different
 cache key. The deps and wx prefixes still hit — static archives built with an
 older minimum link into a newer one fine.
+
+## Opening saved projects: four symptoms, two causes
+
+Reported: the same project shows up twice, sometimes it "can't be opened",
+sometimes it opens to a white Prepare viewport, sometimes there is no preview.
+The device log settles the first two outright. This line is the whole story:
+
+```
+load_project filename is: /private/var/mobile/Containers/Data/Application/
+A5B282A3-066F-4E5D-8E7D-497FE3E17DEB/tmp/org.orca-ios.orcaslicer.9YHLT3UZJ6-Inbox/
+1204 TOKA Base.3mf and originfile is: <loadall>
+```
+
+**Cause 1 — projects were being kept in `tmp`.** `UIDocumentPickerViewController`
+is created with `asCopy:YES`, so iOS hands back a copy in
+`tmp/<bundle-id>-Inbox/`, and `Plater::priv::set_project_filename` records that
+path in the recent-projects list. iOS empties `tmp` whenever it likes, so the
+entry is dead by the next session — `MainFrame::open_recent_project` then finds
+`!wxFileExists` and puts up *"The project is no longer available"*. And each
+pick gets its **own** Inbox directory, so opening one project three times
+records three different paths for it: three entries on the home page with the
+same name.
+
+**Cause 2 — the container UUID changes on every install.** Every absolute path
+here contains it (`/Containers/Data/Application/<UUID>/…`), and the logs from
+one evening carry three different UUIDs, because the app is replaced by a new
+sideloaded build every few hours. Every path recorded before the last install
+points into a container that no longer exists.
+
+Patch 0382 fixes both:
+
+* `orca_ios_stable_project_path()` moves anything that is not already under
+  `$HOME/Documents/` into `Documents/Projects/` — applied in `GUI_App::load_project`
+  (the Open picker), `GUI_App::import_model` (the Import picker, which is what
+  the `<loadall>` line above came through) and `GUI_App::MacOpenFiles`. Same
+  file picked twice now yields the same path, so the recent list de-duplicates.
+  `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` are already on,
+  so `Documents/Projects` is visible in the Files app.
+* `orca_ios_repair_container_path()` splices the *current* container in front of
+  a recorded suffix, and failing that looks for the basename in
+  `Documents/{Projects,Downloads,Autosave}` — applied in `open_recent_project`
+  and `get_recent_projects`, so entries written by earlier installs heal
+  themselves instead of showing "File is missing".
+
+### The third cause, for the duplicate-model case specifically
+
+`Plater::load_project` is re-entrant on iOS. `wxFileDialog::ShowModal` in the
+iPhone port drives the picker through a **nested run loop**, so everything the
+app has queued keeps being delivered while the picker is up — including another
+`load_project`. Upstream's `m_loading_project` guard is set *after*
+`close_with_confirm()` returns, and `close_with_confirm()` is where the picker
+is shown, so the entire re-entrant window sits before the flag. Two loads racing
+through `reset()` and `load_files()` is what a doubled model and a half-built
+scene look like. 0382 adds an iOS-only RAII guard at the very top of the
+function. Deliberately *not* fixed in `filedlg.mm`: that lives in `wx-overlay`,
+and touching it changes `WX_KEY` and buys a 25-minute wxWidgets rebuild.
+
+### White viewport / missing preview: not yet proven
+
+The plausible mechanism is that the canvas spends the load underneath a modal
+picker and a tab switch, and nothing marks the scene dirty afterwards, so the
+frame left on screen is the empty one from before the project existed and no
+second frame is ever requested. 0382 asks for that frame
+(`set_as_dirty` + `request_extra_frame` + `Refresh`) at the end of
+`load_project` and logs `objects/instances/volumes/res` alongside it. If a white
+viewport survives that, the counts in the log say whether the model arrived at
+all — which splits "nothing was loaded" from "loaded but not drawn".
+
+### Build note
+
+`XCODE_TAG` is now part of the deps cache key. CMake rebuilds the whole
+dependency tree when the compiler changes, and the key was only a hash of
+`patches/step1`, so the entry saved by the old toolchain kept winning and every
+run redid a 40-minute rebuild it was never allowed to save. Run 121 paid exactly
+that. The wx key deliberately does not include it: static archives built against
+an older SDK link into a newer one, and only the final link decides which SDK
+the app reports.

@@ -93,6 +93,17 @@ jobs:
             echo "::error::Newest Xcode here has iOS SDK $SDK_VER; Liquid Glass needs 26 or newer. Re-dispatch with runner: macos-26."
             exit 1
           fi
+          # Into the deps cache key. CMake reconfigures and rebuilds the whole
+          # dependency tree when the compiler changes, and the deps key was only
+          # a hash of patches/step1 - so the entry saved by the old toolchain
+          # kept winning, and every run redid a 40 minute rebuild it was never
+          # allowed to save. Run 121 paid exactly that.
+          #
+          # Not in the wx key on purpose: the wx prefix is a set of static
+          # archives, and archives built against an older SDK link into a newer
+          # one perfectly well. Only the final link decides which SDK the app
+          # reports, so there is nothing to gain from a 25 minute rebuild.
+          echo "XCODE_TAG=xc$(xcodebuild -version | awk 'NR==1 {gsub(/\./, "", $2); print $2}')" >> "$GITHUB_ENV"
 
       - name: "[1/9] Checkout + tools"
         uses: actions/checkout@v4
@@ -134,8 +145,9 @@ jobs:
           # a per-run key mints a new multi-GB entry every time, and against a
           # 10 GB repository quota that evicts the entry the next run needs.
           # See the matching change in ios-step3-gui.yml.
-          key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
+          key: ios-deps-device-v1-${{ env.XCODE_TAG }}-${{ hashFiles('patches/step1/*.patch') }}
           restore-keys: |
+            ios-deps-device-v1-${{ env.XCODE_TAG }}-
             ios-deps-device-v1-
 
       - name: "[4/9] Build deps for the device slice"
@@ -179,7 +191,7 @@ jobs:
             ios-prefix
             ~/dep-dl
           # Same key as the restore: an existing key makes the save a skip.
-          key: ios-deps-device-v1-${{ hashFiles('patches/step1/*.patch') }}
+          key: ios-deps-device-v1-${{ env.XCODE_TAG }}-${{ hashFiles('patches/step1/*.patch') }}
 
       # Both workflows have been SAVING this prefix and never restoring it,
       # so wx was rebuilt from scratch on every single run - 5-6 minutes each

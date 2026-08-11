@@ -1,0 +1,307 @@
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -27,6 +27,8 @@
+ // GetHandle() below needs the definition, not the forward declaration that
+ // wx/utils.h supplies.
+ #include <wx/window.h>
++#include <cstdlib>
++#include <boost/filesystem.hpp>
+ #include <boost/log/trivial.hpp>
+ 
+ 
+@@ -661,5 +663,124 @@
+     win->CallAfter([win] { orca_ios_apply_numeric_keyboard(win, "deferred:"); });
+ }
+ 
++// Where a project has to live to still be there tomorrow.
++//
++// A file handed to the app by UIDocumentPickerViewController or by the Files
++// app arrives as a *copy* in tmp/<bundle-id>-Inbox/, and the recent-projects
++// list then records that path. The device log has one verbatim:
++//
++//   load_project filename is: /private/var/mobile/Containers/Data/Application/
++//   A5B282A3-.../tmp/org.orca-ios.orcaslicer.9YHLT3UZJ6-Inbox/1204 TOKA Base.3mf
++//
++// Two things are wrong with keeping that. iOS empties tmp whenever it likes, so
++// the entry is dead by the next session - the home page then says "The project
++// is no longer available". And every pick of the same file gets its own Inbox
++// directory, so opening one project three times puts three entries on the home
++// page, all with the same name.
++//
++// Moving the copy into Documents/Projects fixes both: the path survives, and it
++// is the same path every time, so wxFileHistory recognises the repeat and keeps
++// one entry.
++static boost::filesystem::path orca_ios_projects_dir()
++{
++    const char *home = ::getenv("HOME");
++    boost::filesystem::path dir =
++        boost::filesystem::path(home != nullptr ? home : "/tmp") / "Documents" / "Projects";
++    boost::system::error_code ec;
++    boost::filesystem::create_directories(dir, ec);
++    return dir;
++}
++
++std::string orca_ios_stable_project_path(const std::string &path)
++{
++    boost::system::error_code ec;
++    if (path.empty() || !boost::filesystem::exists(path, ec))
++        return path;
++    // Anything already inside our own Documents tree is where it should be: an
++    // autosave, a MakerWorld download, something an earlier pick moved here.
++    // Everything else - tmp/<id>-Inbox, a security-scoped URL in some other
++    // app's storage - is a loan, and gets copied.
++    const char *home = ::getenv("HOME");
++    const std::string documents = std::string(home != nullptr ? home : "") + "/Documents/";
++    if (home != nullptr && path.compare(0, documents.size(), documents) == 0)
++        return path;
++
++    const boost::filesystem::path dest = orca_ios_projects_dir() /
++                                         boost::filesystem::path(path).filename();
++    boost::filesystem::remove(dest, ec);
++    ec.clear();
++    boost::filesystem::rename(path, dest, ec);
++    if (ec) {
++        // Different filesystems, or a source the sandbox will not let go of.
++        ec.clear();
++        boost::filesystem::copy_file(path, dest,
++                                     boost::filesystem::copy_option::overwrite_if_exists, ec);
++        if (ec) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-project: could not move " << path
++                                     << " to " << dest.string() << ": " << ec.message();
++            return path;
++        }
++        boost::system::error_code ec2;
++        boost::filesystem::remove(path, ec2);
++    }
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-project: " << path << " -> " << dest.string();
++    return dest.string();
++}
++
++// Repair a path recorded by an earlier install.
++//
++// Every absolute path inside this app contains the data container's UUID:
++//
++//   /private/var/mobile/Containers/Data/Application/<UUID>/Documents/...
++//
++// and iOS hands out a new UUID when the container is re-created - which, for a
++// sideloaded build being replaced every few hours, is constantly. The device
++// logs show three different UUIDs across one evening. Every recent-projects
++// entry written before the last install therefore points at a directory that no
++// longer exists, and the home page is a list of files that cannot be opened
++// even though they are all still on disk.
++//
++// Splice the current container in front of the recorded suffix, and if that
++// fails - the file was in tmp, which does not survive - go looking for it by
++// name in the three directories this app keeps projects in.
++std::string orca_ios_repair_container_path(const std::string &path)
++{
++    boost::system::error_code ec;
++    if (path.empty() || boost::filesystem::exists(path, ec))
++        return path;
++
++    const char *home = ::getenv("HOME");
++    if (home == nullptr)
++        return path;
++
++    static const std::string marker = "/Containers/Data/Application/";
++    const size_t at = path.find(marker);
++    if (at != std::string::npos) {
++        const size_t slash = path.find('/', at + marker.size());
++        if (slash != std::string::npos) {
++            const std::string candidate = std::string(home) + path.substr(slash);
++            if (boost::filesystem::exists(candidate, ec)) {
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-project: healed " << path
++                                         << " -> " << candidate;
++                return candidate;
++            }
++        }
++    }
++
++    const std::string name = boost::filesystem::path(path).filename().string();
++    static const char *dirs[] = { "Documents/Projects", "Documents/Downloads",
++                                  "Documents/Autosave" };
++    for (const char *d : dirs) {
++        const boost::filesystem::path candidate = boost::filesystem::path(home) / d / name;
++        if (boost::filesystem::exists(candidate, ec)) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-project: found " << name
++                                     << " at " << candidate.string();
++            return candidate.string();
++        }
++    }
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-project: no trace of " << path;
++    return path;
++}
++
+ } // namespace GUI
+ } // namespace Slic3r
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -206,6 +206,17 @@
+     static void release();
+ };
+ 
++#ifdef __WXOSX_IPHONE__
++// src/slic3r/GUI/ios_webview_support.mm
++namespace Slic3r { namespace GUI {
++// tmp/<id>-Inbox is not a place to keep a project; Documents/Projects is.
++std::string orca_ios_stable_project_path(const std::string &path);
++// Recorded paths carry the old install's container UUID once the app has been
++// replaced, which is every build.
++std::string orca_ios_repair_container_path(const std::string &path);
++} }
++#endif
++
+ namespace Slic3r {
+ namespace GUI {
+ 
+@@ -4832,6 +4843,12 @@
+ 
+     if (dialog.ShowModal() == wxID_OK)
+         input_file = dialog.GetPath();
++#ifdef __WXOSX_IPHONE__
++    // The picker returns a copy in tmp; get it somewhere permanent before the
++    // path is recorded anywhere.
++    if (!input_file.IsEmpty())
++        input_file = from_u8(orca_ios_stable_project_path(into_u8(input_file)));
++#endif
+ }
+ 
+ void GUI_App::import_model(wxWindow *parent, wxArrayString& input_files) const
+@@ -4848,6 +4865,10 @@
+ 
+     if (dialog.ShowModal() == wxID_OK)
+         dialog.GetPaths(input_files);
++#ifdef __WXOSX_IPHONE__
++    for (size_t i = 0; i < input_files.GetCount(); ++i)
++        input_files[i] = from_u8(orca_ios_stable_project_path(into_u8(input_files[i])));
++#endif
+ }
+ 
+ void GUI_App::import_zip(wxWindow* parent, wxString& input_file) const
+@@ -9013,8 +9034,18 @@
+ }
+ 
+ // wxWidgets override to get an event on open files.
+-void GUI_App::MacOpenFiles(const wxArrayString &fileNames)
++void GUI_App::MacOpenFiles(const wxArrayString &fileNames_)
+ {
++#ifdef __WXOSX_IPHONE__
++    // "Open in OrcaSlicer" from the Files app lands in tmp/<id>-Inbox, same as
++    // the picker. Move it before anything downstream remembers where it was.
++    wxArrayString ios_files;
++    for (size_t i = 0; i < fileNames_.GetCount(); ++i)
++        ios_files.Add(from_u8(orca_ios_stable_project_path(into_u8(fileNames_[i]))));
++    const wxArrayString &fileNames = ios_files;
++#else
++    const wxArrayString &fileNames = fileNames_;
++#endif
+     bool single_instance = app_config->get("app", "single_instance") == "true";
+     if (m_post_initialized && !single_instance) {
+         bool has3mf = false;
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -14,6 +14,8 @@
+ extern std::atomic<unsigned> orca_ios_canvas_mouse;
+ extern std::atomic<unsigned> orca_ios_canvas_swaps;
+ extern std::atomic<unsigned> orca_ios_canvas_swap_failures;
++// src/slic3r/GUI/ios_webview_support.mm
++std::string orca_ios_repair_container_path(const std::string &path);
+ } }
+ #endif
+ 
+@@ -4603,6 +4605,12 @@
+     for (size_t i = 0; i < m_recent_projects.GetCount(); ++i) {
+         boost::property_tree::wptree item;
+         std::wstring proj = m_recent_projects.GetHistoryFile(i).ToStdWstring();
++#ifdef __WXOSX_IPHONE__
++        // Otherwise every entry from before the last install reports "File is
++        // missing" and loses its thumbnail: the path still names the container
++        // UUID that install had.
++        proj = from_u8(orca_ios_repair_container_path(into_u8(wxString(proj)))).ToStdWstring();
++#endif
+         item.put(L"project_name", proj.substr(proj.find_last_of(L"/\\") + 1));
+         item.put(L"path", proj);
+         boost::system::error_code ec;
+@@ -4626,10 +4634,14 @@
+     if (file_id == size_t(-1)) {
+         file_id = m_recent_projects.FindFileInHistory(filename);
+     }
+-    if (wxFileExists(filename)) {
+-        CallAfter([this, filename] {
++    wxString path = filename;
++#ifdef __WXOSX_IPHONE__
++    path = from_u8(orca_ios_repair_container_path(into_u8(filename)));
++#endif
++    if (wxFileExists(path)) {
++        CallAfter([this, path] {
+             if (wxGetApp().can_load_project())
+-                m_plater->load_project(filename);
++                m_plater->load_project(path);
+         });
+     }
+     else
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -12260,6 +12260,31 @@
+ 
+     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << "filename is: " << filename2 << "and originfile is: " << originfile;
+     BOOST_LOG_TRIVIAL(info) << __FUNCTION__;
++#ifdef __WXOSX_IPHONE__
++    // One project load at a time.
++    //
++    // wxFileDialog on the iPhone port drives UIDocumentPickerViewController
++    // through a nested run loop, so everything else the app has queued keeps
++    // being delivered while the picker is up - including another load_project,
++    // from the home page or a second tap. Upstream does guard with
++    // m_loading_project, but only *after* close_with_confirm has returned, and
++    // close_with_confirm is where the picker is shown: the entire re-entrant
++    // window sits before the flag is set. Two loads racing through reset() and
++    // load_files() is what "the model is there twice" and a half-built scene
++    // look like from the outside.
++    static bool s_ios_loading = false;
++    if (s_ios_loading) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-project: load_project re-entered, ignoring "
++                                 << filename2;
++        return;
++    }
++    s_ios_loading = true;
++    struct IosLoadGuard {
++        bool &flag;
++        explicit IosLoadGuard(bool &f) : flag(f) {}
++        ~IosLoadGuard() { flag = false; }
++    } ios_load_guard(s_ios_loading);
++#endif
+     auto filename = filename2;
+     auto check = [&filename, this] (bool yes_or_no) {
+         if (!yes_or_no && !wxGetApp().check_and_save_current_preset_changes(_L("Load project"),
+@@ -12380,6 +12405,30 @@
+     sidebar().set_flushing_volume_warning(has_modify);
+ 
+     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << __LINE__ << " load project done";
++#ifdef __WXOSX_IPHONE__
++    {
++        size_t instances = 0, volumes = 0;
++        for (const ModelObject *o : model().objects) {
++            instances += o->instances.size();
++            volumes   += o->volumes.size();
++        }
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-project: loaded " << filename
++                                 << " res=" << res.size()
++                                 << " objects=" << model().objects.size()
++                                 << " instances=" << instances
++                                 << " volumes=" << volumes;
++        // The canvas spent the load underneath a modal picker or a tab switch,
++        // and nothing marks the scene dirty afterwards - so the frame left on
++        // screen can be the empty one from before the project existed, with no
++        // second frame ever asked for. That is what a white Prepare viewport
++        // after a successful load is. Ask for the frame.
++        if (GLCanvas3D *c = canvas3D()) {
++            c->set_as_dirty();
++            c->request_extra_frame();
++            c->Refresh();
++        }
++    }
++#endif
+     m_loading_project = false;
+ }
+ 

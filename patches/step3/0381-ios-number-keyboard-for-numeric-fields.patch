@@ -1,6 +1,6 @@
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -13,14 +13,401 @@
+@@ -13,14 +13,408 @@
  
  #import <WebKit/WebKit.h>
  #import <UIKit/UIKit.h>
@@ -296,16 +296,23 @@
 +    }
 +    if (self.superview == nil)
 +        return;
-+    [UIView animateWithDuration:0.12 animations:^{
-+        self.alpha = 0;
-+    } completion:^(BOOL finished) {
-+        (void) finished;
-+        // Tapping straight from one numeric field to another can re-show this
-+        // pad before the fade finishes; only the fade that is still the current
-+        // state gets to take the view out of the window.
-+        if (self.alpha == 0)
-+            [self removeFromSuperview];
-+    }];
++
++    // Out of the window now, not when an animation finishes.
++    //
++    // A subview is retained by its superview, and this pad is otherwise owned
++    // solely by the text field it belongs to, through an associated object.
++    // Leaving it in the window for the length of a fade means a field
++    // destroyed inside that window - and Orca rebuilds its sidebar fields
++    // constantly - drops its reference while the window still holds one. The
++    // pad then survives its own field: still registered for notifications,
++    // still holding a pointer to memory that has been freed. The next
++    // scene-lifecycle notification messages that pointer.
++    //
++    // Which is where run 124 crashed: objc_retainAutoreleaseReturnValue,
++    // called under _CFXNotificationPost from a UIScene settings change, with
++    // no frame of ours on the stack. A fade is not worth a use-after-free.
++    [self removeFromSuperview];
++    self.alpha = 1;
 +}
 +
 +- (void)fieldDidBeginEditing:(NSNotification *)note
@@ -402,7 +409,7 @@
  namespace Slic3r {
  namespace GUI {
  
-@@ -221,5 +608,58 @@
+@@ -221,5 +615,58 @@
      });
  }
  

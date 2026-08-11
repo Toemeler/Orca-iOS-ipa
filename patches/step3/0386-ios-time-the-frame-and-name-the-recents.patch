@@ -1,0 +1,122 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -49,6 +49,7 @@
+ #include <glad/gl.h>
+ 
+ #include <atomic>
++#include <chrono>
+ 
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
+@@ -132,6 +133,43 @@
+ std::atomic<unsigned> orca_ios_canvas_idles{0};
+ std::atomic<unsigned> orca_ios_canvas_paints{0};
+ std::atomic<unsigned> orca_ios_canvas_renders{0};
++// Where the frame goes, in microseconds.
++//
++// "render +109" and "render +4" in the same session say the frame cost moved
++// by two orders of magnitude, and nothing said why. A 2.4 million segment
++// preview - measured, orca-ios-preview - is heavy to draw once; it is heavy
++// twice if the picking pass draws it again, and the picking pass ends in
++// glReadPixels, which stalls the CPU until the GPU has finished everything
++// queued. That is the difference between a slow frame and a frozen one, and
++// these three numbers tell them apart.
++std::atomic<uint64_t> orca_ios_canvas_render_us{0};
++std::atomic<uint64_t> orca_ios_canvas_pick_us{0};
++std::atomic<uint64_t> orca_ios_canvas_render_max_us{0};
++
++namespace {
++// Adds its own lifetime to a counter. A scope guard rather than a pair of
++// calls because GLCanvas3D::render() has several early returns.
++struct OrcaIosScopedTimer
++{
++    std::atomic<uint64_t> &total;
++    std::atomic<uint64_t> *high_water;
++    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
++
++    explicit OrcaIosScopedTimer(std::atomic<uint64_t> &t, std::atomic<uint64_t> *hw = nullptr)
++        : total(t), high_water(hw) {}
++
++    ~OrcaIosScopedTimer()
++    {
++        const uint64_t us = (uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
++            std::chrono::steady_clock::now() - t0).count();
++        total += us;
++        if (high_water != nullptr) {
++            uint64_t prev = high_water->load();
++            while (us > prev && !high_water->compare_exchange_weak(prev, us)) {}
++        }
++    }
++};
++} // namespace
+ // Touches that reach the canvas. The render count alone cannot tell a viewport
+ // that has stopped drawing from one that is drawing faithfully and simply never
+ // hears the finger: both look like "frozen", and the counters showed 5 renders
+@@ -1972,6 +2010,8 @@
+ {
+ #if defined(__APPLE__) && !TARGET_OS_OSX
+     ++orca_ios_canvas_renders;
++    OrcaIosScopedTimer orca_ios_frame_timer(orca_ios_canvas_render_us,
++                                            &orca_ios_canvas_render_max_us);
+ #endif
+     if (m_in_render) {
+         // if called recursively, return
+@@ -7374,6 +7414,9 @@
+ 
+ void GLCanvas3D::_picking_pass()
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    OrcaIosScopedTimer orca_ios_pick_timer(orca_ios_canvas_pick_us);
++#endif
+     if (!m_picking_enabled || m_mouse.dragging || m_mouse.position == Vec2d(DBL_MAX, DBL_MAX) || m_gizmos.is_dragging()) {
+ #if ENABLE_RAYCAST_PICKING_DEBUG
+         ImGuiWrapper& imgui = *wxGetApp().imgui();
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -14,6 +14,9 @@
+ extern std::atomic<unsigned> orca_ios_canvas_mouse;
+ extern std::atomic<unsigned> orca_ios_canvas_swaps;
+ extern std::atomic<unsigned> orca_ios_canvas_swap_failures;
++extern std::atomic<uint64_t> orca_ios_canvas_render_us;
++extern std::atomic<uint64_t> orca_ios_canvas_pick_us;
++extern std::atomic<uint64_t> orca_ios_canvas_render_max_us;
+ // src/slic3r/GUI/ios_webview_support.mm
+ std::string orca_ios_repair_container_path(const std::string &path);
+ } }
+@@ -1143,6 +1146,7 @@
+         this->Bind(wxEVT_TIMER, [this, counters](wxTimerEvent &) {
+             static unsigned last_i = 0, last_p = 0, last_r = 0, last_m = 0;
+             static unsigned last_s = 0, last_sf = 0;
++            static uint64_t last_ru = 0, last_pu = 0;
+             const unsigned i = orca_ios_canvas_idles.load();
+             const unsigned p = orca_ios_canvas_paints.load();
+             const unsigned r = orca_ios_canvas_renders.load();
+@@ -1168,7 +1172,15 @@
+                 << " swap +" << (sw - last_s) << " fail +" << (sf - last_sf)
+                 << " (totals " << i << "/" << p << "/" << r << "/" << mo
+                 << "/" << sw << "/" << sf << ")"
+-                << "; sel " << cur_sel << (plater_up ? " (plater)" : " (other page)");
++                << "; sel " << cur_sel << (plater_up ? " (plater)" : " (other page)")
++                // Milliseconds of wall clock spent inside render() in the last
++                // five seconds, how much of that was the picking pass, and the
++                // single worst frame. Divide by the render count for the mean.
++                << "; render_ms " << ((orca_ios_canvas_render_us.load() - last_ru) / 1000)
++                << " pick_ms " << ((orca_ios_canvas_pick_us.load() - last_pu) / 1000)
++                << " worst_ms " << (orca_ios_canvas_render_max_us.exchange(0) / 1000);
++            last_ru = orca_ios_canvas_render_us.load();
++            last_pu = orca_ios_canvas_pick_us.load();
+             last_m = mo;
+             last_s = sw; last_sf = sf;
+ 
+@@ -4606,6 +4618,11 @@
+         boost::property_tree::wptree item;
+         std::wstring proj = m_recent_projects.GetHistoryFile(i).ToStdWstring();
+ #ifdef __WXOSX_IPHONE__
++        // The home page showing one project twice is either two history entries
++        // for one file or two files with the same name, and the page itself
++        // cannot say which. The paths can.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-recent: [" << i << "] "
++                                 << into_u8(wxString(proj));
+         // Otherwise every entry from before the last install reports "File is
+         // missing" and loses its thumbnail: the path still names the container
+         // UUID that install had.

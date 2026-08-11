@@ -4713,3 +4713,74 @@ orca-ios-preview: vertices N, enabled segments N, textures N MB, chunks N, load 
 Segment count bounds the draw, texture bytes bound the memory, elapsed time
 bounds the load. Together with the render counter above, the per-frame cost
 falls out of arithmetic instead of speculation.
+
+## Run 124: the preview, measured
+
+The instrumentation paid off immediately. One line, from a real session:
+
+```
+orca-ios-preview: vertices 2397036, layers 500, cpu 183 MB, gpu 87 MB, load 149 ms
+```
+
+2.4 **million** segments. The load is not the problem — 149 ms. The memory is
+real but survivable — 270 MB. What matters is what a frame costs, and the canvas
+counters from the same session show the shape of it:
+
+```
+sel 1  idle +394  render +212  mouse +222   <- Prepare, interactive: ~42 fps
+sel 2  idle +129  render +109  mouse +0     <- Preview, nothing touched: ~22 fps
+sel 2  idle +6    render +4    mouse +14    <- Preview, being touched: ~0.8 fps
+```
+
+Two separate facts:
+
+1. **The preview redraws ~22 times a second with no input at all.** Something
+   asks for continuous frames there — `GLCanvas3D::on_idle` renders again
+   whenever `imgui_requires_extra_frame` or `wxGetApp().imgui()->requires_extra_frame()`
+   is set, and the Preview's legend is an ImGui window. Drawing 2.4M instances
+   22 times a second for a static scene is pure waste.
+2. **A frame under interaction takes about a second.** `idle +6` in five seconds
+   is the tell: the main thread is not idle, it is inside something. The
+   candidate worth naming is the picking pass — it draws the scene *again* into
+   an offscreen target and ends in `glReadPixels`, which blocks the CPU until
+   the GPU has drained. On a 2.4M instance scene that is exactly how a slow
+   frame becomes a frozen one.
+
+Patch 0386 times all three: milliseconds inside `render()` per five seconds, how
+many of those were the picking pass, and the worst single frame. The next log
+says which of the two facts to fix, and the fix follows from the number rather
+than from a guess.
+
+### The crash
+
+Signal 11 with no frame of ours on the stack:
+
+```
+objc_retainAutoreleaseReturnValue + 52
+UIKitCore ...
+_CFXNotificationPost + 680
+_UIScenePerformActionsWithLifecycleActionMask
+_UISceneSettingsDiffActionPerformChangesWithTransitionContextAndCompletion
+```
+
+A notification posted during a UIScene settings change, reaching an object that
+has been freed. The strongest candidate is the numeric keypad, and the mechanism
+is specific: a subview is retained by its superview, but the pad is otherwise
+owned only by its text field through an associated object. `-hide` used to leave
+the pad in the window for the length of a 0.12 s fade. A field destroyed inside
+that window — and Orca rebuilds sidebar fields constantly — drops the only
+ownership while the window still holds a reference, so the pad outlives its own
+field: still registered for notifications, still holding a freed pointer. The
+next scene-lifecycle notification messages it.
+
+0381 now removes the pad from the window synchronously. Not proven to be the
+crash, but it is a genuine use-after-free either way, and a fade is not worth
+one.
+
+### The duplicate in the recent list
+
+Not yet explained. The evaluateJavaScript log truncates the recent-projects JSON
+at 100 characters, so the list itself has never been visible. 0386 logs each
+entry's full path as `orca-ios-recent: [i] <path>`, which separates the two
+possible causes: two history entries for one file, or two files with the same
+name in different directories.

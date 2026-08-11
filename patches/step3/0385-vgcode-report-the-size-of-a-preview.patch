@@ -1,0 +1,49 @@
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -17,6 +17,10 @@
+ #include <algorithm>
+ #include <cmath>
+ #include <numeric>
++#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
++#include <chrono>
++#include <boost/log/trivial.hpp>
++#endif
+ 
+ namespace libvgcode {
+ 
+@@ -983,6 +987,9 @@
+ 
+ void ViewerImpl::load(GCodeInputData&& gcode_data)
+ {
++#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
++    const auto load_start = std::chrono::steady_clock::now();
++#endif
+     if (!m_initialized)
+         return;
+ 
+@@ -1124,6 +1131,25 @@
+     m_view_range.set_visible(m_view_range.get_enabled());
+     update_enabled_entities();
+     update_colors();
++
++#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
++    // How big is this preview, really?
++    //
++    // "The preview makes the app struggle on a big model" has three candidate
++    // causes that look the same from outside - too many instances to draw per
++    // frame, too much texture memory to hold, or too much work rebuilding the
++    // enabled set when the layer slider moves - and no screenshot separates
++    // them. One line per load does: the segment count bounds the draw, the
++    // texture bytes bound the memory, and the elapsed time bounds the load
++    // itself. Pair it with the orca-ios-canvas render counter, which already
++    // reports frames per five seconds, and the frame cost falls out.
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-preview: vertices " << m_vertices.size()
++                             << ", enabled segments " << m_texture_data.get_enabled_segments_count()
++                             << ", textures " << (m_texture_data.get_used_gpu_memory() >> 20) << " MB"
++                             << ", chunks " << m_texture_data.get_count()
++                             << ", load " << std::chrono::duration_cast<std::chrono::milliseconds>(
++                                    std::chrono::steady_clock::now() - load_start).count() << " ms";
++#endif
+ }
+ 
+ void ViewerImpl::update_enabled_entities()

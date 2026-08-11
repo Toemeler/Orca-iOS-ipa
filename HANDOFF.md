@@ -4680,3 +4680,36 @@ shaders, so it costs nothing.
 whether the data is actually bad before touching the code that produces it. Two
 files and `awk` were enough here, and they pointed at the opposite end of the
 pipeline from where three earlier hypotheses were looking.
+
+### "The preview makes the app struggle" — what the counters already say
+
+Do not reach for frame caching. The `orca-ios-canvas` counters, which have been
+in every log since patch 0364, already report the render rate:
+
+```
+last 5s idle +364 paint +0 render +83  mouse +65 ...
+last 5s idle +101 paint +0 render +3   mouse +6  ...
+```
+
+Three renders in five seconds while the user is not touching anything, ~17/s
+while dragging. The canvas is *already* demand-driven — nothing is redrawing a
+static scene. So the cost is per frame, not frames per second, and the levers
+are the number of instances drawn, the texture memory held, or the rebuild of
+the enabled set when the layer slider moves.
+
+Two things follow. First, until 0384 lands, roughly 97% of the segments in a
+big preview were being drawn with **wrapped indices** — garbage geometry, quite
+possibly enormous triangles, which is about the most expensive thing you can
+hand a tile-based GPU. A slow preview and a preview showing 1% are plausibly the
+same bug, so re-measure after 0384 before optimising anything.
+
+Second, 0385 adds one line per preview load so the next round is measured rather
+than guessed:
+
+```
+orca-ios-preview: vertices N, enabled segments N, textures N MB, chunks N, load N ms
+```
+
+Segment count bounds the draw, texture bytes bound the memory, elapsed time
+bounds the load. Together with the render counter above, the per-frame cost
+falls out of arithmetic instead of speculation.

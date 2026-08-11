@@ -4949,3 +4949,47 @@ pointer's way.
 
 **Cost:** this is `patches/step2`, so `WX_KEY` changes and wxWidgets rebuilds
 once (~25 min). Nothing else in the tree is affected.
+
+## Where the preview time actually goes — the mechanism
+
+`ViewerImpl::render()` is not just a draw. Every frame it runs three
+**O(vertices)** rebuilds behind dirty flags:
+
+```cpp
+if (m_settings.update_view_full_range)  update_view_full_range();
+if (m_settings.update_enabled_entities) update_enabled_entities();
+if (m_settings.update_colors)           update_colors();
+render_segments(...);
+```
+
+Each walks all 2.4M vertices, builds multi-megabyte vectors and re-uploads
+textures — **inside the frame**. So anything that sets a flag does not cost
+itself: it makes the *next frame* cost ~1.2 seconds. That is the signature the
+numbers showed all along — `gcode_ms ≈ render_ms`, `swap_ms ≈ 0` — a frame that
+is not slow to draw but is being rebuilt.
+
+At rest the flags are clear and a preview frame is ~35 ms (28 fps). Under touch
+something sets a flag every frame.
+
+Patch 0391 times the three calls separately (`vg_range_ms`, `vg_enabled_ms`,
+`vg_colors_ms`), which names the flag. The atomics live in libvgcode and are
+read by MainFrame across the library boundary — both end up in the same binary,
+so the symbols resolve; libvgcode still gets no boost dependency, which is what
+broke run 123.
+
+### Reading the run-128 log
+
+Worth recording so the next person does not misread it: the session at 17:35
+local (15:35 UTC) was **run 128**, which does *not* contain patch 0390. Run 130
+finished at 15:34 UTC, one minute earlier — not enough time to publish, download
+and sideload. So that log says nothing about whether settling the slider helped.
+
+### What "buttery smooth" needs
+
+1. **No rebuild during interaction.** 0390 (slider settle) is the first half;
+   0391 will say whether anything else sets a flag per frame.
+2. **The 35 ms baseline.** Even with zero rebuilds, 2.4M segments cost ~35 ms a
+   frame — 28 fps, not 60. `swap_ms` is ~0, so this is CPU-side, not the GPU
+   drawing: worth splitting `_render_gcode()` into shells / toolpaths / legend /
+   sliders once the rebuilds are gone, because 35 ms of CPU for one instanced
+   draw call is far too much and something in there is still iterating.

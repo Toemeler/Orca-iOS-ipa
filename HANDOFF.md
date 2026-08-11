@@ -5068,11 +5068,9 @@ making this scene cheaper (narrowing the range, hiding roles, hiding options)
 goes through `update_enabled_entities()`, the `O(vertices)` walk that made
 dragging unusable in the first place. This one changes per frame for free.
 
-A `width_scale` uniform widens what survives by `sqrt(stride)`, so the toolpath
-keeps its visual mass instead of thinning into a dotted line. Both uniforms are
-read through `max(x, 1)` in the shader, so a uniform that somehow never got set
-means full detail rather than stride 0 — which would put every instance on
-segment 0 and draw the model as a single smear.
+The uniform is read through `max(x, 1)` in the shader, so one that somehow never
+got set means full detail rather than stride 0 — which would put every instance
+on segment 0 and draw the model as a single smear.
 
 Patch **0393** turns seams off by default on iOS. They are the one option shown
 by default, they cost four times a segment each, and they are decoration on a
@@ -5155,3 +5153,86 @@ wrong lever.
 worth of work delivered at 40. Once frames are cheap that pacing becomes the
 ceiling. Also step2, also held: it is worth nothing until the frames themselves
 fit, and it is the riskiest change on the list.
+
+## Run 134: smooth, and unreadable
+
+It worked and it looked terrible. Two things were wrong, and the screenshot
+named both.
+
+### Widening the survivors makes spikes, not thicker lines
+
+0392 shipped a `width_scale` uniform that multiplied each surviving segment's
+height and width by `sqrt(stride)`, on the theory that a decimated toolpath
+should keep its visual mass rather than thin out. What came back was a mass of
+teal shards with nothing recognisable as a toolpath in it.
+
+The reason is in the segment template. `POINTY_CAPS` extends the end caps
+*along* the line by `half_width`:
+
+```glsl
+pos += line_dir_sign * line_dir * half_width;
+```
+
+So width is not just the cross section — it sets the cap length too. At stride
+25 the scale factor is 5, and every segment became a spike five times its own
+width at each end, as long as it was wide. Not thicker lines: diamonds.
+
+Removed, and not replaced. A decimated toolpath at **true width** reads as the
+same object drawn lighter, which is exactly what it is, and "I can see the
+lines" is the whole point of the view. Sparse and correct beats dense and wrong.
+
+### A still preview is not allowed to be an approximation
+
+The other half was mine to have known better. 0395 budgeted the settled frame at
+50 ms, reasoning that a still frame must stay answerable because the main thread
+sits inside the draw call for its whole duration — so a 2.4 second frame is 2.4
+seconds in which the touch that ends it is not being read.
+
+That reasoning is still true. It is also not a licence to show a different
+picture. The preview is the artefact being judged; it has to be the same image
+the desktop draws, and a decimated one is not that image at any budget. Detail
+is what gets traded away to protect a **frame rate**, and a still image has no
+frame rate to protect.
+
+So: budgeted while moving, **full detail the moment it stops**, always.
+
+One guard came with it. The controller must not learn from the settled frame:
+that one is drawn in the regime where the driver splits the render, and its cost
+per instance is not the cost per instance of a frame that fits. Feeding it back
+would collapse the budget to the floor the instant the next drag began, making
+the first frame of every drag the worst-looking one. Only a moving frame that
+followed another moving frame is measured (`prev_moving`), which the arithmetic
+test checks explicitly.
+
+### What this costs, and the number that decides it
+
+Full detail at rest costs whatever a full-detail frame costs — on the simulated
+curve, ~2.4 s. Drawn **once** that is a pause after a gesture. Drawn every idle
+it is an app that is never listening.
+
+Which of those it is comes down to one question that has never been answered:
+**what keeps `m_dirty` true on a still preview?** `on_idle` sets it from eight
+sources, and the run-132 log showed the canvas rendering continuously at rest,
+so one of them reports a change on every idle. From outside they are
+indistinguishable — a notification animating, an ImGui window asking for another
+frame and a toolbar recomputing its state all look the same.
+
+The run-134 screenshot has a notification sitting on it ("Processing model
+'Exported3DModel.3mf' with more than 1M triangles could be slow"), which makes
+`NotificationManager::update_notifications` the first suspect. Suspect, not
+answer. So each source is now counted separately and named in the report:
+
+```
+dirty tb N notif N imgui N m3d N gizmo N tex N elsewhere N
+```
+
+On a still preview that nothing has changed, every one of those should be zero
+and the render count should be zero with them. Whichever is not zero is the
+thing to fix, and fixing it is what turns "full detail at rest" from a pause
+into a single frame — after which the still preview costs nothing at all and the
+next touch is answered immediately.
+
+`elsewhere` catches `m_dirty` being true with none of the eight accounting for
+it, which would mean something called `set_as_dirty()` or `request_extra_frame()`
+outside the handler — patch 0390's slider path does exactly that, so it is worth
+being able to see.

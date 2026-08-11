@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/GCodeViewer.cpp b/src/slic3r/GUI/GCodeViewer.cpp
-index c6d0f65c..442936ef 100644
+index c6d0f65c..73210f7f 100644
 --- a/src/slic3r/GUI/GCodeViewer.cpp
 +++ b/src/slic3r/GUI/GCodeViewer.cpp
 @@ -43,6 +43,7 @@
@@ -10,7 +10,7 @@ index c6d0f65c..442936ef 100644
  #include <cmath>
  #include <chrono>
  
-@@ -50,6 +51,50 @@
+@@ -50,6 +51,43 @@
  namespace Slic3r {
  namespace GUI {
  
@@ -38,13 +38,6 @@ index c6d0f65c..442936ef 100644
 +// their own, and they have to come down too. Half the frame is what the draw
 +// gets to aim at.
 +constexpr uint64_t ORCA_IOS_MOVING_BUDGET_US = 4000;
-+// And once it has stopped. A still frame is drawn once and then held, so it can
-+// afford far more detail - but not unbounded detail. The main thread is inside
-+// the draw for its whole duration, which means a 2.4 second frame is 2.4
-+// seconds in which the first touch of the next drag is not being read. That is
-+// the difference between a heavy app and a broken one, so the still frame gets
-+// a ceiling too: high enough to look finished, low enough to stay answerable.
-+constexpr uint64_t ORCA_IOS_SETTLED_BUDGET_US = 50000;
 +// Where the controller starts before it has measured anything: low enough that
 +// the first frame of the first drag is already cheap, and it climbs from there
 +// rather than hitching once and then correcting.
@@ -61,7 +54,7 @@ index c6d0f65c..442936ef 100644
  //BBS translation of EViewType
  //const std::string EViewType_Map[(int) GCodeViewer::EViewType::Count] = {
  //        _u8L("Line Type"),
-@@ -1611,18 +1656,117 @@ void GCodeViewer::reset()
+@@ -1611,18 +1649,129 @@ void GCodeViewer::reset()
  }
  
  //BBS: GUI refactor: add canvas width and height
@@ -92,8 +85,14 @@ index c6d0f65c..442936ef 100644
 +// it depends on the model, on the device, on how much of the screen the scene
 +// covers, and it is badly non-linear because once the tiler's parameter buffer
 +// overruns the driver starts splitting the render. So the budget is measured
-+// rather than chosen, and measured separately for the two states, whose targets
-+// are twelve times apart.
++// rather than chosen.
++//
++// It applies only while the view is being moved. A still preview is drawn at
++// FULL DETAIL, always. A budgeted still frame was tried and is wrong: the
++// preview is the thing being judged, it has to be the same picture the desktop
++// draws, and a decimated one is not that picture however generous the budget
++// is. Detail is what gets traded away to protect a frame rate, and a still
++// image has no frame rate to protect.
 +//
 +// Climb by doubling, fall by calculation:
 +//
@@ -111,20 +110,29 @@ index c6d0f65c..442936ef 100644
 +// because a stride is a whole number - at budget 100000 and 2401216 enabled the
 +// stride is 25 and the frame draws 96049, which is forever just under its own
 +// budget and would never have asked for more.
++//
++// Only a frame that followed another moving frame is measured. The frame right
++// after the view stops moving is a full-detail one, drawn in the regime where
++// the driver splits the render; feeding its cost per instance back in would
++// collapse the budget to the floor the instant the next drag began, and the
++// first frame of every drag would be the worst-looking one.
 +static uint32_t orca_ios_next_detail_budget(bool moving, uint32_t stride_used, size_t enabled, uint64_t elapsed_us)
 +{
-+    static uint32_t moving_budget  = ORCA_IOS_INITIAL_INSTANCES;
-+    static uint32_t settled_budget = ORCA_IOS_INITIAL_INSTANCES;
++    static uint32_t budget      = ORCA_IOS_INITIAL_INSTANCES;
++    static bool     prev_moving = false;
 +
-+    uint32_t       &budget = moving ? moving_budget : settled_budget;
-+    const uint64_t  target = moving ? ORCA_IOS_MOVING_BUDGET_US : ORCA_IOS_SETTLED_BUDGET_US;
++    const bool measurable = moving && prev_moving;
++    prev_moving = moving;
 +
-+    if (enabled > 0 && elapsed_us > 0) {
++    if (!moving)
++        return 0;
++
++    if (measurable && enabled > 0 && elapsed_us > 0) {
 +        const uint32_t stride = std::max<uint32_t>(stride_used, 1);
 +        const size_t   drawn  = (enabled + stride - 1) / stride;
-+        if (elapsed_us > target) {
++        if (elapsed_us > ORCA_IOS_MOVING_BUDGET_US) {
 +            const double per  = double(elapsed_us) / double(drawn);
-+            const double fits = double(target) / per;
++            const double fits = double(ORCA_IOS_MOVING_BUDGET_US) / per;
 +            budget = (uint32_t) std::clamp(fits, double(ORCA_IOS_MIN_INSTANCES), double(ORCA_IOS_MAX_INSTANCES));
 +        }
 +        else if (drawn < enabled)
@@ -150,10 +158,7 @@ index c6d0f65c..442936ef 100644
          return;
  
 +#if defined(__APPLE__) && !TARGET_OS_OSX
-+    // Both states are budgeted, at targets twelve times apart: the moving one
-+    // has to hit the frame, the still one only has to stay answerable. Neither
-+    // is ever unbounded, because an unbounded frame is one the main thread
-+    // spends entirely inside a draw call, deaf to the touch that ends it.
++    // Budgeted while moving, full detail the moment it stops.
 +    const bool     moving  = orca_ios_is_interacting();
 +    const size_t   enabled = m_viewer.get_enabled_segments_count();
 +    const uint32_t budget  = orca_ios_next_detail_budget(moving, m_viewer.get_last_segments_stride(),
@@ -181,7 +186,7 @@ index c6d0f65c..442936ef 100644
  
      if (m_user_mode != wxGetApp().get_mode()) {
          update_by_mode(wxGetApp().get_mode());
-@@ -1638,7 +1782,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+@@ -1638,7 +1787,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
      m_sequential_view.marker.set_world_position(libvgcode::convert(curr_vertex.position));
      m_sequential_view.marker.set_z_offset(m_z_offset + 0.5f);
      // BBS fixed buttom margin. m_moves_slider.pos_y
@@ -195,7 +200,7 @@ index c6d0f65c..442936ef 100644
  
  #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
      if (is_legend_shown()) {
-@@ -1676,7 +1825,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+@@ -1676,7 +1830,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
  #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
  
      //BBS render slider

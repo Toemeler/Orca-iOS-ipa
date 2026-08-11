@@ -4784,3 +4784,25 @@ at 100 characters, so the list itself has never been visible. 0386 logs each
 entry's full path as `orca-ios-recent: [i] <path>`, which separates the two
 possible causes: two history entries for one file, or two files with the same
 name in different directories.
+
+### The duplicate in the recent list — answered by the user, not by the log
+
+"The duplicate was once the downloaded model from MakerWorld and once the
+already imported saved. Only the saved imported should be in the menu."
+
+So it was never two history entries for one file, nor two files with the same
+name by accident: it is the **staging copy** and the **project**. Opening a
+MakerWorld download loads `Documents/Downloads/<name>.3mf`, and
+`Plater::priv::set_project_filename` puts whatever was loaded on the home page.
+Saving then puts the real project there too. Same model, twice, and the entry
+the user never asked for is indistinguishable by name.
+
+Patch 0387: `MainFrame::add_to_recent_projects` skips anything under
+`$HOME/Documents/Downloads/` — the directory `init_download_path()` owns, which
+nothing else writes to. `get_recent_projects` filters the same way, so entries
+recorded by earlier builds disappear from the page immediately rather than
+waiting for the list to turn over.
+
+Note this does not strand an unsaved download: the autosave entry (patch 0369)
+is still listed, and the file itself is still in Documents/Downloads, visible in
+the Files app.

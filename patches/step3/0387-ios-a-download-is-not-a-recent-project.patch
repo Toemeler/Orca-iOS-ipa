@@ -1,0 +1,61 @@
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -17,6 +17,30 @@
+ extern std::atomic<uint64_t> orca_ios_canvas_render_us;
+ extern std::atomic<uint64_t> orca_ios_canvas_pick_us;
+ extern std::atomic<uint64_t> orca_ios_canvas_render_max_us;
++} }
++
++#include <cstdlib>
++#include <string>
++
++namespace {
++// Is this the staging copy of a MakerWorld download?
++//
++// Opening one puts it on the home page, and saving the model the user actually
++// wants puts *that* on the home page too - the same model twice, one of which
++// they never asked for and cannot tell apart by name. Documents/Downloads is
++// where init_download_path() sends them (patch 0377), and nothing else writes
++// there, so the directory is the test.
++bool orca_ios_is_downloaded_copy(const std::string &path)
++{
++    const char *home = ::getenv("HOME");
++    if (home == nullptr || path.empty())
++        return false;
++    const std::string downloads = std::string(home) + "/Documents/Downloads/";
++    return path.compare(0, downloads.size(), downloads) == 0;
++}
++} // namespace
++
++namespace Slic3r { namespace GUI {
+ // src/slic3r/GUI/ios_webview_support.mm
+ std::string orca_ios_repair_container_path(const std::string &path);
+ } }
+@@ -4544,6 +4568,15 @@
+ 
+ void MainFrame::add_to_recent_projects(const wxString& filename)
+ {
++#ifdef __WXOSX_IPHONE__
++    // A download is not a project. It is the file MakerWorld handed over, and
++    // the project is whatever the user saves out of it.
++    if (orca_ios_is_downloaded_copy(into_u8(filename))) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-recent: not listing the download "
++                                 << into_u8(filename);
++        return;
++    }
++#endif
+     if (wxFileExists(filename))
+     {
+         m_recent_projects.AddFileToHistory(filename);
+@@ -4623,6 +4656,11 @@
+         // cannot say which. The paths can.
+         BOOST_LOG_TRIVIAL(error) << "orca-ios-recent: [" << i << "] "
+                                  << into_u8(wxString(proj));
++        // Earlier builds recorded downloads, and those entries are already in
++        // app config. Filter them here as well so the home page is right
++        // straight away rather than after the list next turns over.
++        if (orca_ios_is_downloaded_copy(into_u8(wxString(proj))))
++            continue;
+         // Otherwise every entry from before the last install reports "File is
+         // missing" and loses its thumbnail: the path still names the container
+         // UUID that install had.

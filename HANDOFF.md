@@ -4625,3 +4625,58 @@ point (returning to the tab is instant instead of paying for a TLS handshake and
 a first frame every time), but it is continuous WiFi and JPEG decoding. If
 battery becomes a complaint, stop on `UIApplicationDidEnterBackground` rather
 than on tab change.
+
+## The "bad slicing" was never slicing — it was a 16-bit index in a shader
+
+Reported as models coming out "only partly or just weird sliced", and then more
+precisely: on the iPad only about one percent at the bottom appears, the rest
+looks unsliced — but the estimated times are close to the PC's.
+
+That last detail is the whole clue, and the two project files settle it. The
+same model, sliced on each:
+
+| | iPad | Windows |
+|---|---|---|
+| `plate_1.gcode` | 69.6 MB | 73.9 MB |
+| total layers | 1000 | 1000 |
+| max Z | 100.5 mm | 100.5 mm |
+| prediction | 32639 s | 34183 s |
+| weight | 35.84 g | 35.71 g |
+| filament | 11.83 m | 11.78 m |
+| nozzle | 0.2 | 0.2 |
+
+**The slicing is fine.** The G-code is complete and within a few percent of the
+desktop's on every measure. (This also kills the nozzle hypothesis recorded
+earlier: the Windows profile is a 0.2 nozzle too. Do not spend more time on it.)
+
+### What was actually wrong
+
+`src/libvgcode/src/ShadersES.hpp`, the ES vertex shader that draws the toolpath.
+It reads the entire path out of textures — segment indices from a `usampler2D`,
+positions, heights/widths/angles and packed RGB24 colours from `sampler2D`s —
+and it declared:
+
+```glsl
+#version 300 es
+precision lowp usampler2D;
+```
+
+In GLSL ES the default precision for a sampler **in a vertex shader is lowp**,
+so the three unqualified `sampler2D`s were lowp as well, and the one explicit
+declaration asked for lowp too. Apple's GPUs implement lowp as 16 bits.
+
+A 16-bit segment index wraps at 65536. This model is roughly two million
+segments, so the first few percent got the right index and everything above
+wrapped back into the same low range and was drawn on top of the bottom layers —
+indistinguishable from "the rest was never sliced". `decode_color()` unpacks an
+RGB24 integer out of a float, so the colours were wrong past 65504 by the same
+mechanism.
+
+Patch 0384 declares `highp` for float, int, `sampler2D` and `usampler2D` in both
+vertex shaders that sample those textures. ES 3.0 requires highp in vertex
+shaders, so it costs nothing.
+
+**The lesson worth keeping:** when a symptom looks like bad *data*, check
+whether the data is actually bad before touching the code that produces it. Two
+files and `awk` were enough here, and they pointed at the opposite end of the
+pipeline from where three earlier hypotheses were looking.

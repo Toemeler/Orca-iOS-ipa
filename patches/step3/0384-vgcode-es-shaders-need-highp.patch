@@ -1,0 +1,51 @@
+--- a/src/libvgcode/src/ShadersES.hpp
++++ b/src/libvgcode/src/ShadersES.hpp
+@@ -12,7 +12,32 @@
+ 
+ static const char* Segments_Vertex_Shader_ES =
+ "#version 300 es\n"
+-"precision lowp usampler2D;\n"
++// highp, all four of them, or the preview stops a few layers up.
++//
++// The vertex shader reads the whole toolpath out of textures: segment
++// indices from a usampler2D, positions, heights/widths/angles and packed
++// RGB24 colours from sampler2Ds. In GLSL ES the default precision for a
++// sampler in a VERTEX shader is lowp, and the one explicit declaration here
++// asked for lowp as well - so every one of those fetches came back at lowp,
++// which Apple's GPUs implement as 16 bits.
++//
++// A 16-bit segment index wraps at 65536. This model slices to roughly two
++// million segments, so the first ~3% came out at the right index and
++// everything above it wrapped back into the same low range and was drawn on
++// top of the bottom few layers - which looks exactly like "only about one
++// percent at the bottom is there and the rest was never sliced". The G-code
++// was complete the whole time: 1000 layers, max Z 100.5, 69 MB, and a print
++// time within 5% of the same file sliced on Windows.
++//
++// The colours were broken by the same thing and would have been much harder
++// to notice: decode_color() unpacks an RGB24 integer out of a float, and
++// values above 65504 do not exist in 16-bit float.
++//
++// ES 3.0 requires highp in vertex shaders, so this costs nothing anywhere.
++"precision highp float;\n"
++"precision highp int;\n"
++"precision highp sampler2D;\n"
++"precision highp usampler2D;\n"
+ "#define POINTY_CAPS\n"
+ "#define FIX_TWISTING\n"
+ "const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n"
+@@ -158,7 +183,13 @@
+ 
+ static const char* Options_Vertex_Shader_ES =
+ "#version 300 es\n"
+-"precision lowp usampler2D;\n"
++// highp for the same reason as the segments shader above: a lowp sampler in
++// a vertex shader is 16 bits on Apple's GPUs, and the segment index does not
++// fit in 16 bits.
++"precision highp float;\n"
++"precision highp int;\n"
++"precision highp sampler2D;\n"
++"precision highp usampler2D;\n"
+ "const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n"
+ "const float light_top_diffuse = 0.6 * 0.8;\n"
+ "const float light_top_specular = 0.6 * 0.125;\n"

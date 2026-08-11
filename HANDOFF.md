@@ -4806,3 +4806,45 @@ waiting for the list to turn over.
 Note this does not strand an unsaved download: the autosave entry (patch 0369)
 is still listed, and the file itself is still in Documents/Downloads, visible in
 the Files app.
+
+## The preview frame, phase by phase
+
+Run 125's timing, from a real session on the 2.4M segment preview:
+
+```
+sel 1 (Prepare)  render +219  render_ms 2794  pick_ms 0  worst_ms 26
+sel 2 (Preview)  render +109  render_ms 4471  pick_ms 0  worst_ms 1268   (mouse +0)
+sel 2 (Preview)  render +4    render_ms 4692  pick_ms 0  worst_ms 1181   (mouse +17)
+```
+
+Three facts, and one dead hypothesis:
+
+* **The picking pass is not involved.** `pick_ms 0` throughout — the preview
+  canvas has picking disabled, so `_picking_pass()` returns immediately. That
+  was my hypothesis and it was wrong; the measurement cost one round and saved
+  building the wrong fix.
+* **Prepare is fine**: 219 frames in five seconds, 12.7 ms each.
+* **The preview costs ~41 ms per frame at rest** (109 frames, 4471 ms) and
+  **~1173 ms per frame while being touched** (4 frames, 4692 ms). Same scene,
+  same camera, 40x apart. And in both cases the main thread is inside
+  `render()` about 90% of the wall clock.
+
+An FPS cap cannot help: 41 ms is already 24 fps, below any cap worth setting.
+
+Two candidates remain for the 40x, and they need opposite fixes:
+
+1. **The toolpath draw itself**, made worse under touch by GPU backpressure —
+   `presentRenderbuffer` blocks once the GPU is a frame or two behind, so a
+   scene that only just keeps up at rest collapses when anything is added.
+   Fix: submit less.
+2. **The enabled-segment rebuild.** Dragging a layer or moves slider makes
+   libvgcode rebuild `enabled_segments`/`enabled_options` from scratch and
+   re-upload them — tens of megabytes per drag step at this size. That work
+   happens inside `_render_gcode()`, so it lands inside `render()` exactly as
+   observed. Fix: coalesce the rebuild across a drag.
+
+Patch 0388 times `_render_gcode()` (which covers both the viewer draw and the
+slider handling) and `SwapBuffers()` separately. `render_ms - gcode_ms -
+swap_ms` is then the bed, the objects, ImGui and the overlays, so nothing is
+left unaccounted for. **This is the last measurement round**; the two remaining
+candidates have opposite fixes and the numbers choose between them.

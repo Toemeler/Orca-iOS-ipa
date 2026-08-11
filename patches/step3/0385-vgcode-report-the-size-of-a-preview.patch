@@ -1,49 +1,35 @@
---- a/src/libvgcode/src/ViewerImpl.cpp
-+++ b/src/libvgcode/src/ViewerImpl.cpp
-@@ -17,6 +17,10 @@
- #include <algorithm>
- #include <cmath>
- #include <numeric>
-+#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
-+#include <chrono>
-+#include <boost/log/trivial.hpp>
+--- a/src/slic3r/GUI/GCodeViewer.cpp
++++ b/src/slic3r/GUI/GCodeViewer.cpp
+@@ -1269,7 +1269,32 @@
+ 
+     // send data to the viewer
+     m_viewer.reset_default_extrusion_roles_colors();
++#ifdef __WXOSX_IPHONE__
++    const auto orca_ios_load_start = std::chrono::steady_clock::now();
 +#endif
- 
- namespace libvgcode {
- 
-@@ -983,6 +987,9 @@
- 
- void ViewerImpl::load(GCodeInputData&& gcode_data)
- {
-+#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
-+    const auto load_start = std::chrono::steady_clock::now();
-+#endif
-     if (!m_initialized)
-         return;
- 
-@@ -1124,6 +1131,25 @@
-     m_view_range.set_visible(m_view_range.get_enabled());
-     update_enabled_entities();
-     update_colors();
-+
-+#if defined(__APPLE__) && defined(ENABLE_OPENGL_ES)
+     m_viewer.load(std::move(data));
++#ifdef __WXOSX_IPHONE__
 +    // How big is this preview, really?
 +    //
 +    // "The preview makes the app struggle on a big model" has three candidate
-+    // causes that look the same from outside - too many instances to draw per
++    // causes that look the same from outside - too many segments to draw per
 +    // frame, too much texture memory to hold, or too much work rebuilding the
 +    // enabled set when the layer slider moves - and no screenshot separates
-+    // them. One line per load does: the segment count bounds the draw, the
-+    // texture bytes bound the memory, and the elapsed time bounds the load
++    // them. One line per load does: the vertex count bounds the draw, the
++    // memory figures bound the footprint, and the elapsed time bounds the load
 +    // itself. Pair it with the orca-ios-canvas render counter, which already
-+    // reports frames per five seconds, and the frame cost falls out.
-+    BOOST_LOG_TRIVIAL(error) << "orca-ios-preview: vertices " << m_vertices.size()
-+                             << ", enabled segments " << m_texture_data.get_enabled_segments_count()
-+                             << ", textures " << (m_texture_data.get_used_gpu_memory() >> 20) << " MB"
-+                             << ", chunks " << m_texture_data.get_count()
++    // reports renders per five seconds, and the per-frame cost is arithmetic.
++    //
++    // Logged from here rather than from inside libvgcode: that library is built
++    // without boost on its include path, which is what broke run 123. Viewer's
++    // public interface already exposes everything this needs.
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-preview: vertices " << m_viewer.get_vertices_count()
++                             << ", layers " << m_viewer.get_layers_count()
++                             << ", cpu " << (m_viewer.get_used_cpu_memory() >> 20) << " MB"
++                             << ", gpu " << (m_viewer.get_used_gpu_memory() >> 20) << " MB"
 +                             << ", load " << std::chrono::duration_cast<std::chrono::milliseconds>(
-+                                    std::chrono::steady_clock::now() - load_start).count() << " ms";
++                                    std::chrono::steady_clock::now() - orca_ios_load_start).count() << " ms";
 +#endif
- }
  
- void ViewerImpl::update_enabled_entities()
+ // #if !VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+ //     const size_t vertices_count = m_viewer.get_vertices_count();

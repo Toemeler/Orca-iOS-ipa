@@ -274,7 +274,7 @@
      auto filename = filename2;
      auto check = [&filename, this] (bool yes_or_no) {
          if (!yes_or_no && !wxGetApp().check_and_save_current_preset_changes(_L("Load project"),
-@@ -12380,6 +12405,30 @@
+@@ -12380,6 +12405,33 @@
      sidebar().set_flushing_volume_warning(has_modify);
  
      BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << __LINE__ << " load project done";
@@ -295,10 +295,13 @@
 +        // screen can be the empty one from before the project existed, with no
 +        // second frame ever asked for. That is what a white Prepare viewport
 +        // after a successful load is. Ask for the frame.
++        // GLCanvas3D is not a window - it wraps one - so the repaint has to go
++        // through the wxGLCanvas it holds. Run 123 died on exactly that.
 +        if (GLCanvas3D *c = canvas3D()) {
 +            c->set_as_dirty();
 +            c->request_extra_frame();
-+            c->Refresh();
++            if (wxGLCanvas *w = c->get_wxglcanvas())
++                w->Refresh();
 +        }
 +    }
 +#endif

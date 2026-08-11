@@ -4909,3 +4909,43 @@ separately.
 continuously while ImGui asks for frames. Both are worth attention if the
 preview still feels heavy after this, and both are now measurable with the same
 counter line.
+
+## Two-finger pan never reached the app
+
+Orca's `GLCanvas3D::on_gesture()` has handled `wxEVT_GESTURE_PAN` correctly the
+whole time — it converts the delta through `_mouse_to_3d` and moves the camera
+target. The event simply never arrived.
+
+**UIKit arbitrates.** Without a delegate saying otherwise, only *one* recognizer
+on a view may recognize at a time; the rest are made to fail. Pinch and rotation
+both begin the instant a second finger lands, so a two-finger drag was always
+claimed by one of them and the pan recognizer never sent anything. None of the
+recognizers installed by `EnableTouchEvents` had a delegate.
+
+Patch **step2/0228** adds one shared `wxOSXGestureDelegate` returning YES from
+`gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:`, and
+sets it on the pan, pinch and rotate recognizers. A 3D viewport wants all three
+at once — drag to pan, spread to zoom, twist to rotate, in one motion — which is
+what every iPad app with a camera in it does.
+
+### And the trackpad
+
+Two-finger scroll from a trackpad is not a touch at all: it reaches an app only
+through a pan recognizer that opts in via `allowedScrollTypesMask`, and it
+carries **no touches**, which is why the existing two-finger pan recognizer
+(`minimumNumberOfTouches = 2`) could never see it. It was going to the separate
+scroll recognizer, which turns it into a mouse wheel — a zoom.
+
+Split by scroll type, which is exactly what UIKit provides the distinction for:
+
+* the wheel recognizer takes `UIScrollTypeMaskDiscrete` — a real mouse wheel,
+  still zooming, unchanged;
+* a new trackpad recognizer takes `UIScrollTypeMaskContinuous` and emits a pan.
+
+A separate recognizer rather than reusing the touch pan, because that one's
+two-touch minimum cannot be satisfied by an indirect scroll. Its handler ignores
+anything carrying touches, and `cancelsTouchesInView = NO` keeps it out of the
+pointer's way.
+
+**Cost:** this is `patches/step2`, so `WX_KEY` changes and wxWidgets rebuilds
+once (~25 min). Nothing else in the tree is affected.

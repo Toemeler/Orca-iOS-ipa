@@ -1,0 +1,141 @@
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -606,6 +606,26 @@
+     wxOSXSendGestureEvent(self, wxevent, gesture);
+ }
+ 
++// The same gesture from a trackpad, delivered as a pan rather than as a wheel.
++//
++// The wheel path (WX_scrollGesture:) stays for a real mouse, where turning the
++// wheel to zoom is right. A trackpad is not a wheel: two fingers moving on it
++// mean "move the content", the way they do everywhere else on iPadOS. UIKit
++// tells the two apart by scroll type, so each recognizer takes the one it
++// should - discrete for the wheel, continuous for the trackpad.
++//
++// Indirect scrolls carry no touches, which is what the guard keeps out: this
++// recognizer has the default touch minimum and would otherwise fire for a
++// one-finger drag that belongs to the pointer. Sharing s_last above with the
++// touch pan is safe for the same reason - fingers are either on the screen or
++// on the trackpad, never driving both at once, and each run resets it on Began.
++void wxOSX_trackpadPanGesture(UIView* self, SEL _cmd, UIPanGestureRecognizer* gesture)
++{
++    if ( [gesture numberOfTouches] > 0 )
++        return;
++    wxOSX_panGesture(self, _cmd, gesture);
++}
++
+ void wxOSX_zoomGesture(UIView* self, SEL _cmd, UIPinchGestureRecognizer* gesture)
+ {
+     if ( !wxOSXGestureStateIsLive(gesture) )
+@@ -647,6 +667,7 @@
+     class_addMethod(c, @selector(WX_scrollGesture:), (IMP) wxOSX_scrollGesture, "v@:@");
+     class_addMethod(c, @selector(WX_hoverGesture:), (IMP) wxOSX_hoverGesture, "v@:@");
+     class_addMethod(c, @selector(WX_panGesture:), (IMP) wxOSX_panGesture, "v@:@");
++    class_addMethod(c, @selector(WX_trackpadPanGesture:), (IMP) wxOSX_trackpadPanGesture, "v@:@");
+     class_addMethod(c, @selector(WX_zoomGesture:), (IMP) wxOSX_zoomGesture, "v@:@");
+     class_addMethod(c, @selector(WX_rotateGesture:), (IMP) wxOSX_rotateGesture, "v@:@");
+     class_addMethod(c, @selector(WX_longPressGesture:), (IMP) wxOSX_longPressGesture, "v@:@");
+@@ -1180,7 +1201,11 @@
+ 
+         UIPanGestureRecognizer* scroll =
+             [[UIPanGestureRecognizer alloc] initWithTarget:view action:@selector(WX_scrollGesture:)];
+-        scroll.allowedScrollTypesMask = UIScrollTypeMaskAll;
++        // Discrete only: a mouse wheel. Continuous scrolls - a trackpad -
++        // are the trackpad pan recognizer's, installed with the touch
++        // gestures, so that two fingers on a trackpad move the view instead of
++        // zooming it.
++        scroll.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
+         // Let touch drags fall through to touchesMoved: rather than being
+         // swallowed here; the handler also ignores any pan carrying touches.
+         scroll.cancelsTouchesInView = NO;
+@@ -1198,6 +1223,41 @@
+ // The recognizers this call installed, so a second call replaces rather than
+ // stacks them. Associated with the view because the peer can outlive none of
+ // it and UIKit owns the view's recognizer array.
++// Why two-finger pan never fired.
++//
++// UIKit arbitrates: without a delegate saying otherwise, only ONE recognizer on
++// a view may recognize at a time, and the others are made to fail. Pinch and
++// rotation both begin the instant a second finger lands, so a two-finger drag
++// was always claimed by one of them and the pan recognizer never got to send
++// anything. Orca's on_gesture() has handled wxEVT_GESTURE_PAN correctly the
++// whole time; the event simply never arrived.
++//
++// A 3D viewport wants all three at once - drag to pan, spread to zoom, twist to
++// rotate, in one continuous motion - which is what every iPad app with a camera
++// in it does, so the answer is to allow simultaneous recognition rather than to
++// pick a winner.
++@interface wxOSXGestureDelegate : NSObject <UIGestureRecognizerDelegate>
++@end
++
++@implementation wxOSXGestureDelegate
++- (BOOL)gestureRecognizer:(UIGestureRecognizer *)a
++        shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)b
++{
++    (void) a; (void) b;
++    return YES;
++}
++@end
++
++// One delegate for every recognizer in the process: it holds no state, and a
++// recognizer does not retain its delegate, so it has to outlive them all.
++static id wxOSXSharedGestureDelegate()
++{
++    static wxOSXGestureDelegate* delegate = nil;
++    if ( delegate == nil )
++        delegate = [[wxOSXGestureDelegate alloc] init];
++    return delegate;
++}
++
+ static char wxOSXTouchGesturesKey;
+ 
+ bool wxWidgetIPhoneImpl::EnableTouchEvents(int eventsMask)
+@@ -1222,6 +1282,7 @@
+     Class viewClass = object_getClass(view);
+     struct { SEL sel; IMP imp; } methods[] = {
+         { @selector(WX_panGesture:),       (IMP) wxOSX_panGesture },
++        { @selector(WX_trackpadPanGesture:), (IMP) wxOSX_trackpadPanGesture },
+         { @selector(WX_zoomGesture:),      (IMP) wxOSX_zoomGesture },
+         { @selector(WX_rotateGesture:),    (IMP) wxOSX_rotateGesture },
+         { @selector(WX_longPressGesture:), (IMP) wxOSX_longPressGesture },
+@@ -1241,15 +1302,32 @@
+         // Two fingers exactly. One finger stays the pointer.
+         pan.minimumNumberOfTouches = 2;
+         pan.maximumNumberOfTouches = 2;
++        pan.delegate = wxOSXSharedGestureDelegate();
+         [view addGestureRecognizer:pan];
+         [installed addObject:pan];
+         [pan release];
++
++        // The same gesture from a trackpad. A separate recognizer because the
++        // touch minimum above cannot be satisfied by an indirect scroll, which
++        // carries no touches at all.
++        UIPanGestureRecognizer* trackpad =
++            [[UIPanGestureRecognizer alloc] initWithTarget:view action:@selector(WX_trackpadPanGesture:)];
++        trackpad.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
++        trackpad.delegate = wxOSXSharedGestureDelegate();
++        // Never take a touch away from the pointer: the handler ignores
++        // anything with touches, and this stops the recognizer swallowing them
++        // on the way.
++        trackpad.cancelsTouchesInView = NO;
++        [view addGestureRecognizer:trackpad];
++        [installed addObject:trackpad];
++        [trackpad release];
+     }
+ 
+     if ( eventsMask & wxTOUCH_ZOOM_GESTURE )
+     {
+         UIPinchGestureRecognizer* pinch =
+             [[UIPinchGestureRecognizer alloc] initWithTarget:view action:@selector(WX_zoomGesture:)];
++        pinch.delegate = wxOSXSharedGestureDelegate();
+         [view addGestureRecognizer:pinch];
+         [installed addObject:pinch];
+         [pinch release];
+@@ -1259,6 +1337,7 @@
+     {
+         UIRotationGestureRecognizer* rotate =
+             [[UIRotationGestureRecognizer alloc] initWithTarget:view action:@selector(WX_rotateGesture:)];
++        rotate.delegate = wxOSXSharedGestureDelegate();
+         [view addGestureRecognizer:rotate];
+         [installed addObject:rotate];
+         [rotate release];

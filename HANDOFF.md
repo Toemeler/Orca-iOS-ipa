@@ -4848,3 +4848,27 @@ slider handling) and `SwapBuffers()` separately. `render_ms - gcode_ms -
 swap_ms` is then the bed, the objects, ImGui and the overlays, so nothing is
 left unaccounted for. **This is the last measurement round**; the two remaining
 candidates have opposite fixes and the numbers choose between them.
+
+## Preview defaults on iOS
+
+Two presentation defaults, asked for directly:
+
+* **View type opens on Summary**, not feature type. On a tablet the first thing
+  wanted from a finished slice is what it will cost — time, filament, weight —
+  and the feature-type colouring is something to switch to deliberately.
+  Changed in **two** places: `GCodeViewer` sets it at the first slice, and
+  `load()` re-applies a default whenever the used-extruder count changes.
+  Patching only the first leaves every re-slice putting feature type back.
+* **The G-code text window is hidden.** It covers a quarter of the preview and
+  its content is the kind of thing read next to a keyboard.
+
+The second needed a one-time migration, and the reason is worth remembering:
+`AppConfig::set_defaults()` only fills in keys that are **missing**, and it runs
+*after* an existing config has been loaded. Changing the default therefore does
+nothing on any device the app has already run on — which is all of them. So the
+new value is applied once, recorded under `ios_preview_defaults`, and a user who
+turns the window back on afterwards keeps it on. Any future default flip needs
+the same treatment, with a new key.
+
+Neither of these is a performance fix. Summary still draws every segment; the
+view type only decides the colouring.

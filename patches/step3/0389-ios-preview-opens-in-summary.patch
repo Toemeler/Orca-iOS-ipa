@@ -1,0 +1,73 @@
+--- a/src/libslic3r/AppConfig.cpp
++++ b/src/libslic3r/AppConfig.cpp
+@@ -307,7 +307,28 @@
+         set("drc_bits", DRC_BITS_DEFAULT_STR);
+ 
+     if (get("show_gcode_window").empty())
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // The G-code text window covers a quarter of the preview on a tablet
++        // and its content is the kind of thing you read next to a keyboard.
++        // Off unless asked for; the toggle itself is unchanged.
++        set_bool("show_gcode_window", false);
++#else
+         set_bool("show_gcode_window", true);
++#endif
++
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // One-time correction for configs that already answered the question.
++    //
++    // set_defaults() only fills in keys that are *missing*, and it runs after
++    // an existing config has been loaded - so changing the default above does
++    // nothing on any device the app has already run on, which is all of them.
++    // Apply it once, remembered under its own key, so that a user who turns the
++    // window back on afterwards keeps it turned on.
++    if (get("ios_preview_defaults").empty()) {
++        set_bool("show_gcode_window", false);
++        set("ios_preview_defaults", "1");
++    }
++#endif
+ 
+     if (get("show_3d_navigator").empty())
+         set_bool("show_3d_navigator", true);
+--- a/src/slic3r/GUI/GCodeViewer.cpp
++++ b/src/slic3r/GUI/GCodeViewer.cpp
+@@ -1044,9 +1044,17 @@
+     // Default view type at first slice.
+     // May be overridden in load() once we know how many tools are actually used in the G-code.
+     m_nozzle_nums = preset_bundle ? preset_bundle->get_printer_extruder_count() : 1;
+-    auto it = std::find(view_type_items.begin(), view_type_items.end(), libvgcode::EViewType::FeatureType);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Summary, not feature type: on a tablet the first thing wanted from a
++    // finished slice is what it will cost - time, filament, weight - and the
++    // feature-type colouring is something to switch to deliberately.
++    const libvgcode::EViewType ios_default_view = libvgcode::EViewType::Summary;
++#else
++    const libvgcode::EViewType ios_default_view = libvgcode::EViewType::FeatureType;
++#endif
++    auto it = std::find(view_type_items.begin(), view_type_items.end(), ios_default_view);
+     m_view_type_sel = (it != view_type_items.end()) ? std::distance(view_type_items.begin(), it) : 0;
+-    set_view_type(libvgcode::EViewType::FeatureType);
++    set_view_type(ios_default_view);
+ 
+     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(": finished");
+ }
+@@ -1383,10 +1391,17 @@
+         }
+     } else {
+         if (m_last_extruder_count_default_applied != 1) {
+-            auto it = std::find(view_type_items.begin(), view_type_items.end(), libvgcode::EViewType::FeatureType);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            // Same default as the first slice above. Without this, every
++            // re-slice puts the feature-type view back.
++            const libvgcode::EViewType single_default = libvgcode::EViewType::Summary;
++#else
++            const libvgcode::EViewType single_default = libvgcode::EViewType::FeatureType;
++#endif
++            auto it = std::find(view_type_items.begin(), view_type_items.end(), single_default);
+             if (it != view_type_items.end())
+                 m_view_type_sel = std::distance(view_type_items.begin(), it);
+-            set_view_type(libvgcode::EViewType::FeatureType);
++            set_view_type(single_default);
+             m_last_extruder_count_default_applied = 1;
+         }
+     }

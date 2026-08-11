@@ -4872,3 +4872,40 @@ the same treatment, with a new key.
 
 Neither of these is a performance fix. Summary still draws every segment; the
 view type only decides the colouring.
+
+## The preview: found it
+
+The partition made it unambiguous:
+
+```
+sel 2  render +6  render_ms 4672  gcode_ms 4657  swap_ms 0  worst_ms 793
+sel 2  render +5  render_ms 3875  gcode_ms 3865  swap_ms 1  worst_ms 812
+```
+
+`gcode_ms` **is** the frame, and `swap_ms` is nothing. That second number is the
+important one: if the GPU were the bottleneck, `presentRenderbuffer` would block
+and `swap_ms` would be large. It is zero, so the GPU takes each frame instantly
+and the ~790 ms is **CPU work inside `_render_gcode()`**. It is not the drawing.
+
+What that CPU work is: handing a new range to the viewer makes libvgcode walk
+every vertex to rebuild its enabled-segment, colour and height/width/angle
+arrays and re-upload them. At 1.6M vertices that is ~775 ms, and it was being
+done **once per drag step**, from inside the render.
+
+Throttling cannot fix a 775 ms unit of work — even one per second leaves the app
+unusable — so patch 0390 makes the rebuild wait until the slider **stops**:
+`orca_ios_slider_settled()` reports settled once the range has held still for
+250 ms, and until then the slider is left dirty and an extra frame is requested.
+During a drag the slider still moves and still draws, at the ~39 ms per frame
+the scene costs on its own; the toolpaths catch up a quarter second after the
+user lets go. The shells still follow immediately — that range is a handful of
+volumes, not a toolpath.
+
+Two independent slots, because the layer slider and the moves slider settle
+separately.
+
+**What this does not fix:** the preview still costs ~39 ms a frame at rest
+(~25 fps) because the scene really is 1.6-2.4M segments, and it still redraws
+continuously while ImGui asks for frames. Both are worth attention if the
+preview still feels heavy after this, and both are now measurable with the same
+counter line.

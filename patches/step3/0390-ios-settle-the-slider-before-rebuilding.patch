@@ -1,0 +1,114 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -50,6 +50,7 @@
+ 
+ #include <atomic>
+ #include <chrono>
++#include <limits>
+ 
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
+@@ -8524,6 +8525,56 @@
+     m_camera_clipping_plane = ClippingPlane::ClipsNothing();
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++// Has the slider stopped moving?
++//
++// Handing a new range to the G-code viewer is not a cheap redraw: libvgcode
++// walks every vertex to rebuild its enabled-segment, colour and
++// height/width/angle arrays and re-uploads them. At 1.6 million vertices that
++// measured at about 775 ms, and it was being done once per drag step, from
++// inside _render_gcode() - which is inside render(). The numbers were
++// unambiguous about where the time went:
++//
++//   render +6  render_ms 4672  gcode_ms 4657  swap_ms 0  worst_ms 793
++//
++// gcode_ms is the whole frame and swap_ms is nothing, so the GPU was taking
++// frames instantly and the cost was CPU work inside the viewer. Throttling
++// cannot fix a 775 ms unit of work - even one per second leaves the app
++// unusable - so the rebuild has to not happen until the value stops changing.
++//
++// Which is what this does: report settled once the range has held still for
++// 250 ms. During a drag the slider still moves and still draws, at the ~39 ms
++// per frame the scene costs on its own; the toolpaths catch up a quarter of a
++// second after the user lets go. Two independent slots because the layer and
++// moves sliders settle separately.
++static bool orca_ios_slider_settled(int slot, double low, double high)
++{
++    struct Slot {
++        double low  = std::numeric_limits<double>::quiet_NaN();
++        double high = std::numeric_limits<double>::quiet_NaN();
++        std::chrono::steady_clock::time_point since;
++        bool applied = false;
++    };
++    static Slot slots[2];
++    Slot &s = slots[slot == 0 ? 0 : 1];
++
++    const auto now = std::chrono::steady_clock::now();
++    if (!(low == s.low) || !(high == s.high)) {
++        s.low     = low;
++        s.high    = high;
++        s.since   = now;
++        s.applied = false;
++        return false;
++    }
++    if (s.applied)
++        return true;   // unchanged and already applied: nothing to defer
++    if (now - s.since < std::chrono::milliseconds(250))
++        return false;
++    s.applied = true;
++    return true;
++}
++#endif // __WXOSX_IPHONE__
++
+ //BBS: GUI refactor: add canvas size as parameters
+ void GLCanvas3D::_render_gcode(int canvas_width, int canvas_height)
+ {
+@@ -8547,18 +8598,39 @@
+     }
+ 
+     if (layers_slider->is_dirty()) {
++        // The shells follow the slider immediately: that range is a handful of
++        // volumes, not a toolpath.
+         set_volumes_z_range({layers_slider->GetLowerValueD(), layers_slider->GetHigherValueD()});
+-        if (m_gcode_viewer.has_data()) {
+-            m_gcode_viewer.set_layers_z_range({static_cast<unsigned int>(layers_slider->GetLowerValue()), static_cast<unsigned int>(layers_slider->GetHigherValue())});
++        bool apply = true;
++#ifdef __WXOSX_IPHONE__
++        apply = orca_ios_slider_settled(0, static_cast<double>(layers_slider->GetLowerValue()),
++                                           static_cast<double>(layers_slider->GetHigherValue()));
++        if (!apply)
++            // Still moving: leave the slider dirty so this runs again, and ask
++            // for the frame that brings us back here.
++            request_extra_frame();
++#endif
++        if (apply) {
++            if (m_gcode_viewer.has_data()) {
++                m_gcode_viewer.set_layers_z_range({static_cast<unsigned int>(layers_slider->GetLowerValue()), static_cast<unsigned int>(layers_slider->GetHigherValue())});
++            }
++            layers_slider->set_as_dirty(false);
++            post_event(SimpleEvent(EVT_GLCANVAS_UPDATE));
+         }
+-        layers_slider->set_as_dirty(false);
+-        post_event(SimpleEvent(EVT_GLCANVAS_UPDATE));
+     }
+ 
+     if (moves_slider->is_dirty()) {
+-        moves_slider->set_as_dirty(false);
+-        m_gcode_viewer.update_sequential_view_current((moves_slider->GetLowerValueD() - 1.0), static_cast<unsigned int>(moves_slider->GetHigherValueD() - 1.0));
+-        post_event(SimpleEvent(EVT_GLCANVAS_UPDATE));
++        bool apply = true;
++#ifdef __WXOSX_IPHONE__
++        apply = orca_ios_slider_settled(1, moves_slider->GetLowerValueD(), moves_slider->GetHigherValueD());
++        if (!apply)
++            request_extra_frame();
++#endif
++        if (apply) {
++            moves_slider->set_as_dirty(false);
++            m_gcode_viewer.update_sequential_view_current((moves_slider->GetLowerValueD() - 1.0), static_cast<unsigned int>(moves_slider->GetHigherValueD() - 1.0));
++            post_event(SimpleEvent(EVT_GLCANVAS_UPDATE));
++        }
+     }
+ }
+ 

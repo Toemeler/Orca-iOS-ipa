@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
-index 7144e80..66e0bc3 100644
+index a35eff0..60381ae 100644
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
 @@ -7,6 +7,11 @@ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char
@@ -11,10 +11,10 @@ index 7144e80..66e0bc3 100644
 +namespace Slic3r { namespace GUI {
 +void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *open_title);
 +} }
- #include <atomic>
- #include <chrono>
- // src/slic3r/GUI/GLCanvas3D.cpp
-@@ -1901,6 +1906,13 @@ void MainFrame::init_tabpanel() {
+ // src/slic3r/GUI/ios_webview_support.mm - the one page that needs room kept
+ // clear at the top for the floating tab bar.
+ namespace Slic3r { namespace GUI { void orca_ios_inset_tab(wxWindow *page); } }
+@@ -1904,6 +1909,13 @@ void MainFrame::init_tabpanel() {
              m_webview->load_url(url);
          });
          m_tabpanel->AddPage(m_webview, "", "tab_home_active", "tab_home_active", false);
@@ -29,7 +29,7 @@ index 7144e80..66e0bc3 100644
      }
  
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 8f5f895..4f62d61 100644
+index 0b2eae1..96d384e 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -422,6 +422,85 @@ static UITextField *orca_ios_find_text_field(UIView *view)
@@ -118,7 +118,7 @@ index 8f5f895..4f62d61 100644
  // -- the plater toolbar ----------------------------------------------------
  //
  // The same nanosvg GLTexture uses to build the toolbar atlas, so the buttons
-@@ -1694,5 +1773,180 @@ void orca_ios_toolbar_commit(void *canvas, void *host_view)
+@@ -1736,5 +1815,180 @@ void orca_ios_toolbar_commit(void *canvas, void *host_view)
      }
  }
  

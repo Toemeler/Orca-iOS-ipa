@@ -1,18 +1,21 @@
 diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
-index aa2ee74..7144e80 100644
+index aa2ee74..a35eff0 100644
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
-@@ -4,6 +4,9 @@
+@@ -4,6 +4,12 @@
  #include <wx/display.h>
  // src/slic3r/GUI/ios_webview_support.mm
  namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char *when); } }
 +// src/slic3r/GUI/ios_webview_support.mm - keeps a page out of the native tab
 +// bar without taking it out of the notebook.
 +namespace Slic3r { namespace GUI { void orca_ios_hide_tab(wxWindow *page); } }
++// src/slic3r/GUI/ios_webview_support.mm - the one page that needs room kept
++// clear at the top for the floating tab bar.
++namespace Slic3r { namespace GUI { void orca_ios_inset_tab(wxWindow *page); } }
  #include <atomic>
  #include <chrono>
  // src/slic3r/GUI/GLCanvas3D.cpp
-@@ -1938,6 +1941,14 @@ void MainFrame::init_tabpanel() {
+@@ -1938,6 +1944,18 @@ void MainFrame::init_tabpanel() {
      m_calibration->SetBackgroundColour(*wxWHITE);
      m_tabpanel->AddPage(m_calibration, _L("Calibration"), std::string("tab_calibration_active"), std::string("tab_calibration_active"), false);
  
@@ -22,6 +25,10 @@ index aa2ee74..7144e80 100644
 +    // simply have no tab of their own yet. Delete a line to give one back.
 +    orca_ios_hide_tab(m_project);
 +    orca_ios_hide_tab(m_calibration);
++    // The Device page lays its own header across the top, so it is the one
++    // page that needs the floating bar's height kept clear. The 3D pages do
++    // not - a bar floating over the space above the plate is the point of it.
++    orca_ios_inset_tab(m_monitor);
 +#endif
 +
      if (m_plater) {
@@ -167,7 +174,7 @@ index 959d3c4..450e9e2 100644
      }
  
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 56cb485..483c95d 100644
+index 56cb485..dbc27f2 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -27,6 +27,11 @@
@@ -182,7 +189,7 @@ index 56cb485..483c95d 100644
  #include <cstdlib>
  #include <boost/filesystem.hpp>
  #include <boost/log/trivial.hpp>
-@@ -417,6 +422,287 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+@@ -417,6 +422,306 @@ static UITextField *orca_ios_find_text_field(UIView *view)
  }
  
  
@@ -233,6 +240,10 @@ index 56cb485..483c95d 100644
 +// init_tabpanel to give a page its tab back; nothing else has to change.
 +static std::vector<wxWindow *> gs_orca_untabbed;
 +
++// The one page that wants room at the top for the floating bar. Named from
++// MainFrame::init_tabpanel, by identity, like the untabbed pages above.
++static wxWindow *gs_orca_inset_page = nullptr;
++
 +static bool orca_ios_tab_is_hidden(wxWindow *page)
 +{
 +    if (page == nullptr)
@@ -266,11 +277,15 @@ index 56cb485..483c95d 100644
 +@property (nonatomic, assign) NSUInteger            page;    // notebook page, not tab position
 +@end
 +
-+// How much of the top of the window the floating bar covers. wx knows nothing
-+// about it and will happily lay a page's own header out underneath it - which
-+// is what the Device page did, putting Camera / Control / Printer Parts behind
-+// the capsule. wx's view is inset by this much instead, so every page starts
-+// below the bar rather than under it.
++// How much of the top of the window the floating bar covers, for the one page
++// that asks for it. wx knows nothing about the bar and laid the Device page's
++// own header - Camera / Control / Printer Parts - out underneath it.
++//
++// ONE PAGE, not all of them. Insetting wx's view for every page moved
++// everything on the 3D pages down with it, and the toolbar is centred
++// vertically in the canvas, so it went off the bottom and the column vanished
++// from Prepare entirely. The plate does not need the room anyway: the bar
++// floating over empty space above it is exactly what a floating bar is for.
 +static const CGFloat kOrcaTabBarInset = 56;
 +
 +@interface OrcaTabBarController : UITabBarController
@@ -360,9 +375,16 @@ index 56cb485..483c95d 100644
 +    [super viewDidLayoutSubviews];
 +    if (self.wxView == nil)
 +        return;
++
 +    CGRect r = self.view.bounds;
-+    r.origin.y    += kOrcaTabBarInset;
-+    r.size.height -= kOrcaTabBarInset;
++    if (_book != nullptr && gs_orca_inset_page != nullptr) {
++        const int sel = _book->GetSelection();
++        if (sel >= 0 && (size_t) sel < _book->GetPageCount() &&
++            _book->GetPage((size_t) sel) == gs_orca_inset_page) {
++            r.origin.y    += kOrcaTabBarInset;
++            r.size.height -= kOrcaTabBarInset;
++        }
++    }
 +    if (!CGRectEqualToRect(self.wxView.frame, r))
 +        self.wxView.frame = r;
 +}
@@ -442,6 +464,10 @@ index 56cb485..483c95d 100644
 +        }
 +    }
 +
++    // The inset depends on which page is showing, so the layout has to run
++    // again after a selection change.
++    [self.view setNeedsLayout];
++
 +    _in_sync = NO;
 +}
 +
@@ -470,7 +496,7 @@ index 56cb485..483c95d 100644
  namespace Slic3r {
  namespace GUI {
  
-@@ -789,5 +1075,211 @@ std::string orca_ios_repair_container_path(const std::string &path)
+@@ -789,5 +1094,218 @@ std::string orca_ios_repair_container_path(const std::string &path)
      return path;
  }
  
@@ -619,6 +645,13 @@ index 56cb485..483c95d 100644
 +        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: syncTabs THREW " << [[e name] UTF8String]
 +                                 << ": " << [[e reason] UTF8String];
 +    }
++}
++
++// MainFrame::init_tabpanel names the page that wants room at the top for the
++// floating bar. Exactly one page does - see kOrcaTabBarInset.
++void orca_ios_inset_tab(wxWindow *page)
++{
++    gs_orca_inset_page = page;
 +}
 +
 +// MainFrame::init_tabpanel calls this for each page that should keep working

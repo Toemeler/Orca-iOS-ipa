@@ -351,7 +351,7 @@ index 94c76d8..50d93fb 100644
      // keep information about events to process
      struct MouseCapture
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 483c95d..8f5f895 100644
+index dbc27f2..0b2eae1 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -422,6 +422,352 @@ static UITextField *orca_ios_find_text_field(UIView *view)
@@ -707,7 +707,7 @@ index 483c95d..8f5f895 100644
  // A real UITabBarController, in place of Orca's own tab strip.
  //
  // Orca draws its Home / Prepare / Preview / Device / Project row itself, with
-@@ -1281,5 +1627,72 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
+@@ -1307,5 +1653,88 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
      });
  }
  
@@ -770,6 +770,22 @@ index 483c95d..8f5f895 100644
 +        // changes size on rotation without the items changing at all.
 +        [gs_orca_toolbar setItems:gs_orca_tool_pending];
 +        [gs_orca_toolbar reposition];
++
++        // Where it actually ended up, once, so a column that is on screen can
++        // be told from one that is off the bottom of it. The toolbar went
++        // missing from Prepare when wx's view was inset for the tab bar and
++        // nothing in the log could say whether it had moved or never been
++        // built.
++        static bool logged_frame = false;
++        if (!logged_frame) {
++            logged_frame = true;
++            const CGRect f = gs_orca_toolbar.frame;
++            const CGRect h = host.bounds;
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-toolbar: frame "
++                << (int) f.origin.x << "," << (int) f.origin.y << " "
++                << (int) f.size.width << "x" << (int) f.size.height
++                << " in host " << (int) h.size.width << "x" << (int) h.size.height;
++        }
 +    }
 +    @catch (NSException *e) {
 +        gs_orca_toolbar_failed = true;

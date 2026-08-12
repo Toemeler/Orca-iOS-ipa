@@ -5876,3 +5876,22 @@ the turn the bar arrives the chip is built against the bar's view straight away
 instead of into a window that is about to be emptied. It still runs
 unconditionally, outside the tab bar's early return, so it cannot be taken down
 by the tab bar failing.
+
+### The inset belongs to one page, not to all of them
+
+Insetting wx's view for the floating bar was applied to every page, and it took
+the toolbar off Prepare with it: the column is centred vertically in the canvas,
+so moving the canvas down moved the column down past the bottom of the screen.
+One change, two complaints, one cause.
+
+**Only the Device page needs the room.** It lays its own header — Camera /
+Control / Printer Parts — straight across the top. The 3D pages do not: a bar
+floating over the empty space above the plate is the point of a floating bar.
+`orca_ios_inset_tab()` names the page from `init_tabpanel`, by identity, the
+same way the untabbed pages are named, and `-viewDidLayoutSubviews` applies the
+inset only while that page is the selected one. A selection change asks for
+layout again, because the inset depends on which page is showing.
+
+The toolbar also logs its frame and its host's bounds once per run now, so a
+column that is off the bottom of the screen can be told from one that was never
+built.

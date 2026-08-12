@@ -1,8 +1,8 @@
 diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
-index 4b730209..89377df1 100644
+index 4b730209..aa2ee744 100644
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
-@@ -19,6 +19,28 @@ extern std::atomic<uint64_t> orca_ios_canvas_pick_us;
+@@ -19,6 +19,32 @@ extern std::atomic<uint64_t> orca_ios_canvas_pick_us;
  extern std::atomic<uint64_t> orca_ios_canvas_render_max_us;
  extern std::atomic<uint64_t> orca_ios_canvas_gcode_us;
  extern std::atomic<uint64_t> orca_ios_canvas_swap_us;
@@ -18,6 +18,10 @@ index 4b730209..89377df1 100644
 +extern std::atomic<unsigned> orca_ios_gcv_stride;
 +extern std::atomic<unsigned> orca_ios_gcv_budget;
 +extern std::atomic<unsigned> orca_ios_gcv_moving;
++// Segments enabled, and segments actually submitted after collinear runs were
++// merged. The ratio is what the merge is worth on this model.
++extern std::atomic<unsigned> orca_ios_gcv_segs_raw;
++extern std::atomic<unsigned> orca_ios_gcv_segs_drawn;
 +// Which of on_idle()'s dirty sources fired. A still preview drawn at full
 +// detail is only affordable if it is drawn once; these name whatever is asking
 +// for it again.
@@ -31,7 +35,7 @@ index 4b730209..89377df1 100644
  } }
  // src/libvgcode/src/ViewerImpl.cpp - a different library, linked into the same
  // binary, so the symbols resolve.
-@@ -1184,6 +1206,9 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+@@ -1184,6 +1210,9 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
              static uint64_t last_ru = 0, last_pu = 0;
              static uint64_t last_gu = 0, last_su = 0;
              static uint64_t last_vr = 0, last_ve = 0, last_vc = 0;
@@ -41,7 +45,7 @@ index 4b730209..89377df1 100644
              const unsigned i = orca_ios_canvas_idles.load();
              const unsigned p = orca_ios_canvas_paints.load();
              const unsigned r = orca_ios_canvas_renders.load();
-@@ -1226,7 +1251,42 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+@@ -1226,7 +1255,44 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
                  // slow to draw, it is being rebuilt.
                  << " vg_range_ms " << ((libvgcode::orca_ios_vg_full_range_us.load() - last_vr) / 1000)
                  << " vg_enabled_ms " << ((libvgcode::orca_ios_vg_enabled_us.load() - last_ve) / 1000)
@@ -60,6 +64,8 @@ index 4b730209..89377df1 100644
 +                << " lod_stride " << orca_ios_gcv_stride.load()
 +                << " lod_budget " << orca_ios_gcv_budget.load()
 +                << " moving " << orca_ios_gcv_moving.load()
++                << " segs " << orca_ios_gcv_segs_raw.load()
++                << "->" << orca_ios_gcv_segs_drawn.load()
 +                // Why the canvas was asked to draw at all. At rest, on a
 +                // preview nothing has changed, every one of these should be
 +                // zero and the render count should be zero with them.

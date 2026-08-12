@@ -1,8 +1,8 @@
 diff --git a/src/libvgcode/include/Viewer.hpp b/src/libvgcode/include/Viewer.hpp
-index fa3236fd..3c7d9583 100644
+index fa3236fd..da8160b5 100644
 --- a/src/libvgcode/include/Viewer.hpp
 +++ b/src/libvgcode/include/Viewer.hpp
-@@ -307,6 +307,35 @@ public:
+@@ -307,6 +307,41 @@ public:
      //
      size_t get_vertices_count() const;
      //
@@ -35,11 +35,17 @@ index fa3236fd..3c7d9583 100644
 +    size_t get_enabled_segments_count() const;
 +    size_t get_enabled_options_count() const;
 +    //
++    // How many segments were enabled before consecutive collinear runs were
++    // merged into one. Divided by the count above, this is what the merge was
++    // worth on the model in front of you.
++    //
++    size_t get_enabled_segments_raw_count() const;
++    //
      // Return the vertex pointed by the max value of the view visible range
      //
      const PathVertex& get_current_vertex() const;
 diff --git a/src/libvgcode/src/ShadersES.hpp b/src/libvgcode/src/ShadersES.hpp
-index 4d25cad6..f8b08bde 100644
+index 4d25cad6..b386f23c 100644
 --- a/src/libvgcode/src/ShadersES.hpp
 +++ b/src/libvgcode/src/ShadersES.hpp
 @@ -56,8 +56,40 @@ static const char* Segments_Vertex_Shader_ES =
@@ -84,7 +90,7 @@ index 4d25cad6..f8b08bde 100644
  "vec3 decode_color(float color) {\n"
  "  int c = int(round(color));\n"
  "  int r = (c >> 16) & 0xFF;\n"
-@@ -72,20 +104,43 @@ static const char* Segments_Vertex_Shader_ES =
+@@ -72,20 +104,48 @@ static const char* Segments_Vertex_Shader_ES =
  "  float top_specular = light_top_specular * pow(max(dot(-normalize(eye_position), reflect(-light_top_dir, eye_normal)), 0.0), light_top_shininess);\n"
  "  return ambient + top_diffuse + front_diffuse + top_specular + emission;\n"
  "}\n"
@@ -125,20 +131,26 @@ index 4d25cad6..f8b08bde 100644
  "void main() {\n"
  "  int vertex_id = int(vertex_id_float);\n"
 -"  int id_a = int(texelFetch(segment_index_tex, tex_coord_u(segment_index_tex, gl_InstanceID), 0).r);\n"
+-"  int id_b = id_a + 1;\n"
+-"  vec3 pos_a = texelFetch(position_tex, tex_coord(position_tex, id_a), 0).xyz;\n"
+-"  vec3 pos_b = texelFetch(position_tex, tex_coord(position_tex, id_b), 0).xyz;\n"
 +// Clamped, so that a uniform which never got set reads as full detail rather
 +// than as stride 0 - which would put every instance on segment 0 and draw the
 +// whole toolpath as a single smear.
 +"  int stride = max(instance_stride, 1);\n"
-+"  int id_a = int(texelFetch(segment_index_tex, tex_coord(gl_InstanceID * stride, index_shift), 0).r);\n"
- "  int id_b = id_a + 1;\n"
--"  vec3 pos_a = texelFetch(position_tex, tex_coord(position_tex, id_a), 0).xyz;\n"
--"  vec3 pos_b = texelFetch(position_tex, tex_coord(position_tex, id_b), 0).xyz;\n"
++// Both endpoints out of one fetch. The index texture is RG32UI: a segment is a
++// (first, last) pair rather than an index whose successor is implied, because
++// consecutive collinear moves are merged into one segment before upload and the
++// last vertex is then no longer the first plus one.
++"  uvec2 ids = texelFetch(segment_index_tex, tex_coord(gl_InstanceID * stride, index_shift), 0).rg;\n"
++"  int id_a = int(ids.x);\n"
++"  int id_b = int(ids.y);\n"
 +"  vec3 pos_a = texelFetch(position_tex, tex_coord(id_a, data_shift), 0).xyz;\n"
 +"  vec3 pos_b = texelFetch(position_tex, tex_coord(id_b, data_shift), 0).xyz;\n"
  "  vec3 line = pos_b - pos_a;\n"
  "  // directions of the line box in world space\n"
  "  float line_len = length(line);\n"
-@@ -103,34 +158,14 @@ static const char* Segments_Vertex_Shader_ES =
+@@ -103,34 +163,14 @@ static const char* Segments_Vertex_Shader_ES =
  "  else\n"
  "    line_right_dir = normalize(cross(line_dir, UP));\n"
  "  vec3 line_up_dir = normalize(cross(line_right_dir, line_dir));\n"
@@ -175,7 +187,7 @@ index 4d25cad6..f8b08bde 100644
  "  vec3 diagonal_dir_border = normalize(closer_height_width_angle.x * line_up_dir + closer_height_width_angle.y * line_right_dir);\n"
  "#else\n"
  "  vec3 camera_view_dir = normalize(endpoint_pos - camera_position);\n"
-@@ -167,7 +202,7 @@ static const char* Segments_Vertex_Shader_ES =
+@@ -167,7 +207,7 @@ static const char* Segments_Vertex_Shader_ES =
  "  }\n"
  "  vec3 eye_position = (view_matrix * vec4(pos, 1.0)).xyz;\n"
  "  vec3 eye_normal = (view_matrix * vec4(normalize(pos - endpoint_pos), 0.0)).xyz;\n"
@@ -184,7 +196,7 @@ index 4d25cad6..f8b08bde 100644
  "  color = color_base * lighting(eye_position, eye_normal);\n"
  "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
  "}\n";
-@@ -175,7 +210,7 @@ static const char* Segments_Vertex_Shader_ES =
+@@ -175,7 +215,7 @@ static const char* Segments_Vertex_Shader_ES =
  static const char* Segments_Fragment_Shader_ES =
  "#version 300 es\n"
  "precision highp float;\n"
@@ -193,7 +205,7 @@ index 4d25cad6..f8b08bde 100644
  "out vec4 fragment_color;\n"
  "void main() {\n"
  "  fragment_color = vec4(color, 1.0);\n"
-@@ -205,9 +240,16 @@ static const char* Options_Vertex_Shader_ES =
+@@ -205,9 +245,16 @@ static const char* Options_Vertex_Shader_ES =
  "uniform sampler2D height_width_angle_tex;\n"
  "uniform sampler2D color_tex;\n"
  "uniform usampler2D segment_index_tex;\n"
@@ -211,7 +223,7 @@ index 4d25cad6..f8b08bde 100644
  "vec3 decode_color(float color) {\n"
  "  int c = int(round(color));\n"
  "  int r = (c >> 16) & 0xFF;\n"
-@@ -222,18 +264,16 @@ static const char* Options_Vertex_Shader_ES =
+@@ -222,18 +269,16 @@ static const char* Options_Vertex_Shader_ES =
  "  float top_specular = light_top_specular * pow(max(dot(-normalize(eye_position), reflect(-light_top_dir, eye_normal)), 0.0), light_top_shininess);\n"
  "  return ambient + top_diffuse + front_diffuse + top_specular + emission;\n"
  "}\n"
@@ -238,7 +250,7 @@ index 4d25cad6..f8b08bde 100644
  "  height_width *= scaling_factor;\n"
  "  mat3 scale_matrix = mat3(\n"
  "    height_width.y, 0.0, 0.0,\n"
-@@ -241,7 +281,7 @@ static const char* Options_Vertex_Shader_ES =
+@@ -241,7 +286,7 @@ static const char* Options_Vertex_Shader_ES =
  "    0.0, 0.0, height_width.x);\n"
  "  vec3 eye_position = (view_matrix * vec4(scale_matrix * in_position + offset, 1.0)).xyz;\n"
  "  vec3 eye_normal = (view_matrix * vec4(in_normal, 0.0)).xyz;\n"
@@ -247,7 +259,7 @@ index 4d25cad6..f8b08bde 100644
  "  color = color_base * lighting(eye_position, eye_normal);\n"
  "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
  "}\n";
-@@ -249,7 +289,7 @@ static const char* Options_Vertex_Shader_ES =
+@@ -249,7 +294,7 @@ static const char* Options_Vertex_Shader_ES =
  static const char* Options_Fragment_Shader_ES =
  "#version 300 es\n"
  "precision highp float;\n"
@@ -257,10 +269,10 @@ index 4d25cad6..f8b08bde 100644
  "void main() {\n"
  "  fragment_color = vec4(color, 1.0);\n"
 diff --git a/src/libvgcode/src/Viewer.cpp b/src/libvgcode/src/Viewer.cpp
-index 612a1ed0..8a5f704c 100644
+index 612a1ed0..ae316bf8 100644
 --- a/src/libvgcode/src/Viewer.cpp
 +++ b/src/libvgcode/src/Viewer.cpp
-@@ -262,6 +262,31 @@ size_t Viewer::get_vertices_count() const
+@@ -262,6 +262,36 @@ size_t Viewer::get_vertices_count() const
      return m_impl->get_vertices_count();
  }
  
@@ -289,11 +301,16 @@ index 612a1ed0..8a5f704c 100644
 +    return m_impl->get_enabled_options_count();
 +}
 +
++size_t Viewer::get_enabled_segments_raw_count() const
++{
++    return m_impl->get_enabled_segments_raw_count();
++}
++
  const PathVertex& Viewer::get_current_vertex() const
  {
      return m_impl->get_current_vertex();
 diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
-index b7281ab0..85ae01d5 100644
+index b7281ab0..9c042c0b 100644
 --- a/src/libvgcode/src/ViewerImpl.cpp
 +++ b/src/libvgcode/src/ViewerImpl.cpp
 @@ -353,15 +353,50 @@ static const std::array<Color, size_t(EOptionType::COUNT)> DEFAULT_OPTIONS_COLOR
@@ -430,7 +447,37 @@ index b7281ab0..85ae01d5 100644
          }
          m_colors_size += m_tex_ids[i].colors.second * sizeof(float);
  
-@@ -582,23 +644,18 @@ void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>&
+@@ -566,44 +628,49 @@ void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>&
+ 
+     glsafe(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+ 
++    // Two entries per segment now - first vertex and last - so the texture is
++    // RG32UI and the shader gets both endpoints out of the one fetch it was
++    // already making. Merged runs (coalesce_collinear_runs) mean the last is no
++    // longer always the first plus one.
+     const size_t tex_capacity = max_texture_capacity();
+     size_t curr_tex_id = 0;
+     std::vector<uint32_t> curr_segments;
+-    for (size_t i = 0; i < enabled_segments.size(); ++i) {
+-        uint32_t seg = enabled_segments[i];
++    const size_t segments_count = enabled_segments.size() / 2;
++    for (size_t i = 0; i < segments_count; ++i) {
++        const uint32_t seg     = enabled_segments[2 * i];
++        const uint32_t seg_end = enabled_segments[2 * i + 1];
+         const bool new_tex = static_cast<size_t>(seg) > (curr_tex_id + 1) * tex_capacity;
+-        if (!new_tex)
++        if (!new_tex) {
+             curr_segments.push_back(seg - static_cast<uint32_t>(curr_tex_id * tex_capacity));
+-        if (i + 1 == enabled_segments.size() || new_tex) {
+-            const auto [w, h] = width_height(curr_segments.size());
++            curr_segments.push_back(seg_end - static_cast<uint32_t>(curr_tex_id * tex_capacity));
++        }
++        if (i + 1 == segments_count || new_tex) {
++            const size_t texels = curr_segments.size() / 2;
++            const auto [w, h] = width_height(texels);
+ 
+             glsafe(glGenTextures(1, &m_tex_ids[curr_tex_id].enabled_segments.first));
+             glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[curr_tex_id].enabled_segments.first));
              glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
              glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
              glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
@@ -451,22 +498,29 @@ index b7281ab0..85ae01d5 100644
 -                    m_tex_ids[curr_tex_id].enabled_segments.second = w * (h - 1) + curr_segments.size() % w;
 -                }
 -            }
+-            m_enabled_segments_size += m_tex_ids[curr_tex_id].enabled_segments.second * sizeof(uint32_t);
 +            // Complete rows, then the tail. Counted from the data rather than
 +            // from a modulo that is zero exactly when the rows come out even -
 +            // and with a power-of-two width they often do.
-+            const size_t full_rows = curr_segments.size() / w;
-+            const size_t tail      = curr_segments.size() - full_rows * w;
-+            glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr));
++            const size_t full_rows = texels / w;
++            const size_t tail      = texels - full_rows * w;
++            glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32UI, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RG_INTEGER, GL_UNSIGNED_INT, nullptr));
 +            if (full_rows > 0)
-+                glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(full_rows), GL_RED_INTEGER, GL_UNSIGNED_INT, curr_segments.data()));
++                glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(full_rows), GL_RG_INTEGER, GL_UNSIGNED_INT, curr_segments.data()));
 +            if (tail > 0)
-+                glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(full_rows), static_cast<GLsizei>(tail), 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &curr_segments[full_rows * w]));
-+            m_tex_ids[curr_tex_id].enabled_segments.second = curr_segments.size();
++                glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(full_rows), static_cast<GLsizei>(tail), 1, GL_RG_INTEGER, GL_UNSIGNED_INT, &curr_segments[2 * full_rows * w]));
++            m_tex_ids[curr_tex_id].enabled_segments.second = texels;
 +            m_tex_ids[curr_tex_id].enabled_segments_shift = log2_exact(w);
-             m_enabled_segments_size += m_tex_ids[curr_tex_id].enabled_segments.second * sizeof(uint32_t);
++            m_enabled_segments_size += texels * 2 * sizeof(uint32_t);
              if (new_tex) {
                  curr_segments.clear();
-@@ -650,23 +707,18 @@ void ViewerImpl::TextureData::set_enabled_options(const std::vector<uint32_t>& e
+                 ++curr_tex_id;
+                 curr_segments.push_back(seg - static_cast<uint32_t>(curr_tex_id * tex_capacity));
++                curr_segments.push_back(seg_end - static_cast<uint32_t>(curr_tex_id * tex_capacity));
+             }
+         }
+     }
+@@ -650,23 +717,18 @@ void ViewerImpl::TextureData::set_enabled_options(const std::vector<uint32_t>& e
              glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
              glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
              glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
@@ -502,7 +556,7 @@ index b7281ab0..85ae01d5 100644
              m_enabled_options_size += m_tex_ids[curr_tex_id].enabled_options.second * sizeof(uint32_t);
              if (new_tex) {
                  curr_options.clear();
-@@ -732,6 +784,24 @@ std::pair<unsigned int, size_t> ViewerImpl::TextureData::get_enabled_options_tex
+@@ -732,6 +794,24 @@ std::pair<unsigned int, size_t> ViewerImpl::TextureData::get_enabled_options_tex
      return m_tex_ids[id].enabled_options;
  }
  
@@ -527,7 +581,7 @@ index b7281ab0..85ae01d5 100644
  size_t ViewerImpl::TextureData::get_enabled_segments_count() const
  {
      size_t ret = 0;
-@@ -799,6 +869,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
+@@ -799,6 +879,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
      m_uni_segments_height_width_angle_tex_id = glGetUniformLocation(m_segments_shader_id, "height_width_angle_tex");
      m_uni_segments_colors_tex_id             = glGetUniformLocation(m_segments_shader_id, "color_tex");
      m_uni_segments_segment_index_tex_id      = glGetUniformLocation(m_segments_shader_id, "segment_index_tex");
@@ -539,7 +593,7 @@ index b7281ab0..85ae01d5 100644
      glcheck();
      assert(m_uni_segments_view_matrix_id != -1 &&
             m_uni_segments_projection_matrix_id != -1 &&
-@@ -823,6 +898,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
+@@ -823,6 +908,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
      m_uni_options_height_width_angle_tex_id = glGetUniformLocation(m_options_shader_id, "height_width_angle_tex");
      m_uni_options_colors_tex_id             = glGetUniformLocation(m_options_shader_id, "color_tex");
      m_uni_options_segment_index_tex_id      = glGetUniformLocation(m_options_shader_id, "segment_index_tex");
@@ -551,7 +605,135 @@ index b7281ab0..85ae01d5 100644
      glcheck();
      assert(m_uni_options_view_matrix_id != -1 &&
             m_uni_options_projection_matrix_id != -1 &&
-@@ -1962,6 +2042,13 @@ void ViewerImpl::update_heights_widths()
+@@ -1162,6 +1252,117 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
+     update_colors();
+ }
+ 
++
++#ifdef ENABLE_OPENGL_ES
++// Merge runs of consecutive segments that are collinear and identical.
++//
++// This model slices to 2.4 million segments, and the reason is on screen the
++// moment it loads: "Processing model with more than 1M triangles". A mesh that
++// dense produces a perimeter polygon with a vertex wherever a triangle edge
++// crosses the layer plane, so the toolpath is carved into hundreds of thousands
++// of micro-moves that are *already* straight - adjacent triangles on a smooth
++// surface differ in direction by a fraction of a degree. The slicer has no
++// reason to simplify them and the viewer draws every one.
++//
++// Nothing about that is a level of detail decision. Twenty collinear segments
++// with the same width, colour and speed draw exactly the same pixels as one
++// segment spanning the same distance, because the shader builds a box from the
++// two endpoints and lights it - and the endpoints, widths, angles and colours
++// of the merged segment are the originals. The intermediate vertices contribute
++// nothing but vertex shader invocations.
++//
++// So they are dropped, under a bound rather than a guess: a vertex is only
++// swallowed if it lies within COLLINEAR_EPS_MM of the run's anchor line, which
++// keeps the drawn path within that distance of the real one. At 0.01 mm that is
++// a fortieth of a 0.4 mm extrusion - smaller than the line it is drawn with,
++// and far below one screen pixel at any zoom the bed fits on.
++//
++// The run is also cut whenever anything that changes the *appearance* changes:
++// role, move type, extruder, colour id, layer, width, height, and every scalar
++// any view type colours by. Two segments only merge if they would have been
++// drawn identically.
++static constexpr float COLLINEAR_EPS_MM = 0.01f;
++// Bounds the anchor-line drift and keeps merged indices local.
++static constexpr size_t MAX_RUN_SEGMENTS = 64;
++
++static bool same_appearance(const PathVertex& a, const PathVertex& b)
++{
++    return a.role == b.role && a.type == b.type &&
++           a.extruder_id == b.extruder_id && a.color_id == b.color_id &&
++           a.layer_id == b.layer_id &&
++           a.height == b.height && a.width == b.width &&
++           a.feedrate == b.feedrate && a.actual_feedrate == b.actual_feedrate &&
++           a.mm3_per_mm == b.mm3_per_mm && a.fan_speed == b.fan_speed &&
++           a.temperature == b.temperature && a.layer_duration == b.layer_duration &&
++           a.pressure_advance == b.pressure_advance && a.acceleration == b.acceleration &&
++           a.jerk == b.jerk;
++}
++
++// Where p sits relative to the infinite line through anchor with unit direction
++// dir: how far along it (first) and how far off it (second).
++static std::pair<float, float> project_on_line(const Vec3& p, const Vec3& anchor, const Vec3& dir)
++{
++    const Vec3 d = { p[0] - anchor[0], p[1] - anchor[1], p[2] - anchor[2] };
++    const float t = d[0] * dir[0] + d[1] * dir[1] + d[2] * dir[2];
++    const Vec3 perp = { d[0] - t * dir[0], d[1] - t * dir[1], d[2] - t * dir[2] };
++    return { t, std::sqrt(perp[0] * perp[0] + perp[1] * perp[1] + perp[2] * perp[2]) };
++}
++
++std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint32_t>& enabled_segments) const
++{
++    // Pairs: two entries per drawn segment, its first and last vertex. Where
++    // nothing merges this is the old list with each entry's successor spelled
++    // out, which is what the shader used to assume.
++    std::vector<uint32_t> ret;
++    ret.reserve(enabled_segments.size() * 2);
++
++    size_t i = 0;
++    while (i < enabled_segments.size()) {
++        const uint32_t first = enabled_segments[i];
++        size_t j = i;
++
++        // The anchor line is the run's own first segment. Every vertex the run
++        // swallows has to stay within COLLINEAR_EPS_MM of it, so the merged
++        // chord cannot drift away from the real path however long the run gets.
++        const Vec3& anchor = m_vertices[first].position;
++        const Vec3& next   = m_vertices[first + 1].position;
++        Vec3 dir = { next[0] - anchor[0], next[1] - anchor[1], next[2] - anchor[2] };
++        const float len = std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
++        if (len > 1e-6f) {
++            dir = { dir[0] / len, dir[1] / len, dir[2] / len };
++            float last_t = len;
++            while (j + 1 < enabled_segments.size() &&
++                   j - i + 1 < MAX_RUN_SEGMENTS &&
++                   enabled_segments[j + 1] == enabled_segments[j] + 1 &&
++                   same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1]]) &&
++                   same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1] + 1])) {
++                // The vertex to test is the one the chord would newly reach, not
++                // the one it would swallow: the swallowed one is the anchor
++                // line's own second point on the first extension and sits
++                // exactly on it, so testing that would merge every run by at
++                // least two segments whatever the geometry.
++                const auto [t, off] = project_on_line(m_vertices[enabled_segments[j + 1] + 1].position, anchor, dir);
++                // Off the line, or not past where the chord already reaches. The
++                // second test is what stops a path that runs out and comes
++                // straight back from collapsing: every one of its vertices is on
++                // the anchor line, at distance zero, and merging them would
++                // delete the excursion entirely.
++                if (off >= COLLINEAR_EPS_MM || t <= last_t)
++                    break;
++                last_t = t;
++                ++j;
++            }
++        }
++
++        ret.push_back(first);
++        ret.push_back(enabled_segments[j] + 1);
++        i = j + 1;
++    }
++
++    return ret;
++}
++#endif // ENABLE_OPENGL_ES
++
+ void ViewerImpl::update_enabled_entities()
+ {
+     if (m_vertices.empty())
+@@ -1219,7 +1420,8 @@ void ViewerImpl::update_enabled_entities()
+     }
+ 
+ #ifdef ENABLE_OPENGL_ES
+-    m_texture_data.set_enabled_segments(enabled_segments);
++    m_enabled_segments_raw_count = enabled_segments.size();
++    m_texture_data.set_enabled_segments(coalesce_collinear_runs(enabled_segments));
+     m_texture_data.set_enabled_options(enabled_options);
+ #else
+     m_enabled_segments_count = enabled_segments.size();
+@@ -1962,6 +2164,13 @@ void ViewerImpl::update_heights_widths()
  #endif // ENABLE_OPENGL_ES
  }
  
@@ -565,7 +747,7 @@ index b7281ab0..85ae01d5 100644
  void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position)
  {
      if (m_segments_shader_id == 0)
-@@ -1994,6 +2081,10 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+@@ -1994,6 +2203,10 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
      glsafe(glDisable(GL_CULL_FACE));
  
  #ifdef ENABLE_OPENGL_ES
@@ -576,7 +758,7 @@ index b7281ab0..85ae01d5 100644
      int curr_bound_texture = 0;
      glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
  
-@@ -2009,7 +2100,14 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+@@ -2009,7 +2222,14 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
          glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
          glsafe(glActiveTexture(GL_TEXTURE3));
          glsafe(glBindTexture(GL_TEXTURE_2D, id));
@@ -592,7 +774,7 @@ index b7281ab0..85ae01d5 100644
      }
  #else
      std::array<int, 4> curr_bound_texture = { 0, 0, 0, 0 };
-@@ -2081,6 +2179,9 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
+@@ -2081,6 +2301,9 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
      glsafe(glEnable(GL_CULL_FACE));
  
  #ifdef ENABLE_OPENGL_ES
@@ -602,7 +784,7 @@ index b7281ab0..85ae01d5 100644
      int curr_bound_texture = 0;
      glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
  
-@@ -2096,7 +2197,9 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
+@@ -2096,7 +2319,9 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
          glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
          glsafe(glActiveTexture(GL_TEXTURE3));
          glsafe(glBindTexture(GL_TEXTURE_2D, id));
@@ -614,10 +796,10 @@ index b7281ab0..85ae01d5 100644
  #else
      std::array<int, 4> curr_bound_texture = { 0, 0, 0, 0 };
 diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
-index cc3f1eb9..884b8af8 100644
+index cc3f1eb9..d0d1bc1a 100644
 --- a/src/libvgcode/src/ViewerImpl.hpp
 +++ b/src/libvgcode/src/ViewerImpl.hpp
-@@ -72,6 +72,26 @@ public:
+@@ -72,6 +72,27 @@ public:
      //
      void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
  
@@ -633,6 +815,7 @@ index cc3f1eb9..884b8af8 100644
 +    void set_detail_budget(uint32_t max_instances) { m_detail_budget = max_instances; }
 +    uint32_t get_detail_budget() const { return m_detail_budget; }
 +    uint32_t get_last_segments_stride() const { return m_last_segments_stride; }
++    size_t get_enabled_segments_raw_count() const { return m_enabled_segments_raw_count; }
 +#ifdef ENABLE_OPENGL_ES
 +    size_t get_enabled_segments_count() const { return m_texture_data.get_enabled_segments_count(); }
 +    size_t get_enabled_options_count() const { return m_texture_data.get_enabled_options_count(); }
@@ -644,7 +827,7 @@ index cc3f1eb9..884b8af8 100644
      EViewType get_view_type() const { return m_settings.view_type; }
      void set_view_type(EViewType type);
  
-@@ -321,6 +341,11 @@ private:
+@@ -321,6 +342,11 @@ private:
      int m_uni_segments_height_width_angle_tex_id{ -1 };
      int m_uni_segments_colors_tex_id{ -1 };
      int m_uni_segments_segment_index_tex_id{ -1 };
@@ -656,7 +839,7 @@ index cc3f1eb9..884b8af8 100644
      //
      // Caches for OpenGL uniforms id for options shader 
      //
-@@ -330,6 +355,20 @@ private:
+@@ -330,6 +356,25 @@ private:
      int m_uni_options_height_width_angle_tex_id{ -1 };
      int m_uni_options_colors_tex_id{ -1 };
      int m_uni_options_segment_index_tex_id{ -1 };
@@ -674,10 +857,15 @@ index cc3f1eb9..884b8af8 100644
 +    // The stride the last render_segments() chose, for the caller to report.
 +    //
 +    uint32_t m_last_segments_stride{ 1 };
++    //
++    // How many segments were enabled before collinear runs were merged, so the
++    // report can say what the merge was worth.
++    //
++    size_t m_enabled_segments_raw_count{ 0 };
  #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
      //
      // Caches for OpenGL uniforms id for cog marker shader 
-@@ -369,6 +408,10 @@ private:
+@@ -369,6 +414,10 @@ private:
          size_t get_enabled_segments_count() const;
          size_t get_enabled_options_count() const;
  
@@ -688,7 +876,7 @@ index cc3f1eb9..884b8af8 100644
          size_t max_texture_capacity() const { return m_width * m_height; }
          size_t get_used_gpu_memory() const;
  
-@@ -416,6 +459,16 @@ private:
+@@ -416,6 +465,16 @@ private:
              // OpenGL texture to store enabled options
              //
              std::pair<unsigned int, size_t> enabled_options{ 0, 0 };
@@ -705,13 +893,19 @@ index cc3f1eb9..884b8af8 100644
          };
  
          std::vector<TexIds> m_tex_ids;
-@@ -463,6 +516,9 @@ private:
+@@ -463,6 +522,15 @@ private:
      void update_view_full_range();
      void update_color_ranges();
      void update_heights_widths();
 +    // How many entities to skip between the ones actually drawn, so that no
 +    // more than m_detail_budget instances are submitted. 1 means draw them all.
 +    uint32_t detail_stride(size_t count) const;
++#ifdef ENABLE_OPENGL_ES
++    // Turns a list of first-vertex indices into a list of (first, last) pairs,
++    // merging consecutive segments that are collinear and would be drawn
++    // identically. Same pixels, fewer of them submitted.
++    std::vector<uint32_t> coalesce_collinear_runs(const std::vector<uint32_t>& enabled_segments) const;
++#endif // ENABLE_OPENGL_ES
      void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
      void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
  #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS

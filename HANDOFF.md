@@ -5335,3 +5335,100 @@ The remaining levers, in the order they are worth trying:
 
 None of the three changes a single pixel of the toolpath, which is now the
 constraint every option has to satisfy.
+
+## Why there are 2.4 million segments, and what to do about it
+
+The notification sitting on the run-134 screenshot is the whole explanation:
+
+> Processing model 'Exported3DModel.3mf' with more than 1M triangles could be
+> slow. It is highly recommended to simplify the model.
+
+A mesh that dense produces a perimeter polygon with a vertex wherever a triangle
+edge crosses the layer plane. So the toolpath is carved into hundreds of
+thousands of micro-moves that are **already straight** — adjacent triangles on a
+smooth surface differ in direction by a fraction of a degree. The slicer has no
+reason to simplify them, and the viewer faithfully draws every one.
+
+2.4 million segments is not 2.4 million *shapes*. It is a much smaller number of
+lines, over-sampled by the mesh.
+
+### Merging is not a level of detail
+
+Twenty collinear segments with the same width, colour and speed draw exactly the
+same pixels as one segment spanning the same distance. The shader builds a box
+from two endpoints and lights it; the merged segment's endpoints, widths, angles
+and colours are the originals. The intermediate vertices contribute nothing at
+all except vertex shader invocations.
+
+So `coalesce_collinear_runs()` turns the enabled list into (first, last) pairs,
+extending a run while **all** of these hold:
+
+* the next entry is the consecutive vertex — never merge across a gap in the
+  enabled set, so a hidden role or a layer boundary always cuts the run;
+* both of the new segment's vertices match the run's first in everything that
+  can change how it is drawn — role, move type, extruder, colour id, layer,
+  width, height, and every scalar any view type colours by;
+* the vertex the chord would newly reach is within `COLLINEAR_EPS_MM` (0.01 mm)
+  of the run's anchor line;
+* that vertex is **further along** the anchor line than the chord already
+  reaches.
+
+The index texture is `RG32UI` instead of `R32UI`, so the shader gets both
+endpoints from the fetch it was already making. `id_b = id_a + 1` is gone.
+
+0.01 mm is a fortieth of a 0.4 mm extrusion — smaller than the line it is drawn
+with, and far under one screen pixel at any zoom that fits the bed. This is not
+the same kind of change as decimation: decimation removed lines, this removes
+points that were never visible.
+
+### Two bugs the tests caught before the build did
+
+Both were in the first cut and both would have looked like "it works":
+
+**The collinearity test was on the wrong vertex.** The run's anchor line is
+defined by its first two vertices, so the first vertex a run tries to swallow
+lies exactly *on* that line at distance zero — and every run merged at least two
+segments regardless of geometry. A 90-degree zig-zag merged. The test has to be
+on the vertex the chord would newly **reach**, not the one it would swallow.
+
+**A path that runs out and comes straight back has every vertex on the anchor
+line.** Distance zero for all of them, so it merged into a chord from the start
+to wherever it ended up — deleting the excursion. Hence the monotonic-progress
+test: the new endpoint must be further along the line than the chord already
+reaches. The turn now ends the run.
+
+The harness (`mergecheck.cpp` in the scratch tree, reproduced by the numbers
+below) covers both, plus the cases that must **not** merge:
+
+```
+gentle arc     : 200000 -> 3125 segments (64.0x), worst deviation 0.00000 mm
+sharp zig-zag  : 200000 -> 200000 segments (must be 1.0x)
+colour every 10: 200000 -> 40000 segments
+dead straight  : 200000 -> 3125 segments (64.0x)
+gap in enabled : 6 -> 2 segments, pairs (0,3) (50,53)
+out and back   : 40 -> 2 segments, first pair (0,20)
+```
+
+64x is the `MAX_RUN_SEGMENTS` cap, not the algorithm giving up. What a real
+toolpath gives is unknown until the device says so, which is why the report now
+carries `segs <raw>-><drawn>`.
+
+### The whole stack, and what each part is worth
+
+| | vertices per frame at 2.4M segments |
+|---|---|
+| before | 57 600 000 |
+| indexed templates (0393), 24 corners named → 8 shaded | 19 200 000 |
+| collinear merge (0392), at a merge ratio of *n* | 19 200 000 / *n* |
+
+and per invocation, six `textureSize` calls and twelve integer divides are gone,
+and the varying is half the size.
+
+If the merge ratio on this model is even 4x, the frame submits 4.8M vertices
+instead of 57.6M — a twelfth of the geometry, each vertex cheaper. That is the
+first time any of this has been in the right order of magnitude for 120 Hz.
+
+`segs` in the report is the number that says whether the premise held. If it
+comes back near 1x, the model's toolpath is genuinely not collinear and the
+answer is elsewhere — but then the mesh's triangle count is a red herring too,
+and that would itself be worth knowing.

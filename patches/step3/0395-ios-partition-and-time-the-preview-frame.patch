@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/GCodeViewer.cpp b/src/slic3r/GUI/GCodeViewer.cpp
-index c6d0f65c..32e4ad99 100644
+index c6d0f65c..41f05417 100644
 --- a/src/slic3r/GUI/GCodeViewer.cpp
 +++ b/src/slic3r/GUI/GCodeViewer.cpp
 @@ -43,6 +43,7 @@
@@ -10,7 +10,7 @@ index c6d0f65c..32e4ad99 100644
  #include <cmath>
  #include <chrono>
  
-@@ -50,6 +51,28 @@
+@@ -50,6 +51,32 @@
  namespace Slic3r {
  namespace GUI {
  
@@ -33,13 +33,17 @@ index c6d0f65c..32e4ad99 100644
 +std::atomic<unsigned> orca_ios_gcv_stride{1};
 +std::atomic<unsigned> orca_ios_gcv_budget{0};
 +std::atomic<unsigned> orca_ios_gcv_moving{0};
++// Segments enabled, and segments actually submitted once collinear runs were
++// merged. The ratio is the whole point of the merge, so it is reported.
++std::atomic<unsigned> orca_ios_gcv_segs_raw{0};
++std::atomic<unsigned> orca_ios_gcv_segs_drawn{0};
 +
 +#endif // __APPLE__ && !TARGET_OS_OSX
 +
  //BBS translation of EViewType
  //const std::string EViewType_Map[(int) GCodeViewer::EViewType::Count] = {
  //        _u8L("Line Type"),
-@@ -1611,18 +1634,75 @@ void GCodeViewer::reset()
+@@ -1611,18 +1638,77 @@ void GCodeViewer::reset()
  }
  
  //BBS: GUI refactor: add canvas width and height
@@ -102,6 +106,8 @@ index c6d0f65c..32e4ad99 100644
 +    }
 +    orca_ios_gcv_stride.store(m_viewer.get_last_segments_stride());
 +    orca_ios_gcv_moving.store(orca_ios_is_interacting() ? 1u : 0u);
++    orca_ios_gcv_segs_raw.store((unsigned) m_viewer.get_enabled_segments_raw_count());
++    orca_ios_gcv_segs_drawn.store((unsigned) m_viewer.get_enabled_segments_count());
 +#else
      render_toolpaths();
 +#endif
@@ -117,7 +123,7 @@ index c6d0f65c..32e4ad99 100644
  
      if (m_user_mode != wxGetApp().get_mode()) {
          update_by_mode(wxGetApp().get_mode());
-@@ -1638,7 +1718,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+@@ -1638,7 +1724,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
      m_sequential_view.marker.set_world_position(libvgcode::convert(curr_vertex.position));
      m_sequential_view.marker.set_z_offset(m_z_offset + 0.5f);
      // BBS fixed buttom margin. m_moves_slider.pos_y
@@ -131,7 +137,7 @@ index c6d0f65c..32e4ad99 100644
  
  #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
      if (is_legend_shown()) {
-@@ -1676,7 +1761,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
+@@ -1676,7 +1767,12 @@ void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
  #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
  
      //BBS render slider

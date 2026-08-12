@@ -1,0 +1,200 @@
+  177 |     virtual bool AddPage(wxWindow *page,
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:21:
+In file included from ../src/slic3r/Utils/../GUI/Monitor.hpp:4:
+../src/slic3r/Utils/../GUI/Tabbook.hpp:187:10: warning: 'RemovePage' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  187 |     bool RemovePage(size_t n)
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/bookctrl.h:161:18: note: overridden virtual function is here
+  161 |     virtual bool RemovePage(size_t n)
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:24:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationPanel.hpp:4:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationWizard.hpp:8:
+../src/slic3r/Utils/../GUI/CalibrationWizardStartPage.hpp:51:10: warning: 'on_reset_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   51 |     void on_reset_page();
+      |          ^
+../src/slic3r/GUI/CalibrationWizardPage.hpp:310:18: note: overridden virtual function is here
+  310 |     virtual void on_reset_page() {}
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:24:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationPanel.hpp:4:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationWizard.hpp:8:
+../src/slic3r/Utils/../GUI/CalibrationWizardStartPage.hpp:52:10: warning: 'on_device_connected' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   52 |     void on_device_connected(MachineObject* obj);
+      |          ^
+../src/slic3r/GUI/CalibrationWizardPage.hpp:308:18: note: overridden virtual function is here
+  308 |     virtual void on_device_connected(MachineObject* obj) { curr_obj = obj; }
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:24:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationPanel.hpp:4:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationWizard.hpp:8:
+../src/slic3r/Utils/../GUI/CalibrationWizardStartPage.hpp:66:10: warning: 'on_reset_page' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   66 |     void on_reset_page();
+      |          ^
+../src/slic3r/GUI/CalibrationWizardPage.hpp:310:18: note: overridden virtual function is here
+  310 |     virtual void on_reset_page() {}
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:24:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationPanel.hpp:4:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationWizard.hpp:8:
+../src/slic3r/Utils/../GUI/CalibrationWizardStartPage.hpp:67:10: warning: 'on_device_connected' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   67 |     void on_device_connected(MachineObject* obj);
+      |          ^
+../src/slic3r/GUI/CalibrationWizardPage.hpp:308:18: note: overridden virtual function is here
+  308 |     virtual void on_device_connected(MachineObject* obj) { curr_obj = obj; }
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:24:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationPanel.hpp:4:
+In file included from ../src/slic3r/Utils/../GUI/CalibrationWizard.hpp:11:
+../src/slic3r/Utils/../GUI/CalibrationWizardSavePage.hpp:193:10: warning: 'on_device_connected' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  193 |     void on_device_connected(MachineObject* obj);
+      |          ^
+../src/slic3r/GUI/CalibrationWizardPage.hpp:308:18: note: overridden virtual function is here
+  308 |     virtual void on_device_connected(MachineObject* obj) { curr_obj = obj; }
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:25:
+../src/slic3r/Utils/../GUI/UnsavedChangesDialog.hpp:346:9: warning: 'ShowModal' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  346 |     int ShowModal();
+      |         ^
+../src/slic3r/Utils/../GUI/GUI_Utils.hpp:199:9: note: overridden virtual function is here
+  199 |     int ShowModal()
+      |         ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:26:
+../src/slic3r/Utils/../GUI/Widgets/SideButton.hpp:34:10: warning: 'SetLabel' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   34 |     void SetLabel(const wxString& label);
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/window.h:56:18: note: overridden virtual function is here
+   56 |     virtual void SetLabel( const wxString& label ) override;
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:26:
+../src/slic3r/Utils/../GUI/Widgets/SideButton.hpp:50:10: warning: 'Enable' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   50 |     bool Enable(bool enable = true);
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/window.h:646:18: note: overridden virtual function is here
+  646 |     virtual bool Enable( bool enable = true );
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:36:
+In file included from ../src/slic3r/Utils/../GUI/calib_dlg.hpp:12:
+../src/slic3r/Utils/../GUI/Widgets/LabeledStaticBox.hpp:45:10: warning: 'LabeledStaticBox::SetFont' hides overloaded virtual function [-Woverloaded-virtual]
+   45 |     void SetFont(wxFont set_font);
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/statbox.h:44:18: note: hidden overloaded virtual function 'wxStaticBox::SetFont' declared here: type mismatch at 1st parameter ('const wxFont &' vs 'wxFont')
+   44 |     virtual bool SetFont( const wxFont &font ) override;
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:26:
+../src/slic3r/Utils/Obico.hpp:23:18: warning: 'can_test' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   23 |     virtual bool can_test() const { return true; };
+      |                  ^
+../src/slic3r/Utils/PrintHost.hpp:68:18: note: overridden virtual function is here
+   68 |     virtual bool can_test() const = 0;
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:26:
+../src/slic3r/Utils/Obico.hpp:33:40: warning: 'get_post_upload_actions' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   33 |     PrintHostPostUploadActions         get_post_upload_actions() const;
+      |                                        ^
+../src/slic3r/Utils/PrintHost.hpp:69:40: note: overridden virtual function is here
+   69 |     virtual PrintHostPostUploadActions get_post_upload_actions() const = 0;
+      |                                        ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:29:
+../src/slic3r/Utils/ElegooLink.hpp:37:18: warning: 'validate_version_text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   37 |     virtual bool validate_version_text(const boost::optional<std::string> &version_text) const;
+      |                  ^
+../src/slic3r/Utils/OctoPrint.hpp:41:18: note: overridden virtual function is here
+   41 |     virtual bool validate_version_text(const boost::optional<std::string> &version_text) const;
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:29:
+../src/slic3r/Utils/ElegooLink.hpp:38:18: warning: 'upload_inner_with_host' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   38 |     virtual bool upload_inner_with_host(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn, InfoFn info_fn) const;
+      |                  ^
+../src/slic3r/Utils/OctoPrint.hpp:42:18: note: overridden virtual function is here
+   42 |     virtual bool upload_inner_with_host(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn, InfoFn info_fn) const;
+      |                  ^
+In file included from ../src/slic3r/Utils/PrintHost.cpp:25:
+In file included from ../src/slic3r/Utils/../GUI/MainFrame.hpp:21:
+In file included from ../src/slic3r/Utils/../GUI/Monitor.hpp:4:
+../src/slic3r/Utils/../GUI/Tabbook.hpp:421:25: warning: private field 'm_ctrl' is not used [-Wunused-private-field]
+  421 |     TabButtonsListCtrl *m_ctrl{nullptr};
+      |                         ^
+23 warnings generated.
+[640/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevMapping.cpp.o
+[641/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevNozzleSystem.cpp.o
+In file included from ../src/slic3r/GUI/DeviceCore/DevNozzleSystem.cpp:2:
+../src/slic3r/GUI/DeviceCore/DevNozzleSystem.h:43:23: warning: private field 'm_owner' is not used [-Wunused-private-field]
+   43 |        MachineObject* m_owner = nullptr;
+      |                       ^
+1 warning generated.
+[642/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevUtil.cpp.o
+[643/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/SimplyPrint.cpp.o
+../src/slic3r/Utils/SimplyPrint.cpp:195:34: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+  195 |     const auto create_request = [this, &build_request, &res, &on_complete](const std::string& access_token, bool is_retry) {
+      |                                  ^~~~~
+../src/slic3r/Utils/SimplyPrint.cpp:303:32: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+  303 |         [&error_fn, &filename, this](std::string body, unsigned status) {
+      |                              ~~^~~~
+../src/slic3r/Utils/SimplyPrint.cpp:426:42: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+  426 |             [&error_fn, i, chunk_amount, this, &chunk_id, &delete_token](std::string body, unsigned status) {
+      |                                        ~~^~~~
+3 warnings generated.
+[644/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceTab/uiDeviceUpdateVersion.cpp.o
+../src/slic3r/GUI/DeviceTab/uiDeviceUpdateVersion.cpp:6:2: warning: '/*' within block comment [-Wcomment]
+    6 | //**********************************************************/
+      |  ^
+In file included from ../src/slic3r/GUI/DeviceTab/uiDeviceUpdateVersion.cpp:8:
+../src/slic3r/GUI/DeviceTab/uiDeviceUpdateVersion.h:6:2: warning: '/*' within block comment [-Wcomment]
+    6 | //**********************************************************/
+      |  ^
+2 warnings generated.
+[645/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_platform_stubs.cpp.o
+[646/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_gl_compat.cpp.o
+[647/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_webview_support.mm.o
+[648/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_camera_view.cpp.o
+[649/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanMqtt.cpp.o
+[650/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanFtps.cpp.o
+[651/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanDiscovery.cpp.o
+[652/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrintCommand.cpp.o
+[653/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o
+[654/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrinterAgent.cpp.o
+[655/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevFilaBlackList.cpp.o
+[656/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevManager.cpp.o
+../src/slic3r/GUI/DeviceCore/DevManager.cpp:777:86: warning: loop variable 'pair' of type 'const std::pair<std::string, std::vector<std::string>> &' (aka 'const pair<basic_string<char>, vector<basic_string<char>>> &') binds to a temporary constructed from type 'reference' (aka 'pair<const std::string, std::vector<std::string, std::allocator<std::string>>> &') [-Wrange-loop-construct]
+  777 |                         for (const std::pair<std::string, std::vector<std::string>> &pair : device_subseries) {
+      |                                                                                      ^
+../src/slic3r/GUI/DeviceCore/DevManager.cpp:777:30: note: use non-reference type 'std::pair<std::string, std::vector<std::string>>' (aka 'pair<basic_string<char>, vector<basic_string<char>>>') to make construction explicit or type 'const value_type &' (aka 'const pair<const std::string, std::vector<std::string, std::allocator<std::string>>> &') to prevent copying
+  777 |                         for (const std::pair<std::string, std::vector<std::string>> &pair : device_subseries) {
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[657/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/UndoRedo.cpp.o
+[658/659] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceTab/uiAmsHumidityPopup.cpp.o
+../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:6:2: warning: '/*' within block comment [-Wcomment]
+    6 | //**********************************************************/
+      |  ^
+In file included from ../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:6:2: warning: '/*' within block comment [-Wcomment]
+    6 | //**********************************************************/
+      |  ^
+../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:41:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+   41 |     void Update(uiAmsHumidityInfo *info) { m_ams_id = info->ams_id; Update(info->humidity_display_idx, info->humidity_percent, info->left_dry_time, info->current_temperature); };
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 1)
+   74 |     virtual void Update() override;
+      |                  ^
+In file included from ../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:48:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+   48 |     void Update(int humidiy_level, int humidity_percent, int left_dry_time, float current_temperature);
+      |          ^
+../../wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 4)
+   74 |     virtual void Update() override;
+      |                  ^
+4 warnings generated.
+ninja: build stopped: cannot make progress due to previous errors.

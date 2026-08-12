@@ -1,0 +1,782 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index ef6cdde..5ef87ca 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -124,6 +124,15 @@ namespace Slic3r {
+ namespace GUI {
+ 
+ #if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_webview_support.mm - the native toolbar down the trailing
++// edge of the canvas, which replaces the GL-rendered main toolbar and the gizmo
++// bar on this port. Described one item at a time so that nothing but const
++// char* has to be agreed across the two translation units.
++void orca_ios_toolbar_begin();
++void orca_ios_toolbar_add(const char *id, const char *icon, const char *tooltip,
++                          bool enabled, bool selected, bool collapsed);
++void orca_ios_toolbar_commit(void *canvas, void *host_view);
++
+ // Is the canvas being asked to draw at all, and by whom?
+ //
+ // A frozen viewport has two very different causes that look identical on
+@@ -3455,6 +3464,12 @@ void GLCanvas3D::on_idle(wxIdleEvent& evt)
+         ++orca_ios_dirty_elsewhere;
+ #else
+     m_dirty |= m_main_toolbar.update_items_state();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Straight after the state the buttons show is recomputed. The push is
++    // cheap - the icons are cached, and the native side does nothing at all
++    // when the description has not changed since the last idle.
++    orca_ios_sync_toolbar();
++#endif
+     //BBS: GUI refactor: GLToolbar
+     m_dirty |= m_assemble_view_toolbar.update_items_state();
+     // BBS
+@@ -4504,7 +4519,15 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
+     const int layer_editing_object_idx = is_layers_editing_enabled() ? selected_object_idx : -1;
+     const bool mouse_in_layer_editing  = layer_editing_object_idx != -1 && m_layers_editing.bar_rect_contains(*this, pos(0), pos(1));
+ 
+-    if (!mouse_in_layer_editing && m_main_toolbar.on_mouse(evt, *this)) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Nothing is drawn up there any more, so nothing up there may claim a
++    // touch: without this the toolbar's old rectangle stays live and swallows
++    // every drag that starts near the top of the model.
++    const bool orca_ios_toolbar_takes_mouse = false;
++#else
++    const bool orca_ios_toolbar_takes_mouse = true;
++#endif
++    if (orca_ios_toolbar_takes_mouse && !mouse_in_layer_editing && m_main_toolbar.on_mouse(evt, *this)) {
+         if (m_main_toolbar.is_any_item_pressed())
+             m_gizmos.reset_all_states();
+         if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
+@@ -4514,14 +4537,14 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
+     }
+ 
+     //BBS: GUI refactor: GLToolbar
+-    if (!mouse_in_layer_editing && m_assemble_view_toolbar.on_mouse(evt, *this)) {
++    if (orca_ios_toolbar_takes_mouse && !mouse_in_layer_editing && m_assemble_view_toolbar.on_mouse(evt, *this)) {
+         if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
+             mouse_up_cleanup();
+         m_mouse.set_start_position_3D_as_invalid();
+         return;
+     }
+ 
+-    if (!mouse_in_layer_editing && wxGetApp().plater()->get_collapse_toolbar().on_mouse(evt, *this)) {
++    if (orca_ios_toolbar_takes_mouse && !mouse_in_layer_editing && wxGetApp().plater()->get_collapse_toolbar().on_mouse(evt, *this)) {
+         if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
+             mouse_up_cleanup();
+         m_mouse.set_start_position_3D_as_invalid();
+@@ -9054,6 +9077,118 @@ void GLCanvas3D::_render_current_gizmo() const
+ 
+ //BBS: GUI refactor: GLToolbar adjust
+ //move the size calc to GLCanvas
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// What the native toolbar shows, and in what order: the main toolbar's items
++// first, then the gizmos, which is the order the two GL bars were drawn in from
++// left to right. The item ids are "main:<name>" and "gizmo:<EType>", and they
++// come straight back to orca_ios_run_toolbar_action below.
++//
++// THE COLLAPSED SET is the flag on each call: add, add plate, auto orient,
++// arrange, variable layer height, and the move / rotate / scale / lay on face
++// gizmos. Those nine are what a plate is laid out with; everything else -
++// instances, splitting, cut, the paint tools, text, measure, assemble - is
++// behind the chevron. To move an item between the two sets, change its flag
++// here and nowhere else.
++void GLCanvas3D::orca_ios_sync_toolbar()
++{
++    if (m_canvas == nullptr)
++        return;
++
++    orca_ios_toolbar_begin();
++
++    for (const GLToolbarItem *item : m_main_toolbar.get_items()) {
++        if (item == nullptr || item->is_separator() || !item->is_visible())
++            continue;
++        const std::string &name = item->get_name();
++        const bool collapsed = name == "add"    || name == "addplate" ||
++                               name == "orient" || name == "arrange"  ||
++                               name == "layersediting";
++        orca_ios_toolbar_add(("main:" + name).c_str(),
++                             item->get_icon_filename().c_str(),
++                             item->get_tooltip().c_str(),
++                             item->is_enabled(),
++                             item->is_pressed(),
++                             collapsed);
++    }
++
++    // The sidebar toggle, which used to float over the top left corner of the
++    // plate on its own. Same GLToolbar type as the main one, so it collects the
++    // same way; in the collapsed set because hiding the sidebar is the first
++    // thing anyone wants on a screen this size.
++    for (const GLToolbarItem *item : wxGetApp().plater()->get_collapse_toolbar().get_items()) {
++        if (item == nullptr || item->is_separator() || !item->is_visible())
++            continue;
++        orca_ios_toolbar_add(("collapse:" + item->get_name()).c_str(),
++                             item->get_icon_filename().c_str(),
++                             item->get_tooltip().c_str(),
++                             item->is_enabled(),
++                             item->is_pressed(),
++                             true);
++    }
++
++    const GLGizmosManager::EType current = m_gizmos.get_current_type();
++    for (unsigned char t = 0; t < (unsigned char) GLGizmosManager::Undefined; ++t) {
++        const GLGizmosManager::EType type = (GLGizmosManager::EType) t;
++        const GLGizmoBase *const gizmo = m_gizmos.get_gizmo(type);
++        if (gizmo == nullptr || !gizmo->is_selectable())
++            continue;
++        const bool collapsed = type == GLGizmosManager::Move   ||
++                               type == GLGizmosManager::Rotate ||
++                               type == GLGizmosManager::Scale  ||
++                               type == GLGizmosManager::Flatten;
++        orca_ios_toolbar_add(("gizmo:" + std::to_string((int) t)).c_str(),
++                             gizmo->get_icon_filename().c_str(),
++                             "",
++                             gizmo->is_activable(),
++                             type == current,
++                             collapsed);
++    }
++
++    orca_ios_toolbar_commit(this, (void *) m_canvas->GetHandle());
++}
++
++// A tap. Both branches end in the very call the GL toolbars made on a click, so
++// nothing downstream can tell the difference.
++void GLCanvas3D::orca_ios_run_toolbar_action(const char *id)
++{
++    if (id == nullptr)
++        return;
++    const std::string item(id);
++
++    if (item.rfind("main:", 0) == 0) {
++        GLToolbarItem *const found = m_main_toolbar.get_item(item.substr(5));
++        if (found != nullptr && found->is_enabled())
++            found->do_left_action();
++        return;
++    }
++    if (item.rfind("collapse:", 0) == 0) {
++        GLToolbar &collapse = wxGetApp().plater()->get_collapse_toolbar();
++        GLToolbarItem *const found = collapse.get_item(item.substr(9));
++        if (found != nullptr && found->is_enabled())
++            found->do_left_action();
++        return;
++    }
++    if (item.rfind("gizmo:", 0) == 0) {
++        const int t = std::atoi(item.substr(6).c_str());
++        if (t < 0 || t >= (int) GLGizmosManager::Undefined)
++            return;
++        const GLGizmosManager::EType type = (GLGizmosManager::EType) t;
++        // Tapping the gizmo that is already open closes it, the way clicking
++        // its icon on the GL bar did.
++        m_gizmos.open_gizmo(m_gizmos.get_current_type() == type
++                            ? GLGizmosManager::Undefined : type);
++        m_dirty = true;
++    }
++}
++
++// Called from the toolbar view, which knows the canvas only as a void *.
++void orca_ios_toolbar_action(void *canvas, const char *id)
++{
++    if (canvas != nullptr)
++        ((GLCanvas3D *) canvas)->orca_ios_run_toolbar_action(id);
++}
++#endif
++
+ void GLCanvas3D::_render_gizmos_overlay()
+ {
+ /*#if ENABLE_RETINA_GL
+@@ -9066,6 +9201,12 @@ void GLCanvas3D::_render_gizmos_overlay()
+     const float size = int(GLGizmosManager::Default_Icons_Size * wxGetApp().toolbar_icon_scale());
+     m_gizmos.set_overlay_icon_size(size); //! #ys_FIXME_experiment
+ #endif */ /* __WXMSW__ */
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The bar only. The gizmos keep working exactly as before - this is their
++    // row of icons, not the arrows and handles they put into the scene, and
++    // set_enabled(false) on the manager would have taken both.
++    return;
++#endif
+     m_gizmos.render_overlay();
+ 
+     if (m_gizmo_highlighter.m_render_arrow)
+@@ -9095,6 +9236,14 @@ int GLCanvas3D::get_main_toolbar_offset() const
+ //when rendering, {0, 0} is at the center, left-up is -0.5, 0.5, right-up is 0.5, -0.5
+ void GLCanvas3D::_render_main_toolbar()
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The native toolbar draws these items now. Skipped here rather than by
++    // set_enabled(false), because is_enabled() means a great deal more than "is
++    // it drawn" - the same flag decides whether layer editing is initialised,
++    // whether the gcode viewer is built, and which bodies the scene renders.
++    // Only the drawing is unwanted.
++    return;
++#endif
+     if (!m_main_toolbar.is_enabled())
+         return;
+ 
+@@ -9541,6 +9690,13 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
+ //when rendering, {0, 0} is at the center, {-0.5, 0.5} at the left-up
+ void GLCanvas3D::_render_assemble_view_toolbar() const
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Positioned relative to the main toolbar and the gizmo bar, both of which
++    // are now zero-width holes at the top of the canvas, so this sat on its own
++    // in the corner. Not yet in the native column - it belongs there, next to
++    // the sidebar toggle, and is the obvious next thing to move.
++    return;
++#endif
+     if (!m_assemble_view_toolbar.is_enabled())
+         return;
+ 
+@@ -9817,6 +9973,12 @@ void GLCanvas3D::_render_canvas_toolbar()
+ 
+ void GLCanvas3D::_render_separator_toolbar_right() const
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The separators divided the main toolbar from the gizmo bar. Neither is
++    // drawn here any more, so this is a line across the top of the canvas with
++    // nothing on either side of it.
++    return;
++#endif
+     if (!m_separator_toolbar.is_enabled())
+         return;
+ 
+@@ -9833,6 +9995,9 @@ void GLCanvas3D::_render_separator_toolbar_right() const
+ 
+ void GLCanvas3D::_render_separator_toolbar_left() const
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    return;   // see _render_separator_toolbar_right
++#endif
+     if (!m_separator_toolbar.is_enabled())
+         return;
+ 
+@@ -9847,6 +10012,12 @@ void GLCanvas3D::_render_separator_toolbar_left() const
+ 
+ void GLCanvas3D::_render_collapse_toolbar() const
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The sidebar toggle. Not lost - orca_ios_sync_toolbar puts its items into
++    // the native column, so it is a button on the right hand side rather than a
++    // pair of chevrons floating over the top left corner of the plate.
++    return;
++#endif
+     auto&      plater              = *wxGetApp().plater();
+     const auto sidebar_docking_dir = plater.get_sidebar_docking_state();
+     if (sidebar_docking_dir == Sidebar::None) {
+diff --git a/src/slic3r/GUI/GLCanvas3D.hpp b/src/slic3r/GUI/GLCanvas3D.hpp
+index f06148b..fe85c22 100644
+--- a/src/slic3r/GUI/GLCanvas3D.hpp
++++ b/src/slic3r/GUI/GLCanvas3D.hpp
+@@ -2,6 +2,11 @@
+ #define slic3r_GLCanvas3D_hpp_
+ 
+ #include <stddef.h>
++#ifdef __APPLE__
++// TARGET_OS_OSX below tells the iOS build from the macOS one; undefined reads
++// as zero in an #if, which would declare the iOS-only members in both.
++#include <TargetConditionals.h>
++#endif
+ #include <memory>
+ #include <chrono>
+ #include <cstdint>
+@@ -1280,6 +1285,27 @@ private:
+     void _render_current_gizmo() const;
+     void _render_gizmos_overlay();
+     void _render_main_toolbar();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++public:
++    // The native toolbar on the trailing edge of the canvas: what it should be
++    // showing, and what to run when one of its buttons is tapped. Both reach
++    // m_main_toolbar and m_gizmos, which is why they are members.
++    //
++    // PUBLIC, and the surrounding section is private: the toolbar view knows
++    // the canvas only as a void *, so the free function it calls through has to
++    // be able to reach the second of these. Run 131 failed on exactly that.
++    // The private: below puts the section back for everything after it.
++    //
++    // Member FUNCTIONS, deliberately - they change neither the layout of this
++    // class nor its vtable, which is the trap patch 0379 had to undo after a
++    // conditionally compiled data MEMBER shifted every field declared after it
++    // and handed unrelated translation units a garbage pointer. Flipping access
++    // around two functions is safe for the same reason: functions take no
++    // storage, and the data members either side keep the access they had.
++    void orca_ios_sync_toolbar();
++    void orca_ios_run_toolbar_action(const char *id);
++private:
++#endif
+     void _render_imgui_select_plate_toolbar();
+     void _render_assemble_view_toolbar() const;
+     void _render_return_toolbar() const;
+diff --git a/src/slic3r/GUI/GLToolbar.hpp b/src/slic3r/GUI/GLToolbar.hpp
+index 85413ed..4370cb1 100644
+--- a/src/slic3r/GUI/GLToolbar.hpp
++++ b/src/slic3r/GUI/GLToolbar.hpp
+@@ -395,6 +395,11 @@ public:
+     bool is_any_item_pressed() const;
+ 
+     unsigned int get_items_count() const { return (unsigned int)m_items.size(); }
++    // The items themselves, in order. GLCanvas3D::orca_ios_sync_toolbar builds
++    // the native toolbar from this rather than from a list of names copied out
++    // of _init_main_toolbar, so an item added upstream turns up on iOS too
++    // instead of quietly going missing.
++    const ItemsList& get_items() const { return m_items; }
+     int get_item_id(const std::string& name) const;
+ 
+     void force_left_action(int item_id, GLCanvas3D& parent) { do_action(GLToolbarItem::Left, item_id, parent, false); }
+diff --git a/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp b/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp
+index 94c76d8..50d93fb 100644
+--- a/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp
++++ b/src/slic3r/GUI/Gizmos/GLGizmosManager.cpp
+@@ -1,4 +1,9 @@
+ #include "libslic3r/libslic3r.h"
++#ifdef __APPLE__
++// TARGET_OS_OSX is tested below; undefined reads as zero in an #if, which would
++// compile the iOS-only branch into the macOS build.
++#include <TargetConditionals.h>
++#endif
+ #include "GLGizmosManager.hpp"
+ #include "slic3r/GUI/GLCanvas3D.hpp"
+ #include "slic3r/GUI/3DScene.hpp"
+@@ -652,6 +657,13 @@ bool GLGizmosManager::on_mouse_wheel(const wxMouseEvent &evt)
+ }
+ 
+ bool GLGizmosManager::gizmos_toolbar_on_mouse(const wxMouseEvent &mouse_event) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The gizmo bar is not drawn on this port - the native toolbar shows these
++    // icons instead - so its old rectangle must not go on claiming touches.
++    // Only the bar: everything below this line handles the row of icons, never
++    // the gizmo's own handles in the scene, which keep working untouched.
++    return false;
++#endif
+     assert(m_enabled);
+     // keep information about events to process
+     struct MouseCapture
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 483c95d..8f5f895 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -422,6 +422,352 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+ }
+ 
+ 
++// -- the plater toolbar ----------------------------------------------------
++//
++// The same nanosvg GLTexture uses to build the toolbar atlas, so the buttons
++// below are rasterised from the identical files at the identical geometry.
++#include "nanosvg/nanosvg.h"
++#include "nanosvg/nanosvgrast.h"
++
++static const CGFloat kOrcaToolSize   = 44;   // Apple's minimum touch target
++static const CGFloat kOrcaToolGap    = 4;
++static const CGFloat kOrcaToolInset  = 8;
++static const CGFloat kOrcaToolCorner = 11;
++static const CGFloat kOrcaToolMargin = 12;   // off the edge of the canvas
++
++// src/slic3r/GUI/GLCanvas3D.cpp - runs the item's own callback, which is what a
++// click on the GL toolbar ran.
++namespace Slic3r { namespace GUI { void orca_ios_toolbar_action(void *canvas, const char *id); } }
++
++static void orca_ios_free_bitmap(void *info, const void *data, size_t size)
++{
++    (void) info;
++    (void) size;
++    free((void *) data);
++}
++
++// One of Orca's toolbar SVGs, rasterised at the size and scale this screen
++// wants. nanosvg writes straight (non-premultiplied) RGBA, which is why this
++// goes through CGImageCreate and a data provider rather than a bitmap context -
++// a CGBitmapContext cannot be told to hold unpremultiplied alpha, and asking it
++// to would darken every antialiased edge on the icons.
++static UIImage *orca_ios_svg_image(const std::string &path, CGFloat points, CGFloat screen_scale)
++{
++    NSVGimage *svg = nsvgParseFromFile(path.c_str(), "px", 96.0f);
++    if (svg == nullptr || svg->width <= 0.0f || svg->height <= 0.0f) {
++        if (svg != nullptr)
++            nsvgDelete(svg);
++        return nil;
++    }
++
++    const int px = (int) (points * screen_scale + 0.5f);
++    if (px <= 0) {
++        nsvgDelete(svg);
++        return nil;
++    }
++
++    // Uniform, and centred: the toolbar icons are square, but nothing here has
++    // to assume it.
++    const float scale = (float) std::min((double) px / svg->width, (double) px / svg->height);
++    const float tx    = 0.5f * ((float) px - svg->width  * scale);
++    const float ty    = 0.5f * ((float) px - svg->height * scale);
++
++    unsigned char *const rgba = (unsigned char *) calloc((size_t) px * px * 4, 1);
++    if (rgba == nullptr) {
++        nsvgDelete(svg);
++        return nil;
++    }
++
++    NSVGrasterizer *const rast = nsvgCreateRasterizer();
++    if (rast == nullptr) {
++        free(rgba);
++        nsvgDelete(svg);
++        return nil;
++    }
++    nsvgRasterize(rast, svg, tx, ty, scale, rgba, px, px, px * 4);
++    nsvgDeleteRasterizer(rast);
++    nsvgDelete(svg);
++
++    CGColorSpaceRef  const cs   = CGColorSpaceCreateDeviceRGB();
++    CGDataProviderRef const prov = CGDataProviderCreateWithData(NULL, rgba,
++                                                               (size_t) px * px * 4,
++                                                               orca_ios_free_bitmap);
++    CGImageRef const cg = CGImageCreate(px, px, 8, 32, (size_t) px * 4, cs,
++                                        (CGBitmapInfo) (kCGBitmapByteOrderDefault | kCGImageAlphaLast),
++                                        prov, NULL, false, kCGRenderingIntentDefault);
++    CGDataProviderRelease(prov);
++    CGColorSpaceRelease(cs);
++    if (cg == NULL)
++        return nil;
++
++    // Original, not template: these icons carry their own colours, and Orca
++    // already hands over the light or the dark file to match its theme.
++    UIImage *const img = [[UIImage imageWithCGImage:cg scale:screen_scale
++                                        orientation:UIImageOrientationUp]
++                          imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
++    CGImageRelease(cg);
++    return img;
++}
++
++// Rasterising twenty-five SVGs is not something to do on every idle, and the
++// idle handler is exactly where the toolbar is kept in step, so they are kept.
++static NSMutableDictionary<NSString *, UIImage *> *gs_orca_tool_icons = nil;
++
++static UIImage *orca_ios_tool_icon(const char *icon)
++{
++    if (icon == nullptr || *icon == '\0')
++        return nil;
++
++    const CGFloat scale = [UIScreen mainScreen].scale;
++    NSString *const key  = [NSString stringWithFormat:@"%s@%.0f", icon, (double) scale];
++    if (gs_orca_tool_icons == nil)
++        gs_orca_tool_icons = [[NSMutableDictionary alloc] init];
++    UIImage *cached = [gs_orca_tool_icons objectForKey:key];
++    if (cached != nil)
++        return cached;
++
++    const std::string path = Slic3r::resources_dir() + "/images/" + icon;
++    UIImage *const img = orca_ios_svg_image(path, kOrcaToolSize - 2 * 6, scale);
++    if (img == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-toolbar: could not rasterise " << path;
++        return nil;
++    }
++    [gs_orca_tool_icons setObject:img forKey:key];
++    return img;
++}
++
++// The plater toolbar, on the trailing edge, in glass.
++//
++// Orca draws its toolbar *inside the GL canvas*: GLToolbar composes the icons
++// into a texture atlas and renders them as quads across the top of the 3D view,
++// and the gizmo bar beside it does the same from GLGizmosManager. Nothing about
++// that is a control - there is no view, no hit target, no accessibility, and at
++// iPad scale a 42px row of 24px glyphs is a line of dots along the top edge.
++//
++// The row is replaced here by a column of real UIButtons on a real
++// UIGlassEffect panel, down the right hand side of the canvas. Same icons: the
++// button images are rasterised from the very same resources/images/*.svg files
++// GLToolbar feeds to its atlas, named by the C++ side so the light and dark
++// variants keep following Orca's own theme. Same actions, too - a tap ends in
++// GLToolbarItem::do_left_action() or GLGizmosManager::open_gizmo(), which is
++// exactly what a click on the GL toolbar ended in.
++//
++// COLLAPSED AND OPEN. The full set is 25 items, which is a column taller than
++// an iPad. Collapsed - the default - shows the nine that get used while placing
++// a model: add, add plate, auto orient, arrange, variable layer height, and the
++// move / rotate / scale / lay on face gizmos. The chevron at the foot of the
++// panel opens the rest in place. Which items are in the collapsed set is
++// decided on the C++ side, in orca_ios_collect_toolbar(), where the names are.
++//
++// The GL toolbars are not merely hidden behind this: _render_main_toolbar() and
++// _render_gizmos_overlay() return early, and both of their mouse handlers are
++// skipped, so there is no invisible strip left along the top of the canvas
++// quietly eating touches.
++
++@interface OrcaToolbarButton : UIButton
++@property (nonatomic, copy) NSString *itemId;
++@end
++
++@implementation OrcaToolbarButton
++- (void)dealloc
++{
++    [_itemId release];
++    [super dealloc];
++}
++@end
++
++@interface OrcaToolbar : UIView
++@property (nonatomic, assign) void *canvas;          // GLCanvas3D *, owned by wx
++- (void)setItems:(NSArray<NSDictionary *> *)items;
++- (void)reposition;
++@end
++
++@implementation OrcaToolbar {
++    UIVisualEffectView *_glass;
++    UIButton           *_chevron;
++    NSMutableArray<OrcaToolbarButton *> *_buttons;
++    NSArray<NSDictionary *>             *_items;
++    BOOL                                 _open;
++}
++
++- (instancetype)initWithFrame:(CGRect)frame
++{
++    self = [super initWithFrame:frame];
++    if (self == nil)
++        return nil;
++
++    self.backgroundColor     = [UIColor clearColor];
++    self.clipsToBounds       = NO;
++    self.layer.shadowColor   = [UIColor blackColor].CGColor;
++    self.layer.shadowOpacity = 0.20f;
++    self.layer.shadowRadius  = 14;
++    self.layer.shadowOffset  = CGSizeMake(0, 4);
++
++    UIGlassEffect *const glass = [[[UIGlassEffect alloc] init] autorelease];
++    glass.interactive = YES;
++
++    _glass = [[UIVisualEffectView alloc] initWithEffect:glass];
++    _glass.layer.cornerCurve  = kCACornerCurveContinuous;
++    _glass.clipsToBounds      = YES;
++    [self addSubview:_glass];
++
++    _buttons = [[NSMutableArray alloc] init];
++
++    _chevron = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
++    [_chevron addTarget:self action:@selector(toggle:)
++       forControlEvents:UIControlEventTouchUpInside];
++    [_glass.contentView addSubview:_chevron];
++    [self updateChevron];
++
++    return self;
++}
++
++- (void)dealloc
++{
++    [_buttons release];
++    [_items release];
++    [_chevron release];
++    [_glass release];
++    [super dealloc];
++}
++
++- (void)updateChevron
++{
++    // Down to open, up to close: the extra items appear below the ones already
++    // there, so the chevron points the way the column is about to grow.
++    UIImage *const img = [UIImage systemImageNamed:(_open ? @"chevron.up" : @"chevron.down")];
++    [_chevron setImage:img forState:UIControlStateNormal];
++    _chevron.tintColor = [UIColor secondaryLabelColor];
++    _chevron.accessibilityLabel = _open ? @"Fewer tools" : @"More tools";
++}
++
++- (void)toggle:(id)sender
++{
++    (void) sender;
++    _open = !_open;
++    [self updateChevron];
++    [self rebuild];
++    [UIView animateWithDuration:0.22 delay:0
++         usingSpringWithDamping:0.88f initialSpringVelocity:0
++                        options:UIViewAnimationOptionCurveEaseOut
++                     animations:^{ [self reposition]; }
++                     completion:nil];
++}
++
++// The items this column is showing: all of them when open, the ones the C++
++// side marked for the collapsed set when not.
++- (NSArray<NSDictionary *> *)visibleItems
++{
++    if (_open)
++        return _items;
++    NSMutableArray<NSDictionary *> *const out = [NSMutableArray array];
++    for (NSDictionary *item in _items) {
++        if ([[item objectForKey:@"collapsed"] boolValue])
++            [out addObject:item];
++    }
++    return out;
++}
++
++- (void)setItems:(NSArray<NSDictionary *> *)items
++{
++    if ([items isEqualToArray:_items])
++        return;
++    [_items release];
++    _items = [items copy];
++    [self rebuild];
++    [self reposition];
++}
++
++- (void)rebuild
++{
++    for (OrcaToolbarButton *b in _buttons)
++        [b removeFromSuperview];
++    [_buttons removeAllObjects];
++
++    for (NSDictionary *item in [self visibleItems]) {
++        OrcaToolbarButton *const b = [OrcaToolbarButton buttonWithType:UIButtonTypeSystem];
++        b.itemId = [item objectForKey:@"id"];
++        [b setImage:[item objectForKey:@"image"] forState:UIControlStateNormal];
++        b.enabled            = [[item objectForKey:@"enabled"] boolValue];
++        b.accessibilityLabel = [item objectForKey:@"tooltip"];
++        b.layer.cornerRadius = kOrcaToolCorner;
++        b.layer.cornerCurve  = kCACornerCurveContinuous;
++        // Glass is the panel, not the keys - the same rule the keypad in 0381
++        // follows. A selected gizmo gets the tint instead, which is how the GL
++        // toolbar showed the same thing.
++        b.backgroundColor = [[item objectForKey:@"selected"] boolValue]
++                          ? [[UIColor systemBlueColor] colorWithAlphaComponent:0.22f]
++                          : [UIColor clearColor];
++        [b addTarget:self action:@selector(tapped:)
++            forControlEvents:UIControlEventTouchUpInside];
++        [_glass.contentView addSubview:b];
++        [_buttons addObject:b];
++    }
++    [self setNeedsLayout];
++}
++
++- (void)tapped:(OrcaToolbarButton *)sender
++{
++    if (self.canvas == nullptr || sender.itemId == nil)
++        return;
++    Slic3r::GUI::orca_ios_toolbar_action(self.canvas, [sender.itemId UTF8String]);
++}
++
++// Trailing edge, vertically centred, inside the safe area.
++- (void)reposition
++{
++    UIView *const host = self.superview;
++    if (host == nil)
++        return;
++
++    const CGRect hb         = host.bounds;
++    const UIEdgeInsets safe = host.safeAreaInsets;
++    const NSUInteger rows   = _buttons.count + 1;   // + the chevron
++    const CGFloat w = kOrcaToolSize + 2 * kOrcaToolInset;
++    CGFloat h = rows * kOrcaToolSize + (rows - 1) * kOrcaToolGap + 2 * kOrcaToolInset;
++
++    // Never taller than the canvas: an open column on a small iPad in landscape
++    // can ask for more room than there is, and a panel running off both ends is
++    // worse than a shorter one.
++    const CGFloat room = hb.size.height - safe.top - safe.bottom - 2 * kOrcaToolMargin;
++    if (h > room)
++        h = room;
++
++    const CGFloat x = hb.size.width - safe.right - kOrcaToolMargin - w;
++    const CGFloat y = safe.top + (hb.size.height - safe.top - safe.bottom - h) * 0.5f;
++    self.frame = CGRectMake(x, y, w, h);
++    [self layoutIfNeeded];
++}
++
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++
++    const CGFloat radius = MIN(kOrcaToolCorner + kOrcaToolInset, self.bounds.size.width * 0.5f);
++    _glass.frame              = self.bounds;
++    _glass.layer.cornerRadius = radius;
++    self.layer.shadowPath     = [UIBezierPath bezierPathWithRoundedRect:self.bounds
++                                                          cornerRadius:radius].CGPath;
++
++    const NSUInteger rows = _buttons.count + 1;
++    if (rows == 0)
++        return;
++    const CGFloat side = kOrcaToolSize;
++    CGFloat step = side + kOrcaToolGap;
++    const CGFloat span = self.bounds.size.height - 2 * kOrcaToolInset;
++    if (rows > 1 && rows * side + (rows - 1) * kOrcaToolGap > span)
++        step = (span - side) / (CGFloat)(rows - 1);   // squeeze rather than overflow
++
++    CGFloat y = kOrcaToolInset;
++    for (OrcaToolbarButton *b in _buttons) {
++        b.frame = CGRectMake(kOrcaToolInset, y, side, side);
++        y += step;
++    }
++    _chevron.frame = CGRectMake(kOrcaToolInset, y, side, side);
++}
++
++@end
++
+ // A real UITabBarController, in place of Orca's own tab strip.
+ //
+ // Orca draws its Home / Prepare / Preview / Device / Project row itself, with
+@@ -1281,5 +1627,72 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
+     });
+ }
+ 
++// -- the toolbar, from the canvas ------------------------------------------
++
++static OrcaToolbar             *gs_orca_toolbar      = nil;
++static bool                     gs_orca_toolbar_failed = false;
++static NSMutableArray<NSDictionary *> *gs_orca_tool_pending = nil;
++
++// GLCanvas3D::on_idle describes the toolbar it wants, one item at a time, and
++// commits it. Only const char* crosses, so nothing has to be agreed between
++// that translation unit and this one beyond the names of these three calls.
++void orca_ios_toolbar_begin()
++{
++    [gs_orca_tool_pending release];
++    gs_orca_tool_pending = [[NSMutableArray alloc] init];
++}
++
++void orca_ios_toolbar_add(const char *id, const char *icon, const char *tooltip,
++                          bool enabled, bool selected, bool collapsed)
++{
++    if (gs_orca_tool_pending == nil || id == nullptr)
++        return;
++    UIImage *const image = orca_ios_tool_icon(icon);
++    if (image == nil)
++        return;
++    [gs_orca_tool_pending addObject:@{
++        @"id"        : [NSString stringWithUTF8String:id],
++        @"image"     : image,
++        @"tooltip"   : [NSString stringWithUTF8String:tooltip != nullptr ? tooltip : ""],
++        @"enabled"   : [NSNumber numberWithBool:enabled ? YES : NO],
++        @"selected"  : [NSNumber numberWithBool:selected ? YES : NO],
++        @"collapsed" : [NSNumber numberWithBool:collapsed ? YES : NO],
++    }];
++}
++
++void orca_ios_toolbar_commit(void *canvas, void *host_view)
++{
++    UIView *const host = (UIView *) host_view;
++    if (host == nil || gs_orca_tool_pending == nil || gs_orca_toolbar_failed)
++        return;
++
++    // Caught for the reason the tab bar is: this runs from on_idle, inside
++    // wx's event dispatch, and an NSException coming up through wx is an
++    // abort() rather than a bug report. See run 131.
++    @try {
++        if (gs_orca_toolbar == nil) {
++            gs_orca_toolbar = [[OrcaToolbar alloc] initWithFrame:CGRectZero];
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-toolbar: created with "
++                                     << (unsigned long) gs_orca_tool_pending.count << " items";
++        }
++        gs_orca_toolbar.canvas = canvas;
++
++        if (gs_orca_toolbar.superview != host)
++            [host addSubview:gs_orca_toolbar];
++        [host bringSubviewToFront:gs_orca_toolbar];
++
++        // -setItems: does nothing when nothing changed, which is the ordinary
++        // case on an idle; the reposition is unconditional because the canvas
++        // changes size on rotation without the items changing at all.
++        [gs_orca_toolbar setItems:gs_orca_tool_pending];
++        [gs_orca_toolbar reposition];
++    }
++    @catch (NSException *e) {
++        gs_orca_toolbar_failed = true;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-toolbar: THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++    }
++}
++
+ } // namespace GUI
+ } // namespace Slic3r

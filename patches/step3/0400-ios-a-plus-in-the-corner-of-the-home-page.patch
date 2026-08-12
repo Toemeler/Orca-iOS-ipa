@@ -1,0 +1,301 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 7144e80..66e0bc3 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -7,6 +7,11 @@ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char
+ // src/slic3r/GUI/ios_webview_support.mm - keeps a page out of the native tab
+ // bar without taking it out of the notebook.
+ namespace Slic3r { namespace GUI { void orca_ios_hide_tab(wxWindow *page); } }
++// src/slic3r/GUI/ios_webview_support.mm - the plus in the corner of the home
++// page, in place of the two tiles the page lays out for the same two actions.
++namespace Slic3r { namespace GUI {
++void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *open_title);
++} }
+ #include <atomic>
+ #include <chrono>
+ // src/slic3r/GUI/GLCanvas3D.cpp
+@@ -1901,6 +1906,13 @@ void MainFrame::init_tabpanel() {
+             m_webview->load_url(url);
+         });
+         m_tabpanel->AddPage(m_webview, "", "tab_home_active", "tab_home_active", false);
++#ifdef __WXOSX_IPHONE__
++        // The page's own "new project" and "open project" tiles are hidden by
++        // css/orca-ios.css; this is what replaces them.
++        orca_ios_add_home_plus(m_webview,
++                               into_u8(_L("New Project")).c_str(),
++                               into_u8(_L("Open Project")).c_str());
++#endif
+         m_param_panel = new ParamsPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBK_LEFT | wxTAB_TRAVERSAL);
+     }
+ 
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 8f5f895..4f62d61 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -422,6 +422,85 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+ }
+ 
+ 
++// The plus, top right of the home page.
++//
++// Orca's home page offers "new project" and "open project" as two tiles in the
++// body of the page, above the recent files. That is a web page laying out a
++// desktop dialog: two large targets competing with the content for the top of
++// the screen, in a place iPadOS puts nothing. The tiles are hidden
++// (css/orca-ios.css) and this replaces them with the one control the platform
++// uses for exactly this - a plus in the top trailing corner, opening a menu.
++//
++// The menu is a real UIMenu, so the system draws it, in its own material, with
++// its own dismissal, its own keyboard and pointer handling and its own
++// accessibility. Nothing here paints a popup.
++//
++// Both entries end in the page's own handlers, the same two the tiles called:
++// OnClickNewProject() and OnClickOpenProject(). Whatever those do keeps
++// working, and this file does not need to know what that is.
++//
++// IT LIVES IN THE WINDOW, NOT IN THE PAGE.
++//
++// It was a subview of the WebViewPanel's wx view for three builds, and for
++// three builds it drew correctly and received nothing - no press, and no
++// pointer hover either, which together mean it was never hit-tested rather
++// than that its action was wrong. The evidence for where to put it instead was
++// already in this repository: the numeric keypad in 0381 is the one native
++// control here that has always worked, and 0381 puts it in the window on
++// purpose. wx hangs a pan and a hover gesture recogniser off every view it
++// wraps (step2/0209), and a UIKit control buried under those does not get a
++// clean touch. In the window it is a sibling of everything wx owns rather than
++// a guest inside it.
++//
++// The cost of living in the window is that the window is not the home page, so
++// visibility has to follow the notebook: orca_ios_home_plus_update() is called
++// from the tab bar's sync and shows the chip only while the home page is the
++// selected one.
++
++static const CGFloat  kOrcaPlusSize   = 44;
++static const CGFloat  kOrcaPlusMargin = 14;
++
++// The chip, once it is in the window. Retained: the window holds it too, but
++// this reference outlives any reordering wx does underneath.
++static UIView   *gs_orca_home_plus  = nil;
++// The page it belongs to, and the web view its menu talks to. Both assigned,
++// never retained - wx owns them.
++static wxWindow *gs_orca_home_panel = nullptr;
++static WKWebView *gs_orca_home_web  = nil;
++// Held from the call in init_tabpanel until there is a window to install into.
++static std::string gs_orca_home_new_title;
++static std::string gs_orca_home_open_title;
++
++static WKWebView *orca_ios_find_web_view(UIView *view)
++{
++    if (view == nil)
++        return nil;
++    if ([view isKindOfClass:[WKWebView class]])
++        return (WKWebView *) view;
++    for (UIView *sub in view.subviews) {
++        WKWebView *const found = orca_ios_find_web_view(sub);
++        if (found != nil)
++            return found;
++    }
++    return nil;
++}
++
++static void orca_ios_home_run(NSString *script)
++{
++    if (gs_orca_home_web == nil || script == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: no web view to run "
++                                 << (script != nil ? [script UTF8String] : "(null)");
++        return;
++    }
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-home: running " << [script UTF8String];
++    [gs_orca_home_web evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
++        (void) result;
++        if (error != nil)
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-home: " << [script UTF8String] << " failed: "
++                                     << [[error localizedDescription] UTF8String];
++    }];
++}
++
+ // -- the plater toolbar ----------------------------------------------------
+ //
+ // The same nanosvg GLTexture uses to build the toolbar atlas, so the buttons
+@@ -1694,5 +1773,180 @@ void orca_ios_toolbar_commit(void *canvas, void *host_view)
+     }
+ }
+ 
++// -- the home page's plus --------------------------------------------------
++
++// Where the chip belongs right now.
++//
++// The window, until the tab bar controller takes the window - and then the tab
++// bar controller's own view, because taking the window replaces its subviews
++// and a chip added beforehand goes with them. The log timed that to the
++// microsecond: "plus installed in the window" at 14.756740, "step 3, taking the
++// window" at 14.819877, and no plus on screen afterwards.
++//
++// Either way it is outside wx's view tree, which is the point of the move: wx
++// hangs gesture recognisers off everything it wraps and a control underneath
++// those never gets a clean touch.
++static UIView *orca_ios_plus_host(UIWindow *window)
++{
++    if (gs_orca_tab_bar != nil && gs_orca_tab_bar.isViewLoaded)
++        return gs_orca_tab_bar.view;
++    return window;
++}
++
++static bool orca_ios_install_home_plus()
++{
++    if (gs_orca_home_panel == nullptr)
++        return false;
++
++    UIView *const panel_view = (UIView *) gs_orca_home_panel->GetHandle();
++    if (panel_view == nil)
++        return false;
++
++    UIWindow *const window = panel_view.window;
++    if (window == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: no window yet, deferring the plus";
++        return false;
++    }
++
++    UIView *const host = orca_ios_plus_host(window);
++
++    // Already up, and in the right place.
++    if (gs_orca_home_plus != nil && gs_orca_home_plus.superview == host)
++        return true;
++
++    // Up, but somewhere that no longer exists or is no longer on top - which is
++    // what the tab bar taking the window does to it. Build it again against the
++    // host it should have.
++    if (gs_orca_home_plus != nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: the plus lost its host, rebuilding";
++        [gs_orca_home_plus removeFromSuperview];
++        [gs_orca_home_plus release];
++        gs_orca_home_plus = nil;
++    }
++
++    WKWebView *const web = orca_ios_find_web_view(panel_view);
++    if (web == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: no web view under the home panel";
++        return false;
++    }
++    gs_orca_home_web = web;
++
++    @try {
++        UIView *const circle = [[UIView alloc] initWithFrame:CGRectZero];
++        circle.backgroundColor    = [UIColor colorWithWhite:0.35f alpha:0.80f];
++        circle.layer.cornerRadius = kOrcaPlusSize * 0.5f;
++        circle.clipsToBounds      = YES;
++        circle.translatesAutoresizingMaskIntoConstraints = NO;
++
++        // THE MENU'S BACKGROUND. A UIMenu is drawn by the system, in the
++        // system's own material - there is no API that tints it - and the
++        // material it picks follows the interface style of the view the menu is
++        // presented from. Over this white page that style is light, so the menu
++        // came up white. Forcing the style to dark carries into the menu, and
++        // the dark material is the grey background wanted here.
++        circle.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
++
++        UIButton *const button = [UIButton buttonWithType:UIButtonTypeSystem];
++        UIImageSymbolConfiguration *const glyph =
++            [UIImageSymbolConfiguration configurationWithPointSize:19
++                                                            weight:UIImageSymbolWeightSemibold];
++        [button setImage:[UIImage systemImageNamed:@"plus" withConfiguration:glyph]
++                forState:UIControlStateNormal];
++        button.tintColor          = [UIColor whiteColor];
++        button.accessibilityLabel = @"New";
++        button.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
++        // The pointer effect, which was missing along with the touches for the
++        // same reason: nothing was reaching this control at all.
++        button.pointerInteractionEnabled = YES;
++        button.translatesAutoresizingMaskIntoConstraints = NO;
++
++        UIAction *const make = [UIAction actionWithTitle:
++                [NSString stringWithUTF8String:gs_orca_home_new_title.c_str()]
++                                                   image:[UIImage systemImageNamed:@"doc.badge.plus"]
++                                              identifier:nil
++                                                 handler:^(__kindof UIAction *a) {
++            (void) a;
++            orca_ios_home_run(@"OnClickNewProject()");
++        }];
++        UIAction *const open = [UIAction actionWithTitle:
++                [NSString stringWithUTF8String:gs_orca_home_open_title.c_str()]
++                                                   image:[UIImage systemImageNamed:@"folder"]
++                                              identifier:nil
++                                                 handler:^(__kindof UIAction *a) {
++            (void) a;
++            orca_ios_home_run(@"OnClickOpenProject()");
++        }];
++
++        // Primary action, so one tap opens the menu - there is no second thing
++        // the button could do, and a long press to reach the only behaviour it
++        // has would be a control nobody finds.
++        button.menu                     = [UIMenu menuWithTitle:@"" children:@[ make, open ]];
++        button.showsMenuAsPrimaryAction = YES;
++
++        [circle addSubview:button];
++        [host addSubview:circle];
++        [host bringSubviewToFront:circle];
++
++        // Both constrained: the chip to the window's safe area, the button to
++        // the chip. A fixed frame inside a constrained parent is what put the
++        // button off the chip in the build before this one - if the parent's
++        // size arrives from constraints, the child's has to as well.
++        [NSLayoutConstraint activateConstraints:@[
++            [circle.trailingAnchor constraintEqualToAnchor:host.safeAreaLayoutGuide.trailingAnchor
++                                                  constant:-kOrcaPlusMargin],
++            [circle.topAnchor constraintEqualToAnchor:host.safeAreaLayoutGuide.topAnchor
++                                             constant:kOrcaPlusMargin],
++            [circle.widthAnchor  constraintEqualToConstant:kOrcaPlusSize],
++            [circle.heightAnchor constraintEqualToConstant:kOrcaPlusSize],
++            [button.leadingAnchor  constraintEqualToAnchor:circle.leadingAnchor],
++            [button.trailingAnchor constraintEqualToAnchor:circle.trailingAnchor],
++            [button.topAnchor      constraintEqualToAnchor:circle.topAnchor],
++            [button.bottomAnchor   constraintEqualToAnchor:circle.bottomAnchor],
++        ]];
++
++        gs_orca_home_plus = circle;   // the +1 from -alloc is this reference
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: plus installed under "
++                                 << [NSStringFromClass([host class]) UTF8String];
++        return true;
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: plus THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++        gs_orca_home_plus = nil;
++        return false;
++    }
++}
++
++// Called from the tab bar's sync, which runs on every page change and every
++// notebook rebuild - so this is both the install's retry and its visibility.
++// The chip is in the window, and the window is not the home page.
++void orca_ios_home_plus_update(wxBookCtrlBase *book)
++{
++    if (!orca_ios_install_home_plus())
++        return;
++    if (book == nullptr || gs_orca_home_panel == nullptr)
++        return;
++
++    const int sel = book->GetSelection();
++    const bool on_home = sel >= 0 && sel < (int) book->GetPageCount() &&
++                         book->GetPage((size_t) sel) == gs_orca_home_panel;
++    [gs_orca_home_plus setHidden:on_home ? NO : YES];
++    [gs_orca_home_plus.superview bringSubviewToFront:gs_orca_home_plus];
++}
++
++// MainFrame::init_tabpanel, with the two titles already translated - _L() is
++// not reachable from here, and "New project" is not called that everywhere.
++// There is usually no window this early, so this only records what is needed;
++// orca_ios_home_plus_update() does the installing when there is one.
++void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *open_title)
++{
++    if (panel == nullptr || new_title == nullptr || open_title == nullptr)
++        return;
++    gs_orca_home_panel      = panel;
++    gs_orca_home_new_title  = new_title;
++    gs_orca_home_open_title = open_title;
++    orca_ios_install_home_plus();
++}
++
+ } // namespace GUI
+ } // namespace Slic3r

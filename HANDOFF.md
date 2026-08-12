@@ -5432,3 +5432,447 @@ first time any of this has been in the right order of magnitude for 120 Hz.
 comes back near 1x, the model's toolpath is genuinely not collinear and the
 answer is elsewhere — but then the mesh's triangle count is a red herring too,
 and that would itself be worth knowing.
+
+## The iOS-native UI pass (patches 0397-0400)
+
+The port has reached the point where the remaining problem is not "does it
+run" but "does it belong on an iPad". Orca's chrome is all custom-drawn — a
+wxControl for the tab strip, a GL-rendered toolbar inside the canvas — which is
+exactly what made the port tractable and exactly what makes it feel like a
+desktop application running in a phone-shaped window. These patches replace the
+chrome with the system's own controls, one element at a time.
+
+The rule for all of them: **hide, do not delete.** Every wx page, every panel
+and every callback stays built and stays wired. A native control is put in
+front of it and drives it. Bringing something back is deleting a rule or a
+line, never re-implementing it.
+
+### 0397 — the tab bar
+
+The Home / Prepare / Preview / Device / Project strip is `ButtonsListCtrl`
+(Notebook.hpp), a wxControl painting bitmaps into a band across the top. It is
+hidden on iOS and a real `UITabBarController` drives the notebook instead,
+which on iPadOS renders as the floating Liquid Glass capsule at the top of the
+window and brings pointer effects, keyboard shortcuts, Dynamic Type and
+VoiceOver with it.
+
+**The controller has to own the window.** wx gives a top level window a
+`UIWindow` whose `rootViewController` is a `wxUIContentViewController` holding
+every wx view (`src/osx/iphone/nonownedwnd.mm`). A tab bar is not a view you can
+add on top — the floating bar, its glass and its sidebar only happen when
+`UITabBarController` is the controller running the window. So it takes the
+window and wx's controller is re-parented under it, full bleed, below the bar.
+
+Two consequences worth knowing before touching this code:
+
+- **Adopt wx's controller before taking the window.** Assigning
+  `rootViewController` releases the one that was there, and the window holds the
+  only reference to it. `addChildViewController:` first, then the assignment.
+  The other order deallocates the controller that owns every wx view in the
+  application, under a live wxWindow tree.
+- **The tabs show nothing.** wx's view is behind all of them, not inside any
+  one, so each tab's view controller is a transparent `OrcaPassthroughView`
+  whose `-hitTest:` returns nil for itself. Touches fall straight through to
+  the wx view. Selecting a tab moves nothing in UIKit; it calls
+  `SetSelection` and wx swaps its own pages exactly as before.
+
+Selection is kept in step in both directions without a flag: a tab reports in
+from `-viewWillAppear:`, and ignores itself when the page it stands for is
+already the notebook's selection — which is true precisely when we were the
+ones who asked for it. Correct even though the callback lands a run loop turn
+after the request.
+
+Sync points are all in Notebook.hpp: both `InsertPage` overloads,
+`DoRemovePage`, `ChangeSelection`, and a `wxEVT_BOOKCTRL_PAGE_CHANGED` binding
+in `Create()` that catches every ordinary selection change. Deliberately
+nothing inside `SetSelection` — 0372 is already editing that method, and the
+binding covers it.
+
+**Project and Calibration have no tab for now.** Held back by
+`orca_ios_hide_tab()` from `init_tabpanel`, by page identity rather than by
+label: the labels are `_L()` and "Project" is only called Project in English.
+The pages are still built, still paged, still reachable. Delete a line in
+`init_tabpanel` to give one its tab back.
+
+**iOS 26 carries all of this, and 27 would add nothing.** Worth stating
+plainly, because it is easy to assume otherwise from the design language: iOS
+27's UIKit is a very small release, and nothing either patch draws arrived in
+it. The floating glass capsule is simply what iPadOS 26 already makes of a
+`UITabBarController` with `UITab` items (iOS 18), and `UIGlassEffect` is 26 —
+the guard patch 0381 installs. The only 27 symbols anywhere near this work are
+`performBatchUpdates:`, `prominentTabIdentifier` and the sidebar placement
+pair; none of them change what appears on screen. So `IOS_MIN` and the "Select
+Xcode" gate stay at 26, which also keeps the ccache rather than paying an hour
+of rebuild for an identical result.
+
+### 0398 — the cloud accounts on the home page
+
+`resources/web/homepage/index.html` gains one stylesheet,
+`orca-overlay/resources/web/homepage/css/orca-ios.css`, which hides the Orca
+Cloud section, the Bambu Cloud section and the OrcaCloud shortcut. One block per
+hidden thing; delete a block to bring it back. `!important` throughout because
+`home.js` sets `display` inline as the sign-in state changes.
+
+Losing the Bambu section takes the "network plugin not detected — click here to
+install it" notice with it, which is worth having gone on its own account:
+there is no network plugin on iOS and there cannot be one. Printing over the
+LAN does not go through that section (see `BambuLan*`) and is unaffected.
+
+### 0399 — the plater toolbar
+
+Orca draws its toolbar *inside the GL canvas*: `GLToolbar` composes the icons
+into a texture atlas and renders them as quads across the top of the 3D view,
+and the gizmo bar beside it does the same out of `GLGizmosManager`. Neither is a
+control — no view, no hit target, no accessibility — and at iPad scale the row
+reads as a line of dots along the top edge.
+
+0399 puts a column of real `UIButton`s on a `UIGlassEffect` panel down the
+trailing edge of the canvas instead. **The icons are the same files**: the
+button images are rasterised with nanosvg straight out of `resources/images/*.svg`,
+named by the C++ side, so the light and dark variants keep following Orca's own
+theme. The actions are the same calls, too — a tap ends in
+`GLToolbarItem::do_left_action()` or `GLGizmosManager::open_gizmo()`, which is
+exactly where a click on the GL toolbar ended.
+
+**Collapsed by default, open on the chevron.** The full set is 25 items, a
+column taller than an iPad. Collapsed shows the nine used while laying out a
+plate: add, add plate, auto orient, arrange, variable layer height, and the
+move / rotate / scale / lay on face gizmos. The set is a flag per item in
+`GLCanvas3D::orca_ios_sync_toolbar()` — change it there and nowhere else.
+
+Four things worth knowing:
+
+- **The GL bars are un-drawn, not disabled.** `_render_main_toolbar()` returns
+  early rather than `m_main_toolbar.set_enabled(false)`, because `is_enabled()`
+  means far more than "is it drawn" — the same flag decides whether layer
+  editing is initialised, whether the gcode viewer is built, and which bodies
+  the scene renders. Same for the gizmos: `_render_gizmos_overlay()` returns
+  early, where `m_gizmos.set_enabled(false)` would have taken the gizmos'
+  handles out of the scene along with their icon row.
+- **And their hit rectangles go with them.** An undrawn toolbar that still
+  hit-tests is an invisible strip along the top of the canvas eating every drag
+  that starts near it, so `m_main_toolbar.on_mouse` is skipped and
+  `GLGizmosManager::gizmos_toolbar_on_mouse` returns false. Only the bar — the
+  gizmos' own `on_mouse` is untouched.
+- **nanosvg writes unpremultiplied RGBA**, which is why the icons go through
+  `CGImageCreate` with `kCGImageAlphaLast` and a data provider rather than a
+  `CGBitmapContext`: a bitmap context cannot hold unpremultiplied alpha, and
+  asking it to darkens every antialiased edge.
+- **Rasterised icons are cached** by name and screen scale. The sync runs from
+  `on_idle`, right after `m_main_toolbar.update_items_state()`, so it runs
+  constantly; it pushes a description, and the native side does nothing at all
+  when that description has not changed.
+
+`GLToolbar` gains one accessor, `get_items()`, so the column is built from the
+toolbar's actual items rather than a list of names copied out of
+`_init_main_toolbar` — an item added upstream then turns up on iOS instead of
+quietly going missing. The two new members on `GLCanvas3D` are member
+*functions*: they change neither the class layout nor its vtable, which is the
+trap 0379 had to undo after a conditionally compiled data member shifted every
+field declared after it.
+
+**Run 131 found the access specifier first:** the two
+new members were anchored next to `_render_gizmos_overlay()`, which sits in a
+private section, so the free function the toolbar view calls through could not
+reach `orca_ios_run_toolbar_action`. They are `public:` now, with `private:`
+restored immediately after, which is safe for the same reason they are member
+functions at all — functions take no storage, so the data members either side
+keep both their access and their offsets.
+
+Worth recording what did *not* break: `ios_webview_support.mm` compiled clean
+at 647/659 on that run, all of the tab bar, the toolbar and the plus. The
+Objective-C was not the risky part; the C++ it hangs off was.
+
+**And then the device found the real one — see below.**
+
+### 0400 — a plus in the corner of the home page
+
+The home page offers "new project" and "open project" as two tiles in the body
+of the page, above the recent files — a web page laying out a desktop dialog,
+two large targets competing with the content for the top of the screen, in a
+place iPadOS puts nothing. The tiles are hidden by `css/orca-ios.css` and a
+plus goes in the top trailing corner instead, opening a menu with the same two
+entries.
+
+The menu is a real `UIMenu` on a `UIButton` with `showsMenuAsPrimaryAction`, so
+the system draws it — its own glass, its own dismissal, its own pointer and
+keyboard handling, its own accessibility. Nothing here paints a popup. One tap
+opens it rather than a long press, because there is no second thing the button
+could do and a hidden-behind-a-long-press control is one nobody finds.
+
+Both entries end in the page's own handlers, `OnClickNewProject()` and
+`OnClickOpenProject()` — the very functions the tiles called — reached with
+`evaluateJavaScript:`. Whatever those do keeps working and this side does not
+need to know what it is. Deleting the `#MenuArea` block in the stylesheet
+brings the tiles back with nothing else to undo.
+
+Two details worth keeping:
+
+- **The web view is held in a file static, not captured by the menu's blocks.**
+  A block capturing it would be retained by the action, which is retained by
+  the menu, which is retained by the button, which is a subview of the very
+  view tree the web view belongs to. This file is compiled without ARC, so
+  that cycle would be permanent.
+- **The button is constrained, not framed.** It is the one thing here that has
+  to survive rotation and the split view on its own, and wx never lays out a
+  view it did not create. Only the subview is constrained — its host keeps the
+  manual layout wx gives it, which is allowed.
+
+The titles come from `MainFrame::init_tabpanel` already translated: `_L()` is
+not reachable from the .mm, and "New Project" is not called that everywhere.
+
+### What run 131 crashed on, and what the next run will say
+
+The build after the access fix launched on the iPad and died before the window
+was usable: `SIGABRT`, `abort()`, out of
+
+    wxAppConsoleBase::ProcessPendingEvents()
+      wxEvtHandler::ProcessPendingEvents()
+        wxEvtHandler::WXConsumeException()
+          wxAbort()
+
+That stack is wx aborting on a C++ or Objective-C exception that escaped an
+event handler — and `ProcessPendingEvents()` is exactly where `CallAfter`
+lambdas run, which is how the tab bar installs itself.
+
+**The log localises it further, by what is missing.** `orca-ios-home: plus
+installed` is there, so 0400 works. `orca-ios-tabbar:` appears **nowhere** —
+neither the success line at the bottom of `orca_ios_install_tab_bar` nor the
+"no root view controller" line above it. The success line is the last statement
+in that function. So the throw was inside it, among the four UIKit containment
+calls, and nothing recorded which one.
+
+Two faults are visible without guessing which call threw:
+
+- **The controller took the window with no tabs.** `syncTabs` only ran after
+  the install returned, so a `UITabBarController` became the window's root
+  while `tabs` was still empty, and loaded its view in that state. Tabs are
+  built first now, before it goes anywhere near the window.
+- **The deferred retry was queued once per call and logged nothing.** The
+  notebook syncs on every page insertion and every selection change, so run 131
+  queued roughly ten lambdas all racing to install the same thing, and the
+  no-window path was silent, so the log cannot even say how many ran. One
+  pending retry now, and it says so.
+
+**The rest is instrumentation, deliberately, rather than a third guess.** Every
+UIKit call in the install path logs what it is about to do (`step 1` … `step 5`),
+and the whole function — plus `syncTabs`, plus the toolbar's commit — is inside
+`@try/@catch`. An `NSException` is named, its reason logged, and a latch stops
+further attempts. A throw now costs the native tab bar, not the application.
+
+The catch also **puts wx back**: surviving is not sufficient on its own, because
+a throw at step 4 or 5 leaves wx's content controller adopted by a bar that
+never took the window — every view in the application parented to something
+nobody is showing. The rollback detaches it and hands the window back, so the
+app comes up exactly as it did before any of this, with the log saying what to
+fix.
+
+Next run either works or names the call and the reason. It will not be a
+mystery twice.
+
+### What the device showed next, and what was fixed
+
+The build came up. The toolbar works — the column on the trailing edge renders
+the nine collapsed items and the chevron, from the same SVGs, in glass. The home
+page hides what it should. Three things were wrong.
+
+**The plus was invisible.** It sits on the home page's web view, which is a
+sheet of white, and `UIGlassEffect` over white is a circle nobody can see. It is
+a plain translucent grey chip now — the same `colorWithWhite:0.5 alpha:` the
+keypad in 0381 uses for its keys, so it reads on white and on dark alike. The
+panels that float over the 3D view stay glass; there is something behind those
+to refract. **Glass needs a background. Do not put it on the web views.**
+
+**Three toolbars were still drawing across the top.** With the main toolbar and
+the gizmo bar gone, what remained was a separator line dividing nothing from
+nothing, the assemble-view button alone in a corner, and the sidebar toggle over
+the top left of the plate — all of them positioned relative to the two bars that
+are no longer there. `_render_separator_toolbar_left/right`,
+`_render_assemble_view_toolbar` and `_render_collapse_toolbar` return early now,
+and the last two have their hit rectangles skipped with the same
+`orca_ios_toolbar_takes_mouse` switch the main toolbar uses.
+
+The sidebar toggle is **not** lost with them: `get_collapse_toolbar()` is an
+ordinary `GLToolbar`, so its items are collected into the native column exactly
+like the main toolbar's, in the collapsed set — hiding the sidebar is the first
+thing anyone wants on a screen this size. The assemble-view button is the
+obvious next one to move across.
+
+**The tab bar: the log named it outright.**
+
+    orca-ios-tabbar: step 3, adopting the wx controller
+    orca-ios-tabbar: THREW UIViewControllerHierarchyInconsistency: adding a
+      root view controller <wxUIContentViewController: 0x11abb8000> as a child
+      of view controller:<OrcaTabBarController: 0x11f952400>
+    orca-ios-tabbar: wx has its window back
+
+**A view controller must stop being a window's root before it can become
+anybody's child.** The order was backwards, and the reason it was backwards is
+worth keeping: the window holds the only strong reference to wx's content
+controller, so clearing the root deallocates the object that owns every wx view
+in the application. That is a real hazard — but the answer to it is a `retain`
+of our own, not an adoption UIKit refuses. The window is handed over first now,
+under our own retain, and the controller is adopted afterwards.
+
+Note what the instrumentation bought: one run, one line, the exact call and the
+exact reason, and the rollback meant the application came up perfectly usable
+while being wrong. That is the whole argument for breadcrumbs over reasoning,
+and it settled in one build what three rounds of thinking had not.
+
+**And the menu is grey by forcing the interface style, not by painting one.** A
+`UIMenu` is drawn by the system in the style of the view it is presented from,
+so over the white home page it came up light however grey the button was.
+`overrideUserInterfaceStyle = UIUserInterfaceStyleDark` on the chip carries into
+the menu it opens — a grey chip with a grey menu, and still a real UIMenu with
+the system's own dismissal, pointer handling and accessibility.
+
+### Four tabs called Home — a trap in ButtonsListCtrl
+
+The tab bar came up, with the right number of tabs and the right two held back,
+and every one of them labelled "Home".
+
+`Notebook::GetPageText(n)` forwards to `ButtonsListCtrl::GetPageText(n)`, and
+that returns **the button's** label:
+
+```cpp
+wxString ButtonsListCtrl::GetPageText(size_t n) const
+{
+    Button* btn = m_pageButtons[n];
+    return btn->GetLabel();
+}
+```
+
+`SetCompact(n, true)` does `btn->SetLabel("")` — and the strip is compact on
+this port always, because it is hidden and therefore has no width to fit a
+label into. So every page returned an empty string, and the empty-label
+fallback (which exists for the home page, the one page Orca really does insert
+without a label) named all four of them Home.
+
+Upstream keeps the real text in `m_pageLabels` for exactly this reason —
+`SetCompact` reads it back to restore the label when the strip widens again.
+`ButtonsListCtrl` gains a `GetPageLabel()` returning that, and `Notebook::GetPageText`
+uses it on iOS only. Nothing about the desktop's behaviour changes.
+
+**The general lesson: a getter named after a property is not always reading
+that property.** The label was being asked of the widget that displays it
+rather than of the model that owns it, and the widget had been told to display
+nothing.
+
+### Grey, in the menu
+
+**The tab bar keeps the system style** — it was briefly forced dark and that was
+not what was wanted. The grey belongs to the home page's menu.
+
+A `UIMenu` is drawn by the system in the system's own material, and **there is
+no API that tints it**. What the material follows is the interface style of the
+view the menu is presented from, so over the white home page it drew light.
+`overrideUserInterfaceStyle = UIUserInterfaceStyleDark`, set on the chip and on
+the button that actually presents the menu, makes it draw the dark material —
+which over a light page is the grey background wanted here.
+
+That is the only public lever on that background. Anything more exact than "the
+dark material" means drawing the popup by hand, and a hand-drawn popup gives up
+the dismissal, the pointer and keyboard handling, the haptics and the
+accessibility that come with the real one.
+
+The home page's left column is hidden too. With the accounts and the OrcaCloud
+shortcut gone it held one button — "Recent" — pointing at the only thing the
+page shows, so it was a 262px border down the side saying nothing. `#RightBoard`
+is already `width:100%`, so hiding `#LeftBoard` is the whole change.
+
+### The plus: a circle with nothing in it, and nothing on tap
+
+Both symptoms were one bug. The chip is laid out by constraints, so it starts
+at `CGRectZero` and gets its size later. The button inside it was given a fixed
+44x44 frame and a flexible autoresizing mask — and autoresizing a subview inside
+a superview whose bounds go from `0x0` to `44x44` resizes it from a degenerate
+starting size. The button ended up somewhere other than over the chip, so there
+was no plus to see and the tap landed on the bare chip behind it.
+
+The button is constrained to the chip's edges now. **Do not mix a constrained
+parent with an autoresized child** — if the parent's size arrives from
+constraints, the child's has to as well.
+
+The tab bar reads Home / Prepare / Preview / Device, which is the whole of what
+0397 set out to do.
+
+### The plus had to leave wx's view tree
+
+Three builds of "it draws but does nothing". The decisive symptom was the
+second one: **no pointer hover either.** A wrong target/action gives you a
+button that highlights and does nothing; no highlight and no hover means the
+control is never hit-tested at all.
+
+The evidence for where to put it was already in this repository. **The numeric
+keypad in 0381 is the one native control on this port that has always worked,
+and 0381 puts it in the window on purpose.** wx hangs a pan and a hover gesture
+recogniser off every view it wraps (step2/0209 — the same pair that used to
+kill the process on any touch), and a UIKit control buried underneath those does
+not get a clean touch. In the window the chip is a sibling of everything wx
+owns rather than a guest inside it.
+
+So the chip is added to the `UIWindow` and constrained to its safe area. The
+price is that the window is not the home page, so visibility has to follow the
+notebook: `orca_ios_home_plus_update()` runs from `orca_ios_notebook_sync`,
+which fires on every page change, and shows the chip only while the home page
+is selected. That call sits **before** the tab bar's own early return on
+purpose — the plus must not stop working because the tab bar failed.
+
+`orca_ios_notebook_sync` is also the install's retry now, so the plus no longer
+depends on a single `CallAfter` landing after the window exists.
+
+**If a native control on this port does not respond, ask what it is parented
+to before you look at its action.**
+
+### And then the plus vanished: one retry loop, not one per feature
+
+Moving the chip into the window was right, and it disappeared completely,
+because of the retry rather than the move.
+
+`orca_ios_notebook_sync` queued a `CallAfter` that installed **the tab bar** and
+nothing else — and that `CallAfter` is the only thing on this path that runs
+after the window exists, because the page changes are all over by then. So the
+tab bar installed from it, the plus never did, and the plus needs a window now
+in a way it did not when it lived in the page.
+
+The retry re-enters `orca_ios_notebook_sync` itself now, so everything still
+missing gets another turn, and it is bounded at sixty turns so something that
+can never install cannot spin the event loop for the life of the process.
+
+**Whatever runs after the window appears has to retry everything**, not the one
+thing that was being debugged when it was written.
+
+Worth checking next: the toolbar is still parented into the GL canvas's wx
+view, which is the same position the plus was in when nothing reached it. It
+draws, but whether its buttons take a tap has not been confirmed. If they do
+not, the fix is the one above — into the window, visibility driven from the
+notebook.
+
+### Taking the window throws away what was already in it
+
+The plus installed, and then vanished, and the log timed it to the microsecond:
+
+    14.756740  orca-ios-home: plus installed in the window
+    14.756768  orca-ios-tabbar: step 1, allocating ...
+    14.819877  orca-ios-tabbar: step 3, taking the window
+    14.869439  orca-ios-tabbar: installed
+
+**`window.rootViewController = bar` replaces the window's subviews.** A chip
+added to the window 28 microseconds earlier goes with them. Both of the last
+two rounds were the same shape: the plus arriving *before* the thing that
+rearranges everything underneath it.
+
+Two changes, and between them the ordering stops mattering:
+
+- **The host follows whoever owns the window.** `orca_ios_plus_host()` returns
+  the tab bar controller's view once there is one, and the window until then.
+  Either is outside wx's view tree, which is the whole point of the move.
+- **The install repairs itself.** If the chip exists but its superview is not
+  the host it should have — exactly what a window takeover leaves behind — it
+  is torn down and rebuilt against the right one, and says so in the log.
+
+The plus is now updated *after* the tab bar install rather than before, so on
+the turn the bar arrives the chip is built against the bar's view straight away
+instead of into a window that is about to be emptied. It still runs
+unconditionally, outside the tab bar's early return, so it cannot be taken down
+by the tab bar failing.

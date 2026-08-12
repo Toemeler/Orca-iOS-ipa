@@ -1,0 +1,684 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index aa2ee74..7144e80 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -4,6 +4,9 @@
+ #include <wx/display.h>
+ // src/slic3r/GUI/ios_webview_support.mm
+ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char *when); } }
++// src/slic3r/GUI/ios_webview_support.mm - keeps a page out of the native tab
++// bar without taking it out of the notebook.
++namespace Slic3r { namespace GUI { void orca_ios_hide_tab(wxWindow *page); } }
+ #include <atomic>
+ #include <chrono>
+ // src/slic3r/GUI/GLCanvas3D.cpp
+@@ -1938,6 +1941,14 @@ void MainFrame::init_tabpanel() {
+     m_calibration->SetBackgroundColour(*wxWHITE);
+     m_tabpanel->AddPage(m_calibration, _L("Calibration"), std::string("tab_calibration_active"), std::string("tab_calibration_active"), false);
+ 
++#ifdef __WXOSX_IPHONE__
++    // Held back from the tab bar for now. Both pages are still built, still
++    // paged and still reachable from everything that opens them by name - they
++    // simply have no tab of their own yet. Delete a line to give one back.
++    orca_ios_hide_tab(m_project);
++    orca_ios_hide_tab(m_calibration);
++#endif
++
+     if (m_plater) {
+         // load initial config
+         auto full_config = wxGetApp().preset_bundle->full_config();
+diff --git a/src/slic3r/GUI/Notebook.hpp b/src/slic3r/GUI/Notebook.hpp
+index 959d3c4..450e9e2 100644
+--- a/src/slic3r/GUI/Notebook.hpp
++++ b/src/slic3r/GUI/Notebook.hpp
+@@ -36,6 +36,19 @@ public:
+     void SetPageText(size_t n, const wxString& strText);
+     void SetCompact(size_t n, bool compact); // ORCA
+     wxString GetPageText(size_t n) const;
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The label as it was inserted, which is NOT what GetPageText() returns.
++    // That one hands back the *button's* label - and SetCompact() blanks the
++    // button's label whenever the strip is compact, which on this port it
++    // always is, because the strip is hidden and therefore has no width. Every
++    // page came back as an empty string and the native tab bar showed four
++    // tabs called Home. m_pageLabels is where upstream keeps the real text for
++    // exactly this reason; this reads it.
++    wxString GetPageLabel(size_t n) const
++    {
++        return n < m_pageLabels.size() ? m_pageLabels[n] : wxString();
++    }
++#endif
+     wxFlexGridSizer* GetBtnsSizer(){return m_buttons_sizer;}; // ORCA
+ 
+ private:
+@@ -49,6 +62,14 @@ private:
+     std::vector<wxString>           m_pageLabels; // ORCA
+ };
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_webview_support.mm. The tab strip is hidden on iOS and a
++// real UITabBarController drives the pages instead; this keeps its tabs and its
++// selection in step with the notebook. TargetConditionals.h comes from the
++// block patch 0372 added at the top of this file, so 0372 has to sort first.
++namespace Slic3r { namespace GUI { void orca_ios_notebook_sync(wxBookCtrlBase *book); } }
++#endif
++
+ class Notebook: public wxBookCtrlBase
+ {
+ public:
+@@ -77,6 +98,18 @@ public:
+ 
+         m_bookctrl = new ButtonsListCtrl(this, side_tools);
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Orca's own tab strip is not shown on this port - the system tab bar
++        // is - but it is hidden rather than deleted, because the notebook keeps
++        // its page labels, its images and its selection inside it, GetPageText()
++        // below reads them straight back out, and a good deal of MainFrame
++        // reaches for GetBtnsListCtrl(). Hidden is also exactly what
++        // wxBookCtrlBase::GetControllerSize() tests, so hiding it is what hands
++        // the pages the whole window instead of everything below a strip that
++        // is no longer drawn.
++        m_bookctrl->Hide();
++#endif
++
+         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
+ 
+         if (style & wxBK_RIGHT || style & wxBK_BOTTOM)
+@@ -100,6 +133,18 @@ public:
+ 
+         this->Bind(wxEVT_NAVIGATION_KEY, &Notebook::OnNavigationKey, this);
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Every path that changes the page ends in a CHANGED event, whichever
++        // of SetSelection, MainFrame::select_tab or a page insertion started
++        // it, so one binding here covers all of them - and covers them without
++        // a line inside SetSelection, which patch 0372 is already editing.
++        this->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& evt)
++        {
++            evt.Skip();
++            Slic3r::GUI::orca_ios_notebook_sync(this);
++        });
++#endif
++
+         return true;
+     }
+ 
+@@ -168,6 +213,10 @@ public:
+         if (!DoSetSelectionAfterInsertion(n, bSelect))
+             page->Hide();
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        Slic3r::GUI::orca_ios_notebook_sync(this);
++#endif
++
+         return true;
+     }
+ 
+@@ -186,6 +235,10 @@ public:
+         if (bSelect)
+             SetSelection(n);
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        Slic3r::GUI::orca_ios_notebook_sync(this);
++#endif
++
+         return true;
+     }
+ 
+@@ -261,7 +314,13 @@ public:
+     virtual int ChangeSelection(size_t n) override
+     {
+         GetBtnsListCtrl()->SetSelection(n);
+-        return DoSetSelection(n);
++        const int ret = DoSetSelection(n);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // ChangeSelection deliberately sends no event, so the binding in
++        // Create() never hears about this one.
++        Slic3r::GUI::orca_ios_notebook_sync(this);
++#endif
++        return ret;
+     }
+ 
+     // Neither labels nor images are supported but we still store the labels
+@@ -278,7 +337,13 @@ public:
+     virtual wxString GetPageText(size_t n) const override
+     {
+         wxCHECK_MSG(n < GetPageCount(), wxString(), wxS("Invalid page"));
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // See GetPageLabel: the button's label is empty while the strip is
++        // compact, and the strip is always compact here because it is hidden.
++        return GetBtnsListCtrl()->GetPageLabel(n);
++#else
+         return GetBtnsListCtrl()->GetPageText(n);
++#endif
+     }
+ 
+     virtual bool SetPageImage(size_t WXUNUSED(n), int WXUNUSED(imageId)) override
+@@ -426,6 +491,10 @@ protected:
+             DoSetSelectionAfterRemoval(page);
+         }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        Slic3r::GUI::orca_ios_notebook_sync(this);
++#endif
++
+         return win;
+     }
+ 
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 56cb485..483c95d 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -27,6 +27,11 @@
+ // GetHandle() below needs the definition, not the forward declaration that
+ // wx/utils.h supplies.
+ #include <wx/window.h>
++// GetPageCount()/GetPageText()/GetPage()/SetSelection(), on the notebook the
++// tab bar drives.
++#include <wx/bookctrl.h>
++#include <algorithm>
++#include <vector>
+ #include <cstdlib>
+ #include <boost/filesystem.hpp>
+ #include <boost/log/trivial.hpp>
+@@ -417,6 +422,287 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+ }
+ 
+ 
++// A real UITabBarController, in place of Orca's own tab strip.
++//
++// Orca draws its Home / Prepare / Preview / Device / Project row itself, with
++// ButtonsListCtrl (Notebook.hpp): a wxControl that paints bitmaps and text into
++// a 30px band across the top of the window. It is desktop title bar furniture -
++// hit targets built for a mouse, a hover state nothing on a touch screen can
++// reach - and none of it belongs on an iPad. The strip is hidden on this port
++// (Notebook::Create) and the pages are driven from the system tab bar instead,
++// which on iPadOS renders as the floating Liquid Glass capsule centred at the
++// top of the window, and brings the pointer effects, the keyboard shortcuts,
++// Dynamic Type and VoiceOver with it. The custom strip had none of those.
++//
++// WHY THE WX CONTROLLER BECOMES A CHILD OF THE TAB BAR CONTROLLER.
++//
++// wx gives a top level window a UIWindow whose rootViewController is a
++// wxUIContentViewController owning every wx view in the application
++// (src/osx/iphone/nonownedwnd.mm). A tab bar is not a view that can simply be
++// added on top: the floating bar, its glass, its morph on scroll and its
++// sidebar all belong to UITabBarController, and it only does any of that when
++// it is the controller running the window. So it takes the window, and wx's
++// controller is re-parented underneath it, full bleed, below the bar.
++//
++// That leaves the tabs themselves with nothing to show - wx's view is behind
++// all of them, not inside any one of them - so each tab gets a transparent
++// OrcaPassthroughView that hit-tests to nil and drops every touch through to
++// the wx view underneath. Selecting a tab moves nothing in UIKit: it tells the
++// notebook to change page, and wx swaps its pages exactly as it did before.
++//
++// Everything below runs on the main thread, which is also wx's GUI thread:
++// UIKit calls in on it, and the notebook is only ever touched from there.
++
++// All of this is iOS 18 and 26 API, and that is not a compromise: iOS 27's
++// UIKit is a very small release, and nothing drawn here arrived in it. The
++// floating glass capsule is what iPadOS 26 already makes of a
++// UITabBarController with UITab items, and UIGlassEffect is 26 - the guard
++// patch 0381 installs covers everything this file needs. What 27 adds anywhere
++// near this is performBatchUpdates:, prominentTabIdentifier and a sidebar
++// placement pair, none of which change what appears on screen. Staying on 26
++// keeps the ccache as well, so it costs nothing.
++
++// Pages that are built, paged and working, but that get no tab. Named from
++// MainFrame::init_tabpanel, where the identity of each page is known - matching
++// on the label would mean matching translated text, and "Project" is only
++// called Project in English. Take the orca_ios_hide_tab() call out of
++// init_tabpanel to give a page its tab back; nothing else has to change.
++static std::vector<wxWindow *> gs_orca_untabbed;
++
++static bool orca_ios_tab_is_hidden(wxWindow *page)
++{
++    if (page == nullptr)
++        return false;
++    return std::find(gs_orca_untabbed.begin(), gs_orca_untabbed.end(), page) !=
++           gs_orca_untabbed.end();
++}
++
++@class OrcaTabBarController;
++
++// The content area of a tab, and a hole through to wx. -hitTest: returning nil
++// for the view itself is what makes the hole: UIKit then keeps looking at the
++// views behind it in the tab bar controller, and finds wx's. A subview would
++// still be found first, and there are none, but the check states the intent.
++@interface OrcaPassthroughView : UIView
++@end
++
++@implementation OrcaPassthroughView
++- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
++{
++    UIView *const hit = [super hitTest:point withEvent:event];
++    return hit == self ? nil : hit;
++}
++@end
++
++// One per tab, carrying the page index it stands for. It reports in when UIKit
++// brings it on screen, which is the single signal that catches every way a tab
++// can be chosen: a tap, a pointer click, a keyboard shortcut, the sidebar.
++@interface OrcaTabPage : UIViewController
++@property (nonatomic, assign) OrcaTabBarController *owner;   // owns this, not owned by it
++@property (nonatomic, assign) NSUInteger            page;    // notebook page, not tab position
++@end
++
++// How much of the top of the window the floating bar covers. wx knows nothing
++// about it and will happily lay a page's own header out underneath it - which
++// is what the Device page did, putting Camera / Control / Printer Parts behind
++// the capsule. wx's view is inset by this much instead, so every page starts
++// below the bar rather than under it.
++static const CGFloat kOrcaTabBarInset = 56;
++
++@interface OrcaTabBarController : UITabBarController
++@property (nonatomic, assign) UIView *wxView;   // not retained: the hierarchy holds it
++- (instancetype)initWithBook:(wxBookCtrlBase *)book;
++- (void)syncTabs;
++- (void)pageDidAppear:(NSUInteger)page;
++@end
++
++@implementation OrcaTabPage
++
++- (void)loadView
++{
++    OrcaPassthroughView *const v =
++        [[[OrcaPassthroughView alloc] initWithFrame:CGRectZero] autorelease];
++    v.backgroundColor = [UIColor clearColor];
++    v.opaque          = NO;
++    self.view         = v;
++}
++
++- (void)viewWillAppear:(BOOL)animated
++{
++    [super viewWillAppear:animated];
++    [self.owner pageDidAppear:self.page];
++    [self stepOutOfTheWay];
++}
++
++- (void)viewDidLayoutSubviews
++{
++    [super viewDidLayoutSubviews];
++    [self stepOutOfTheWay];   // UIKit rebuilds these wrappers across a switch
++}
++
++// -hitTest: returning nil from this controller's own view is not enough.
++//
++// UITabBarController does not put a tab's view straight into its own view - it
++// wraps it, and the wrapper is UIKit's, not ours. A wrapper whose subviews all
++// decline a touch answers for it itself, so the wrapper took every touch over
++// the whole content area and the canvas underneath got none. The counters said
++// so plainly: "mouse +0" in every five second window, while the plate was on
++// screen and rendering.
++//
++// A view with userInteractionEnabled = NO is not hit-tested at all, and neither
++// is anything inside it, so switching it off from this view up to - but not
++// including - the tab bar controller's own view takes the whole wrapper chain
++// out of the path. The floating bar is a sibling of that chain rather than
++// inside it, so it keeps its touches.
++- (void)stepOutOfTheWay
++{
++    UIView *const stop = (self.owner != nil && self.owner.isViewLoaded) ? self.owner.view : nil;
++    for (UIView *v = self.view; v != nil && v != stop; v = v.superview)
++        v.userInteractionEnabled = NO;
++}
++
++@end
++
++@implementation OrcaTabBarController {
++    wxBookCtrlBase             *_book;     // outlives this controller; owned by wx
++    NSMutableArray<NSString *> *_titles;   // what the tabs read right now
++    NSMutableArray<NSNumber *> *_pages;    // the notebook page behind each tab
++    BOOL                        _in_sync;
++}
++
++- (instancetype)initWithBook:(wxBookCtrlBase *)book
++{
++    self = [super initWithNibName:nil bundle:nil];
++    if (self == nil)
++        return nil;
++    _book   = book;
++    _titles = [[NSMutableArray alloc] init];
++    _pages  = [[NSMutableArray alloc] init];
++    return self;
++}
++
++- (void)dealloc
++{
++    [_titles release];
++    [_pages release];
++    [super dealloc];
++}
++
++// Re-applied rather than set once: the window's bounds change on rotation, and
++// wx sets this view's frame itself whenever the frame resizes, so the inset has
++// to be put back afterwards.
++- (void)viewDidLayoutSubviews
++{
++    [super viewDidLayoutSubviews];
++    if (self.wxView == nil)
++        return;
++    CGRect r = self.view.bounds;
++    r.origin.y    += kOrcaTabBarInset;
++    r.size.height -= kOrcaTabBarInset;
++    if (!CGRectEqualToRect(self.wxView.frame, r))
++        self.wxView.frame = r;
++}
++
++// The tabs the bar should be showing: every notebook page except the ones held
++// back, in notebook order, with the page each one stands for alongside.
++- (void)collectTitles:(NSMutableArray<NSString *> *)titles
++                pages:(NSMutableArray<NSNumber *> *)pages
++{
++    const size_t count = _book->GetPageCount();
++    for (size_t i = 0; i < count; ++i) {
++        if (orca_ios_tab_is_hidden(_book->GetPage(i)))
++            continue;
++        wxString label = _book->GetPageText(i);
++        // Orca adds the home page with an empty label and an icon
++        // (MainFrame::init_tabpanel). A tab bar item is its text here, so the
++        // one page that has none has to be named.
++        if (label.IsEmpty())
++            label = wxString("Home");
++        [titles addObject:wxCFStringRef(label).AsNSString()];
++        [pages addObject:[NSNumber numberWithUnsignedLong:(unsigned long) i]];
++    }
++}
++
++- (void)syncTabs
++{
++    if (_book == nullptr || _in_sync)
++        return;
++    _in_sync = YES;
++
++    NSMutableArray<NSString *> *const titles = [NSMutableArray array];
++    NSMutableArray<NSNumber *> *const pages  = [NSMutableArray array];
++    [self collectTitles:titles pages:pages];
++
++    // The pages matter as well as the labels: inserting Prepare in front of
++    // Preview moves every page behind it without changing a single title.
++    if (![titles isEqualToArray:_titles] || ![pages isEqualToArray:_pages]) {
++        NSMutableArray<UITab *> *const tabs = [NSMutableArray arrayWithCapacity:titles.count];
++        for (NSUInteger i = 0; i < titles.count; ++i) {
++            OrcaTabPage *const page = [[[OrcaTabPage alloc] initWithNibName:nil
++                                                                     bundle:nil] autorelease];
++            page.owner = self;
++            page.page  = (NSUInteger) [[pages objectAtIndex:i] unsignedLongValue];
++            // The provider block is copied by UITab, and a copied block retains
++            // what it captures - which is the only reference the page needs.
++            UITab *const tab = [[[UITab alloc]
++                initWithTitle:[titles objectAtIndex:i]
++                        image:nil
++                   identifier:[NSString stringWithFormat:@"orca.tab.%lu", (unsigned long) i]
++       viewControllerProvider:^UIViewController *(UITab *t) {
++                                   (void) t;
++                                   return page;
++                               }] autorelease];
++            [tabs addObject:tab];
++        }
++        // The tabs and the selection change together in every case that
++        // reaches here: Prepare and Preview are inserted and removed as a pair
++        // with the plater, Device comes and goes with the printer. iOS 27's
++        // -performBatchUpdates: would put the two into a single animation, and
++        // the end state is identical either way.
++        self.tabs = tabs;
++        [_titles setArray:titles];
++        [_pages setArray:pages];
++    }
++
++    const int sel = _book->GetSelection();
++    if (sel >= 0) {
++        const NSUInteger tab =
++            [_pages indexOfObject:[NSNumber numberWithUnsignedLong:(unsigned long) sel]];
++        // A page that was held back has no tab to move to, so the bar keeps
++        // showing the last one that did. That is the right answer rather than a
++        // gap: reaching Project from a link should not blank the tab bar.
++        if (tab != NSNotFound && tab < self.tabs.count) {
++            UITab *const want = [self.tabs objectAtIndex:tab];
++            if (self.selectedTab != want)
++                self.selectedTab = want;
++        }
++    }
++
++    _in_sync = NO;
++}
++
++- (void)pageDidAppear:(NSUInteger)page
++{
++    if (_book == nullptr || _in_sync)
++        return;
++    if (page >= _book->GetPageCount())
++        return;
++    // The tab UIKit is showing is already the notebook's page whenever we were
++    // the ones who asked for it, so this is how a selection we made is told
++    // apart from one the user made - no flag, and correct even though the
++    // appearance callback lands a turn of the run loop after the request.
++    if ((int) page == _book->GetSelection())
++        return;
++    _book->SetSelection(page);
++}
++
++@end
++
++// The tab bar controller, once it is running the window. Not owned by anything
++// else that can be reached from here, so the +1 from -alloc is this reference.
++static OrcaTabBarController *gs_orca_tab_bar = nil;
++
++
+ namespace Slic3r {
+ namespace GUI {
+ 
+@@ -789,5 +1075,211 @@ std::string orca_ios_repair_container_path(const std::string &path)
+     return path;
+ }
+ 
++// Takes the window from wx and gives it to a UITabBarController, with wx's own
++// controller re-parented under it. Returns false while there is no window yet -
++// the notebook is built before the frame is shown, so the first few calls are
++// expected to come to nothing.
++//
++// EVERY UIKit CALL HERE IS BREADCRUMBED AND THE WHOLE THING IS CAUGHT.
++// Run 131 died in exactly this function: SIGABRT out of
++// wxEvtHandler::WXConsumeException, which is wx aborting on an exception that
++// escaped an event handler - and CallAfter below runs inside
++// ProcessPendingEvents, which is that handler. Neither the success line at the
++// bottom nor the failure line above was in the log, so the throw was in here,
++// somewhere among the four containment calls, and nothing recorded which. It
++// will not be a mystery twice: each step says what it is about to do, and an
++// NSException is caught, named and survived rather than taken up through wx.
++// Losing the native tab bar is a bad outcome; taking the application down with
++// it is a worse one.
++static bool gs_orca_tab_bar_failed = false;
++
++static void orca_ios_sync_tabs_guarded();
++// src/slic3r/GUI/ios_webview_support.mm, further down this file.
++void orca_ios_home_plus_update(wxBookCtrlBase *book);
++
++
++static bool orca_ios_install_tab_bar(wxBookCtrlBase *book)
++{
++    if (gs_orca_tab_bar != nil)
++        return true;
++    if (gs_orca_tab_bar_failed)
++        return false;      // it threw once; do not keep throwing
++
++    UIView *const content = (UIView *) book->GetHandle();
++    UIWindow *const window = content.window;
++    if (window == nil) {
++        // Logged, because run 131 could not tell whether this path had been
++        // taken ten times or none.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: no window yet, deferring";
++        return false;
++    }
++
++    UIViewController *const wx_vc = window.rootViewController;
++    if (wx_vc == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: the window has no root view controller";
++        return false;
++    }
++
++    @try {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: step 1, allocating over "
++                                 << [NSStringFromClass([wx_vc class]) UTF8String];
++        OrcaTabBarController *const bar = [[OrcaTabBarController alloc] initWithBook:book];
++
++        // Tabs FIRST, before this controller is anywhere near the window.
++        // Run 131 made it the window's root while it still had none, and a tab
++        // bar controller with an empty `tabs` is not a state worth being in
++        // when its view loads.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: step 2, building tabs";
++        [bar syncTabs];
++
++        // THE WINDOW GOES FIRST, AND WE HOLD wx's CONTROLLER OURSELVES.
++        //
++        // The other order does not work, and run 134 said so in as many words:
++        //
++        //   UIViewControllerHierarchyInconsistency: adding a root view
++        //   controller <wxUIContentViewController> as a child of view
++        //   controller: <OrcaTabBarController>
++        //
++        // A view controller has to stop being a window's root before it can
++        // become anybody's child. The reason the wrong order was there at all
++        // is real - the window holds the only strong reference to wx's
++        // controller, so clearing the root would deallocate the object that
++        // owns every wx view in the application - but the answer to that is a
++        // retain of our own, not an adoption UIKit refuses.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: step 3, taking the window";
++        [wx_vc retain];
++        UIView *const wx_view = [[wx_vc.view retain] autorelease];
++        window.rootViewController = bar;
++
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: step 4, adopting the wx controller";
++        [bar addChildViewController:wx_vc];
++
++        // Underneath everything UITabBarController puts in its own view: the
++        // tab's content container, and the floating bar above that.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: step 5, putting wx back under the bar";
++        // Inset from the top, so the floating bar sits above the page rather
++        // than on it - see kOrcaTabBarInset. -viewDidLayoutSubviews puts it
++        // back after rotation and after wx resizes the frame itself.
++        bar.wxView               = wx_view;
++        wx_view.autoresizingMask = UIViewAutoresizingFlexibleWidth |
++                                   UIViewAutoresizingFlexibleHeight;
++        [bar.view insertSubview:wx_view atIndex:0];
++        [bar.view setNeedsLayout];
++        [wx_vc didMoveToParentViewController:bar];
++
++        // -addChildViewController: holds it now, so the retain above is spent.
++        [wx_vc release];
++
++
++        gs_orca_tab_bar = bar;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: installed";
++        return true;
++    }
++    @catch (NSException *e) {
++        gs_orca_tab_bar_failed = true;
++        gs_orca_tab_bar        = nil;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++
++        // Put wx back. Surviving the exception is not enough on its own: a
++        // throw at step 4 or 5 leaves wx's controller adopted by a bar that
++        // never took the window, which is every view in the application
++        // hanging off a parent nobody is showing. Undo it, hand the window
++        // back, and the app comes up as it did before any of this - Orca's own
++        // tab strip hidden and no native bar, ugly but entirely usable, with
++        // the line above saying what to fix.
++        @try {
++            if (wx_vc.parentViewController != nil) {
++                [wx_vc willMoveToParentViewController:nil];
++                [wx_vc.view removeFromSuperview];
++                [wx_vc removeFromParentViewController];
++            }
++            if (window.rootViewController != wx_vc)
++                window.rootViewController = wx_vc;
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: wx has its window back";
++        }
++        @catch (NSException *inner) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: could not undo: "
++                                     << [[inner name] UTF8String];
++        }
++        return false;
++    }
++}
++
++// -syncTabs rebuilds UITab objects and assigns them, which is the other place
++// UIKit could object to something. Same treatment: named, survived, latched.
++static void orca_ios_sync_tabs_guarded()
++{
++    if (gs_orca_tab_bar == nil)
++        return;
++    @try {
++        [gs_orca_tab_bar syncTabs];
++    }
++    @catch (NSException *e) {
++        gs_orca_tab_bar_failed = true;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-tabbar: syncTabs THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++    }
++}
++
++// MainFrame::init_tabpanel calls this for each page that should keep working
++// but should not appear in the tab bar.
++void orca_ios_hide_tab(wxWindow *page)
++{
++    if (page != nullptr && !orca_ios_tab_is_hidden(page))
++        gs_orca_untabbed.push_back(page);
++    orca_ios_sync_tabs_guarded();
++}
++
++// Notebook.hpp calls this whenever a page is added, removed, or selected.
++void orca_ios_notebook_sync(wxBookCtrlBase *book)
++{
++    if (book == nullptr)
++        return;
++
++    if (!gs_orca_tab_bar_failed && orca_ios_install_tab_bar(book))
++        orca_ios_sync_tabs_guarded();
++
++    // The plus AFTER the tab bar, and unconditionally.
++    //
++    // After, because taking the window replaces its subviews, so a chip
++    // installed first is thrown away by the install that follows it - which is
++    // exactly what the log showed, 28 microseconds apart. Doing it second means
++    // that on the turn the bar arrives, the chip is built against the bar's
++    // view instead and there is no window left to lose.
++    //
++    // Unconditionally, because the plus must not stop working because the tab
++    // bar failed; it is not inside the tab bar's early return for that reason.
++    orca_ios_home_plus_update(book);
++
++    // ONE RETRY LOOP FOR BOTH, RE-ENTERING THIS FUNCTION.
++    //
++    // The previous version queued a CallAfter that installed the tab bar and
++    // nothing else - and that CallAfter is the only thing here that runs after
++    // the window exists, because page changes are all over by then. So the tab
++    // bar installed, the plus never did, and it vanished entirely. Whatever
++    // lands after the window has to retry everything, not the one thing that
++    // was being debugged when it was written.
++    const bool bar_pending  = gs_orca_tab_bar == nil && !gs_orca_tab_bar_failed;
++    const bool plus_pending = gs_orca_home_plus == nil;
++    if (!bar_pending && !plus_pending)
++        return;
++
++    // Bounded, so a thing that can never install cannot spin the event loop
++    // for the life of the process. Sixty turns is far more than the handful it
++    // takes for the frame to be shown, and it is over in a blink if it is not
++    // needed.
++    static bool retry_queued  = false;
++    static int  retries_left  = 60;
++    if (retry_queued || retries_left <= 0)
++        return;
++    retry_queued = true;
++    --retries_left;
++    book->CallAfter([book] {
++        retry_queued = false;
++        orca_ios_notebook_sync(book);
++    });
++}
++
+ } // namespace GUI
+ } // namespace Slic3r

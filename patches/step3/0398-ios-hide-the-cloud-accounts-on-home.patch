@@ -1,0 +1,16 @@
+diff --git a/resources/web/homepage/index.html b/resources/web/homepage/index.html
+index 24eb828..8334610 100644
+--- a/resources/web/homepage/index.html
++++ b/resources/web/homepage/index.html
+@@ -8,6 +8,11 @@
+ <link rel="stylesheet" type="text/css" href="../include/global.css" />	<!-- ORCA One for all-->
+ <link rel="stylesheet" type="text/css" href="./css/home.css" />
+ <link rel="stylesheet" type="text/css" href="./css/dark.css" />	
++<!-- iPadOS only, and this repository only builds for iPadOS: what the home
++     page does not show on this port. Nothing is deleted - the rules are in
++     css/orca-ios.css, one block per hidden thing, and deleting a block brings
++     that thing back. Last of the stylesheets so it wins the cascade. -->
++<link rel="stylesheet" type="text/css" href="./css/orca-ios.css" />
+ 
+ <script type="text/javascript" src="../include/jquery-2.1.1.min.js"></script>
+ <script type="text/javascript" src="../include/json2.js"></script>	

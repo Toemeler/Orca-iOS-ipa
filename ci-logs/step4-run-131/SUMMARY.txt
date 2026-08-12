@@ -1,0 +1,7 @@
+=== FAILED targets ===
+GUI/GLCanvas3D.cpp
+
+=== undefined symbols (linker) ===
+
+total FAILED: 1
+undefined symbol count: 0

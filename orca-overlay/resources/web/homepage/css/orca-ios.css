@@ -1,0 +1,66 @@
+/*
+ * What the home page does not show on iPadOS.
+ *
+ * Nothing here is deleted. Every element these rules hide is still in
+ * resources/web/homepage/index.html, still built, still wired to the same
+ * handlers in js/home.js, and still works the moment it is on screen again.
+ * The rules are separated by what they hide so that bringing one thing back is
+ * deleting one block, and nothing else has to be touched.
+ *
+ * !important throughout, deliberately: home.js sets `display` inline on most of
+ * these as the sign-in state changes (OrcaLogin1 / OrcaLogin2 swap that way), and
+ * an inline style beats an ordinary rule. An important rule beats the inline one.
+ *
+ * Loaded from index.html by patch 0398.
+ */
+
+/* -- Orca Cloud: the section label, login / register, the avatar and log out.
+      Delete this block to bring the Orca account back. ---------------------- */
+#OrcaSectionLabel,
+#OrcaLoginSection {
+    display: none !important;
+}
+
+/* -- Bambu Cloud: its header, its login, the avatar, and the "network plugin
+      not detected" notice underneath. That notice is worth losing on its own
+      account - there is no network plugin on iOS and there cannot be one, so
+      the offer to install it never had anything behind it (see the LAN backend
+      in orca-overlay/src/slic3r/Utils/BambuLan*). Printing over the LAN does
+      not go through this section and is unaffected.
+      Delete this block to bring the Bambu account back. --------------------- */
+#BambuCloudSection {
+    display: none !important;
+}
+
+/* -- The whole account column, so the left board does not keep the empty band
+      the two sections above used to fill. ----------------------------------- */
+#LoginArea {
+    display: none !important;
+}
+
+/* -- The "new project" and "open project" tiles. Both actions live on the plus
+      in the top right corner now (patch 0400), which is where iPadOS puts them
+      and where nothing else on this page has to make room for them. The page's
+      own handlers - OnClickNewProject() and OnClickOpenProject() - are what the
+      menu calls, so the tiles can come back by deleting this block and nothing
+      else has to be undone. --------------------------------------------------- */
+#MenuArea {
+    display: none !important;
+}
+
+/* -- The left column itself. With the accounts and the OrcaCloud shortcut gone
+      it held one button, "Recent", pointing at the only thing the page shows -
+      so it was a 262px border down the side of the window saying nothing. The
+      right board is already width:100%, so hiding this is all it takes for the
+      recent files to have the page.
+      Delete this block to bring the column back. ---------------------------- */
+#LeftBoard {
+    display: none !important;
+}
+
+/* -- The OrcaCloud shortcut in the left column, which opens
+      cloud.orcaslicer.com in Safari. The Recent button beside it stays.
+      Delete this block to bring the shortcut back. -------------------------- */
+#BtnArea .BtnShortcut {
+    display: none !important;
+}

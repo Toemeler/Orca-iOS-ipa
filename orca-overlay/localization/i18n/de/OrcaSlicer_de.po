@@ -9602,7 +9602,7 @@ msgstr "Nach dem Überschreiben"
 
 msgctxt "Sync_AMS"
 msgid "Plate"
-msgstr "Aktuelle Platte"
+msgstr "Platte"
 
 msgid "The connected printer does not match the currently selected printer. Please change the selected printer."
 msgstr "Der angeschlossene Drucker stimmt nicht mit dem aktuell ausgewählten Drucker überein. Bitte ändern Sie den ausgewählten Drucker."

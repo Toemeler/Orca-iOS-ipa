@@ -1,0 +1,65 @@
+--- a/src/libslic3r/AppConfig.cpp
++++ b/src/libslic3r/AppConfig.cpp
+@@ -619,7 +619,18 @@
+     }
+ 
+     if (get("curr_bed_type").empty()) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Textured PEI, which is what these machines ship with and what this
++        // port is asked to start on. The value is the BedType enum in
++        // PrintConfig.hpp - btDefault 0, btPC 1 (Cool), btEP 2, btPEI 3 (High
++        // Temp), btPTE 4 (Textured PEI) - and it is written as a number here
++        // because that is how Plater reads it back (atoi, then
++        // "(BedType) value"). The matching fallback for a printer that has
++        // never been asked is Preset::get_default_bed_type().
++        set("curr_bed_type", "4");
++#else
+         set("curr_bed_type", "1");
++#endif
+     }
+ 
+     if (get("sending_interval").empty()) {
+--- a/src/libslic3r/Preset.cpp
++++ b/src/libslic3r/Preset.cpp
+@@ -6,6 +6,13 @@
+ #include "PresetBundle.hpp"
+ #include "AppConfig.hpp"
+ 
++#ifdef __APPLE__
++// get_default_bed_type() below tests TARGET_OS_OSX. Without this header the
++// macro is undefined, an #if reads it as zero, and the iOS answer compiles
++// into the macOS build - the same gap 0416 found in three other files.
++#include <TargetConditionals.h>
++#endif
++
+ #ifdef _MSC_VER
+     #define WIN32_LEAN_AND_MEAN
+     #define NOMINMAX
+@@ -1004,6 +1011,19 @@
+         }
+     }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Textured PEI unless the profile named a plate itself.
++    //
++    // This is the answer for a printer whose bed has never been chosen - it is
++    // where Sidebar::update_presets() lands when
++    // app_config->get_printer_setting(printer, "curr_bed_type") is empty, which
++    // is every printer until the user picks a plate in the sidebar. Upstream
++    // answers Cool Plate for the P1/X1 models and High Temp otherwise; this
++    // port answers Textured PEI, which is the plate these machines are shipped
++    // and used with. An explicit choice still wins: it is stored per printer
++    // and read before this function is reached.
++    return BedType::btPTE;
++#else
+     std::string model_id = this->get_printer_type(preset_bundle);
+     if (model_id == "BL-P001" || model_id == "BL-P002" || model_id == "C13") {
+         return BedType::btPC;
+@@ -1011,6 +1031,7 @@
+         return BedType::btPEI;
+     }
+     return BedType::btPEI;
++#endif
+ }
+ 
+ bool Preset::has_cali_lines(PresetBundle* preset_bundle)

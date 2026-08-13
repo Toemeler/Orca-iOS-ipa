@@ -1,0 +1,167 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -59,6 +59,11 @@
+ // src/slic3r/GUI/ios_gl_compat.cpp
+ extern void orca_ios_note_default_framebuffer();
+ extern unsigned orca_ios_default_framebuffer();
++// src/libvgcode/src/ViewerImpl.cpp - microseconds spent rebuilding the enabled
++// segment set, which is what a slider step costs. A different library, linked
++// into the same binary, so the symbol resolves; MainFrame.cpp reads the same
++// counter to print vg_enabled_ms.
++namespace libvgcode { extern std::atomic<uint64_t> orca_ios_vg_enabled_us; }
+ #endif
+ 
+ #include <wx/glcanvas.h>
+@@ -8741,56 +8746,66 @@
+ }
+ 
+ #ifdef __WXOSX_IPHONE__
+-// Has the slider stopped moving?
++// May this slider value go to the viewer on this frame?
+ //
+-// Handing a new range to the G-code viewer is not a cheap redraw: libvgcode
+-// walks every vertex to rebuild its enabled-segment, colour and
+-// height/width/angle arrays and re-uploads them. At 1.6 million vertices that
+-// measured at about 775 ms, and it was being done once per drag step, from
+-// inside _render_gcode() - which is inside render(). The numbers were
+-// unambiguous about where the time went:
++// 0390 answered "not until it has stopped moving, and then 250 ms later",
++// because handing a new range to libvgcode measured at about 775 ms and
++// nothing usable can be built on a 775 ms unit of work. Two things have
++// happened since, and both of them were in that number.
+ //
+-//   render +6  render_ms 4672  gcode_ms 4657  swap_ms 0  worst_ms 793
++// The draw was most of it. 0410 found the toolpath being submitted as 623 000
++// instanced draws of eight vertices, replaced it with one flat indexed draw,
++// and the same frame went from 241 ms to 6-13 ms - nineteen to forty-three
++// times. 0411 took the load peak down beside it. What is left in a drag step
++// is libvgcode's own walk over the vertices to rebuild the enabled-segment set
++// and re-upload it, which the frame report already times, as vg_enabled_ms.
+ //
+-// gcode_ms is the whole frame and swap_ms is nothing, so the GPU was taking
+-// frames instantly and the cost was CPU work inside the viewer. Throttling
+-// cannot fix a 775 ms unit of work - even one per second leaves the app
+-// unusable - so the rebuild has to not happen until the value stops changing.
++// So the toolpaths follow the slider now, which is what the preview is for,
++// and the only thing left worth limiting is how much of the clock that rebuild
++// may have. The rule is one line: apply once at least as long has passed since
++// the last apply as the last rebuild took. Where a rebuild is 10 ms that is
++// every frame - live. Where it is 300 ms it is three times a second, and the
++// drag still draws at the frame rate in between, because only the rebuild is
++// being spaced out, not the frame.
+ //
+-// Which is what this does: report settled once the range has held still for
+-// 250 ms. During a drag the slider still moves and still draws, at the ~39 ms
+-// per frame the scene costs on its own; the toolpaths catch up a quarter of a
+-// second after the user lets go. Two independent slots because the layer and
+-// moves sliders settle separately.
+-static bool orca_ios_slider_settled(int slot, double low, double high)
++// The value the slider stops on is never lost: it stays dirty until it is
++// applied, and the caller asks for the frame that comes back here.
++//
++// Two slots because the layer and the moves slider are dragged separately.
++static bool orca_ios_slider_should_apply(int slot, double low, double high, uint64_t rebuild_us)
+ {
+     struct Slot {
+         double low  = std::numeric_limits<double>::quiet_NaN();
+         double high = std::numeric_limits<double>::quiet_NaN();
+-        std::chrono::steady_clock::time_point since;
+-        bool applied = false;
++        std::chrono::steady_clock::time_point applied;
++        bool started = false;
+     };
+     static Slot slots[2];
+     Slot &s = slots[slot == 0 ? 0 : 1];
+ 
+     const auto now = std::chrono::steady_clock::now();
+     if (!(low == s.low) || !(high == s.high)) {
+-        s.low     = low;
+-        s.high    = high;
+-        s.since   = now;
+-        s.applied = false;
+-        // A slider that just moved is the view being moved, so the toolpaths
+-        // should drop to interaction detail for the same reason an orbit does.
+-        // This is the one place that knows a slider is mid-drag: the drag
+-        // itself is handled inside ImGui and never reaches an event handler.
++        s.low  = low;
++        s.high = high;
++        // A slider that just moved is the view being moved, and the one place
++        // that can tell: the drag itself is handled inside ImGui and never
++        // reaches an event handler.
+         orca_ios_note_interaction();
+-        return false;
+     }
+-    if (s.applied)
+-        return true;   // unchanged and already applied: nothing to defer
+-    if (now - s.since < std::chrono::milliseconds(250))
++
++    if (!s.started) {
++        s.started = true;
++        s.applied = now;
++        return true;
++    }
++
++    // Capped, because the cap is what keeps a very large model answering at
++    // all: three times a second is a preview being scrubbed, once every two
++    // seconds is a preview that has stopped.
++    const auto gap = std::chrono::microseconds(std::min<uint64_t>(rebuild_us, 300000));
++    if (now - s.applied < gap)
+         return false;
+-    s.applied = true;
++    s.applied = now;
+     return true;
+ }
+ #endif // __WXOSX_IPHONE__
+@@ -8806,7 +8821,25 @@
+     // the other candidate for a 1.2 second frame.
+     OrcaIosScopedTimer orca_ios_gcode_timer(orca_ios_canvas_gcode_us);
+ #endif
++#ifdef __WXOSX_IPHONE__
++    // What the rebuild the last slider step asked for actually cost.
++    //
++    // set_layers_z_range() only raises a flag; the work happens at the top of
++    // libvgcode's own render(), which is inside the call below, and it already
++    // times itself into the counter the frame report prints as vg_enabled_ms.
++    // Reading the counter either side of the call is therefore the measurement,
++    // with no new timing code and nothing that can disagree with the report.
++    const uint64_t orca_ios_vg_before = libvgcode::orca_ios_vg_enabled_us.load();
++#endif
+     m_gcode_viewer.render(canvas_width, canvas_height, SLIDER_RIGHT_MARGIN * GCODE_VIEWER_SLIDER_SCALE);
++#ifdef __WXOSX_IPHONE__
++    // Kept between frames: most frames rebuild nothing, and the last real cost
++    // is the honest estimate of what the next one will be.
++    static uint64_t orca_ios_rebuild_us = 0;
++    const uint64_t orca_ios_vg_spent = libvgcode::orca_ios_vg_enabled_us.load() - orca_ios_vg_before;
++    if (orca_ios_vg_spent > 0)
++        orca_ios_rebuild_us = orca_ios_vg_spent;
++#endif
+     IMSlider *layers_slider = m_gcode_viewer.get_layers_slider();
+     IMSlider *moves_slider  = m_gcode_viewer.get_moves_slider();
+ 
+@@ -8823,11 +8856,12 @@
+         set_volumes_z_range({layers_slider->GetLowerValueD(), layers_slider->GetHigherValueD()});
+         bool apply = true;
+ #ifdef __WXOSX_IPHONE__
+-        apply = orca_ios_slider_settled(0, static_cast<double>(layers_slider->GetLowerValue()),
+-                                           static_cast<double>(layers_slider->GetHigherValue()));
++        apply = orca_ios_slider_should_apply(0, static_cast<double>(layers_slider->GetLowerValue()),
++                                                static_cast<double>(layers_slider->GetHigherValue()),
++                                             orca_ios_rebuild_us);
+         if (!apply)
+-            // Still moving: leave the slider dirty so this runs again, and ask
+-            // for the frame that brings us back here.
++            // Not yet: leave the slider dirty so this runs again, and ask for
++            // the frame that brings us back here.
+             request_extra_frame();
+ #endif
+         if (apply) {
+@@ -8842,7 +8876,8 @@
+     if (moves_slider->is_dirty()) {
+         bool apply = true;
+ #ifdef __WXOSX_IPHONE__
+-        apply = orca_ios_slider_settled(1, moves_slider->GetLowerValueD(), moves_slider->GetHigherValueD());
++        apply = orca_ios_slider_should_apply(1, moves_slider->GetLowerValueD(), moves_slider->GetHigherValueD(),
++                                             orca_ios_rebuild_us);
+         if (!apply)
+             request_extra_frame();
+ #endif

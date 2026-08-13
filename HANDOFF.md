@@ -6960,3 +6960,184 @@ moves with it.
 reads as zero and the offset would compile into the macOS build. That is the
 third header in this stack with the same gap — Notebook.hpp (0372), Tabbook.hpp
 (0413), and now this one. **Check it in every file this stack reaches into.**
+
+## 0417-0421 + 0229-0230 — the preview tab, and dialogs that are windows
+
+Seven reports from the device, one build. Two of them turned out to be the
+same class of bug in two different recognizers, and one of them was a fix from
+an earlier round that had aged out of its own reasoning.
+
+### The pan jump at the end of every orbit is 0227, again
+
+**`WX_trackpadPanGesture:` had the guard without the ordering.** 0228 added a
+second pan recognizer so that two fingers on a *trackpad* slide the plate
+instead of zooming it, and guarded it with `numberOfTouches > 0` — the same
+guard `WX_scrollGesture:` uses to keep a finger drag out of the wheel path.
+0227 had already found what is wrong with that guard used alone:
+
+> by the time UIKit reports Ended the count has ALREADY dropped to zero, so the
+> guard stops protecting at exactly the wrong moment.
+
+A one-finger drag drives that recognizer too — `allowedScrollTypesMask` decides
+which *indirect* scrolls it accepts, it does not stop a direct touch from
+panning it. Began and Changed are rejected, the finger lifts, Ended arrives
+with a touch count of zero, and the whole drag's translation is delivered as a
+single pan delta. That is the plate jumping every time a finger is lifted off
+an orbit, and it is the same shape as the zoom jump 0227 fixed.
+
+`0229` drops Ended and Cancelled outright, which is what 0227 did. An indirect
+pan still starts from zero, because `wxOSX_panGesture` resets its cumulative
+origin on Began and Began still gets through.
+
+**Worth keeping as a rule: a guard copied without its ordering is not the same
+guard.** Both recognizers now read the same way, three lines apart.
+
+### The slider orbited the model because ImGui answers about last frame
+
+`ImGuiWrapper::update_mouse_data()` returns `io.WantCaptureMouse`, which
+`NewFrame()` computed from where the pointer was **then**. With a mouse that is
+harmless — the cursor has hovered the widget for at least one frame before the
+button goes down. A finger arrives with the button already down at a point
+ImGui has never been told about, so the touch is judged against wherever the
+last one ended: the press falls through to the camera, the *next* frame notices
+the slider under the finger, and from there both are being dragged at once.
+
+ImGui documents the answer in `imgui_internal.h`:
+`UpdateHoveredWindowAndCaptureFlags()` is exposed "on touch-based system that
+don't have hovering, we want to dispatch inputs to the right target (imgui vs
+imgui+app)". `0417` re-runs it on every button-down with the new position and
+no button yet held — which is the state the event is in, because
+`update_mouse_data()` is what sets `MouseDown` — and `WantCaptureMouse` then
+describes where the finger actually landed.
+
+The second half is the early return underneath it. Upstream keeps two
+exceptions to "ImGui took it, stop here": a non-empty tooltip and the
+multi-material gizmo following the cursor. Both are about a pointer *hovering*,
+neither can happen with a finger, and both hand the event to the camera as a
+side effect — the first one through sets `m_mouse.dragging` and the drag
+origin, and every step after it orbits. On iOS the rule is now the simple one:
+if ImGui wants it, ImGui gets it, unless the camera was already mid-drag when
+the finger crossed onto an ImGui window.
+
+**Both halves are needed.** The first stops the press reaching the camera; the
+second stops the drag steps reaching it.
+
+### The toolpaths follow the slider now (0390 is retired)
+
+0390 deferred the rebuild until the slider had been still for 250 ms, because
+handing a new range to libvgcode measured at ~775 ms. **Most of that number was
+the draw.** 0410 replaced 623 000 instanced draws with one flat indexed draw —
+241 ms to 6-13 ms — and 0411 took the load peak down beside it. What is left in
+a drag step is libvgcode's own walk to rebuild the enabled-segment set, which
+the frame report already times as `vg_enabled_ms`.
+
+`0418` reads that counter either side of `GCodeViewer::render()`, which is the
+measurement with no new timing code, and applies the slider value once at least
+as long has passed since the last apply as the last rebuild took (capped at 300
+ms). On a model where a rebuild is 10 ms that is every frame — live. On a very
+large one it is three times a second, and the drag still draws at the frame
+rate in between, because only the rebuild is spaced out. The value the slider
+stops on is never lost: it stays dirty until it is applied.
+
+### The toolbar was over the slider, and Preview was stealing it
+
+Two separate things behind one report.
+
+**The column is a singleton, and every canvas commits into it.** Prepare,
+Preview and the assemble view each sync from their own `on_idle`, so the last
+one to run took the toolbar away from the others — and Preview's set is one
+item (the sidebar toggle; its main toolbar and gizmos are not enabled) against
+Prepare's twenty-five. `0419` ignores a commit from a canvas that is not on
+screen, which is a three-line walk up the superview chain.
+
+**And it now clears the slider.** The vertical layer slider is pinned to the
+right of the canvas by `IMSlider::render()`; it is ImGui *inside* the GL scene
+and the toolbar is a UIKit view *above* that scene, so there is no z-order
+between them — the same shape as the legend problem in 0416. The canvas passes
+the width it has already spoken for on that edge, in canvas pixels, and the
+column moves in by it. Same constant the slider uses, converted to points with
+the host view's `contentScaleFactor`.
+
+### The plate pictures in Preview were never rendered
+
+`PartPlate::thumbnail_data` is filled by `Plater::update_all_plate_thumbnails()`
+— and the call that was meant to produce them for that column is in
+`GLCanvas3D::on_set_focus()`, when the preview canvas takes the keyboard focus.
+**There is no focus to take on this port.** `wxWidgetIPhoneImpl::SetFocus()` is
+a stub that returns `false` and no UIView sends `wxEVT_SET_FOCUS`, so the
+canvas is never told and the column comes up as plate numbers over empty
+buttons.
+
+The second half: the textures are built exactly once.
+`_update_imgui_select_plate_toolbar()` returns immediately once
+`is_render_finish` is set, so a thumbnail that becomes valid *later* — after a
+save, after a slice — is never picked up either.
+
+`0420` answers both by looking at what the column is actually holding rather
+than by hooking an event: if a plate has no thumbnail or an item has no
+texture, render what is missing and clear the flag. Rate limited to one attempt
+per two seconds, because a miss is a full offscreen pass per plate.
+
+### Textured PEI is the plate
+
+Two fallbacks, because the bed type is read from two places. `AppConfig` seeds
+`curr_bed_type` with `"1"` (btPC, Cool Plate) on a fresh install, and
+`Preset::get_default_bed_type()` answers for a printer whose bed has never been
+chosen — which is every printer until someone picks a plate in the sidebar.
+`0421` sets both to `btPTE` on iOS. An explicit choice still wins: it is stored
+per printer and read before the fallback is reached.
+
+`Preset.cpp` had no `TargetConditionals.h`. That is the fourth file in this
+stack with the same gap — see 0416 — and the check is now part of writing any
+patch that tests `TARGET_OS_OSX`.
+
+### 0230 — a dialog is a window
+
+`wxCAPTION | wxCLOSE_BOX`, or `wxDEFAULT_DIALOG_STYLE` which contains both, is
+how every dialog in this application asks for a title bar with an X in it. On
+Windows and macOS the window manager draws that bar. On iOS there is no window
+manager: `wxNonOwnedWindowIPhoneImpl::Create()` reads `wxCAPTION` into an empty
+branch, so a dialog arrived as a bare rectangle of controls — no title, no
+edge, no way to dismiss it. Two open at once were indistinguishable from one,
+and a dialog clamped to exactly the screen was indistinguishable from the
+application behind it. That is the "borders run into the other UI".
+
+So the port draws the bar: one `UIView` per decorated window above the window's
+root view, carrying the title and a close button on the iOS 26 glass material,
+with the window inset from the screen edges, its corners rounded, and a dim
+backdrop between it and everything below.
+
+**The header is not client area**, and that is the whole of how it stays out of
+the dialog's way. `GetContentArea()` hands its height back, so
+`GetClientAreaOrigin()` offsets every child the sizer places, `DoGetClientSize()`
+reports the room that is left, and `Fit()` / `SetSizerAndFit()` — which both go
+through `GetSize() - GetClientSize()` — grow the window rather than losing the
+bottom row of buttons behind the bar. It is exactly how a native title bar is
+accounted for on the desktop ports.
+
+**The X sends `wxEVT_CLOSE_WINDOW`**, which is what a desktop title bar's X
+sends: `wxDialogBase::OnCloseWindow` turns it into `EndDialog(wxID_CANCEL)` and
+an application may veto it. It is dispatched asynchronously and disarms itself
+on the tap, because closing a modal dialog unwinds the modal loop and can
+release the button's own view while it is still inside its action method.
+
+**The backdrop never takes a touch.** Swallowing them would be the correct modal
+behaviour and the wrong risk here: a window left up by mistake — and this port
+has had several — would then take the whole application with it rather than
+merely dimming it.
+
+**`UIGlassEffect` is compiled out, not `@available`-guarded.** It is a class:
+on an SDK that has never heard of it the availability check does not help, the
+name does not resolve, and the build fails. wx is built by more than one
+workflow here and `ios-step2-wxwidgets` / `ios-wx-only` still build at
+`IOS_MIN=17.0` on purpose. `__IPHONE_OS_VERSION_MAX_ALLOWED >= 260000` decides
+whether the glass path exists at all, and a system material stands in below it.
+
+### Not verified on device yet
+
+All of the above is reasoned from the sources and from the counters the earlier
+rounds installed; none of it has been through a device build at the time of
+writing. The two with the most surface are the dialog chrome (every wxDialog in
+the application changes size by 52 points) and the plate-thumbnail pass (an
+offscreen render started from an idle). If a dialog comes up with its bottom
+row clipped, `GetContentArea()` is the one place to look.

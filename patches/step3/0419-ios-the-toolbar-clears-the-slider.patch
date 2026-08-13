@@ -1,0 +1,123 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -136,7 +136,9 @@
+ void orca_ios_toolbar_begin();
+ void orca_ios_toolbar_add(const char *id, const char *icon, const char *tooltip,
+                           bool enabled, bool selected, bool collapsed);
+-void orca_ios_toolbar_commit(void *canvas, void *host_view);
++// right_inset_px: what the canvas has already spoken for on its trailing edge,
++// in canvas pixels. See orca_ios_sync_toolbar().
++void orca_ios_toolbar_commit(void *canvas, void *host_view, float right_inset_px);
+ // src/slic3r/GUI/ios_webview_support.mm - the tab bar's selection, the plus and
+ // the canvas wake, driven from the idle rather than from a page-changed event.
+ void orca_ios_native_tick();
+@@ -9255,7 +9257,24 @@
+                              collapsed);
+     }
+ 
+-    orca_ios_toolbar_commit(this, (void *) m_canvas->GetHandle());
++    // What the canvas itself has already claimed on that edge.
++    //
++    // On Preview the vertical layer slider is pinned to the right of the
++    // canvas - IMSlider::render() places its window at (canvas_width, ...)
++    // with a right-hand pivot - and it is ImGui drawn inside the GL scene,
++    // while this column is a UIKit view above that scene. There is no z-order
++    // between the two to fix and no way to make the slider narrower without
++    // changing what it looks like on every other platform, so the column moves
++    // in by the width of the slider's window instead. Same number the slider
++    // itself uses, in the same units, taken from the same place.
++    float right_inset_px = 0.0f;
++    if (m_canvas_type == ECanvasType::CanvasPreview && m_gcode_viewer.has_data()) {
++        const IMSlider *const layers_slider = m_gcode_viewer.get_layers_slider();
++        if (layers_slider != nullptr && !layers_slider->is_horizontal())
++            right_inset_px = IMSlider::vertical_slider_window_width() * layers_slider->m_scale;
++    }
++
++    orca_ios_toolbar_commit(this, (void *) m_canvas->GetHandle(), right_inset_px);
+ }
+ 
+ // A tap. Both branches end in the very call the GL toolbars made on a click, so
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -891,6 +891,12 @@
+ 
+ @interface OrcaToolbar : UIView
+ @property (nonatomic, assign) void *canvas;          // GLCanvas3D *, owned by wx
++// How much of the trailing edge belongs to something else - in points, from
++// the canvas that committed. On Preview that is the vertical layer slider,
++// which is drawn inside the GL canvas along the right hand edge and cannot
++// move: it is ImGui inside the scene, and this column is a UIKit view above
++// it, so there is no z-order between them to arrange. The column moves instead.
++@property (nonatomic, assign) CGFloat rightInset;
+ - (void)setItems:(NSArray<NSDictionary *> *)items;
+ - (void)reposition;
+ @end
+@@ -1074,7 +1080,15 @@
+     if (h > room)
+         h = room;
+ 
+-    const CGFloat x = hb.size.width - safe.right - kOrcaToolMargin - w;
++    // Clear of whatever the canvas has reserved on that edge - the layer
++    // slider on Preview - and never pushed off the other side of a narrow
++    // screen by it.
++    CGFloat inset = self.rightInset;
++    const CGFloat headroom = hb.size.width - safe.left - safe.right - 2 * kOrcaToolMargin - w;
++    if (inset > headroom)
++        inset = MAX(0.0, headroom);
++
++    const CGFloat x = hb.size.width - safe.right - kOrcaToolMargin - inset - w;
+     const CGFloat y = top + (hb.size.height - top - safe.bottom - h) * 0.5f;
+     self.frame = CGRectMake(x, y, w, h);
+     [self layoutIfNeeded];
+@@ -2206,12 +2220,37 @@
+     }];
+ }
+ 
+-void orca_ios_toolbar_commit(void *canvas, void *host_view)
++// Is this view actually on screen? A hidden notebook page is still a view with
++// a superview and a window, so "has a window" is not the question.
++static BOOL orca_ios_view_on_screen(UIView *view)
++{
++    if (view == nil || view.window == nil)
++        return NO;
++    for (UIView *v = view; v != nil; v = v.superview) {
++        if (v.hidden || v.alpha < 0.01)
++            return NO;
++    }
++    return YES;
++}
++
++void orca_ios_toolbar_commit(void *canvas, void *host_view, float right_inset_px)
+ {
+     UIView *const host = (UIView *) host_view;
+     if (host == nil || gs_orca_tool_pending == nil || gs_orca_toolbar_failed)
+         return;
+ 
++    // ONE COLUMN, MOVED TO WHICHEVER CANVAS IS SHOWING.
++    //
++    // Every GLCanvas3D syncs from its own idle - Prepare's, Preview's and the
++    // assemble view's - and they all commit into this one view, so the last
++    // one to run took it away from the others. Prepare and Preview were
++    // therefore trading the toolbar back and forth every idle, and Preview's
++    // set of items (the sidebar toggle; its main toolbar and gizmos are not
++    // enabled) was overwriting Prepare's twenty-five. A canvas that is not on
++    // screen has nothing to say about a bar the user can see.
++    if (!orca_ios_view_on_screen(host))
++        return;
++
+     // Caught for the reason the tab bar is: this runs from on_idle, inside
+     // wx's event dispatch, and an NSException coming up through wx is an
+     // abort() rather than a bug report. See run 131.
+@@ -2223,6 +2262,12 @@
+         }
+         gs_orca_toolbar.canvas = canvas;
+ 
++        // Into points. The canvas measures in drawable pixels - everything
++        // ImGui draws inside it is in those - and this is UIKit.
++        const CGFloat scale = host.contentScaleFactor > 0 ? host.contentScaleFactor
++                                                          : [UIScreen mainScreen].scale;
++        gs_orca_toolbar.rightInset = right_inset_px > 0 ? right_inset_px / scale : 0;
++
+         if (gs_orca_toolbar.superview != host)
+             [host addSubview:gs_orca_toolbar];
+         [host bringSubviewToFront:gs_orca_toolbar];

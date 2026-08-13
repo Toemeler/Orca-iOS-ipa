@@ -1,0 +1,76 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -4505,6 +4505,45 @@
+         // ignore left up events coming from imgui windows and not processed by them
+         m_mouse.ignore_left_up = true;
+     m_tooltip.set_in_imgui(false);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // A finger has no hover, and ImGui answers "is this mine?" from last frame.
++    //
++    // ImGuiWrapper::update_mouse_data() below returns io.WantCaptureMouse, and
++    // that flag was computed by the previous NewFrame() from where the pointer
++    // was THEN. With a mouse that is harmless: the pointer has been sitting on
++    // the widget for at least one frame before the button goes down, so the
++    // answer is about the right place. A finger arrives with the button already
++    // down, at a point ImGui has never been told about - so the touch is judged
++    // against wherever the last one ended, the press falls through to the
++    // camera, and only the frame after it does ImGui notice the slider under
++    // the finger. From there both are being dragged at once, which is the
++    // preview scrubbing its layers and orbiting the model in the same gesture.
++    //
++    // ImGui answers exactly this question, and says so:
++    // UpdateHoveredWindowAndCaptureFlags() is exposed in imgui_internal.h with
++    // the comment "on touch-based system that don't have hovering, we want to
++    // dispatch inputs to the right target (imgui vs imgui+app)". Re-running it
++    // with the new position and no button yet held - which is the state this
++    // event is in, because update_mouse_data() is what sets MouseDown - leaves
++    // WantCaptureMouse describing where the finger actually landed.
++    //
++    // Only between frames, which is where an event handler runs. The hit test
++    // inside walks the windows and skips the ones that are not Active, and
++    // NewFrame() clears that flag on every window and lets each one set it
++    // again as it draws - so between frames Active means "was in the last
++    // frame", which is what the test wants, and inside an open frame it is
++    // half rebuilt and means nothing yet.
++    //
++    // GetCurrentContext() first: display_initialized() reads ImGui::GetIO(),
++    // which dereferences the context.
++    if ((evt.LeftDown() || evt.RightDown() || evt.MiddleDown()) &&
++        ImGui::GetCurrentContext() != nullptr &&
++        !ImGui::GetCurrentContext()->WithinFrameScope &&
++        imgui->display_initialized()) {
++        ImGui::GetIO().MousePos = ImVec2((float) pos(0), (float) pos(1));
++        ImGui::UpdateHoveredWindowAndCaptureFlags();
++    }
++#endif
+     if (imgui->update_mouse_data(evt)) {
+         if ((evt.LeftDown() || (evt.Moving() && (evt.AltDown() || evt.ShiftDown()))) && m_canvas != nullptr)
+             m_canvas->SetFocus();
+@@ -4517,8 +4556,27 @@
+         m_dirty = true;
+         // do not return if dragging or tooltip not empty to allow for tooltip update
+         // also, do not return if the mouse is moving and also is inside MM gizmo to allow update seed fill selection
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Both of those exceptions are about a pointer HOVERING: keeping a
++        // tooltip alive under a cursor, and letting the multi-material gizmo
++        // follow one with no button held. A finger does neither - it is either
++        // down or gone - and the exceptions have a side effect that costs this
++        // port a great deal: an event that falls through here reaches the
++        // camera, and the first one to do so sets m_mouse.dragging and the drag
++        // origin, after which every further step orbits the view underneath
++        // whatever ImGui window the finger is actually holding. That is the
++        // preview slider scrubbing and the model spinning in one gesture.
++        //
++        // So here the rule is the simple one: if ImGui wants the event, ImGui
++        // gets it, and nothing else does - unless the camera was already in the
++        // middle of its own drag when the finger crossed onto an ImGui window,
++        // which is the one case the gesture does belong to the canvas.
++        if (!m_mouse.dragging)
++            return;
++#else
+         if (!m_mouse.dragging && m_tooltip.is_empty() && (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation || !evt.Moving()))
+             return;
++#endif
+     }
+ 
+ #ifdef __WXMSW__

@@ -1,0 +1,39 @@
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -619,10 +619,35 @@
+ // one-finger drag that belongs to the pointer. Sharing s_last above with the
+ // touch pan is safe for the same reason - fingers are either on the screen or
+ // on the trackpad, never driving both at once, and each run resets it on Began.
++//
++// THE TOUCH COUNT STOPS PROTECTING AT THE END OF THE GESTURE, and that is the
++// whole bug this second guard exists for. It is the same mistake 0227 found in
++// WX_scrollGesture: and it was reintroduced here, in the recognizer 0228 added
++// afterwards, because the guard was copied without the ordering that makes it
++// work.
++//
++// A one-finger drag on the glass drives this recognizer too - the scroll type
++// mask only decides which *indirect* scrolls it accepts, it does not stop a
++// direct touch from panning it. Began and Changed are correctly rejected below,
++// because the finger is on the screen and the count is 1. Then the finger
++// lifts, UIKit reports Ended with a touch count of ZERO, the guard passes, and
++// wxOSX_panGesture runs once with the cumulative translation of the entire
++// drag as a single delta. On the 3D canvas that is a pan jump at the end of
++// every orbit, which is exactly what the device showed.
++//
++// Ended and Cancelled carry no motion that Changed has not already delivered,
++// so they are dropped outright. An indirect pan still begins from zero:
++// wxOSX_panGesture resets s_last on Began, and Began is one of the two states
++// that still get through.
+ void wxOSX_trackpadPanGesture(UIView* self, SEL _cmd, UIPanGestureRecognizer* gesture)
+ {
+-    if ( [gesture numberOfTouches] > 0 )
++    const UIGestureRecognizerState state = [gesture state];
++    if ( state != UIGestureRecognizerStateBegan &&
++         state != UIGestureRecognizerStateChanged )
+         return;
++
++    if ( [gesture numberOfTouches] > 0 )
++        return;     // a real drag, already handled as touches
+     wxOSX_panGesture(self, _cmd, gesture);
+ }
+ 

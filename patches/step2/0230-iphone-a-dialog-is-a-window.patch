@@ -1,0 +1,445 @@
+--- a/src/osx/iphone/nonownedwnd.mm
++++ b/src/osx/iphone/nonownedwnd.mm
+@@ -81,6 +81,279 @@
+ 
+ 
+ 
++// The first top level window shown is the application's main frame. Everything
++// after it - a dialog, a preferences panel, a wizard, a combo box drop-down -
++// is meant to appear *over* it, and on this port none of them did.
++//
++// Each wxTopLevelWindow becomes its own UIWindow here. A wxDialog carries
++// wxCAPTION, which lands in an empty branch in Create() and leaves the level at
++// UIWindowLevelNormal, the same as the main frame. UIKit gives no defined
++// z-order between windows at equal level, and -makeKeyWindow moves key status
++// rather than order, so a dialog was created, told to show, and never seen.
++static UIWindow* gs_mainWindow = nil;
++
++// ---------------------------------------------------------------------------
++// A dialog that looks like a window
++//
++// wxCAPTION and wxCLOSE_BOX are how a wxDialog asks for a title bar with an X
++// in it, and every dialog in this application asks for one - "wxCAPTION |
++// wxCLOSE_BOX" or wxDEFAULT_DIALOG_STYLE, which contains both. On Windows and
++// on macOS the window manager draws that bar. On iOS there is no window
++// manager: Create() below reads wxCAPTION into an empty branch, so a dialog
++// arrived as a bare rectangle of controls with no title, no edge and no way to
++// dismiss it. Two dialogs open at once were indistinguishable from one, and a
++// dialog that filled the screen was indistinguishable from the application
++// itself - which is the "the borders run into the other UI" the port was
++// reported with.
++//
++// So the port draws the bar. It is one UIView per decorated window, sitting
++// above the window's root view, carrying the title and a close button, on the
++// iOS 26 glass material; the window is inset from the screen edges, its corners
++// are rounded, and a dim backdrop sits between it and everything below. The
++// header is NOT client area - GetContentArea() hands its height back, which is
++// exactly how a native title bar is accounted for on the desktop ports, so
++// wxDialog::Fit() sizes the window to its contents plus the bar, and the bar
++// covers nothing the dialog drew.
++//
++// The X sends wxEVT_CLOSE_WINDOW, which is what a desktop title bar's X sends:
++// wxDialog turns it into EndModal(wxID_CANCEL) and an application may veto it,
++// so nothing here decides on its own that a window may close.
++//
++// It is given to EVERY decorated window, including the ones whose style leaves
++// wxCLOSE_BOX out. On a desktop those are closed from the keyboard or the
++// window menu, and this device has neither; a dialog with no way out is a dead
++// end for the whole application, which is worse than a close button the author
++// did not ask for.
++static const CGFloat kwxOSXDialogHeaderHeight = 52;
++static const CGFloat kwxOSXDialogCornerRadius = 26;
++static const CGFloat kwxOSXDialogScreenMargin = 22;
++
++// Called by the close button below.
++static void wxOSXDialogChromeClose(void* peer)
++{
++    wxNonOwnedWindow* const now = static_cast<wxNonOwnedWindow*>(peer);
++    if ( now == nullptr )
++        return;
++    now->Close();
++}
++
++@interface wxOSXDialogChrome : UIView
++// The wxNonOwnedWindow this bar belongs to. Weak by nature - the window owns
++// the UIWindow which owns this view, so it cannot outlive its peer - and
++// cleared in WillBeDestroyed() so a queued tap cannot reach a dead window.
++@property (nonatomic, assign) void* peer;
++- (void)setTitleText:(NSString*)text;
++// Re-arms the close button, which disarms itself on the tap that closes the
++// window: a dialog that is shown again is a new interaction.
++- (void)setEnabledForShow;
++@end
++
++@implementation wxOSXDialogChrome {
++    UIVisualEffectView* _glass;
++    UILabel*            _title;
++    UIButton*           _close;
++    UIView*             _hairline;
++}
++
++- (instancetype)initWithFrame:(CGRect)frame
++{
++    self = [super initWithFrame:frame];
++    if ( self == nil )
++        return nil;
++
++    self.backgroundColor    = [UIColor clearColor];
++    self.autoresizingMask   = UIViewAutoresizingFlexibleWidth;
++
++    // Liquid Glass where there is Liquid Glass to have.
++    //
++    // Compiled out entirely rather than merely @available-guarded, because
++    // UIGlassEffect is a CLASS: on an SDK that has never heard of it the guard
++    // does not help, the name does not resolve, and the build fails. wx is
++    // built by more than one workflow in this repo and not all of them pin an
++    // Xcode with the iOS 26 SDK - ios-step2-wxwidgets and ios-wx-only still
++    // build against 17.0 on purpose, to keep a green wx while the GUI stack
++    // moves. The runtime check inside is the ordinary one, for a binary built
++    // against 26 and run on something older.
++    UIVisualEffect* material = nil;
++#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
++    if ( @available(iOS 26.0, *) )
++        material = [[[UIGlassEffect alloc] init] autorelease];
++#endif
++    if ( material == nil )
++        material = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThickMaterial];
++
++    _glass = [[UIVisualEffectView alloc] initWithEffect:material];
++    _glass.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
++    [self addSubview:_glass];
++
++    _title = [[UILabel alloc] initWithFrame:CGRectZero];
++    _title.font          = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
++    _title.textColor     = [UIColor labelColor];
++    _title.textAlignment = NSTextAlignmentCenter;
++    _title.lineBreakMode = NSLineBreakByTruncatingTail;
++    [_glass.contentView addSubview:_title];
++
++    // The separator, so the bar reads as a bar even when the dialog behind it
++    // happens to be the same colour as the glass.
++    _hairline = [[UIView alloc] initWithFrame:CGRectZero];
++    _hairline.backgroundColor = [UIColor separatorColor];
++    [_glass.contentView addSubview:_hairline];
++
++    _close = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
++    [_close setImage:[UIImage systemImageNamed:@"xmark"] forState:UIControlStateNormal];
++    _close.tintColor              = [UIColor labelColor];
++    _close.accessibilityLabel     = @"Close";
++    _close.pointerInteractionEnabled = YES;
++    _close.layer.cornerRadius     = 15;
++    _close.layer.cornerCurve      = kCACornerCurveContinuous;
++    _close.backgroundColor        = [UIColor colorWithWhite:0.5 alpha:0.18];
++    [_close addTarget:self action:@selector(closeTapped:)
++     forControlEvents:UIControlEventTouchUpInside];
++    [_glass.contentView addSubview:_close];
++
++    return self;
++}
++
++- (void)dealloc
++{
++    [_close release];
++    [_hairline release];
++    [_title release];
++    [_glass release];
++    [super dealloc];
++}
++
++- (void)setTitleText:(NSString*)text
++{
++    _title.text = text != nil ? text : @"";
++}
++
++- (void)setEnabledForShow
++{
++    _close.enabled = YES;
++}
++
++- (void)closeTapped:(id)sender
++{
++    (void) sender;
++    // Once. Closing a modal dialog ends the modal event loop and can destroy
++    // the window - and with it this view - so a second queued tap would run
++    // against freed memory.
++    _close.enabled = NO;
++
++    // Asynchronously for the same reason: -Close() may unwind the modal loop
++    // and release this view while it is still inside its own action method.
++    void* const peer = self.peer;
++    dispatch_async(dispatch_get_main_queue(), ^{
++        wxOSXDialogChromeClose(peer);
++    });
++}
++
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++
++    const CGRect b = self.bounds;
++    _glass.frame = b;
++
++    const CGFloat side = 30;
++    const CGFloat pad  = 11;
++    _close.frame = CGRectMake(b.size.width - pad - side,
++                              (b.size.height - side) / 2, side, side);
++    _title.frame = CGRectMake(pad + side + 6, 0,
++                              MAX(0.0, b.size.width - 2 * (pad + side + 6)), b.size.height);
++    _hairline.frame = CGRectMake(0, b.size.height - 0.5, b.size.width, 0.5);
++}
++
++// Only the close button belongs to this view. Everything else falls through,
++// so nothing that lands on the bar can be swallowed away from the window.
++- (UIView*)hitTest:(CGPoint)point withEvent:(UIEvent*)event
++{
++    UIView* const hit = [super hitTest:point withEvent:event];
++    if ( hit != nil && (hit == _close || [hit isDescendantOfView:_close]) )
++        return _close;
++    return nil;
++}
++@end
++
++// Which windows get the bar. Stable over a window's life: it is decided by the
++// window style and by identity, never by anything that changes while it is up,
++// because GetContentArea() below is asked the same question on every layout.
++static bool wxOSXWantsDialogChrome(const wxNonOwnedWindow* now, UIWindow* win)
++{
++    if ( now == nullptr )
++        return false;
++    if ( win != nil && win == gs_mainWindow )
++        return false;                       // the application's own frame
++
++    const long style = now->GetWindowStyle();
++    // A drop-down, a menu or a tooltip is chrome for something else already.
++    if ( (style & (wxPOPUP_WINDOW | wxFRAME_TOOL_WINDOW)) != 0 )
++        return false;
++
++    return (style & wxCAPTION) != 0;
++}
++
++// The dim behind the frontmost dialog. Weak references: these windows are owned
++// by their wxNonOwnedWindow and are released without telling anyone.
++static NSHashTable* gs_dialogWindows = nil;
++static UIWindow*    gs_dimWindow = nil;
++
++static void wxOSXUpdateDialogBackdrop(UIWindow* owner)
++{
++    const bool wanted = gs_dialogWindows != nil && [gs_dialogWindows count] > 0;
++
++    if ( !wanted )
++    {
++        [gs_dimWindow setHidden:YES];
++        return;
++    }
++
++    if ( gs_dimWindow == nil )
++    {
++        gs_dimWindow = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
++        gs_dimWindow.backgroundColor = [UIColor colorWithWhite:0 alpha:0.34];
++        // Just below the dialogs, which sit at UIWindowLevelAlert + 1.
++        gs_dimWindow.windowLevel = UIWindowLevelAlert + 0.5;
++        // AND IT NEVER TAKES A TOUCH. A backdrop that swallowed them would be
++        // the correct modal behaviour and the wrong risk on this port: a
++        // window that is left up by mistake - and this port has had several -
++        // would then take the whole application with it rather than merely
++        // dimming it.
++        gs_dimWindow.userInteractionEnabled = NO;
++        UIViewController* const vc = [[[UIViewController alloc] init] autorelease];
++        vc.view.backgroundColor        = [UIColor clearColor];
++        vc.view.userInteractionEnabled = NO;
++        gs_dimWindow.rootViewController = vc;
++    }
++
++    // A window created without a scene never appears once the application has
++    // one, so it takes the scene of the dialog it is dimming for.
++    if ( owner != nil && owner.windowScene != nil )
++        gs_dimWindow.windowScene = owner.windowScene;
++
++    gs_dimWindow.frame = [[UIScreen mainScreen] bounds];
++    [gs_dimWindow setHidden:NO];
++}
++
++// The bar of a window, created on the first show.
++static wxOSXDialogChrome* wxOSXDialogChromeFor(UIWindow* win, void* peer)
++{
++    for ( UIView* v in [win subviews] )
++    {
++        if ( [v isKindOfClass:[wxOSXDialogChrome class]] )
++            return (wxOSXDialogChrome*) v;
++    }
++
++    wxOSXDialogChrome* const chrome =
++        [[[wxOSXDialogChrome alloc] initWithFrame:CGRectMake(0, 0, win.bounds.size.width,
++                                                             kwxOSXDialogHeaderHeight)] autorelease];
++    chrome.peer = peer;
++    [win addSubview:chrome];
++    return chrome;
++}
++
++
+ //
+ // c++ impl
+ //
+@@ -109,6 +382,23 @@
+ 
+ void wxNonOwnedWindowIPhoneImpl::WillBeDestroyed()
+ {
++    // The title bar holds a raw pointer to the window it closes. A tap is
++    // dispatched to the next turn of the run loop, so it can outlive the tap
++    // that queued it - but never this call, which is the last moment the peer
++    // is known to be alive.
++    if ( m_macWindow != nil )
++    {
++        for ( UIView* v in [m_macWindow subviews] )
++        {
++            if ( [v isKindOfClass:[wxOSXDialogChrome class]] )
++                ((wxOSXDialogChrome*) v).peer = nullptr;
++        }
++        if ( gs_dialogWindows != nil )
++        {
++            [gs_dialogWindows removeObject:m_macWindow];
++            wxOSXUpdateDialogBackdrop(nil);
++        }
++    }
+ }
+ 
+ void wxNonOwnedWindowIPhoneImpl::Create( wxWindow* parent, const wxPoint& pos, const wxSize& size,
+@@ -177,17 +467,6 @@
+ {
+ }
+ 
+-// The first top level window shown is the application's main frame. Everything
+-// after it - a dialog, a preferences panel, a wizard, a combo box drop-down -
+-// is meant to appear *over* it, and on this port none of them did.
+-//
+-// Each wxTopLevelWindow becomes its own UIWindow here. A wxDialog carries
+-// wxCAPTION, which lands in an empty branch in Create() and leaves the level at
+-// UIWindowLevelNormal, the same as the main frame. UIKit gives no defined
+-// z-order between windows at equal level, and -makeKeyWindow moves key status
+-// rather than order, so a dialog was created, told to show, and never seen.
+-static UIWindow* gs_mainWindow = nil;
+-
+ bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+ {
+     wxNonOwnedWindow* const now = dynamic_cast<wxNonOwnedWindow*> (GetWXPeer());
+@@ -197,6 +476,7 @@
+     // relative to the control it belongs to. Only a dialog wants centring.
+     const bool isPopup = (style & wxPOPUP_WINDOW) != 0 ||
+                          (style & wxFRAME_TOOL_WINDOW) != 0;
++    const bool decorated = wxOSXWantsDialogChrome(now, m_macWindow);
+ 
+     if ( show )
+     {
+@@ -211,13 +491,22 @@
+             {
+                 // Centre a dialog, and keep it inside the screen: a desktop
+                 // layout is routinely wider than an iPad.
++                //
++                // Inside it with room to spare, in fact. A dialog clamped to
++                // exactly the screen has its edges against the screen's, which
++                // is the state that made one indistinguishable from the
++                // application behind it; the margin is what says "this is a
++                // window standing in front of something else".
+                 const CGRect screen = [[UIScreen mainScreen] bounds];
++                const CGFloat margin = decorated ? kwxOSXDialogScreenMargin : 0;
++                const CGFloat maxW = screen.size.width  - 2 * margin;
++                const CGFloat maxH = screen.size.height - 2 * margin;
+                 CGRect r = [m_macWindow frame];
+ 
+-                if ( r.size.width <= 1 || r.size.width > screen.size.width )
+-                    r.size.width = screen.size.width;
+-                if ( r.size.height <= 1 || r.size.height > screen.size.height )
+-                    r.size.height = screen.size.height;
++                if ( r.size.width <= 1 || r.size.width > maxW )
++                    r.size.width = maxW;
++                if ( r.size.height <= 1 || r.size.height > maxH )
++                    r.size.height = maxH;
+ 
+                 r.origin.x = (screen.size.width - r.size.width) / 2;
+                 r.origin.y = (screen.size.height - r.size.height) / 2;
+@@ -232,8 +521,37 @@
+             // viewport and looks exactly like a canvas that stopped rendering.
+             [m_macWindow setWindowLevel:UIWindowLevelAlert + 1];
+         }
++
++        if ( decorated )
++        {
++            // Rounded, clipped, and carrying its title bar. The corners are on
++            // the window itself rather than on a container view because the
++            // whole point is that the dialog's own background stops there.
++            m_macWindow.layer.cornerRadius = kwxOSXDialogCornerRadius;
++            m_macWindow.layer.cornerCurve  = kCACornerCurveContinuous;
++            m_macWindow.clipsToBounds      = YES;
++
++            wxOSXDialogChrome* const chrome = wxOSXDialogChromeFor(m_macWindow, now);
++            chrome.peer = now;
++            [chrome setTitleText:wxCFStringRef(now->GetLabel()).AsNSString()];
++            [chrome setEnabledForShow];
++            chrome.frame = CGRectMake(0, 0, m_macWindow.bounds.size.width,
++                                      kwxOSXDialogHeaderHeight);
++            [m_macWindow bringSubviewToFront:chrome];
++
++            if ( gs_dialogWindows == nil )
++                gs_dialogWindows = [[NSHashTable weakObjectsHashTable] retain];
++            [gs_dialogWindows addObject:m_macWindow];
++        }
++    }
++    else if ( decorated && gs_dialogWindows != nil )
++    {
++        [gs_dialogWindows removeObject:m_macWindow];
+     }
+ 
++    if ( decorated )
++        wxOSXUpdateDialogBackdrop(show ? m_macWindow : nil);
++
+     [m_macWindow setHidden:(show ? NO : YES)];
+ 
+     if ( show )
+@@ -355,6 +673,28 @@
+     r.size.width -= (safe.left + safe.right);
+     r.size.height -= (safe.top + safe.bottom);
+ 
++    // The title bar is not client area, exactly as it is not on the desktop
++    // ports. This one function is what makes that true everywhere it matters,
++    // because wxNonOwnedWindow routes both of its answers through it:
++    //
++    //  * GetClientAreaOrigin() returns (left, top), and
++    //    wxWindowBase::AdjustForParentClientOrigin() adds it to every child the
++    //    sizer places - so the dialog's contents start below the bar rather
++    //    than under it;
++    //  * DoGetClientSize() returns what is left, which is what the sizer lays
++    //    out into, and what Fit() and SetSizerAndFit() grow the window from:
++    //    both go through GetSize() - GetClientSize(), so the bar is added back
++    //    on and the dialog gets taller instead of losing its bottom row of
++    //    buttons behind the bar.
++    if ( wxOSXWantsDialogChrome(
++             const_cast<wxNonOwnedWindowIPhoneImpl*>(this)->GetWXPeer(), m_macWindow) )
++    {
++        r.origin.y    += kwxOSXDialogHeaderHeight;
++        r.size.height -= kwxOSXDialogHeaderHeight;
++        if ( r.size.height < 0 )
++            r.size.height = 0;
++    }
++
+     width = r.size.width;
+     height = r.size.height;
+     left = r.origin.x;
+@@ -368,7 +708,17 @@
+ 
+ void wxNonOwnedWindowIPhoneImpl::SetTitle( const wxString& title )
+ {
+-// TODO change title of app ?
++    // Into the title bar the port draws for decorated windows. A window that
++    // renames itself while it is up - a wizard stepping through its pages is
++    // the usual one - says so, the way it does on every other platform.
++    for ( UIView* v in [m_macWindow subviews] )
++    {
++        if ( [v isKindOfClass:[wxOSXDialogChrome class]] )
++        {
++            [(wxOSXDialogChrome*) v setTitleText:wxCFStringRef(title).AsNSString()];
++            break;
++        }
++    }
+ }
+ 
+ bool wxNonOwnedWindowIPhoneImpl::IsMaximized() const

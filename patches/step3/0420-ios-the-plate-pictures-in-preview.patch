@@ -1,0 +1,61 @@
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -3463,6 +3463,58 @@
+     m_dirty |= d_assemble_toolbar;
+     const bool d_collapse_toolbar = wxGetApp().plater()->get_collapse_toolbar().update_items_state();
+     m_dirty |= d_collapse_toolbar;
++    // The plate thumbnails on Preview, which nothing else on this port asks for.
++    //
++    // The pictures in that column are PartPlate::thumbnail_data, rendered by
++    // Plater::update_all_plate_thumbnails() - and the call that was meant to
++    // produce them for this column is in GLCanvas3D::on_set_focus(), when the
++    // preview canvas takes the keyboard focus. There is no focus to take here:
++    // wxWidgetIPhoneImpl::SetFocus() is a stub that returns false and no UIView
++    // sends wxEVT_SET_FOCUS, so the canvas is never told, the thumbnails are
++    // never rendered, and the column comes up as plate numbers over empty
++    // buttons. That is "the small plate pictures do not work".
++    //
++    // The second half is that the textures are built exactly once:
++    // _update_imgui_select_plate_toolbar() returns immediately once
++    // is_render_finish is set, so a thumbnail that only becomes valid later -
++    // after a save, after a slice, or after the render below - is never picked
++    // up either. Clearing the flag is what asks for the rebuild; the call
++    // underneath is the rebuild.
++    //
++    // Both are answered by looking at what the column is actually holding
++    // rather than by hooking an event: if a plate has no thumbnail, or an item
++    // has no texture, render what is missing and rebuild. Once they are all
++    // there this costs one comparison per plate per idle and does nothing.
++    //
++    // No #if around it: this is already inside the iOS arm of the one above,
++    // and a second `__APPLE__ && !TARGET_OS_OSX` nested in it is precisely the
++    // mistake 0403 had to undo - a guard inside its own else can never be true.
++    if (m_canvas_type == ECanvasType::CanvasPreview && m_sel_plate_toolbar.is_enabled()) {
++        PartPlateList &plate_list = wxGetApp().plater()->get_partplate_list();
++        const int plate_count = plate_list.get_plate_count();
++        bool missing = plate_count != (int) m_sel_plate_toolbar.m_items.size();
++        for (int i = 0; !missing && i < plate_count; ++i) {
++            PartPlate *const plate = plate_list.get_plate(i);
++            if (plate == nullptr)
++                continue;
++            missing = !plate->thumbnail_data.is_valid() ||
++                      (int64_t) m_sel_plate_toolbar.m_items[i]->texture_id == 0;
++        }
++        // Rate limited, because a miss is not free: each plate that has no
++        // thumbnail is a full offscreen render pass, and a plate that cannot
++        // produce one - an empty one on a canvas that has not drawn yet - would
++        // otherwise be retried on every idle for as long as Preview is up.
++        static std::chrono::steady_clock::time_point orca_ios_thumb_last;
++        const auto orca_ios_thumb_now = std::chrono::steady_clock::now();
++        if (missing && orca_ios_thumb_now - orca_ios_thumb_last > std::chrono::seconds(2) &&
++            _set_current()) {
++            orca_ios_thumb_last = orca_ios_thumb_now;
++            // false: only the plates that have none. The ones already rendered
++            // - by a save, or by an earlier pass through here - are kept.
++            wxGetApp().plater()->update_all_plate_thumbnails(false);
++            m_sel_plate_toolbar.is_render_finish = false;
++        }
++    }
+     _update_imgui_select_plate_toolbar();
+     bool mouse3d_controller_applied = wxGetApp().plater()->get_mouse3d_controller().apply(wxGetApp().plater()->get_camera());
+     m_dirty |= mouse3d_controller_applied;

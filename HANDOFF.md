@@ -6854,3 +6854,55 @@ first, the way the index-buffer test was.
 
 Not a regression from 0410: its addition is a 6 MB static index buffer, which
 the `gpu 93 MB` line accounts for exactly.
+
+## 0411 — one array at a time on load
+
+The `std::bad_alloc` from run 159, on a **5 369 727-move** G-code against the
+2.4M one everything else was measured on. It fails while building the preview,
+before anything is drawn.
+
+`extract_pos_and_or_hwa()` filled two `std::vector<Vec4>` - a Vec4 per vertex,
+**82 MB each at that size** - and they were built together, so the peak carried
+both on top of `m_vertices`, which is the largest block in the program and is
+still alive throughout. The function already supported building one at a time
+(`update_heights_widths()` passes `nullptr` for positions), so the load path now
+does the same: build positions, upload them, release them, then build the
+heights/widths/angles.
+
+**Splitting the walk is safe, and the reason is not obvious.**
+`heights_widths_angles` carries an angle computed from `prev_line`, which
+depends on `m_valid_lines_bitset[i - 1]`. The first pass updates bit `i - 1`
+before it reaches `i`, so it is already reading the finalised value there - and
+a second pass over the finalised bitset computes the identical angle. The bitset
+must therefore be written by the first pass, which is why `true` stays on that
+call and the second takes the default `false`. Get that order wrong and the
+angles change silently.
+
+`std::vector<Vec4>().swap(positions)` rather than `clear()`, because `clear()`
+keeps the capacity, which is the whole 82 MB.
+
+Second, smaller one: `update_enabled_entities()` held three model-sized arrays
+across one call - `enabled_segments`, the coalesced runs built from it, and the
+copy `set_enabled_segments()` takes. It takes a `const&` and copies into its own
+textures, so the runs cannot be moved into it, but the list they were built from
+can be dropped first. Three become two.
+
+**Peak on that model: about 102 MB lower.** Whether that is enough for 5.37M
+moves is not established - `m_vertices` alone is far larger, and this only
+removes what was redundant. If it still throws, the next candidates are
+`m_vertices_colors` plus the copy `update_colors_texture()` makes, and then
+`m_vertices` itself, which would need chunked upload rather than a resident
+copy.
+
+### The VBO is not in this build, deliberately
+
+It bakes ~100 MB of box geometry at load, on the model that is already dying of
+memory at load. Doing both at once would have shipped a fix and its own
+counterweight in the same binary, and left no way to tell which number moved.
+The order is: land the memory work, confirm the 5.37M model opens, then bake.
+
+Also worth weighing before building it: the frame is now **13.5 ms**, of which
+paths is ~12.5 ms, and the flat draw already removed the cost that dominated.
+The VBO's remaining prize is the six texture fetches per vertex - real, but this
+is no longer a 40x lever, and it costs the memory headroom this patch just
+bought.

@@ -1,0 +1,70 @@
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index 67351b74c..690003d33 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -1194,16 +1194,45 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
+     // buffers to send to gpu
+     // the last component is a dummy float to comply with GL_RGBA32F format
+     std::vector<Vec4> positions;
+-    std::vector<Vec4> heights_widths_angles;
+     positions.reserve(m_vertices.size());
++#ifdef ENABLE_OPENGL_ES
++    // One array at a time, not both at once.
++    //
++    // A 5 369 727-move G-code threw std::bad_alloc here, before anything was
++    // drawn. Each of these is a Vec4 per vertex - 86 MB at that size - and they
++    // were built together, so the peak carried both on top of m_vertices, which
++    // is the largest block in the program and is still alive. Uploading the
++    // positions and releasing them before the other is built takes one of the
++    // two off the peak.
++    //
++    // Splitting the walk is safe, and the reason is worth stating because it is
++    // not obvious: heights_widths_angles carries an angle computed from
++    // prev_line, which depends on m_valid_lines_bitset[i - 1]. The first pass
++    // updates bit i - 1 before it reaches i, so it already reads the finalised
++    // value there - and the second pass, reading the same finalised bitset,
++    // computes the identical angle. The bitset must therefore be updated by the
++    // first pass, which is why `true` stays on this one and the second passes
++    // the default `false`.
++    extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, nullptr, true);
++#else
++    std::vector<Vec4> heights_widths_angles;
+     heights_widths_angles.reserve(m_vertices.size());
+     extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, &heights_widths_angles, true);
++#endif // ENABLE_OPENGL_ES
+ 
+     if (!positions.empty()) {
+ #ifdef ENABLE_OPENGL_ES
+         m_texture_data.init(positions.size());
+         // create and fill position textures
+         m_texture_data.set_positions(positions);
++        // Released before the second array is built, so only one of the two is
++        // ever resident. swap with an empty vector because clear() keeps the
++        // capacity, which is the whole 86 MB.
++        std::vector<Vec4>().swap(positions);
++
++        std::vector<Vec4> heights_widths_angles;
++        heights_widths_angles.reserve(m_vertices.size());
++        extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, nullptr, &heights_widths_angles);
+         // create and fill height, width and angle textures
+         m_texture_data.set_heights_widths_angles(heights_widths_angles);
+ #else
+@@ -1581,7 +1610,17 @@ void ViewerImpl::update_enabled_entities()
+ 
+ #ifdef ENABLE_OPENGL_ES
+     m_enabled_segments_raw_count = enabled_segments.size();
+-    m_texture_data.set_enabled_segments(coalesce_collinear_runs(enabled_segments));
++    // The input list is released before the textures are allocated.
++    //
++    // set_enabled_segments() takes a const reference and copies into its own
++    // textures, so the coalesced runs cannot be moved into it - but the list
++    // they were built from can be dropped first. Three arrays proportional to
++    // the model were alive across this call; now it is two.
++    {
++        std::vector<uint32_t> runs = coalesce_collinear_runs(enabled_segments);
++        std::vector<uint32_t>().swap(enabled_segments);
++        m_texture_data.set_enabled_segments(runs);
++    }
+     m_texture_data.set_enabled_options(enabled_options);
+ #else
+     m_enabled_segments_count = enabled_segments.size();

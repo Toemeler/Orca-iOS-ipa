@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
-index a35eff0..60381ae 100644
+index bf6213a..7d8e35b 100644
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
 @@ -7,6 +7,11 @@ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char
@@ -29,7 +29,7 @@ index a35eff0..60381ae 100644
      }
  
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 0b2eae1..96d384e 100644
+index 75454d8..afc6beb 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -422,6 +422,85 @@ static UITextField *orca_ios_find_text_field(UIView *view)
@@ -118,7 +118,7 @@ index 0b2eae1..96d384e 100644
  // -- the plater toolbar ----------------------------------------------------
  //
  // The same nanosvg GLTexture uses to build the toolbar atlas, so the buttons
-@@ -1736,5 +1815,180 @@ void orca_ios_toolbar_commit(void *canvas, void *host_view)
+@@ -1756,5 +1835,189 @@ void orca_ios_toolbar_commit(void *canvas, void *host_view)
      }
  }
  
@@ -216,6 +216,12 @@ index 0b2eae1..96d384e 100644
 +                                                 handler:^(__kindof UIAction *a) {
 +            (void) a;
 +            orca_ios_home_run(@"OnClickNewProject()");
++            // And go there. Making a project and being left on the home page is
++            // a dead end - there is nothing to do next but switch to Prepare.
++            // Deferred a turn so the page's handler has made the project first.
++            dispatch_async(dispatch_get_main_queue(), ^{
++                orca_ios_select_prepare();
++            });
 +        }];
 +        UIAction *const open = [UIAction actionWithTitle:
 +                [NSString stringWithUTF8String:gs_orca_home_open_title.c_str()]
@@ -279,6 +285,9 @@ index 0b2eae1..96d384e 100644
 +    const int sel = book->GetSelection();
 +    const bool on_home = sel >= 0 && sel < (int) book->GetPageCount() &&
 +                         book->GetPage((size_t) sel) == gs_orca_home_panel;
++    if (gs_orca_home_plus.hidden == (on_home ? YES : NO))
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-home: plus " << (on_home ? "shown" : "hidden")
++                                 << " for page " << sel;
 +    [gs_orca_home_plus setHidden:on_home ? NO : YES];
 +    [gs_orca_home_plus.superview bringSubviewToFront:gs_orca_home_plus];
 +}

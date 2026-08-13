@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
-index ef6cdde..5ef87ca 100644
+index ef6cdde..13427f8 100644
 --- a/src/slic3r/GUI/GLCanvas3D.cpp
 +++ b/src/slic3r/GUI/GLCanvas3D.cpp
 @@ -124,6 +124,15 @@ namespace Slic3r {
@@ -65,7 +65,7 @@ index ef6cdde..5ef87ca 100644
          if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
              mouse_up_cleanup();
          m_mouse.set_start_position_3D_as_invalid();
-@@ -9054,6 +9077,118 @@ void GLCanvas3D::_render_current_gizmo() const
+@@ -9054,6 +9077,135 @@ void GLCanvas3D::_render_current_gizmo() const
  
  //BBS: GUI refactor: GLToolbar adjust
  //move the size calc to GLCanvas
@@ -173,6 +173,23 @@ index ef6cdde..5ef87ca 100644
 +    }
 +}
 +
++// The 3D page can come up blank: the canvas is on screen and shown, and
++// nothing has asked it to draw. main's own counters name that state outright -
++// "no render; onscreen yes; (plater selected: not rendering is WRONG)" - and
++// switching to Prepare through the native tab bar is one of the ways into it,
++// because the tab bar moves the page without wx noticing anything changed.
++// Called after every selection the bar makes.
++void orca_ios_wake_canvas()
++{
++    Plater *const plater = wxGetApp().plater();
++    if (plater == nullptr)
++        return;
++    if (GLCanvas3D *const canvas = plater->get_current_canvas3D()) {
++        canvas->set_as_dirty();
++        canvas->Refresh();
++    }
++}
++
 +// Called from the toolbar view, which knows the canvas only as a void *.
 +void orca_ios_toolbar_action(void *canvas, const char *id)
 +{
@@ -184,7 +201,7 @@ index ef6cdde..5ef87ca 100644
  void GLCanvas3D::_render_gizmos_overlay()
  {
  /*#if ENABLE_RETINA_GL
-@@ -9066,6 +9201,12 @@ void GLCanvas3D::_render_gizmos_overlay()
+@@ -9066,6 +9218,12 @@ void GLCanvas3D::_render_gizmos_overlay()
      const float size = int(GLGizmosManager::Default_Icons_Size * wxGetApp().toolbar_icon_scale());
      m_gizmos.set_overlay_icon_size(size); //! #ys_FIXME_experiment
  #endif */ /* __WXMSW__ */
@@ -197,7 +214,7 @@ index ef6cdde..5ef87ca 100644
      m_gizmos.render_overlay();
  
      if (m_gizmo_highlighter.m_render_arrow)
-@@ -9095,6 +9236,14 @@ int GLCanvas3D::get_main_toolbar_offset() const
+@@ -9095,6 +9253,14 @@ int GLCanvas3D::get_main_toolbar_offset() const
  //when rendering, {0, 0} is at the center, left-up is -0.5, 0.5, right-up is 0.5, -0.5
  void GLCanvas3D::_render_main_toolbar()
  {
@@ -212,7 +229,7 @@ index ef6cdde..5ef87ca 100644
      if (!m_main_toolbar.is_enabled())
          return;
  
-@@ -9541,6 +9690,13 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
+@@ -9541,6 +9707,13 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
  //when rendering, {0, 0} is at the center, {-0.5, 0.5} at the left-up
  void GLCanvas3D::_render_assemble_view_toolbar() const
  {
@@ -226,7 +243,7 @@ index ef6cdde..5ef87ca 100644
      if (!m_assemble_view_toolbar.is_enabled())
          return;
  
-@@ -9817,6 +9973,12 @@ void GLCanvas3D::_render_canvas_toolbar()
+@@ -9817,6 +9990,12 @@ void GLCanvas3D::_render_canvas_toolbar()
  
  void GLCanvas3D::_render_separator_toolbar_right() const
  {
@@ -239,7 +256,7 @@ index ef6cdde..5ef87ca 100644
      if (!m_separator_toolbar.is_enabled())
          return;
  
-@@ -9833,6 +9995,9 @@ void GLCanvas3D::_render_separator_toolbar_right() const
+@@ -9833,6 +10012,9 @@ void GLCanvas3D::_render_separator_toolbar_right() const
  
  void GLCanvas3D::_render_separator_toolbar_left() const
  {
@@ -249,7 +266,7 @@ index ef6cdde..5ef87ca 100644
      if (!m_separator_toolbar.is_enabled())
          return;
  
-@@ -9847,6 +10012,12 @@ void GLCanvas3D::_render_separator_toolbar_left() const
+@@ -9847,6 +10029,12 @@ void GLCanvas3D::_render_separator_toolbar_left() const
  
  void GLCanvas3D::_render_collapse_toolbar() const
  {
@@ -351,7 +368,7 @@ index 94c76d8..50d93fb 100644
      // keep information about events to process
      struct MouseCapture
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index dbc27f2..0b2eae1 100644
+index f2bec63..75454d8 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -422,6 +422,352 @@ static UITextField *orca_ios_find_text_field(UIView *view)
@@ -707,7 +724,7 @@ index dbc27f2..0b2eae1 100644
  // A real UITabBarController, in place of Orca's own tab strip.
  //
  // Orca draws its Home / Prepare / Preview / Device / Project row itself, with
-@@ -1307,5 +1653,88 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
+@@ -1327,5 +1673,88 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
      });
  }
  

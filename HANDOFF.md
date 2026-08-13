@@ -5895,3 +5895,35 @@ layout again, because the inset depends on which page is showing.
 The toolbar also logs its frame and its host's bounds once per run now, so a
 column that is off the bottom of the screen can be told from one that was never
 built.
+
+### The plus belongs to the home page, and a new project belongs in Prepare
+
+Three changes, all hanging off the same moment — the page on screen changing.
+
+**The plus is home-page only.** It lives in the window, so nothing hides it on
+its own; the visibility update now also runs from the tab bar's own
+`pageDidAppear:`, not only from the notebook's page-changed event, and logs
+which way it went so "it is still there on Prepare" is answerable from a log
+rather than a screenshot.
+
+**A new project switches to Prepare.** Making one and being left on the home
+page is a dead end on this screen — there is nothing to do next. The menu action
+runs the page's `OnClickNewProject()` and then, a turn later so the handler has
+actually made the project, calls `select_tab(tp3DEditor)`.
+
+**The 3D page can come up blank**, and main's own counters already name the
+state: `no render; onscreen yes; (plater selected: not rendering is WRONG)`.
+The canvas is shown and nothing has asked it to draw. Moving pages through the
+native tab bar is one way in, because the bar changes what is on screen without
+wx noticing anything happened. Every selection the bar makes now ends in
+`orca_ios_wake_canvas()` — `set_as_dirty()` and a `Refresh()` on the current
+canvas.
+
+All three are hung off one scope-exit hook in `pageDidAppear:` so that the early
+returns in that method cannot skip them.
+
+**Autosave was not touched.** 0366 already autosaves into Documents and 0369
+already puts autosaves in Recent, so placing an object with no project open
+should save itself once the blank viewport is fixed and there is a way to place
+one. That is worth checking on the next device run rather than adding a second
+mechanism beside the one already there.

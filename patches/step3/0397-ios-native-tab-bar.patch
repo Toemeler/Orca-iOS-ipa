@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
-index aa2ee74..a35eff0 100644
+index aa2ee74..bf6213a 100644
 --- a/src/slic3r/GUI/MainFrame.cpp
 +++ b/src/slic3r/GUI/MainFrame.cpp
 @@ -4,6 +4,12 @@
@@ -34,6 +34,24 @@ index aa2ee74..a35eff0 100644
      if (m_plater) {
          // load initial config
          auto full_config = wxGetApp().preset_bundle->full_config();
+@@ -1952,6 +1970,17 @@ void MainFrame::init_tabpanel() {
+     }
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++// The tab to land on after a new project. Making one and being left looking at
++// the home page is a dead end on a screen this size - there is nothing else to
++// do next but go to Prepare, so the plus does it.
++void orca_ios_select_prepare()
++{
++    if (wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->select_tab(size_t(MainFrame::tp3DEditor));
++}
++#endif
++
+ // SoftFever
+ void MainFrame::show_device(bool bBBLPrinter) {
+     auto idx = -1;
 diff --git a/src/slic3r/GUI/Notebook.hpp b/src/slic3r/GUI/Notebook.hpp
 index 959d3c4..450e9e2 100644
 --- a/src/slic3r/GUI/Notebook.hpp
@@ -174,7 +192,7 @@ index 959d3c4..450e9e2 100644
      }
  
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 56cb485..dbc27f2 100644
+index 56cb485..f2bec63 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -27,6 +27,11 @@
@@ -189,7 +207,7 @@ index 56cb485..dbc27f2 100644
  #include <cstdlib>
  #include <boost/filesystem.hpp>
  #include <boost/log/trivial.hpp>
-@@ -417,6 +422,306 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+@@ -417,6 +422,326 @@ static UITextField *orca_ios_find_text_field(UIView *view)
  }
  
  
@@ -251,6 +269,14 @@ index 56cb485..dbc27f2 100644
 +    return std::find(gs_orca_untabbed.begin(), gs_orca_untabbed.end(), page) !=
 +           gs_orca_untabbed.end();
 +}
++
++// src/slic3r/GUI/ios_webview_support.mm and MainFrame.cpp / GLCanvas3D.cpp,
++// all further down or in another translation unit.
++namespace Slic3r { namespace GUI {
++void orca_ios_home_plus_update(wxBookCtrlBase *book);
++void orca_ios_select_prepare();
++void orca_ios_wake_canvas();
++} }
 +
 +@class OrcaTabBarController;
 +
@@ -477,6 +503,18 @@ index 56cb485..dbc27f2 100644
 +        return;
 +    if (page >= _book->GetPageCount())
 +        return;
++
++    // Whatever else happens, the page on screen has just changed, so the two
++    // things that depend on which page that is have to be told. The plus
++    // belongs to the home page alone, and the 3D canvas can sit there shown and
++    // undrawn until something asks it for a frame.
++    struct OrcaAfterSwitch {
++        wxBookCtrlBase *book;
++        ~OrcaAfterSwitch() {
++            Slic3r::GUI::orca_ios_home_plus_update(book);
++            Slic3r::GUI::orca_ios_wake_canvas();
++        }
++    } after_switch{ _book };
 +    // The tab UIKit is showing is already the notebook's page whenever we were
 +    // the ones who asked for it, so this is how a selection we made is told
 +    // apart from one the user made - no flag, and correct even though the
@@ -496,7 +534,7 @@ index 56cb485..dbc27f2 100644
  namespace Slic3r {
  namespace GUI {
  
-@@ -789,5 +1094,218 @@ std::string orca_ios_repair_container_path(const std::string &path)
+@@ -789,5 +1114,218 @@ std::string orca_ios_repair_container_path(const std::string &path)
      return path;
  }
  

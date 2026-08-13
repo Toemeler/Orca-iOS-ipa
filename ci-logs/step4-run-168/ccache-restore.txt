@@ -1,0 +1,16 @@
+cache-hit:         false
+cache-matched-key: ccache-step4-v2-31745529912
+dir:               /Users/runner/.ccache-step4
+625M	/Users/runner/.ccache-step4
+files:                 4298
+=== ccache -s before the build ===
+Cacheable calls:   23351 / 23356 (99.98%)
+  Hits:            20723 / 23351 (88.75%)
+    Direct:        20723 / 20723 (100.0%)
+    Preprocessed:      0 / 20723 ( 0.00%)
+  Misses:           2628 / 23351 (11.25%)
+Uncacheable calls:     5 / 23356 ( 0.02%)
+Local storage:
+  Cache size (GB):   0.5 /   1.5 (34.86%)
+  Hits:            20723 / 23351 (88.75%)
+  Misses:           2628 / 23351 (11.25%)

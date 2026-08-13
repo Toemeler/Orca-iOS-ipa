@@ -1,0 +1,45 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index c98d747bd..fb12ce568 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -3423,6 +3423,23 @@ void GLCanvas3D::on_idle(wxIdleEvent& evt)
+     // OR-ed into m_dirty exactly where they used to be, so no side effect moves.
+     const bool d_main_toolbar = m_main_toolbar.update_items_state();
+     m_dirty |= d_main_toolbar;
++    // Straight after the state the buttons show is recomputed. The push is
++    // cheap - the icons are cached, and the native side does nothing at all
++    // when the description has not changed since the last idle.
++    //
++    // This lives here, in the branch iOS actually compiles, and not where 0399
++    // and 0401 first put it. That was the other arm of this same #if: 0394 had
++    // turned the original body into the #else, so a call guarded by
++    // `__APPLE__ && !TARGET_OS_OSX` inside the #else of
++    // `__APPLE__ && !TARGET_OS_OSX` could never be reached on any platform. The
++    // native toolbar and the Slice/Print capsule were therefore never synced
++    // from idle at all - the states they show would have been whatever they
++    // were built with.
++    orca_ios_sync_toolbar();
++    // Slice and Print alongside it: the same idle, the same diffing on the
++    // other side, so neither costs anything when nothing has changed.
++    if (wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->orca_ios_sync_side_tools();
+     const bool d_assemble_toolbar = m_assemble_view_toolbar.update_items_state();
+     m_dirty |= d_assemble_toolbar;
+     const bool d_collapse_toolbar = wxGetApp().plater()->get_collapse_toolbar().update_items_state();
+@@ -3464,16 +3481,6 @@ void GLCanvas3D::on_idle(wxIdleEvent& evt)
+         ++orca_ios_dirty_elsewhere;
+ #else
+     m_dirty |= m_main_toolbar.update_items_state();
+-#if defined(__APPLE__) && !TARGET_OS_OSX
+-    // Straight after the state the buttons show is recomputed. The push is
+-    // cheap - the icons are cached, and the native side does nothing at all
+-    // when the description has not changed since the last idle.
+-    orca_ios_sync_toolbar();
+-    // Slice and Print alongside it: the same idle, the same diffing on the
+-    // other side, so neither costs anything when nothing has changed.
+-    if (wxGetApp().mainframe != nullptr)
+-        wxGetApp().mainframe->orca_ios_sync_side_tools();
+-#endif
+     //BBS: GUI refactor: GLToolbar
+     m_dirty |= m_assemble_view_toolbar.update_items_state();
+     // BBS

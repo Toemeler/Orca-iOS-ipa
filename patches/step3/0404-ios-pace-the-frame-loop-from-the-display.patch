@@ -1,0 +1,149 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 2e275f3cf..e48c0a155 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -4,6 +4,7 @@
+ #include <wx/display.h>
+ // src/slic3r/GUI/ios_webview_support.mm
+ namespace Slic3r { namespace GUI { void orca_ios_log_display_metrics(const char *when); } }
++namespace Slic3r { namespace GUI { void orca_ios_start_display_link(); } }
+ // src/slic3r/GUI/ios_webview_support.mm - keeps a page out of the native tab
+ // bar without taking it out of the notebook.
+ namespace Slic3r { namespace GUI { void orca_ios_hide_tab(wxWindow *page); } }
+@@ -26,6 +27,10 @@ void orca_ios_side_tools_commit();
+ #include <chrono>
+ // src/slic3r/GUI/GLCanvas3D.cpp
+ namespace Slic3r { namespace GUI {
++// src/slic3r/GUI/ios_webview_support.mm - CADisplayLink ticks. A frame rate
++// that did not move and a display link that never started look identical
++// from a log, so the link is counted rather than assumed.
++extern std::atomic<unsigned> orca_ios_display_link_ticks;
+ extern std::atomic<unsigned> orca_ios_canvas_idles;
+ extern std::atomic<unsigned> orca_ios_canvas_paints;
+ extern std::atomic<unsigned> orca_ios_canvas_renders;
+@@ -947,6 +952,11 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                                  << display_size.x << "x" << display_size.y
+                                  << ", content scale " << GetContentScaleFactor();
+         orca_ios_log_display_metrics("MainFrame");
++        // Pace the frame loop from the display rather than from whether the
++        // last frame remembered to ask for another one. Started here because
++        // this block runs exactly once, during MainFrame construction, and
++        // the run loop the link attaches to is already up.
++        orca_ios_start_display_link();
+     }
+ #else
+     SetMinSize(min_size/*wxSize(760, 490)*/);
+@@ -1231,6 +1241,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+             static uint64_t last_gsh = 0, last_gtp = 0, last_gle = 0, last_gsq = 0, last_gsl = 0;
+             static unsigned last_dtb = 0, last_dnt = 0, last_dim = 0, last_dm3 = 0;
+             static unsigned last_dgz = 0, last_dtx = 0, last_dew = 0;
++            static unsigned last_dl = 0;
++            const unsigned dl = orca_ios_display_link_ticks.load();
+             const unsigned i = orca_ios_canvas_idles.load();
+             const unsigned p = orca_ios_canvas_paints.load();
+             const unsigned r = orca_ios_canvas_renders.load();
+@@ -1251,6 +1263,11 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                                    cur_sel < (int) m_tabpanel->GetPageCount() &&
+                                    m_tabpanel->GetPage(cur_sel) == m_plater;
+             BOOST_LOG_TRIVIAL(error) << "orca-ios-canvas: last 5s idle +" << (i - last_i)
++                // Display link ticks. At 120 Hz this should be ~600 in a five
++                // second window, and idle should no longer be far below it:
++                // every tick is a run-loop iteration, and every iteration ends
++                // in the observer that runs idle.
++                << " link +" << (dl - last_dl)
+                 << " paint +" << (p - last_p) << " render +" << (r - last_r)
+                 << " mouse +" << (mo - last_m)
+                 << " swap +" << (sw - last_s) << " fail +" << (sf - last_sf)
+@@ -1311,6 +1328,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+             last_gle = orca_ios_gcv_legend_us.load();
+             last_gsq = orca_ios_gcv_sequential_us.load();
+             last_gsl = orca_ios_gcv_slider_us.load();
++            last_dl = dl;
+             last_vr = libvgcode::orca_ios_vg_full_range_us.load();
+             last_ve = libvgcode::orca_ios_vg_enabled_us.load();
+             last_vc = libvgcode::orca_ios_vg_colors_us.load();
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index b3f1b0b8b..9179fa8c0 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -39,6 +39,49 @@
+ #include <cstdlib>
+ #include <boost/filesystem.hpp>
+ #include <boost/log/trivial.hpp>
++#include <atomic>
++
++// A CADisplayLink, so that frames are paced by the display instead of by luck.
++//
++// Rendering is driven by wxIdle, and wx processes idle from a run-loop observer
++// on kCFRunLoopBeforeWaiting (src/osx/core/evtloop_cf.cpp): once per run-loop
++// iteration, just before it would sleep. GLCanvas3D::on_idle renders and calls
++// evt.RequestMore(), which makes ProcessIdle() return true, which calls WakeUp()
++// to stop the loop sleeping, which produces another iteration. That is the whole
++// frame loop, and it turns only for as long as the previous frame remembered to
++// ask for another one. Under UIApplicationMain nothing reliably does - patch
++// 0364's complaint - and it is why Prepare delivers 40 frames a second out of
++// 16 ms of work: 62 fps of rendering arriving at 40, the difference being the
++// iterations that never happened.
++//
++// What is deliberately NOT here is any rendering. The callback does nothing but
++// count, and it does not need to do more: a CADisplayLink is a run-loop source,
++// so the display waking the loop *is* an iteration, and every iteration ends in
++// the BeforeWaiting observer that runs idle. Firing at the refresh rate hands wx
++// one idle pass per displayed frame through the path that already exists - no
++// second render path to keep in step with the first, and nothing to re-enter.
++// The frame loop stops depending on whether the last frame asked for another.
++//
++// preferredFrameRateRange asks for 120 and will settle for 60. It is a request
++// in both directions: the system drops the rate for thermals, and Low Power Mode
++// pins ProMotion to 60 for every app on the device, which no app can opt out of.
++// Info.plist carries CADisableMinimumFrameDuration, without which UIKit holds
++// every app to a 16.67 ms minimum frame duration and 60 is the ceiling however
++// often this fires.
++namespace Slic3r { namespace GUI { std::atomic<unsigned> orca_ios_display_link_ticks{0}; } }
++
++@interface OrcaDisplayLinkTarget : NSObject
++- (void)tick:(CADisplayLink *)link;
++@end
++
++@implementation OrcaDisplayLinkTarget
++- (void)tick:(CADisplayLink *)link
++{
++    (void) link;
++    ++Slic3r::GUI::orca_ios_display_link_ticks;
++}
++@end
++
+ 
+ 
+ // A small number keypad, in Liquid Glass, floating directly under the field
+@@ -1387,6 +1430,30 @@ void WKWebView_setTransparentBackground(void *web)
+     webView.layer.backgroundColor = [UIColor clearColor].CGColor;
+ }
+ 
++void orca_ios_start_display_link()
++{
++    static CADisplayLink *s_link = nil;
++    if (s_link != nil)
++        return;
++
++    OrcaDisplayLinkTarget *const target = [[OrcaDisplayLinkTarget alloc] init];
++    s_link = [CADisplayLink displayLinkWithTarget:target selector:@selector(tick:)];
++    if (@available(iOS 15.0, *))
++        s_link.preferredFrameRateRange = CAFrameRateRangeMake(60.0f, 120.0f, 120.0f);
++
++    // Common modes, so the link keeps firing inside the nested run loops wx
++    // spins for modal dialogs (step2/0216). A link on the default mode alone
++    // would stop the viewport dead behind every modal - the state patch 0364
++    // was written to get out of.
++    //
++    // The run loop retains the link and the link retains its target. This file
++    // is built without ARC and neither is ever torn down - both live as long as
++    // the process - so there is nothing to release.
++    [s_link addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-displaylink: started";
++}
++
+ // The drawable is a third larger than the panel can show.
+ //
+ // UIScreen reports scale 2 and nativeScale 1.72 here (iPad16,5: bounds

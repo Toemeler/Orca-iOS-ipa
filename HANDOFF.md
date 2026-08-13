@@ -6084,3 +6084,109 @@ reasons and happen to make a mid-flight drawable resize safe.
 2. **A CADisplayLink instead of wxIdle pacing.** Ceiling 2, and the only route
    to more than 60 delivered frames. Also the riskiest change on the list.
 3. **The 11.5 ms itself**, once the phase numbers say where it goes.
+
+## 0403 — the idle sync was on a branch no platform compiles
+
+Found while reading `on_idle` for the pacing work, not by looking for it.
+
+0394 added the counted version of the dirty evaluation under
+`#if defined(__APPLE__) && !TARGET_OS_OSX` and turned the original body into the
+`#else`. 0399 then added `orca_ios_sync_toolbar()` to that `#else`, wrapped in
+`#if defined(__APPLE__) && !TARGET_OS_OSX` — the same condition it is already
+the negative arm of. 0401 added `orca_ios_sync_side_tools()` immediately after
+it and inherited the position.
+
+So the guard reads, in effect, `if (iOS) { ... } else { if (iOS) { sync } }`.
+On iOS the first arm is taken and the sync is not compiled; everywhere else the
+inner test is false. **Neither call has ever run on any platform.** The native
+toolbar's item states and the Slice/Print capsule were never synced from idle —
+they showed whatever they were built with, and "Slice plate" becoming "Slice
+all", or greying out while a slice runs, could not have worked.
+
+Moved into the arm iOS actually compiles, straight after
+`m_main_toolbar.update_items_state()`, which is where the comment always said it
+belonged.
+
+Worth noting for the next person: this is invisible to CI. It compiles, links
+and runs. Only the behaviour is missing, and only on a device.
+
+## 0404 — pace the frame loop from the display
+
+Ceiling 2 from the 120 fps analysis. wx processes idle from a run-loop observer
+on `kCFRunLoopBeforeWaiting` (`src/osx/core/evtloop_cf.cpp`): once per run-loop
+iteration, just before it would sleep. `on_idle` renders and calls
+`evt.RequestMore()`, which makes `ProcessIdle()` return true, which calls
+`WakeUp()` to stop the loop sleeping, which produces another iteration.
+
+That is the entire frame loop, and it turns only while the previous frame
+remembers to ask for another one. Under `UIApplicationMain` nothing reliably
+does — 0364's complaint — and it is why Prepare delivers **40 frames a second
+out of 16 ms of work**. The missing 22 fps are iterations that never happened.
+
+A `CADisplayLink` fixes this by existing. **The callback does no rendering at
+all** — it increments a counter. It does not need to do more: a display link is
+a run-loop source, so the display waking the loop *is* an iteration, and every
+iteration ends in the observer that runs idle. Firing at the refresh rate hands
+wx one idle pass per displayed frame, through the path that already exists.
+No second render path to keep in step with the first, nothing to re-enter, and
+no change to `GLCanvas3D` at all.
+
+`preferredFrameRateRange` asks for 120 and settles for 60. Both directions are
+requests: the system drops the rate for thermals, and Low Power Mode pins
+ProMotion to 60 for every app, which is not something an app can opt out of.
+Added to `NSRunLoopCommonModes` so it keeps firing inside the nested run loops
+wx spins for modal dialogs (step2/0216) — on the default mode alone the viewport
+would freeze behind every modal, which is the state 0364 was written to escape.
+
+The report gains `link +N`. At 120 Hz that should be ~600 in a five second
+window, with `idle` no longer far below it. A frame rate that did not move and a
+link that never started look identical in a log, so it is counted.
+
+## Reducing resolution while moving cannot be done this way — shelf item 2 was wrong
+
+Shelf item 2 has been "halve the drawable while moving" for three rounds, and
+0402 made it look cheap: the GLKView is one `GetHandle()` away, so it seemed to
+be a matter of dropping `contentScaleFactor` while `orca_ios_is_interacting()`
+and putting it back on settle. It is not, and the reason is worth writing down
+so nobody tries it a fourth time.
+
+`RetinaHelper::get_scale_factor()` is not just a number the renderer reads. It
+is wired, through `GLCanvas3D::_resize()`, into
+`ImGuiWrapper::set_scaling(font_size, 1.0f, scale)` — and `set_scaling` does two
+things that are fine once and unacceptable per gesture:
+
+* **`destroy_font()`**, which deletes the glyph atlas texture and forces the
+  whole atlas to be re-rasterised and re-uploaded on the next frame. Twice per
+  gesture, at the moment the drag starts — exactly the frame this change exists
+  to make cheap.
+* **`ImGui::GetStyle().ScaleAllSizes(new / old)`**, which is cumulative and
+  lossy. Every padding, rounding and spacing value is multiplied up and down
+  again on every gesture, and the rounding drifts. After enough drags the
+  overlay is visibly wrong and nothing points at why.
+
+And if `_resize()` does *not* run on a scale change, ImGui keeps the old font
+size against a different framebuffer and the legend changes apparent size on
+every drag instead. There is no arrangement of the existing call graph where
+this is correct.
+
+The camera has the same shape of problem, already documented in 0402:
+`apply_projection` derives the frustum from `m_viewport` in pixels
+(`w = 0.5 * m_viewport[2] * inv_zoom`), so zoom has to be corrected by
+`new/orig` at every transition, and the correction has to land *after*
+`camera.apply_viewport()` or `min_zoom()` clamps against the previous
+viewport — which bites precisely at "zoomed to fit", the most common state.
+That part is solvable. The ImGui part is not, not from this lever.
+
+**What it would actually take:** render the 3D scene into an offscreen FBO at
+reduced size, upscale that to the drawable, and composite ImGui on top at full
+resolution. That decouples scene resolution from `get_scale_factor()`, which is
+the only way the overlay stays put. It is a real piece of work — a new render
+target, a resolve pass, and integration with the picking pass and with the
+GLKit default-framebuffer wrapper (0329) — and it should follow a measurement
+that says fragment and tile cost are actually a large share of the moving
+frame, which nothing has established yet.
+
+This also retroactively justifies 0402's design. Answering the scale from
+`UIScreen` so that no consumer ever observes a transition was chosen to keep the
+camera from moving underneath. It turns out to be what keeps the font atlas from
+being thrown away as well.

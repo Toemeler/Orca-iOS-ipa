@@ -6942,3 +6942,21 @@ says so every launch — and Orca's path abandons the translation along with it.
 whatever Orca manages afterwards is a bonus rather than the only chance. The
 line `orca-ios-lang: de catalog from <dir> -> loaded|NOT FOUND` says whether
 the .mo is even in the bundle, which is the other thing that could be wrong.
+
+### 0416 — the legend clears the Slice capsule
+
+The totals, the cost and the time estimate are `GCodeViewer`'s legend, pinned to
+the **top right of the canvas** — the same corner the Slice and Print capsule
+floats in, so the capsule was drawn over it.
+
+It cannot be reordered against the capsule: the legend is ImGui *inside* the GL
+canvas, and the capsule is a UIKit view above the canvas. There is no z-order
+between them to fix. So the legend starts lower instead, by
+`orca_ios_tab_bar_inset()` — the same number the Device page uses, so the two
+stay in step if it is ever tuned. The g-code viewer window in the same corner
+moves with it.
+
+`GCodeViewer.cpp` had no `TargetConditionals.h`; without it `TARGET_OS_OSX`
+reads as zero and the offset would compile into the macOS build. That is the
+third header in this stack with the same gap — Notebook.hpp (0372), Tabbook.hpp
+(0413), and now this one. **Check it in every file this stack reaches into.**

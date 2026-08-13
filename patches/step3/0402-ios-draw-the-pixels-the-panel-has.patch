@@ -1,0 +1,139 @@
+diff --git a/src/slic3r/GUI/ios_platform_stubs.cpp b/src/slic3r/GUI/ios_platform_stubs.cpp
+index fa3a62852..c1d306911 100644
+--- a/src/slic3r/GUI/ios_platform_stubs.cpp
++++ b/src/slic3r/GUI/ios_platform_stubs.cpp
+@@ -101,6 +101,11 @@ void   initGestures(void * /*view*/, wxEvtHandler * /*handler*/) {}
+ void   openFolderForFile(wxString const & /*file*/) {}
+ void   StaticGroup_layoutBadge(void * /*group*/, void * /*badge*/) {}
+ 
++// src/slic3r/GUI/ios_webview_support.mm - the scale the GL drawable should be
++// rendered at, setting the canvas to it on the way past. UIKit cannot be
++// included here (see the header comment), so it is reached by declaration.
++float orca_ios_gl_drawable_scale(void *view_handle);
++
+ // --- RetinaHelper (Utils/RetinaHelper.hpp; class in namespace Slic3r::GUI) --
+ RetinaHelper::RetinaHelper(wxWindow *window)  { m_self = static_cast<void*>(window); }
+ RetinaHelper::~RetinaHelper()                 {}
+@@ -108,9 +113,26 @@ void  RetinaHelper::set_use_retina(bool /*value*/) {}
+ bool  RetinaHelper::get_use_retina()          { return true; }
+ float RetinaHelper::get_scale_factor()
+ {
+-    // iOS GLKView is inherently HiDPI; report wx's content scale for the window.
+-    return m_self ? static_cast<float>(static_cast<wxWindow*>(m_self)->GetContentScaleFactor())
+-                  : 1.0f;
++    if (m_self == nullptr)
++        return 1.0f;
++
++    wxWindow *const win = static_cast<wxWindow*>(m_self);
++
++    // The scale the GL drawable is rendered at, not wx's window scale.
++    //
++    // These have to be the same number, because it has three consumers that
++    // each assume they agree: the framebuffer-pixel canvas size
++    // get_canvas_size() derives and hands to glViewport, the ImGui overlay
++    // scaling, and the pointer coordinates on_mouse* multiply up before
++    // picking. wx reports the window's content scale, which is 2 - and that
++    // stops being the drawable's scale the moment the GL canvas is set to the
++    // panel's native 1.72. A viewport 16% wider than the framebuffer it draws
++    // into, with picking off by the same margin, is what that disagreement
++    // would look like, and it would read as a rendering bug rather than as a
++    // scale bug.
++    const float scale = orca_ios_gl_drawable_scale(static_cast<void*>(win->GetHandle()));
++    // Only if UIScreen had nothing to say, which it always does.
++    return scale > 0.0f ? scale : static_cast<float>(win->GetContentScaleFactor());
+ }
+ 
+ } // namespace GUI
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 3eff44e80..aab5d65b3 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -14,6 +14,9 @@
+ #import <WebKit/WebKit.h>
+ #import <UIKit/UIKit.h>
+ #import <QuartzCore/QuartzCore.h>
++// GLKView, to tell the GL canvas apart from every other UIView before its
++// drawable scale is touched.
++#import <GLKit/GLKit.h>
+ // objc_setAssociatedObject, so a text field owns its keypad. This file is
+ // built WITHOUT ARC - there is no -fobjc-arc anywhere in the CMake - so the
+ // retain/release in the keypad is required, not optional.
+@@ -31,6 +34,7 @@
+ // tab bar drives.
+ #include <wx/bookctrl.h>
+ #include <algorithm>
++#include <cmath>
+ #include <vector>
+ #include <cstdlib>
+ #include <boost/filesystem.hpp>
+@@ -1380,6 +1384,70 @@ void WKWebView_setTransparentBackground(void *web)
+     webView.layer.backgroundColor = [UIColor clearColor].CGColor;
+ }
+ 
++// The drawable is a third larger than the panel can show.
++//
++// UIScreen reports scale 2 and nativeScale 1.72 here (iPad16,5: bounds
++// 1600x1200 points, nativeBounds 2064x2752 - see orca_ios_log_display_metrics
++// below). A view at contentScaleFactor 2 is therefore rendered at 2x and
++// resampled down to 1.72x by the compositor on its way to the glass, so
++// (1.72/2)^2 = 74% of every fragment shaded, every tile stored and every
++// post-transform vertex binned is work whose result is discarded. Not while
++// moving - always, on every frame the app has ever drawn.
++//
++// Drawing at nativeScale is not a quality trade. It is the resolution the
++// display physically has; the pixels being dropped are ones no panel ever
++// showed. What it buys is 26% of the fragment and tile cost, and - the reason
++// it is worth more than that sounds - a smaller render target. The toolpath
++// draw overruns the tiler's parameter buffer for a 4 megapixel target and gets
++// split into partial renders, which is where seconds-per-frame came from; the
++// threshold being overrun scales with the target.
++//
++// The scale is reported from UIScreen rather than read back off the view, and
++// that is what makes this safe rather than merely cheap. GLCanvas3D treats the
++// scale as a constant - camera zoom is in pixels (update_ui_from_settings
++// corrects zoom by new/orig whenever it changes), the ImGui overlay is scaled
++// by it, and pointer coordinates are multiplied by it before picking - so a
++// value that changed under it would misplace the view and the touches
++// together. Reading the view back would do exactly that: RetinaHelper is
++// constructed with the wxGLCanvas, and any call made before its peer exists
++// would report the old scale and every later call the new one. Answering from
++// the screen means the first caller and the ten-thousandth get the same
++// number, whether or not there is a view yet; the view is corrected to match
++// as soon as there is one.
++//
++// Every RetinaHelper in Orca belongs to a GLCanvas3D, so only the GL canvas is
++// touched. A non-GL view would keep whatever scale the system gave it.
++float orca_ios_gl_drawable_scale(void *view_handle)
++{
++    const CGFloat native = [UIScreen mainScreen].nativeScale;
++    if (native <= 0.0)
++        return 0.0f;
++
++    // wxGLCanvas's peer is a GLKView subclass (src/osx/iphone/glcanvas.mm).
++    UIView *const view = (UIView *) view_handle;
++    if (view != nil && [view isKindOfClass:[GLKView class]] &&
++        // Compared with a tolerance, not for equality. This runs several times
++        // per frame - get_canvas_size() alone is called from most of the render
++        // path - and assigning contentScaleFactor invalidates the CAEAGLLayer's
++        // backing store, so an assignment that fired on every call would
++        // reallocate the drawable on every call. It has to settle after one.
++        std::fabs(view.contentScaleFactor - native) > 0.001) {
++        view.contentScaleFactor = native;
++        // GLKView rebuilds its framebuffer from the resized layer on the next
++        // -bindDrawable, which step2/0224 does once per frame, and
++        // GLCanvas3D::render() re-reads the framebuffer name straight after
++        // (orca_ios_note_default_framebuffer, patch 0329). So the new drawable
++        // and the name Orca binds reach agreement without help here - but only
++        // because both of those already happen every frame.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-drawable: GL canvas contentScaleFactor -> "
++                                 << (float) view.contentScaleFactor
++                                 << " (UIScreen scale " << (float) [UIScreen mainScreen].scale
++                                 << ", nativeScale " << (float) native << ")";
++    }
++
++    return (float) native;
++}
++
+ // Display metrics, logged once, because the layout is wrong in a way that only
+ // the numbers can explain. wx reports the top-level window as 1600x1200 points
+ // (patch 0326 sets it from wxDisplay, whose iOS implementation is

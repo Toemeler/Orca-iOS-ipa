@@ -5956,3 +5956,131 @@ the hard way in 0400.
 (`m_slice_option_btn` / `m_print_option_btn`), which choose plate-versus-all.
 Their popups are positioned against the hidden wx buttons and would open off
 screen, so they need a `UIMenu` of their own on each capsule button.
+## Will 0392/0393 give 120 fps? No — and the toolpaths are not what stops it
+
+Asked before run 147 was tested on device, which is the right time to ask it:
+the answer does not depend on the device numbers, and it changes what is worth
+building next.
+
+**120 fps is an 8.33 ms frame.** Three independent ceilings sit below that, and
+everything shipped so far — 0390 through 0396 — attacks only the third.
+
+### Ceiling 1: the frame without any G-code in it
+
+From the run-132 log, `(render_ms 4838 - gcode_ms 4815) / 2 frames` = **11.5 ms
+per frame** outside `GCodeViewer::render()`. Bed, objects, ImGui, overlays. If
+the toolpath draw became literally free, the frame is still 11.5 ms — 87 fps of
+work, and that is before the pacing loss below.
+
+The independent check is Prepare, measured on the same drawable and the same
+device: **201 frames in five seconds, 16 ms each**. Prepare draws no toolpaths
+at all and is already **1.9x over the 120 fps budget**. Preview draws everything
+Prepare draws, plus shells, plus the legend, plus the toolpaths. It cannot be
+faster than the tab that does less.
+
+Some of the 11.5 ms is already gone unmeasured: 0399 made `_render_main_toolbar`
+and `_render_gizmos_overlay` return early. How much is unknown until
+`legend_ms` / `seq_ms` / `slider_ms` come back from a device.
+
+### Ceiling 2: wxIdle pacing
+
+201 frames in five seconds out of 16 ms frames is **40 fps delivered from 62 fps
+of work** — a third of the wall clock thrown away by `RequestMore()`. No amount
+of cheaper frames raises this. Nothing else in the app can dispatch 120 frames a
+second, so until the pacing changes, 120 is unreachable by construction and the
+other two ceilings are academic.
+
+### Ceiling 3: the toolpath draw
+
+The one the shipped stack addresses. 0393 cuts vertices 3x (24 named corners →
+8 shaded); 0392 cuts per-vertex cost (twelve integer divides, six `textureSize`,
+half the varying) but **not the six texture fetches per vertex**, which are
+dependent RGBA32F reads and are the likelier bottleneck. The collinear merge
+ratio *n* is the only large unknown, and `MAX_RUN_SEGMENTS` caps it at 64.
+
+At a generous 300M vertices/s, with 19.2M/*n* vertices a frame:
+
+| *n* | toolpath | + 11.5 ms | work | delivered (x0.65) |
+|---|---|---|---|---|
+| 4 | 16 ms | 27.5 ms | 36 fps | ~24 |
+| 8 | 8 ms | 19.5 ms | 51 fps | ~33 |
+| 16 | 4 ms | 15.5 ms | 64 fps | ~42 |
+| 32 | 2 ms | 13.5 ms | 74 fps | ~48 |
+| free | 0 ms | 11.5 ms | 87 fps | ~57 |
+
+The column saturates near **50 fps** whatever the merge ratio does. That is the
+whole finding: as soon as the toolpaths get cheap, the fixed cost and the pacing
+are the frame, and neither has been touched.
+
+So run 147 should be a large win over 1 fps — the toolpath work is sound and
+worth having. It is not a 120 fps build, and no tuning of *n* makes it one.
+
+### What was wrong on the shelf, in our favour
+
+The last round shelved the drawable fix as expensive:
+
+> It needs a `wxGLCanvas` setter, so it is a `patches/step2` change and a 25
+> minute wx rebuild.
+
+It does not. `m_canvas->GetHandle()` already returns the GLKView — 0380 and 0399
+both use exactly that. It is a **step3 change with no wx rebuild**.
+
+It is also worth more than "halve it while moving", because the oversampling is
+permanent rather than a moving-frame problem. `orca-ios-display` reports `scale
+2, nativeScale 1.72`: the app renders at 2x and the compositor resamples down to
+1.72x before anything reaches the glass. **(1.72/2)^2 = 74%** — a quarter of
+every fragment, every tile store and every post-transform vertex binned has
+always been discarded, at rest and moving alike. Drawing at `nativeScale` is not
+a quality trade, because the pixels being dropped are ones the panel never had.
+
+## 0402 — draw the pixels the panel actually has
+
+`RetinaHelper::get_scale_factor()` now reports the panel's native scale, and
+sets the GL canvas's `contentScaleFactor` to match on the way past.
+
+The subtlety is not the setter, it is that **this number has three consumers
+that have to agree**: the framebuffer-pixel size `get_canvas_size()` hands to
+`glViewport`, the ImGui overlay scaling, and the pointer coordinates `on_mouse*`
+multiply up before picking. Changing the view's scale while `RetinaHelper` kept
+reporting wx's 2 would give a viewport 16% wider than the framebuffer it draws
+into and picking wrong by the same margin — which would have read as a rendering
+bug, not a scale bug.
+
+The second subtlety is that the scale is answered from `UIScreen`, not read back
+off the view. `GLCanvas3D` treats it as a constant — `update_ui_from_settings`
+corrects camera zoom by `new/orig` whenever it changes, because zoom is in
+pixels — so a value that moved under it would misplace the view and the touches
+together. Reading the view back would do exactly that: `RetinaHelper` is
+constructed with the wxGLCanvas, and any call made before its peer exists would
+report 2 while every later call reported 1.72. Answering from the screen means
+the first caller and the ten-thousandth get the same number whether or not there
+is a view yet, and the view is corrected to match as soon as there is one. There
+is no transition, so there is nothing to correct.
+
+Nothing else needed changing: `[v bindDrawable]` already runs once per frame
+(step2/0224) and rebuilds GLKView's framebuffer from the resized layer, and
+`GLCanvas3D::render()` already re-reads the framebuffer name straight after
+(`orca_ios_note_default_framebuffer`, 0329). Both of those exist for other
+reasons and happen to make a mid-flight drawable resize safe.
+
+`orca-ios-drawable:` in the log says it took effect, once.
+
+### What to check on the next device run
+
+* **`orca-ios-drawable:`** — should say `contentScaleFactor -> 1.72`.
+* **The legend and sliders should be the same physical size.** ImGui is scaled
+  by this factor (`GLCanvas3D.cpp:7500`), so it should render at 1.72x and
+  occupy the same space. If the overlay changed size, that assumption is wrong
+  and this patch is what did it.
+* **Picking still lands where you touch.** Same factor, same reason.
+
+### Still on the shelf, in order
+
+1. **Drop the drawable further while moving.** 1.72 → 1.0 is another 3x of
+   fragment and tile cost. Now cheap to reach, but no longer free of
+   transitions: the scale would change mid-gesture, and camera zoom and pointer
+   coordinates both depend on it. Needs the change confined to the settle
+   boundaries of 0394's clock, and it needs 0401 to have proven safe first.
+2. **A CADisplayLink instead of wxIdle pacing.** Ceiling 2, and the only route
+   to more than 60 delivered frames. Also the riskiest change on the list.
+3. **The 11.5 ms itself**, once the phase numbers say where it goes.

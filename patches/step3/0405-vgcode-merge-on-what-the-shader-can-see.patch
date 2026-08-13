@@ -1,0 +1,197 @@
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index 9c042c0b4..7fbc4b420 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -1281,21 +1281,59 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
+ // role, move type, extruder, colour id, layer, width, height, and every scalar
+ // any view type colours by. Two segments only merge if they would have been
+ // drawn identically.
++// Why the runs ended, over the last merge. Reset at the top of each merge, so
++// the report describes one rebuild rather than the history of the session.
++std::atomic<unsigned> orca_ios_vg_cut_gap{0};
++std::atomic<unsigned> orca_ios_vg_cut_appearance{0};
++std::atomic<unsigned> orca_ios_vg_cut_geometry{0};
++std::atomic<unsigned> orca_ios_vg_cut_cap{0};
++
+ static constexpr float COLLINEAR_EPS_MM = 0.01f;
+ // Bounds the anchor-line drift and keeps merged indices local.
+ static constexpr size_t MAX_RUN_SEGMENTS = 64;
+ 
+-static bool same_appearance(const PathVertex& a, const PathVertex& b)
++// Would these two be drawn identically?
++//
++// The first cut of this compared sixteen fields, on the reasoning that a merge
++// must survive any later change of view type. The device answered it: on a real
++// toolpath the merge ratio came back exactly 1.000 - 1372290 segments in,
++// 1372290 out, not one run longer than a single segment. Nine of those fields
++// are per-move floats that a slicer varies continuously. actual_feedrate alone
++// is enough: it is the acceleration-planned speed of each move, so on a curve
++// made of micro-moves no two consecutive vertices carry the same value, and
++// every run was cut at length one before geometry was ever considered.
++//
++// So the test is now what the shader can actually see. Per segment it reads
++// exactly three things: the two endpoint positions, the height/width/angle
++// triple, and the colour. Nothing else reaches the GPU, so nothing else can
++// change how a segment is drawn:
++//
++//   * height and width, because they build the box;
++//   * the colour, taken live from get_vertex_color() rather than from
++//     color_id, because for most view types the colour is derived from one of
++//     the very scalars this test no longer compares - and it is derived at
++//     update_colors() time, which runs *after* this does, so the cached
++//     m_vertices_colors would be a frame stale on the change that matters;
++//   * layer_id, which the shader does not read, but update_colors_texture()
++//     does: with top_layer_only_view_range the layers below the top are
++//     recoloured to DUMMY_COLOR per vertex, and a run spanning that boundary
++//     would take one colour for both sides of it.
++//
++// role, type and extruder_id are kept because they are discrete, never vary
++// along a straight run, and are what the enabled set is filtered by - keeping
++// them means a run can never straddle a category the user is about to hide.
++//
++// Dropped, deliberately: feedrate, actual_feedrate, mm3_per_mm, fan_speed,
++// temperature, layer_duration, pressure_advance, acceleration and jerk. They
++// reach the picture only through the colour, and the colour is now compared
++// directly.
++bool ViewerImpl::same_appearance(const PathVertex& a, const PathVertex& b) const
+ {
+     return a.role == b.role && a.type == b.type &&
+-           a.extruder_id == b.extruder_id && a.color_id == b.color_id &&
++           a.extruder_id == b.extruder_id &&
+            a.layer_id == b.layer_id &&
+            a.height == b.height && a.width == b.width &&
+-           a.feedrate == b.feedrate && a.actual_feedrate == b.actual_feedrate &&
+-           a.mm3_per_mm == b.mm3_per_mm && a.fan_speed == b.fan_speed &&
+-           a.temperature == b.temperature && a.layer_duration == b.layer_duration &&
+-           a.pressure_advance == b.pressure_advance && a.acceleration == b.acceleration &&
+-           a.jerk == b.jerk;
++           get_vertex_color(a) == get_vertex_color(b);
+ }
+ 
+ // Where p sits relative to the infinite line through anchor with unit direction
+@@ -1316,6 +1354,11 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+     std::vector<uint32_t> ret;
+     ret.reserve(enabled_segments.size() * 2);
+ 
++    orca_ios_vg_cut_gap = 0;
++    orca_ios_vg_cut_appearance = 0;
++    orca_ios_vg_cut_geometry = 0;
++    orca_ios_vg_cut_cap = 0;
++
+     size_t i = 0;
+     while (i < enabled_segments.size()) {
+         const uint32_t first = enabled_segments[i];
+@@ -1331,11 +1374,26 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+         if (len > 1e-6f) {
+             dir = { dir[0] / len, dir[1] / len, dir[2] / len };
+             float last_t = len;
+-            while (j + 1 < enabled_segments.size() &&
+-                   j - i + 1 < MAX_RUN_SEGMENTS &&
+-                   enabled_segments[j + 1] == enabled_segments[j] + 1 &&
+-                   same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1]]) &&
+-                   same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1] + 1])) {
++            for (;;) {
++                // Why runs end, counted rather than reasoned about. The last
++                // round shipped a merge that returned a ratio of exactly 1.000
++                // and the log could not say which of four conditions was doing
++                // it, which cost a whole build to find out. Now it says.
++                if (j + 1 >= enabled_segments.size())
++                    break;
++                if (j - i + 1 >= MAX_RUN_SEGMENTS) {
++                    ++orca_ios_vg_cut_cap;
++                    break;
++                }
++                if (enabled_segments[j + 1] != enabled_segments[j] + 1) {
++                    ++orca_ios_vg_cut_gap;
++                    break;
++                }
++                if (!same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1]]) ||
++                    !same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1] + 1])) {
++                    ++orca_ios_vg_cut_appearance;
++                    break;
++                }
+                 // The vertex to test is the one the chord would newly reach, not
+                 // the one it would swallow: the swallowed one is the anchor
+                 // line's own second point on the first extension and sits
+@@ -1347,8 +1405,10 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+                 // straight back from collapsing: every one of its vertices is on
+                 // the anchor line, at distance zero, and merging them would
+                 // delete the excursion entirely.
+-                if (off >= COLLINEAR_EPS_MM || t <= last_t)
++                if (off >= COLLINEAR_EPS_MM || t <= last_t) {
++                    ++orca_ios_vg_cut_geometry;
+                     break;
++                }
+                 last_t = t;
+                 ++j;
+             }
+@@ -1568,12 +1628,22 @@ void ViewerImpl::set_view_type(EViewType type)
+ {
+     m_settings.view_type = type;
+     m_settings.update_colors = true;
++    // The collinear merge folds together runs that share a colour, and which
++    // segments share a colour is a function of the view type. Changing it has
++    // to re-derive the runs, not just repaint them - otherwise a run merged
++    // while colouring by feature type keeps one colour when the user switches
++    // to speed. This is the O(vertices) rebuild, which is why it is attached
++    // to a deliberate user action and not to anything that happens per frame.
++    m_settings.update_enabled_entities = true;
+ }
+ 
+ void ViewerImpl::set_time_mode(ETimeMode mode)
+ {
+     m_settings.time_mode = mode;
+     m_settings.update_colors = true;
++    // Same reason as set_view_type: the time mode feeds layer_duration, which
++    // feeds the colour, which the runs are merged on.
++    m_settings.update_enabled_entities = true;
+     // Update layer_duration for all vertices based on the new time mode
+     for (PathVertex& v : m_vertices) {
+         v.layer_duration = m_layers.get_layer_time(mode, static_cast<size_t>(v.layer_id));
+diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
+index d0d1bc1a6..ea107fb82 100644
+--- a/src/libvgcode/src/ViewerImpl.hpp
++++ b/src/libvgcode/src/ViewerImpl.hpp
+@@ -526,6 +526,9 @@ private:
+     // more than m_detail_budget instances are submitted. 1 means draw them all.
+     uint32_t detail_stride(size_t count) const;
+ #ifdef ENABLE_OPENGL_ES
++    // Would these two vertices be drawn identically? Needs the viewer, not
++    // just the pair, because the colour is derived from the current view type.
++    bool same_appearance(const PathVertex& a, const PathVertex& b) const;
+     // Turns a list of first-vertex indices into a list of (first, last) pairs,
+     // merging consecutive segments that are collinear and would be drawn
+     // identically. Same pixels, fewer of them submitted.
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index e48c0a155..e2fe8bde0 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -75,6 +75,13 @@ namespace libvgcode {
+ extern std::atomic<uint64_t> orca_ios_vg_full_range_us;
+ extern std::atomic<uint64_t> orca_ios_vg_enabled_us;
+ extern std::atomic<uint64_t> orca_ios_vg_colors_us;
++// Why the collinear runs ended, over the last rebuild. The first cut of the
++// merge came back at a ratio of exactly 1.000 and the log could not say
++// which of the four conditions was cutting every run.
++extern std::atomic<unsigned> orca_ios_vg_cut_gap;
++extern std::atomic<unsigned> orca_ios_vg_cut_appearance;
++extern std::atomic<unsigned> orca_ios_vg_cut_geometry;
++extern std::atomic<unsigned> orca_ios_vg_cut_cap;
+ }
+ namespace Slic3r { namespace GUI {
+ } }
+@@ -1306,6 +1313,14 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 << " moving " << orca_ios_gcv_moving.load()
+                 << " segs " << orca_ios_gcv_segs_raw.load()
+                 << "->" << orca_ios_gcv_segs_drawn.load()
++                // Which condition ended each run, from the last merge:
++                // gap in the enabled set / drawn differently / not collinear /
++                // hit MAX_RUN_SEGMENTS. Whichever dominates is the one that
++                // decides the merge ratio, and so the size of the frame.
++                << " cut g" << libvgcode::orca_ios_vg_cut_gap.load()
++                << " a" << libvgcode::orca_ios_vg_cut_appearance.load()
++                << " m" << libvgcode::orca_ios_vg_cut_geometry.load()
++                << " c" << libvgcode::orca_ios_vg_cut_cap.load()
+                 // Why the canvas was asked to draw at all. At rest, on a
+                 // preview nothing has changed, every one of these should be
+                 // zero and the render count should be zero with them.

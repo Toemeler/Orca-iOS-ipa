@@ -6190,3 +6190,99 @@ This also retroactively justifies 0402's design. Answering the scale from
 `UIScreen` so that no consumer ever observes a transition was chosen to keep the
 camera from moving underneath. It turns out to be what keeps the font atlas from
 being thrown away as well.
+
+## Run 150, measured: the merge did nothing, and that is the whole story
+
+```
+render +5  render_ms 2674  gcode_ms 2673  shells_ms 3  paths_ms 2669  legend_ms 0
+lod_stride 1  segs 1372290->1372290
+idle +845  link +241  swap_ms 0
+```
+
+Five frames in five seconds. **534 ms a frame, and 99.8% of it is `paths_ms`.**
+
+### What worked
+
+* **The shader work paid, about as predicted.** Run 132 was 2407 ms for 2.4M
+  segments — 1.00 us per segment. This is 534 ms for 1.37M — **0.389 us per
+  segment, a 2.6x improvement**. Indexed templates and the addressing changes
+  did what the arithmetic said they would.
+* **The display link runs.** `link +600` in a five second window is 120 Hz on
+  the nose, and `idle +2088` alongside it shows idle is not starved at all —
+  it runs at ~450/s. Pacing was never going to be the binding constraint at
+  534 ms a frame, and it is not. It will matter when frames are cheap.
+* **Ceiling 1 is much smaller than estimated.** I put the non-G-code frame at
+  11.5 ms from run 132. Measured here: `render_ms 37` over 8 frames on Prepare
+  is ~4.6 ms, and `legend_ms`/`seq_ms`/`slider_ms` are 0. 0399 taking the GL
+  toolbars out of the frame is most of the difference. The ImGui phases are not
+  a problem and can come off the list.
+
+### What did not
+
+**`segs 1372290->1372290`.** The collinear merge produced a ratio of exactly
+1.000 — not one run longer than a single segment, on a 1.37M segment toolpath
+from a mesh dense enough that the slicer warned about it. Every estimate in the
+last round's table was multiplied by this, and it is 1.
+
+The cause is `same_appearance()`. It compared sixteen fields, nine of which are
+per-move floats a slicer varies continuously. `actual_feedrate` alone is enough:
+it is the acceleration-planned speed of each move, so along a curve made of
+micro-moves no two consecutive vertices carry the same value, and every run was
+cut before geometry was ever tested. The strictness was deliberate — it was
+meant to make a merge survive any later change of view type — and it cost the
+entire win.
+
+## 0405 — merge on what the shader can actually see
+
+Per segment the shader reads exactly three things: the two endpoint positions,
+the height/width/angle triple, and the colour. Nothing else reaches the GPU, so
+nothing else can change how a segment is drawn. The test is now:
+
+* `height` and `width`, because they build the box;
+* **the colour, taken live from `get_vertex_color()`** rather than from
+  `color_id` — for most view types the colour is derived from one of the very
+  scalars the test no longer compares, and it is derived in `update_colors()`,
+  which runs *after* `update_enabled_entities()`, so the cached
+  `m_vertices_colors` would be a frame stale on exactly the change that matters;
+* `layer_id`, which the shader does not read but `update_colors_texture()` does:
+  under `top_layer_only_view_range` the layers below the top are recoloured to
+  `DUMMY_COLOR` per vertex, and a run spanning that boundary would take one
+  colour for both sides of it;
+* `role`, `type`, `extruder_id`, kept because they are discrete, never vary
+  along a straight run, and are what the enabled set is filtered by.
+
+Dropped: `feedrate`, `actual_feedrate`, `mm3_per_mm`, `fan_speed`,
+`temperature`, `layer_duration`, `pressure_advance`, `acceleration`, `jerk`.
+They reach the picture only through the colour, and the colour is now compared
+directly.
+
+Because the merge now depends on the colour, `set_view_type()` and
+`set_time_mode()` set `update_enabled_entities` as well as `update_colors`, so a
+recolour re-derives the runs instead of repainting merged ones. That is the
+`O(vertices)` rebuild, which is why it hangs off a deliberate user action and
+nothing that happens per frame.
+
+### And the counters that should have been there the first time
+
+The last round shipped a merge whose ratio came back exactly 1.000, and the log
+could not say which of four conditions was doing it. That cost a whole build.
+The report now carries `cut g<N> a<N> m<N> c<N>` — runs ended by a gap in the
+enabled set, by appearance, by geometry, or by `MAX_RUN_SEGMENTS`. Whichever
+dominates is what decides the merge ratio, and so the size of the frame.
+
+If `a` still dominates, something in the narrowed test is still varying and the
+colour is the only real candidate. If `m` dominates, the toolpath genuinely is
+not collinear at 0.01 mm and the epsilon is the dial. If `c` dominates, the
+merge is working and `MAX_RUN_SEGMENTS` (64) is the cap — raise it.
+
+### One diagnostic gap of my own
+
+0402 logs `orca-ios-drawable:` only when it *changes* `contentScaleFactor`, so
+silence means either "already correct" or "never applied" and the log cannot
+tell them apart. `orca-ios-gl: first render() canvas=2070x2021` is the same
+width as the 2070 recorded before 0402, which suggests the factor is still 2 —
+but the layout changed under 0397-0401 too, so that is not proof either.
+
+It does not matter much yet: at 534 ms a frame with 99.8% in `paths_ms`, a 26%
+cut in fragment and tile cost is not the lever. It should be logged
+unconditionally next time it is touched.

@@ -6376,3 +6376,95 @@ So there are two independent problems and only one of them is being worked:
 
 Number 2 is where the next round should go if 0406 lands and the frame is still
 tens of milliseconds.
+
+## Run 152: the bridge worked, and it changed nothing
+
+```
+segs 1372290->834850  cut g23009 a257979 m553861 c0  br735084 gv290665
+```
+
+| cut by | run 151 | run 152 |
+|---|---|---|
+| gap | 758 093 | **23 009** |
+| appearance | 87 814 | 257 979 |
+| geometry | 464 | **553 861** |
+
+`br735084` — the holes were stepped over, 735 084 of them, and gap cuts fell by
+97%. `gv/g` is 12.6 vertices per surviving gap, so what remains are genuine
+travels, which are supposed to cut runs. That part of the diagnosis was right
+and is now finished.
+
+The merge went from 1.62x to 1.64x. Nothing.
+
+### The correction: the toolpath was never shown to be collinear
+
+Last round's note said "464 geometric cuts in 1.37M segments settles the
+premise — the toolpath really is collinear". **That was wrong, and the error
+was in the reading, not the data.** The gap test runs before the geometry test
+and `break`s, so geometry was never reached on 90% of runs. It was masked, not
+absent. With the holes bridged it becomes the dominant cut at 553 861 — 66% of
+all runs.
+
+The lesson is about the counters, not the toolpath: a counter placed after an
+earlier `break` measures only what survives to it, and reading it as a
+population statistic is a mistake. `m` was a conditional probability all along.
+
+### Both survivors are exact float comparisons
+
+* **Geometry, 553 861.** `COLLINEAR_EPS_MM` was a flat 0.01 mm — a fortieth of a
+  0.4 mm extrusion. But the thing being drawn is a *ribbon 0.4 mm wide*, so a
+  chord that stays within an eighth of the width never leaves it, at any zoom.
+  The bound is a fraction of the line the deviation hides inside, not a distance
+  in millimetres.
+* **Appearance, 257 979.** `height` and `width` were compared with `==`, and
+  Orca varies extrusion width continuously — Arachne fits each wall to the space
+  it has, so width drifts along a perimeter. Exact equality cut a run wherever
+  the wall got a micrometre thinner.
+
+0407 makes both relative: `collinear_eps(width) = max(0.01, 0.125 * width)`, and
+height/width equal within 2%.
+
+## The other half, which the merge cannot fix
+
+Cost per drawn segment, three runs:
+
+| run | drawn | ms/frame | us/segment |
+|---|---|---|---|
+| 150 | 1 372 290 | 534 | 0.389 |
+| 151 | 846 372 | 327 | 0.386 |
+| 152 | 834 850 | ~400 (worst_ms 411) | ~0.48 |
+
+**The cost is linear in segment count and the merge does not make a segment
+cheaper.** 150 and 151 agree to within 1% across a 1.6x change in count. So the
+merge is worth exactly its ratio and nothing more, and an 8.3 ms frame needs
+about 21 500 drawn segments — a 64x merge, which is exactly `MAX_RUN_SEGMENTS`.
+Not reachable. Even a perfect merge lands near 30 fps.
+
+6.8M vertices in 327 ms is **20.7M vertices/sec** on an M4. That is one to two
+orders of magnitude below what the part should do, and it has not moved through
+any of this.
+
+### 0407 also stops the guessing about why
+
+Three rounds have been spent reasoning about that number from frame times that
+include CPU submission and whatever the driver blocked on. So it is measured
+directly, once: the same geometry is drawn twice more, back to back, `glFinish`
+either side, at the real viewport and at a sixteenth of the area. Both land in a
+frame that the real draw then overdraws, so nothing shows; it costs one slow
+frame at load.
+
+```
+benchfull <ms>  benchquarter <ms>
+```
+
+* **benchquarter ≈ benchfull** → the frame is bound by the vertex stage.
+  Resolution is irrelevant, and only fewer or cheaper vertices help. The next
+  lever is the shape of the draw: 835k instances of 8 vertices is a shape Apple's
+  tiler handles badly, and a flat `gl_VertexID` draw would remove instancing
+  without changing a pixel.
+* **benchquarter << benchfull** → the frame is bound by fragment and tile-store
+  work, and the answer is an offscreen target at reduced resolution — the option
+  0405's note said needed a measurement before anyone built it. This is that
+  measurement.
+
+Either way the next round stops being a guess, which the last three were.

@@ -1,0 +1,179 @@
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index a7888bba1..b951a1b13 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -1272,7 +1272,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
+ // nothing but vertex shader invocations.
+ //
+ // So they are dropped, under a bound rather than a guess: a vertex is only
+-// swallowed if it lies within COLLINEAR_EPS_MM of the run's anchor line, which
++// swallowed if it lies within collinear_eps() of the run's anchor line, which
+ // keeps the drawn path within that distance of the real one. At 0.01 mm that is
+ // a fortieth of a 0.4 mm extrusion - smaller than the line it is drawn with,
+ // and far below one screen pixel at any zoom the bed fits on.
+@@ -1293,8 +1293,48 @@ std::atomic<unsigned> orca_ios_vg_cut_cap{0};
+ // number of vertices in one.
+ std::atomic<unsigned> orca_ios_vg_bridged{0};
+ std::atomic<unsigned> orca_ios_vg_cut_gap_verts{0};
++// One-shot GPU timings of the toolpath draw, full viewport vs a sixteenth of
++// the area, both fenced with glFinish. Equal means vertex bound; much smaller
++// means fragment and tile bound.
++std::atomic<unsigned> orca_ios_bench_full_us{0};
++std::atomic<unsigned> orca_ios_bench_small_us{0};
+ 
+-static constexpr float COLLINEAR_EPS_MM = 0.01f;
++// How far the merged chord may sit from the path it replaces.
++//
++// This was a flat 0.01 mm, and run 152 showed what that costs. Once the holes
++// in the enabled list were bridged, geometry became the reason 553861 runs
++// ended - up from 464, because until then the gap test fired first and the
++// geometry test was never reached. The earlier reading of "464 geometric cuts,
++// so the toolpath is collinear" was wrong: it was masked, not absent.
++//
++// 0.01 mm is a fortieth of a 0.4 mm extrusion, which is far tighter than
++// anything the eye can resolve, because the thing being drawn is a ribbon
++// 0.4 mm wide. A chord that stays within an eighth of the width - 0.05 mm on a
++// 0.4 mm line - never leaves the ribbon it is approximating, at any zoom. That
++// is the real bound: not a distance in millimetres, but a fraction of the line
++// the deviation is hiding inside.
++//
++// Floored at the old value so that a hair-thin extrusion is never tested more
++// loosely than before.
++static constexpr float COLLINEAR_EPS_FLOOR_MM = 0.01f;
++static constexpr float COLLINEAR_EPS_WIDTH_FRAC = 0.125f;
++
++static float collinear_eps(float width)
++{
++    return std::max(COLLINEAR_EPS_FLOOR_MM, COLLINEAR_EPS_WIDTH_FRAC * width);
++}
++
++// Height and width were compared exactly, and Orca varies extrusion width
++// continuously - Arachne fits the wall to the space it has, so a perimeter's
++// width drifts along its length. Exact equality therefore cut a run wherever
++// the wall got a micrometre thinner, which is 257979 of them. Two boxes whose
++// widths differ by a fraction of a percent are the same box on screen.
++static constexpr float SIZE_EPS_FRAC = 0.02f;
++
++static bool near_equal(float a, float b, float frac)
++{
++    return std::fabs(a - b) <= frac * std::max(std::fabs(a), std::fabs(b));
++}
+ // Bounds the anchor-line drift and keeps merged indices local.
+ static constexpr size_t MAX_RUN_SEGMENTS = 64;
+ 
+@@ -1338,7 +1378,8 @@ bool ViewerImpl::same_appearance(const PathVertex& a, const PathVertex& b) const
+     return a.role == b.role && a.type == b.type &&
+            a.extruder_id == b.extruder_id &&
+            a.layer_id == b.layer_id &&
+-           a.height == b.height && a.width == b.width &&
++           near_equal(a.height, b.height, SIZE_EPS_FRAC) &&
++           near_equal(a.width, b.width, SIZE_EPS_FRAC) &&
+            get_vertex_color(a) == get_vertex_color(b);
+ }
+ 
+@@ -1406,7 +1447,7 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+         size_t j = i;
+ 
+         // The anchor line is the run's own first segment. Every vertex the run
+-        // swallows has to stay within COLLINEAR_EPS_MM of it, so the merged
++        // swallows has to stay within collinear_eps() of it, so the merged
+         // chord cannot drift away from the real path however long the run gets.
+         const Vec3& anchor = m_vertices[first].position;
+         const Vec3& next   = m_vertices[first + 1].position;
+@@ -1454,7 +1495,7 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+                 // straight back from collapsing: every one of its vertices is on
+                 // the anchor line, at distance zero, and merging them would
+                 // delete the excursion entirely.
+-                if (off >= COLLINEAR_EPS_MM || t <= last_t) {
++                if (off >= collinear_eps(m_vertices[first].width) || t <= last_t) {
+                     ++orca_ios_vg_cut_geometry;
+                     break;
+                 }
+@@ -2329,6 +2370,62 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+     int curr_bound_texture = 0;
+     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
+ 
++    // What is this draw actually bound by? Measured once, because three rounds
++    // have now been spent reasoning about it from frame times that include CPU
++    // submission and whatever the driver decided to block on.
++    //
++    // The same geometry is drawn twice more, back to back, with glFinish either
++    // side so the numbers are GPU time rather than queue depth: once at the real
++    // viewport, once at a sixteenth of the area. If the small one costs the
++    // same, the frame is bound by the vertex stage and only fewer or cheaper
++    // vertices will help. If it is much faster, the frame is bound by fragment
++    // and tile-store work and the answer is an offscreen target at reduced
++    // resolution - which is the option 0405's note said would need a
++    // measurement before anyone built it. This is that measurement.
++    //
++    // Both extra draws land in the frame that is about to be overdrawn by the
++    // real one, so nothing shows on screen. It costs one slow frame, once.
++    const auto draw_all_chunks = [&]() {
++        for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
++            const auto [bid, bcount] = m_texture_data.get_enabled_segments_tex_id(i);
++            if (bcount == 0)
++                continue;
++            glsafe(glActiveTexture(GL_TEXTURE0));
++            glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i).first));
++            glsafe(glActiveTexture(GL_TEXTURE1));
++            glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i).first));
++            glsafe(glActiveTexture(GL_TEXTURE2));
++            glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
++            glsafe(glActiveTexture(GL_TEXTURE3));
++            glsafe(glBindTexture(GL_TEXTURE_2D, bid));
++            glsafe(glUniform1i(m_uni_segments_data_shift_id, m_texture_data.get_data_shift(i)));
++            glsafe(glUniform1i(m_uni_segments_index_shift_id, m_texture_data.get_enabled_segments_shift(i)));
++            m_segment_template.render((bcount + stride - 1) / stride);
++        }
++    };
++
++    static bool s_orca_ios_benched = false;
++    if (!s_orca_ios_benched && m_texture_data.get_enabled_segments_count() > 100000) {
++        s_orca_ios_benched = true;
++        GLint vp[4] = { 0, 0, 0, 0 };
++        glsafe(glGetIntegerv(GL_VIEWPORT, vp));
++
++        glFinish();
++        const auto t0 = std::chrono::steady_clock::now();
++        draw_all_chunks();
++        glFinish();
++        const auto t1 = std::chrono::steady_clock::now();
++
++        glsafe(glViewport(vp[0], vp[1], std::max(1, vp[2] / 4), std::max(1, vp[3] / 4)));
++        draw_all_chunks();
++        glFinish();
++        const auto t2 = std::chrono::steady_clock::now();
++        glsafe(glViewport(vp[0], vp[1], vp[2], vp[3]));
++
++        orca_ios_bench_full_us  = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
++        orca_ios_bench_small_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
++    }
++
+     for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
+         const auto [id, count] = m_texture_data.get_enabled_segments_tex_id(i);
+         if (count == 0)
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 71748a764..4849f2d09 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -84,6 +84,11 @@ extern std::atomic<unsigned> orca_ios_vg_cut_geometry;
+ extern std::atomic<unsigned> orca_ios_vg_cut_cap;
+ extern std::atomic<unsigned> orca_ios_vg_bridged;
+ extern std::atomic<unsigned> orca_ios_vg_cut_gap_verts;
++// One-shot GPU timing of the toolpath draw at full viewport and at a sixteenth
++// of the area. Equal means the frame is bound by the vertex stage; much smaller
++// means it is bound by fragment and tile-store work.
++extern std::atomic<unsigned> orca_ios_bench_full_us;
++extern std::atomic<unsigned> orca_ios_bench_small_us;
+ }
+ namespace Slic3r { namespace GUI {
+ } }
+@@ -1329,6 +1334,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 // travel.
+                 << " br" << libvgcode::orca_ios_vg_bridged.load()
+                 << " gv" << libvgcode::orca_ios_vg_cut_gap_verts.load()
++                << " benchfull " << (libvgcode::orca_ios_bench_full_us.load() / 1000)
++                << " benchquarter " << (libvgcode::orca_ios_bench_small_us.load() / 1000)
+                 // Why the canvas was asked to draw at all. At rest, on a
+                 // preview nothing has changed, every one of these should be
+                 // zero and the render count should be zero with them.

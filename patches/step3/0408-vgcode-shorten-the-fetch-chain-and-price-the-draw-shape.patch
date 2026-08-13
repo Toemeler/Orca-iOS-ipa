@@ -1,0 +1,200 @@
+diff --git a/src/libvgcode/src/ShadersES.hpp b/src/libvgcode/src/ShadersES.hpp
+index b386f23c6..49770a6f3 100644
+--- a/src/libvgcode/src/ShadersES.hpp
++++ b/src/libvgcode/src/ShadersES.hpp
+@@ -165,12 +165,29 @@ static const char* Segments_Vertex_Shader_ES =
+ "  vec3 line_up_dir = normalize(cross(line_right_dir, line_dir));\n"
+ "  int id = vertex_id < 4 ? id_a : id_b;\n"
+ "  vec3 endpoint_pos = vertex_id < 4 ? pos_a : pos_b;\n"
+-"  vec3 height_width_angle = texelFetch(height_width_angle_tex, tex_coord(id, data_shift), 0).xyz;\n"
++// Two fetches, both addressed from id_a / id_b, and then a select.
++//
++// This used to fetch height_width_angle[id] and, separately,
++// height_width_angle[closer_id] - and closer_id is computed from pos_a and
++// pos_b, which are themselves fetched. That made a three-level dependent
++// chain: index texture -> positions -> height_width_angle, with the shader
++// unable to start the last fetch until the middle one had landed. The device
++// says this draw is bound by the vertex stage and nothing else (benchquarter
++// 262 ms against benchfull 274 ms, a sixteenth of the area for 96% of the
++// cost), so latency that cannot be hidden is the cost.
++//
++// Fetching both endpoints' triples instead costs the same two fetches, but
++// both are addressable the moment the index fetch lands, so the chain is two
++// levels rather than three and the two are issued together. closer_ is then a
++// select between values already in registers.
++"  vec3 hwa_a = texelFetch(height_width_angle_tex, tex_coord(id_a, data_shift), 0).xyz;\n"
++"  vec3 hwa_b = texelFetch(height_width_angle_tex, tex_coord(id_b, data_shift), 0).xyz;\n"
++"  vec3 height_width_angle = (vertex_id < 4) ? hwa_a : hwa_b;\n"
+ "#ifdef FIX_TWISTING\n"
+-"  int closer_id = (dot(camera_position - pos_a, camera_position - pos_a) < dot(camera_position - pos_b, camera_position - pos_b)) ? id_a : id_b;\n"
+-"  vec3 closer_pos = (closer_id == id_a) ? pos_a : pos_b;\n"
++"  bool a_is_closer = dot(camera_position - pos_a, camera_position - pos_a) < dot(camera_position - pos_b, camera_position - pos_b);\n"
++"  vec3 closer_pos = a_is_closer ? pos_a : pos_b;\n"
+ "  vec3 camera_view_dir = normalize(closer_pos - camera_position);\n"
+-"  vec3 closer_height_width_angle = texelFetch(height_width_angle_tex, tex_coord(closer_id, data_shift), 0).xyz;\n"
++"  vec3 closer_height_width_angle = a_is_closer ? hwa_a : hwa_b;\n"
+ "  vec3 diagonal_dir_border = normalize(closer_height_width_angle.x * line_up_dir + closer_height_width_angle.y * line_right_dir);\n"
+ "#else\n"
+ "  vec3 camera_view_dir = normalize(endpoint_pos - camera_position);\n"
+@@ -212,6 +229,35 @@ static const char* Segments_Vertex_Shader_ES =
+ "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
+ "}\n";
+ 
++// A control for the one-shot benchmark: the same draw call, the same instance
++// count, the same vertex count per instance - and no texture fetches, no
++// lighting, no matrices. Whatever this costs is what the *shape* of the draw
++// costs, before any work the shader does.
++//
++// It answers the only question left. benchquarter proved the frame is bound by
++// the vertex stage rather than by fragments or tiles, but not what inside that
++// stage: 623307 instances of 8 vertices at 18.2M vertices/sec is either a
++// shader whose dependent fetches cannot be hidden, or an instanced draw shape
++// that Apple's tiler will not parallelise. If this control is also slow it is
++// the shape, and instancing has to go - a flat gl_VertexID draw, same pixels.
++// If it is fast, the fetches are the cost and the shader is where to work.
++//
++// Real triangles rather than degenerate ones, so nothing is culled before it is
++// counted; positioned from gl_InstanceID alone so no memory is touched.
++static const char* Segments_Bench_Vertex_Shader_ES =
++"#version 300 es\n"
++"precision highp float;\n"
++"in float vertex_id_float;\n"
++"out mediump vec3 color;\n"
++"void main() {\n"
++"  int vertex_id = int(vertex_id_float);\n"
++"  float x = float(gl_InstanceID & 255) * (2.0 / 255.0) - 1.0;\n"
++"  float y = float((gl_InstanceID >> 8) & 255) * (2.0 / 255.0) - 1.0;\n"
++"  vec2 corner = vec2(float(vertex_id & 1), float((vertex_id >> 1) & 1)) * 0.01;\n"
++"  color = vec3(0.5);\n"
++"  gl_Position = vec4(x + corner.x, y + corner.y, 0.0, 1.0);\n"
++"}\n";
++
+ static const char* Segments_Fragment_Shader_ES =
+ "#version 300 es\n"
+ "precision highp float;\n"
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index b951a1b13..97bfec8e9 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -868,6 +868,8 @@ void ViewerImpl::init(const std::string& opengl_context_version)
+     // segments shader
+ #ifdef ENABLE_OPENGL_ES
+     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
++    // Control for the one-shot benchmark; see Segments_Bench_Vertex_Shader_ES.
++    m_segments_bench_shader_id = init_shader("segments_bench", Segments_Bench_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
+ #else
+     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
+ #endif // ENABLE_OPENGL_ES
+@@ -1298,6 +1300,9 @@ std::atomic<unsigned> orca_ios_vg_cut_gap_verts{0};
+ // means fragment and tile bound.
+ std::atomic<unsigned> orca_ios_bench_full_us{0};
+ std::atomic<unsigned> orca_ios_bench_small_us{0};
++// The same draw with a shader that fetches nothing: what the shape of the draw
++// costs before the shader does any work.
++std::atomic<unsigned> orca_ios_bench_null_us{0};
+ 
+ // How far the merged chord may sit from the path it replaces.
+ //
+@@ -2385,21 +2390,27 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+     //
+     // Both extra draws land in the frame that is about to be overdrawn by the
+     // real one, so nothing shows on screen. It costs one slow frame, once.
+-    const auto draw_all_chunks = [&]() {
++    // bind_data is false for the control draw: its program has no samplers and
++    // none of these uniforms, and the locations here were queried from the real
++    // program - setting them while another program is current is an error, not
++    // a no-op.
++    const auto draw_all_chunks = [&](bool bind_data) {
+         for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
+             const auto [bid, bcount] = m_texture_data.get_enabled_segments_tex_id(i);
+             if (bcount == 0)
+                 continue;
+-            glsafe(glActiveTexture(GL_TEXTURE0));
+-            glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i).first));
+-            glsafe(glActiveTexture(GL_TEXTURE1));
+-            glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i).first));
+-            glsafe(glActiveTexture(GL_TEXTURE2));
+-            glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
+-            glsafe(glActiveTexture(GL_TEXTURE3));
+-            glsafe(glBindTexture(GL_TEXTURE_2D, bid));
+-            glsafe(glUniform1i(m_uni_segments_data_shift_id, m_texture_data.get_data_shift(i)));
+-            glsafe(glUniform1i(m_uni_segments_index_shift_id, m_texture_data.get_enabled_segments_shift(i)));
++            if (bind_data) {
++                glsafe(glActiveTexture(GL_TEXTURE0));
++                glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i).first));
++                glsafe(glActiveTexture(GL_TEXTURE1));
++                glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i).first));
++                glsafe(glActiveTexture(GL_TEXTURE2));
++                glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
++                glsafe(glActiveTexture(GL_TEXTURE3));
++                glsafe(glBindTexture(GL_TEXTURE_2D, bid));
++                glsafe(glUniform1i(m_uni_segments_data_shift_id, m_texture_data.get_data_shift(i)));
++                glsafe(glUniform1i(m_uni_segments_index_shift_id, m_texture_data.get_enabled_segments_shift(i)));
++            }
+             m_segment_template.render((bcount + stride - 1) / stride);
+         }
+     };
+@@ -2412,16 +2423,28 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+ 
+         glFinish();
+         const auto t0 = std::chrono::steady_clock::now();
+-        draw_all_chunks();
++        draw_all_chunks(true);
+         glFinish();
+         const auto t1 = std::chrono::steady_clock::now();
+ 
+         glsafe(glViewport(vp[0], vp[1], std::max(1, vp[2] / 4), std::max(1, vp[3] / 4)));
+-        draw_all_chunks();
++        draw_all_chunks(true);
+         glFinish();
+         const auto t2 = std::chrono::steady_clock::now();
+         glsafe(glViewport(vp[0], vp[1], vp[2], vp[3]));
+ 
++        // Same instances, same vertices per instance, no fetches and no
++        // lighting. The gap between this and benchfull is what the shader
++        // costs; this number itself is what the draw's shape costs.
++        if (m_segments_bench_shader_id != 0) {
++            glsafe(glUseProgram(m_segments_bench_shader_id));
++            draw_all_chunks(false);
++            glFinish();
++            const auto t3 = std::chrono::steady_clock::now();
++            orca_ios_bench_null_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
++            glsafe(glUseProgram(m_segments_shader_id));
++        }
++
+         orca_ios_bench_full_us  = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+         orca_ios_bench_small_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+     }
+diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
+index 7ec3ca08c..2c44dd775 100644
+--- a/src/libvgcode/src/ViewerImpl.hpp
++++ b/src/libvgcode/src/ViewerImpl.hpp
+@@ -327,6 +327,8 @@ private:
+     // OpenGL shaders ids
+     //
+     unsigned int m_segments_shader_id{ 0 };
++    // Control program for the one-shot draw benchmark: same draw, no fetches.
++    unsigned int m_segments_bench_shader_id{ 0 };
+     unsigned int m_options_shader_id{ 0 };
+ #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+     unsigned int m_cog_marker_shader_id{ 0 };
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 4849f2d09..783494dd3 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -89,6 +89,7 @@ extern std::atomic<unsigned> orca_ios_vg_cut_gap_verts;
+ // means it is bound by fragment and tile-store work.
+ extern std::atomic<unsigned> orca_ios_bench_full_us;
+ extern std::atomic<unsigned> orca_ios_bench_small_us;
++extern std::atomic<unsigned> orca_ios_bench_null_us;
+ }
+ namespace Slic3r { namespace GUI {
+ } }
+@@ -1336,6 +1337,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 << " gv" << libvgcode::orca_ios_vg_cut_gap_verts.load()
+                 << " benchfull " << (libvgcode::orca_ios_bench_full_us.load() / 1000)
+                 << " benchquarter " << (libvgcode::orca_ios_bench_small_us.load() / 1000)
++                << " benchnull " << (libvgcode::orca_ios_bench_null_us.load() / 1000)
+                 // Why the canvas was asked to draw at all. At rest, on a
+                 // preview nothing has changed, every one of these should be
+                 // zero and the render count should be zero with them.

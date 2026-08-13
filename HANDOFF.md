@@ -6468,3 +6468,84 @@ benchfull <ms>  benchquarter <ms>
   measurement.
 
 Either way the next round stops being a guess, which the last three were.
+
+## Run 153: the benchmark answered the architecture question
+
+```
+benchfull 274 ms   benchquarter 262 ms
+segs 1373315->623307   cut g22995 a63803 m536508 c0
+```
+
+**A sixteenth of the area costs 96% of the full-viewport time.** The frame is
+bound by the vertex stage and by nothing else. Fragments, tile store, resolution
+— together they are 4% of it.
+
+That closes two things at once:
+
+* **The offscreen-render-at-reduced-resolution idea is dead**, and with it the
+  last of the drawable work. 0405's note said it needed a measurement before
+  anyone built it; the measurement says it would have bought 4%. Not building it
+  was the right call, and 0402's 26% is worth almost nothing on this frame too.
+* **Only fewer or cheaper vertices can help.** Everything else is noise.
+
+### The tolerances: half worked
+
+| cut by | run 152 | run 153 |
+|---|---|---|
+| appearance | 257 979 | **63 803** |
+| geometry | 553 861 | 536 508 |
+
+Relative width matching was right — appearance cuts fell 4x, and the merge went
+1.64x to **2.20x**. Arachne's drifting wall width was exactly the problem.
+
+Raising the collinearity bound 5x moved geometry by 3%. That is a flat response,
+and it means the path really does turn: **this toolpath is not a set of
+over-sampled straight lines.** The premise the whole merge was built on holds
+for a smooth dense mesh and does not hold for this model. The merge is near its
+ceiling at ~2.2x, and it is no longer where the frame is.
+
+### The number that is left
+
+623 307 segments x 8 vertices = 5.0M vertices in 274 ms — **18.2M vertices/sec**
+on an M4. One to two orders of magnitude below what the part should do, linear
+in segment count, and unmoved by everything so far.
+
+440 ns per instance, for 8 vertices. Across a 10-core GPU that is close to no
+parallelism at all, which is not what expensive per-vertex work looks like — it
+is what serialisation looks like. Two candidates, and they call for opposite
+fixes:
+
+1. **The shader.** Six texture fetches with a dependent chain: index texture ->
+   positions -> height_width_angle, the last addressed by `closer_id`, which is
+   computed from the fetched positions. Latency that cannot be hidden.
+2. **The draw's shape.** 623 307 instances of 8 vertices, via
+   `glDrawElementsInstanced` with 24 `GL_UNSIGNED_BYTE` indices. Tiny instances
+   in enormous numbers is a shape Apple's tiler is known to handle badly.
+
+## 0408 — shorten the chain, and price the shape
+
+**The fix, for candidate 1.** `height_width_angle` is now fetched for both
+endpoints and selected between, instead of fetching `[id]` and then
+`[closer_id]`. Same two fetches, but both are addressable the moment the index
+fetch lands, so the chain is two levels deep rather than three and the pair is
+issued together. `closer_height_width_angle` becomes a register select.
+
+**The measurement, for candidate 2.** A control program: the same draw call, the
+same instance count, the same vertices per instance, no fetches, no lighting, no
+matrices — position synthesised from `gl_InstanceID`. Real triangles, so nothing
+is culled before it is counted. Timed in the same one-shot fenced benchmark:
+
+```
+benchfull <ms>  benchquarter <ms>  benchnull <ms>
+```
+
+* **benchnull ≈ benchfull** → the shape is the cost, the shader is irrelevant,
+  and instancing has to go: a flat `gl_VertexID` draw computing segment and
+  corner arithmetically, same pixels, no instancing.
+* **benchnull ≪ benchfull** → the fetches are the cost, and the shader is where
+  to work: pack colour into the position texture's unused `.w`, and consider
+  dropping FIX_TWISTING on a tablet.
+
+The control skips the texture binds and the `data_shift` / `index_shift`
+uniforms, because those locations were queried from the real program and setting
+them while another program is current is an error rather than a no-op.

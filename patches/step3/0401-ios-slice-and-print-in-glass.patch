@@ -1,0 +1,344 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index 13427f8..c47b216 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -3469,6 +3469,10 @@ void GLCanvas3D::on_idle(wxIdleEvent& evt)
+     // cheap - the icons are cached, and the native side does nothing at all
+     // when the description has not changed since the last idle.
+     orca_ios_sync_toolbar();
++    // Slice and Print alongside it: the same idle, the same diffing on the
++    // other side, so neither costs anything when nothing has changed.
++    if (wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->orca_ios_sync_side_tools();
+ #endif
+     //BBS: GUI refactor: GLToolbar
+     m_dirty |= m_assemble_view_toolbar.update_items_state();
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 7d8e35b..2e275f3 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -15,6 +15,13 @@ void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *
+ // src/slic3r/GUI/ios_webview_support.mm - the one page that needs room kept
+ // clear at the top for the floating tab bar.
+ namespace Slic3r { namespace GUI { void orca_ios_inset_tab(wxWindow *page); } }
++// src/slic3r/GUI/ios_webview_support.mm - the glass capsule that shows Slice
++// and Print now that the strip holding them is hidden.
++namespace Slic3r { namespace GUI {
++void orca_ios_side_tools_begin();
++void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bool primary);
++void orca_ios_side_tools_commit();
++} }
+ #include <atomic>
+ #include <chrono>
+ // src/slic3r/GUI/GLCanvas3D.cpp
+@@ -1983,6 +1990,47 @@ void MainFrame::init_tabpanel() {
+ }
+ 
+ #ifdef __WXOSX_IPHONE__
++// What the native Slice / Print capsule should be showing. Read from the very
++// buttons Orca would have drawn in the strip, so a label that changes to "Slice
++// all", or a button that greys out while a slice runs, carries across on its
++// own. IsShown() is Orca's own decision about whether this pair belongs on the
++// current tab, and it is respected rather than second-guessed.
++void MainFrame::orca_ios_sync_side_tools()
++{
++    orca_ios_side_tools_begin();
++    if (m_slice_btn != nullptr && m_slice_btn->IsShown())
++        orca_ios_side_tools_add("slice", into_u8(m_slice_btn->GetLabel()).c_str(),
++                                m_slice_btn->IsEnabled(), true);
++    if (m_print_btn != nullptr && m_print_btn->IsShown())
++        orca_ios_side_tools_add("print", into_u8(m_print_btn->GetLabel()).c_str(),
++                                m_print_btn->IsEnabled(), false);
++    orca_ios_side_tools_commit();
++}
++
++// A tap. Posted to the button itself, so everything bound to it - and there is
++// a good deal, from exiting the gizmo to picking which plate - runs exactly as
++// it does on the desktop.
++void MainFrame::orca_ios_run_side_tool(const char *id)
++{
++    if (id == nullptr)
++        return;
++    const std::string item(id);
++    SideButton *const btn = item == "slice" ? m_slice_btn
++                          : item == "print" ? m_print_btn : nullptr;
++    if (btn == nullptr || !btn->IsEnabled())
++        return;
++    wxCommandEvent evt(wxEVT_BUTTON, btn->GetId());
++    evt.SetEventObject(btn);
++    btn->GetEventHandler()->ProcessEvent(evt);
++}
++
++// Called from the capsule, which knows nothing about MainFrame.
++void orca_ios_side_tool_action(const char *id)
++{
++    if (wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->orca_ios_run_side_tool(id);
++}
++
+ // The tab to land on after a new project. Making one and being left looking at
+ // the home page is a dead end on a screen this size - there is nothing else to
+ // do next but go to Prepare, so the plus does it.
+diff --git a/src/slic3r/GUI/MainFrame.hpp b/src/slic3r/GUI/MainFrame.hpp
+index 6495dea..38396a5 100644
+--- a/src/slic3r/GUI/MainFrame.hpp
++++ b/src/slic3r/GUI/MainFrame.hpp
+@@ -327,6 +327,14 @@ public:
+     //BBS: GUI refactor
+     void        select_tab(wxPanel* panel);
+     void        select_tab(size_t tab = size_t(-1));
++#ifdef __WXOSX_IPHONE__
++    // Slice and Print. They live in side_tools, which belongs to the tab strip,
++    // and the strip is hidden on this port - so they are described to the
++    // native bar from here and run from here. Member FUNCTIONS: no layout and
++    // no vtable change, the trap 0379 had to undo.
++    void        orca_ios_sync_side_tools();
++    void        orca_ios_run_side_tool(const char *id);
++#endif
+     void        request_select_tab(TabPosition pos);
+     int         get_calibration_curr_tab();
+     void        select_view(const std::string& direction);
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index afc6beb..3eff44e 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -422,6 +422,163 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+ }
+ 
+ 
++// Slice and Print, in glass.
++//
++// Orca puts these two in `side_tools` (MainFrame::create_side_tools) and hands
++// that sizer to ButtonsListCtrl - the tab strip. Hiding the strip for the
++// native tab bar therefore hid the slice and print buttons with it, which is
++// how the most important control in the application went missing. They come
++// back here as their own glass capsule, and they are still the same buttons
++// underneath: the label and the enabled state are read from m_slice_btn and
++// m_print_btn every idle, and a tap posts wxEVT_BUTTON to them, so "Slice
++// plate" becoming "Slice all" and going grey while a slice runs all still work
++// without this file knowing any of it.
++//
++// In the window's own controller, not in wx's view tree - the same reason the
++// plus is there.
++
++static const CGFloat kOrcaSideH      = 40;
++static const CGFloat kOrcaSideGap    = 8;
++static const CGFloat kOrcaSideInsetX = 14;
++static const CGFloat kOrcaSideMargin = 14;
++
++@interface OrcaSideButton : UIButton
++@property (nonatomic, copy) NSString *itemId;
++@end
++
++@implementation OrcaSideButton
++- (void)dealloc { [_itemId release]; [super dealloc]; }
++@end
++
++@interface OrcaSideTools : UIView
++- (void)setItems:(NSArray<NSDictionary *> *)items;
++- (void)reposition;
++@end
++
++@implementation OrcaSideTools {
++    UIVisualEffectView *_glass;
++    NSMutableArray<OrcaSideButton *> *_buttons;
++    NSArray<NSDictionary *>          *_items;
++}
++
++- (instancetype)initWithFrame:(CGRect)frame
++{
++    self = [super initWithFrame:frame];
++    if (self == nil)
++        return nil;
++
++    self.backgroundColor     = [UIColor clearColor];
++    self.layer.shadowColor   = [UIColor blackColor].CGColor;
++    self.layer.shadowOpacity = 0.18f;
++    self.layer.shadowRadius  = 12;
++    self.layer.shadowOffset  = CGSizeMake(0, 3);
++
++    UIGlassEffect *const glass = [[[UIGlassEffect alloc] init] autorelease];
++    glass.interactive = YES;
++    _glass = [[UIVisualEffectView alloc] initWithEffect:glass];
++    _glass.layer.cornerCurve = kCACornerCurveContinuous;
++    _glass.clipsToBounds     = YES;
++    [self addSubview:_glass];
++
++    _buttons = [[NSMutableArray alloc] init];
++    return self;
++}
++
++- (void)dealloc
++{
++    [_buttons release];
++    [_items release];
++    [_glass release];
++    [super dealloc];
++}
++
++- (void)setItems:(NSArray<NSDictionary *> *)items
++{
++    if ([items isEqualToArray:_items])
++        return;
++    [_items release];
++    _items = [items copy];
++
++    for (OrcaSideButton *b in _buttons)
++        [b removeFromSuperview];
++    [_buttons removeAllObjects];
++
++    for (NSDictionary *item in _items) {
++        OrcaSideButton *const b = [OrcaSideButton buttonWithType:UIButtonTypeSystem];
++        b.itemId = [item objectForKey:@"id"];
++        [b setTitle:[item objectForKey:@"title"] forState:UIControlStateNormal];
++        b.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
++        b.enabled         = [[item objectForKey:@"enabled"] boolValue];
++        // The primary one carries the tint, the way Orca's own pair does.
++        const BOOL primary = [[item objectForKey:@"primary"] boolValue];
++        [b setTitleColor:(primary ? [UIColor whiteColor] : [UIColor labelColor])
++                forState:UIControlStateNormal];
++        b.backgroundColor    = primary ? [UIColor systemBlueColor]
++                                       : [UIColor colorWithWhite:0.5 alpha:0.14];
++        b.layer.cornerRadius = (kOrcaSideH - 12) * 0.5f;
++        b.layer.cornerCurve  = kCACornerCurveContinuous;
++        b.pointerInteractionEnabled = YES;
++        [b addTarget:self action:@selector(tapped:)
++            forControlEvents:UIControlEventTouchUpInside];
++        [_glass.contentView addSubview:b];
++        [_buttons addObject:b];
++    }
++    [self reposition];
++}
++
++- (void)tapped:(OrcaSideButton *)sender
++{
++    if (sender.itemId != nil)
++        Slic3r::GUI::orca_ios_side_tool_action([sender.itemId UTF8String]);
++}
++
++- (void)reposition
++{
++    UIView *const host = self.superview;
++    if (host == nil)
++        return;
++    if (_buttons.count == 0) {
++        self.hidden = YES;
++        return;
++    }
++    self.hidden = NO;
++
++    CGFloat w = kOrcaSideInsetX;
++    for (OrcaSideButton *b in _buttons) {
++        const CGSize s = [b sizeThatFits:CGSizeMake(CGFLOAT_MAX, kOrcaSideH - 12)];
++        w += MAX(s.width + 28, 96) + kOrcaSideGap;
++    }
++    w = w - kOrcaSideGap + kOrcaSideInsetX;
++
++    const UIEdgeInsets safe = host.safeAreaInsets;
++    const CGRect hb = host.bounds;
++    self.frame = CGRectMake(hb.size.width - safe.right - kOrcaSideMargin - w,
++                            safe.top + kOrcaSideMargin,
++                            w, kOrcaSideH);
++    [self setNeedsLayout];
++    [self layoutIfNeeded];
++}
++
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++    const CGFloat radius = self.bounds.size.height * 0.5f;
++    _glass.frame              = self.bounds;
++    _glass.layer.cornerRadius = radius;
++    self.layer.shadowPath     = [UIBezierPath bezierPathWithRoundedRect:self.bounds
++                                                          cornerRadius:radius].CGPath;
++
++    CGFloat x = kOrcaSideInsetX;
++    for (OrcaSideButton *b in _buttons) {
++        const CGSize s = [b sizeThatFits:CGSizeMake(CGFLOAT_MAX, kOrcaSideH - 12)];
++        const CGFloat bw = MAX(s.width + 28, 96);
++        b.frame = CGRectMake(x, 6, bw, kOrcaSideH - 12);
++        x += bw + kOrcaSideGap;
++    }
++}
++
++@end
++
+ // The plus, top right of the home page.
+ //
+ // Orca's home page offers "new project" and "open project" as two tiles in the
+@@ -909,6 +1066,7 @@ static bool orca_ios_tab_is_hidden(wxWindow *page)
+ // src/slic3r/GUI/ios_webview_support.mm and MainFrame.cpp / GLCanvas3D.cpp,
+ // all further down or in another translation unit.
+ namespace Slic3r { namespace GUI {
++void orca_ios_side_tool_action(const char *id);
+ void orca_ios_home_plus_update(wxBookCtrlBase *book);
+ void orca_ios_select_prepare();
+ void orca_ios_wake_canvas();
+@@ -2019,5 +2177,67 @@ void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *
+     orca_ios_install_home_plus();
+ }
+ 
++// -- slice and print -------------------------------------------------------
++
++static OrcaSideTools                  *gs_orca_side_tools   = nil;
++static NSMutableArray<NSDictionary *> *gs_orca_side_pending = nil;
++static bool                            gs_orca_side_failed  = false;
++
++// MainFrame describes the pair it has, one at a time, the same way the canvas
++// describes the toolbar.
++void orca_ios_side_tools_begin()
++{
++    [gs_orca_side_pending release];
++    gs_orca_side_pending = [[NSMutableArray alloc] init];
++}
++
++void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bool primary)
++{
++    if (gs_orca_side_pending == nil || id == nullptr || title == nullptr || *title == '\0')
++        return;
++    [gs_orca_side_pending addObject:@{
++        @"id"      : [NSString stringWithUTF8String:id],
++        @"title"   : [NSString stringWithUTF8String:title],
++        @"enabled" : [NSNumber numberWithBool:enabled ? YES : NO],
++        @"primary" : [NSNumber numberWithBool:primary ? YES : NO],
++    }];
++}
++
++void orca_ios_side_tools_commit()
++{
++    if (gs_orca_side_failed || gs_orca_side_pending == nil)
++        return;
++
++    // Same host as the plus, and for the same reason: outside wx's view tree,
++    // and following whoever owns the window.
++    UIWindow *window = nil;
++    if (gs_orca_home_panel != nullptr) {
++        UIView *const v = (UIView *) gs_orca_home_panel->GetHandle();
++        window = v.window;
++    }
++    if (window == nil)
++        return;
++    UIView *const host = orca_ios_plus_host(window);
++
++    @try {
++        if (gs_orca_side_tools == nil) {
++            gs_orca_side_tools = [[OrcaSideTools alloc] initWithFrame:CGRectZero];
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-side: slice and print created";
++        }
++        if (gs_orca_side_tools.superview != host) {
++            [gs_orca_side_tools removeFromSuperview];
++            [host addSubview:gs_orca_side_tools];
++        }
++        [host bringSubviewToFront:gs_orca_side_tools];
++        [gs_orca_side_tools setItems:gs_orca_side_pending];
++        [gs_orca_side_tools reposition];
++    }
++    @catch (NSException *e) {
++        gs_orca_side_failed = true;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-side: THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++    }
++}
++
+ } // namespace GUI
+ } // namespace Slic3r

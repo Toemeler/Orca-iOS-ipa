@@ -5927,3 +5927,32 @@ already puts autosaves in Recent, so placing an object with no project open
 should save itself once the blank viewport is fixed and there is a way to place
 one. That is worth checking on the next device run rather than adding a second
 mechanism beside the one already there.
+
+### 0401 — Slice and Print, in glass
+
+**Hiding the tab strip hid the slice button.** Orca builds Slice and Print in
+`MainFrame::create_side_tools()` and hands that sizer to `ButtonsListCtrl` —
+the strip. 0397 hides the strip, so the most important control in the
+application went with it. Anything else living in `side_tools` would have gone
+the same way; that sizer is worth remembering.
+
+They come back as their own glass capsule at the top trailing edge, and they
+are still the same buttons underneath:
+
+- **Label and enabled state are read from `m_slice_btn` / `m_print_btn`** every
+  idle, so "Slice plate" turning into "Slice all", or greying out while a slice
+  runs, carries across without this code knowing any of it.
+- **`IsShown()` is respected rather than second-guessed** — that is Orca's own
+  decision about whether the pair belongs on the current tab, and it is why the
+  capsule disappears on Home and Device without a page test of its own.
+- **A tap posts `wxEVT_BUTTON` to the button itself**, so everything bound to
+  it — exiting the gizmo, choosing the plate, the filament group popup — runs
+  exactly as on the desktop.
+
+Hosted alongside the plus, outside wx's view tree, for the reason established
+the hard way in 0400.
+
+**Not yet moved across:** the two dropdown option buttons
+(`m_slice_option_btn` / `m_print_option_btn`), which choose plate-versus-all.
+Their popups are positioned against the hidden wx buttons and would open off
+screen, so they need a `UIMenu` of their own on each capsule button.

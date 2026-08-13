@@ -1,0 +1,8 @@
+=== FAILED targets ===
+GUI/GLCanvas3D.cpp
+GUI/ios_webview_support.mm
+
+=== undefined symbols (linker) ===
+
+total FAILED: 2
+undefined symbol count: 0

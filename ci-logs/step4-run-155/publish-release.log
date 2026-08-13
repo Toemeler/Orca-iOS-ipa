@@ -1,0 +1,10 @@
+HTTP 422: Validation Failed (https://uploads.github.com/repos/Toemeler/Orca-iOS-ipa/releases/369985855/assets?label=&name=OrcaSlicer-iPad.ipa)
+ReleaseAsset.name already exists
+publish_release: attempt 1 failed, retrying in 10s
+HTTP 502: Server Error (https://api.github.com/repos/Toemeler/Orca-iOS-ipa/releases)
+publish_release: attempt 2 failed, retrying in 20s
+HTTP 500 (https://api.github.com/repos/Toemeler/Orca-iOS-ipa/releases)
+publish_release: attempt 3 failed, retrying in 30s
+HTTP 502: Server Error (https://api.github.com/repos/Toemeler/Orca-iOS-ipa/releases)
+publish_release: attempt 4 failed, retrying in 40s
+publish_release: could not create orcaslicer-ipa-run155 after 4 attempts

@@ -1,0 +1,88 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index bac19b5..992ea7e 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -8016,6 +8016,24 @@ bool GUI_App::load_language(wxString language, bool initial)
+         language = "de_DE";
+         if (app_config->get("language") != "de_DE")
+             app_config->set("language", "de_DE");
++
++        // And load the catalog directly, because naming the language was not
++        // enough: the interface came up in English anyway. wxLocale cannot set
++        // a locale on this device - "Cannot set locale to language English
++        // (Switzerland)" in every launch - and Orca's path below gives the
++        // translation up along with it. wxTranslations needs no C locale at
++        // all, so the catalog is loaded here and whatever the code below
++        // manages afterwards is a bonus rather than the only chance.
++        {
++            wxTranslations *const trans = new wxTranslations();
++            wxTranslations::Set(trans);
++            trans->SetLanguage("de");
++            trans->AddStdCatalog();
++            const bool ok = trans->AddCatalog(SLIC3R_APP_KEY);
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-lang: de catalog from "
++                                     << localization_dir() << " -> "
++                                     << (ok ? "loaded" : "NOT FOUND");
++        }
+ #endif
+         if (! language.empty())
+         	BOOST_LOG_TRIVIAL(info) << boost::format("language provided by OrcaSlicer.conf: %1%") % language;
+diff --git a/src/slic3r/GUI/Notebook.hpp b/src/slic3r/GUI/Notebook.hpp
+index b3443c8..8e8aeff 100644
+--- a/src/slic3r/GUI/Notebook.hpp
++++ b/src/slic3r/GUI/Notebook.hpp
+@@ -108,6 +108,20 @@ public:
+         // the pages the whole window instead of everything below a strip that
+         // is no longer drawn.
+         m_bookctrl->Hide();
++
++        // AND the border wx keeps around the page regardless.
++        //
++        // Hiding the strip zeroes GetControllerSize(), and 0414 took the sizer
++        // item away as well, and the grey band was still there - because
++        // neither is what draws it. wxBookCtrlBase::GetPageRect() computes
++        //
++        //     rectPage.y = size.y + GetInternalBorder();
++        //
++        // so with the controller at zero height the internal border is the
++        // whole of the offset, and the notebook's own grey shows through it
++        // across the top of every page. It defaults to 5 and nothing here
++        // wants it.
++        SetInternalBorder(0);
+ #endif
+ 
+         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index a5b8808..1759785 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -1001,8 +1001,28 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+         OrcaToolbarButton *const b = [OrcaToolbarButton buttonWithType:UIButtonTypeSystem];
+         b.itemId = [item objectForKey:@"id"];
+         [b setImage:[item objectForKey:@"image"] forState:UIControlStateNormal];
+-        b.enabled            = [[item objectForKey:@"enabled"] boolValue];
++        const BOOL usable    = [[item objectForKey:@"enabled"] boolValue];
++        b.enabled            = usable;
+         b.accessibilityLabel = [item objectForKey:@"tooltip"];
++
++        // GREYED OUT WHEN IT CANNOT BE USED. A disabled UIButton dims its
++        // title, but these carry an image rendered AlwaysOriginal - which is
++        // what keeps Orca's own icon colours - and UIKit does not dim that. So
++        // a tool that cannot be used looked exactly like one that can. Dimming
++        // the whole button is what the rendering mode costs us, and it is the
++        // clearer signal anyway.
++        b.alpha = usable ? 1.0f : 0.35f;
++
++        // THE NAME, ON A LONG HOVER. UIToolTipInteraction is the pointer
++        // tooltip iPadOS shows for exactly this, and the text is the tooltip
++        // Orca already wrote for the item - "Add", "Auto orient all/selected
++        // objects" and so on, shortcut included.
++        NSString *const name = [item objectForKey:@"tooltip"];
++        if (name.length > 0) {
++            UIToolTipInteraction *const tip =
++                [[[UIToolTipInteraction alloc] initWithDefaultToolTip:name] autorelease];
++            [b addInteraction:tip];
++        }
+         b.layer.cornerRadius = kOrcaToolCorner;
+         // The pointer effect each icon should have had from the start: this is
+         // a bar of buttons and a trackpad ought to light them one at a time.

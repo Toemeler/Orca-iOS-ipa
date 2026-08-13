@@ -6906,3 +6906,39 @@ paths is ~12.5 ms, and the flat draw already removed the cost that dominated.
 The VBO's remaining prize is the six texture fetches per vertex - real, but this
 is no longer a 40x lever, and it costs the memory headroom this patch just
 bought.
+
+### 0415 — the page border, dimmed tools, and their names
+
+**The grey band was never the strip and never the sizer.** Two rounds went on
+`m_bookctrl->Hide()` and then on removing the sizer item, and it was still
+there, because `wxBookCtrlBase::GetPageRect()` computes
+
+    rectPage.y = size.y + GetInternalBorder();
+
+With the controller hidden `size.y` is zero, so the **internal border is the
+entire offset** — a band of the notebook's own grey across the top of every
+page, owed to neither of the things that were removed. It defaults to 5 and
+nothing on this port wants it: `SetInternalBorder(0)`.
+
+Worth keeping as a method: when two plausible fixes both fail, the cause is
+usually a third thing that neither touched. Reading `GetPageRect()` would have
+answered it before either attempt.
+
+**A disabled tool did not look disabled.** UIKit dims a disabled button's
+*title*, not its image — and these buttons carry `AlwaysOriginal` images, which
+is what keeps Orca's own icon colours. So the whole button is dimmed instead
+(`alpha 0.35`), which is the clearer signal anyway.
+
+**And a long hover names the tool.** `UIToolTipInteraction` is what iPadOS
+shows for a pointer resting on a control, and the text is the tooltip Orca
+already wrote for the item — "Add [Ctrl+I]", "Auto orient all/selected objects
+[Q]" — shortcut included, at no cost, because it was already being carried
+across for the accessibility label.
+
+**German, second attempt.** Naming the language was not enough: the interface
+still came up English. wxLocale cannot set a locale on this device — the log
+says so every launch — and Orca's path abandons the translation along with it.
+`wxTranslations` needs no C locale, so the catalog is now loaded directly and
+whatever Orca manages afterwards is a bonus rather than the only chance. The
+line `orca-ios-lang: de catalog from <dir> -> loaded|NOT FOUND` says whether
+the .mo is even in the bundle, which is the other thing that could be wrong.

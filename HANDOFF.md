@@ -6549,3 +6549,66 @@ benchfull <ms>  benchquarter <ms>  benchnull <ms>
 The control skips the texture binds and the `data_shift` / `index_shift`
 uniforms, because those locations were queried from the real program and setting
 them while another program is current is an error rather than a no-op.
+
+## Run 154: it is not the shader, it is the shape
+
+```
+benchfull 507   benchquarter 267   benchnull 236
+```
+
+`benchfull` is the first of the three draws and carries the warm-up; 267 is the
+warm number for the real shader, and it matches run 153's 262.
+
+**`benchnull` is 236 ms** — the same draw call, the same 622 894 instances, the
+same 8 vertices each, with a vertex shader that fetches nothing, lights nothing
+and multiplies by nothing.
+
+| | ms | share |
+|---|---|---|
+| shader work (fetches, lighting, matrices) | 31 | **12%** |
+| the shape of the draw | 236 | **88%** |
+
+**379 nanoseconds per instance to draw eight vertices of nothing at all.** Every
+round of shader work — the indexed templates, the power-of-two addressing, the
+mediump varying, this round's shortened fetch chain — has been optimising 12% of
+the frame. That is why the frame time has not moved: 0408's dependency fix was
+correct and bought nothing, exactly as this number predicts.
+
+The frame is unchanged at 241 ms, as expected.
+
+## 0409 — 16-bit indices, and a price for instancing
+
+**The fix that costs nothing to try.** The segment template draws with
+`GL_UNSIGNED_BYTE` indices. Almost no GPU has native 8-bit index fetch; the
+usual driver response is to convert the buffer to 16-bit, and a driver doing
+that per draw — or per instance — produces exactly this signature: a
+per-instance cost that does not care what the shader does. `INDEX_DATA` is
+`uint16_t` now and the draw passes `GL_UNSIGNED_SHORT`. Twenty-four extra bytes,
+once.
+
+**The measurement, if it is not that.** `benchflat`: the same control geometry
+drawn with no instancing, no index buffer and no vertex attributes — `24 * N`
+vertices from one `glDrawArrays`, segment and corner derived from
+`gl_VertexID`, into an empty VAO (this VAO's attribute 0 is an eight-element
+buffer and 24N vertices would read off the end of it).
+
+* **benchflat ≪ benchnull** → instancing is the cost. The toolpath gets drawn
+  flat: 24 invocations per segment instead of 8, no per-instance cost, same
+  pixels. On these numbers that trades 236 ms of instancing for 24 x 6.2 ns x
+  622 894 = ~93 ms of vertex work, which is a 2.5x frame at worst and better if
+  the per-vertex cost falls outside an instanced draw.
+* **benchflat ≈ benchnull** → the cost is per-vertex dispatch and neither shape
+  wins. Then the only remaining lever is fewer vertices, and that means a real
+  vertex buffer built once at load instead of the texture-fetch expansion —
+  which is what a normal renderer does and what libvgcode's design has been
+  avoiding all along.
+
+### What the numbers say about the target
+
+Being honest about the ceiling: at 6.2 ns per vertex, 120 fps (8.3 ms) affords
+about 1.3M vertices a frame. Flat drawing needs 24 per segment, so ~56 000
+segments; the merge gives 623 000. Even with instancing gone entirely, this model
+at full detail is roughly an order of magnitude past a 120 Hz frame, and about
+2-3x past 60. The honest targets are a solid 30 while moving on a model this
+size, 60 on ordinary ones, and 120 only on small ones — unless the vertex count
+per segment comes down, which is the vertex-buffer question above.

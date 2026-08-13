@@ -1,0 +1,167 @@
+diff --git a/src/libvgcode/src/SegmentTemplate.cpp b/src/libvgcode/src/SegmentTemplate.cpp
+index bb653417b..9860991db 100644
+--- a/src/libvgcode/src/SegmentTemplate.cpp
++++ b/src/libvgcode/src/SegmentTemplate.cpp
+@@ -33,7 +33,19 @@ namespace libvgcode {
+ // triangles, same order, same vertices - so this costs nothing in quality.
+ static constexpr const std::array<uint8_t, 8> VERTEX_DATA = { 0, 1, 2, 3, 4, 5, 6, 7 };
+ 
+-static constexpr const std::array<uint8_t, 24> INDEX_DATA = {
++// 16-bit, not 8-bit.
++//
++// benchnull measured this draw at 236 ms with a vertex shader that fetches
++// nothing, lights nothing and multiplies by nothing - 379 ns per instance to
++// draw eight vertices of nothing at all, which is 88% of the whole toolpath
++// frame. The work is not in the shader; it is in the shape of the draw.
++//
++// GL_UNSIGNED_BYTE indices are the first suspect, because almost no GPU has
++// native 8-bit index fetch. The usual driver response is to convert the index
++// buffer to 16-bit, and a driver that does that per draw - or worse, per
++// instance - would produce exactly this: a per-instance cost that does not care
++// what the shader does. Sixteen bits costs 24 extra bytes once.
++static constexpr const std::array<uint16_t, 24> INDEX_DATA = {
+     0, 1, 2, // front spike
+     0, 2, 3, // front spike
+     0, 3, 4, // right/bottom body 
+@@ -50,7 +62,7 @@ void SegmentTemplate::init()
+         return;
+ 
+     m_size_in_bytes_gpu += VERTEX_DATA.size() * sizeof(uint8_t);
+-    m_size_in_bytes_gpu += INDEX_DATA.size() * sizeof(uint8_t);
++    m_size_in_bytes_gpu += INDEX_DATA.size() * sizeof(uint16_t);
+ 
+     int curr_vertex_array;
+     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
+@@ -74,7 +86,7 @@ void SegmentTemplate::init()
+     // bound while the VAO is and needs no restoring of its own.
+     glsafe(glGenBuffers(1, &m_ibo_id));
+     glsafe(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo_id));
+-    glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDEX_DATA.size() * sizeof(uint8_t), INDEX_DATA.data(), GL_STATIC_DRAW));
++    glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDEX_DATA.size() * sizeof(uint16_t), INDEX_DATA.data(), GL_STATIC_DRAW));
+ 
+     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
+     glsafe(glBindVertexArray(curr_vertex_array));
+@@ -107,7 +119,7 @@ void SegmentTemplate::render(size_t count)
+     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
+ 
+     glsafe(glBindVertexArray(m_vao_id));
+-    glsafe(glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(INDEX_DATA.size()), GL_UNSIGNED_BYTE,
++    glsafe(glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(INDEX_DATA.size()), GL_UNSIGNED_SHORT,
+                                    (const void*)0, static_cast<GLsizei>(count)));
+     glsafe(glBindVertexArray(curr_vertex_array));
+ }
+diff --git a/src/libvgcode/src/ShadersES.hpp b/src/libvgcode/src/ShadersES.hpp
+index 49770a6f3..35ae9fc9d 100644
+--- a/src/libvgcode/src/ShadersES.hpp
++++ b/src/libvgcode/src/ShadersES.hpp
+@@ -258,6 +258,28 @@ static const char* Segments_Bench_Vertex_Shader_ES =
+ "  gl_Position = vec4(x + corner.x, y + corner.y, 0.0, 1.0);\n"
+ "}\n";
+ 
++// The same control, drawn flat: no instancing, no index buffer, no vertex
++// attributes - 24 * N vertices from one glDrawArrays, with the segment and the
++// corner derived from gl_VertexID. Against benchnull (the instanced control) it
++// prices instancing itself, which benchnull says is 88% of the toolpath frame.
++//
++// If this is much faster, the fix is to draw the toolpath this way: 24
++// invocations per segment instead of 8, but no per-instance cost, and the same
++// pixels. If it is not, the cost is per-vertex dispatch and neither shape wins.
++static const char* Segments_Bench_Flat_Vertex_Shader_ES =
++"#version 300 es\n"
++"precision highp float;\n"
++"out mediump vec3 color;\n"
++"void main() {\n"
++"  int seg = gl_VertexID / 24;\n"
++"  int corner = gl_VertexID - seg * 24;\n"
++"  float x = float(seg & 255) * (2.0 / 255.0) - 1.0;\n"
++"  float y = float((seg >> 8) & 255) * (2.0 / 255.0) - 1.0;\n"
++"  vec2 c = vec2(float(corner & 1), float((corner >> 1) & 1)) * 0.01;\n"
++"  color = vec3(0.5);\n"
++"  gl_Position = vec4(x + c.x, y + c.y, 0.0, 1.0);\n"
++"}\n";
++
+ static const char* Segments_Fragment_Shader_ES =
+ "#version 300 es\n"
+ "precision highp float;\n"
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index 97bfec8e9..82e67892b 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -870,6 +870,7 @@ void ViewerImpl::init(const std::string& opengl_context_version)
+     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
+     // Control for the one-shot benchmark; see Segments_Bench_Vertex_Shader_ES.
+     m_segments_bench_shader_id = init_shader("segments_bench", Segments_Bench_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
++    m_segments_bench_flat_shader_id = init_shader("segments_bench_flat", Segments_Bench_Flat_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
+ #else
+     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
+ #endif // ENABLE_OPENGL_ES
+@@ -1303,6 +1304,9 @@ std::atomic<unsigned> orca_ios_bench_small_us{0};
+ // The same draw with a shader that fetches nothing: what the shape of the draw
+ // costs before the shader does any work.
+ std::atomic<unsigned> orca_ios_bench_null_us{0};
++// The same control drawn flat - no instancing, no indices - which prices
++// instancing itself against benchnull.
++std::atomic<unsigned> orca_ios_bench_flat_us{0};
+ 
+ // How far the merged chord may sit from the path it replaces.
+ //
+@@ -2442,6 +2446,26 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+             glFinish();
+             const auto t3 = std::chrono::steady_clock::now();
+             orca_ios_bench_null_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
++
++            // Same vertex count per segment as the real draw would need without
++            // an index buffer (24, not 8), no instancing, no attributes. An
++            // empty VAO because this VAO's attribute 0 is an eight-element
++            // buffer, and 24 * N vertices would read off the end of it.
++            if (m_segments_bench_flat_shader_id != 0) {
++                GLuint empty_vao = 0;
++                glsafe(glGenVertexArrays(1, &empty_vao));
++                glsafe(glBindVertexArray(empty_vao));
++                glsafe(glUseProgram(m_segments_bench_flat_shader_id));
++                size_t total = 0;
++                for (size_t i = 0; i < m_texture_data.get_count(); ++i)
++                    total += m_texture_data.get_enabled_segments_tex_id(i).second;
++                glsafe(glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(24 * (total / stride ? total / stride : 1))));
++                glFinish();
++                const auto t4 = std::chrono::steady_clock::now();
++                orca_ios_bench_flat_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
++                glsafe(glBindVertexArray(0));
++                glsafe(glDeleteVertexArrays(1, &empty_vao));
++            }
+             glsafe(glUseProgram(m_segments_shader_id));
+         }
+ 
+diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
+index 2c44dd775..6f767118e 100644
+--- a/src/libvgcode/src/ViewerImpl.hpp
++++ b/src/libvgcode/src/ViewerImpl.hpp
+@@ -329,6 +329,8 @@ private:
+     unsigned int m_segments_shader_id{ 0 };
+     // Control program for the one-shot draw benchmark: same draw, no fetches.
+     unsigned int m_segments_bench_shader_id{ 0 };
++    // Flat, non-instanced control: prices instancing itself.
++    unsigned int m_segments_bench_flat_shader_id{ 0 };
+     unsigned int m_options_shader_id{ 0 };
+ #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+     unsigned int m_cog_marker_shader_id{ 0 };
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 783494dd3..8cf7acce4 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -90,6 +90,7 @@ extern std::atomic<unsigned> orca_ios_vg_cut_gap_verts;
+ extern std::atomic<unsigned> orca_ios_bench_full_us;
+ extern std::atomic<unsigned> orca_ios_bench_small_us;
+ extern std::atomic<unsigned> orca_ios_bench_null_us;
++extern std::atomic<unsigned> orca_ios_bench_flat_us;
+ }
+ namespace Slic3r { namespace GUI {
+ } }
+@@ -1338,6 +1339,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 << " benchfull " << (libvgcode::orca_ios_bench_full_us.load() / 1000)
+                 << " benchquarter " << (libvgcode::orca_ios_bench_small_us.load() / 1000)
+                 << " benchnull " << (libvgcode::orca_ios_bench_null_us.load() / 1000)
++                << " benchflat " << (libvgcode::orca_ios_bench_flat_us.load() / 1000)
+                 // Why the canvas was asked to draw at all. At rest, on a
+                 // preview nothing has changed, every one of these should be
+                 // zero and the render count should be zero with them.

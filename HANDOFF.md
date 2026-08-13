@@ -6791,3 +6791,66 @@ ALL CHECKS PASSED
 
 Four builds were spent on mistakes CI could not catch and a local check could.
 This is the pattern to keep: the arithmetic gets tested on this machine first.
+
+## Run 159: flat drawing works — 241 ms to 6-13 ms
+
+```
+render +50  paths_ms 643  worst_ms  39   -> 12.9 ms a frame
+render +12  paths_ms  68  worst_ms 102   ->  5.7 ms a frame
+segs 1372026->622851   gpu 93 MB (was 88, = the 6 MB index buffer)
+```
+
+**Nineteen to forty-three times faster**, and the user reports it as smooth. The
+whole four-round hunt lands here: the frame was never the shader, the model, the
+resolution or the API. It was 623 000 instanced draws of eight vertices, and
+`benchnull` said so the moment it was asked the right question.
+
+Worth keeping as the lesson: `benchquarter` ruled out fragments, `benchnull`
+ruled out the shader, `benchflat` convicted instancing. Three numbers, one build
+each, after four builds of reasoning from frame times that could not distinguish
+any of them.
+
+## Two crashes, and only one of them is new
+
+`orcacrash.txt` holds four reports. They are not the same bug.
+
+**Three x SIGSEGV (pids 3418, 3729, 4081), identical stacks:**
+
+```
+objc_retainAutoreleaseReturnValue
+UIKitCore ... _CFXNotificationPost
+UIKitCore ... _UIScenePerformActionsWithLifecycleActionMask
+```
+
+Entirely inside UIKit's scene-lifecycle notification delivery, with no Orca
+frame below the signal handler. This is the app being suspended or resumed, not
+the renderer, and it predates this round. Untouched by anything here.
+
+**One x std::bad_alloc (pid 4481), and this one is a real limit:**
+
+```
+load_print_as_fff: will load gcode_preview from result, moves count 5369727
+std::bad_alloc exception: std::bad_alloc
+```
+
+**5.37 million moves**, against 2.4M for the model everything above was measured
+on. It fails while building the preview, before any drawing. The previous model
+reported `cpu 183 MB, gpu 93 MB`; this one is 2.2x the moves, and the load path
+allocates several full-length arrays at once:
+
+* `m_vertices` - 5.37M x sizeof(PathVertex), the largest single block;
+* `positions` and `heights_widths_angles` in `extract_pos_and_or_hwa()`, two
+  `std::vector<Vec4>` each reserved to the full vertex count - 86 MB apiece;
+* `m_vertices_colors`, plus the colour copy `update_colors_texture()` makes;
+* `enabled_segments`, plus `coalesce_collinear_runs()`'s return value reserved
+  at twice its size, plus the copy `set_enabled_segments()` takes of it.
+
+The peak is the sum of those, not the largest of them, and it is reached while
+`m_vertices` is still alive. That is where to look: stream the Vec4 arrays per
+chunk instead of building them whole, and move rather than copy the coalesced
+list. Neither needs a device to reason about - the sizes are all
+`vertices.size()` multiplied by a constant, so the arithmetic can be done here
+first, the way the index-buffer test was.
+
+Not a regression from 0410: its addition is a 6 MB static index buffer, which
+the `gpu 93 MB` line accounts for exactly.

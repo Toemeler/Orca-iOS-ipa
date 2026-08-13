@@ -1,0 +1,77 @@
++ echo '=== ccache -s after the build ==='
+=== ccache -s after the build ===
++ ccache -s -v
+Cache directory:        /Users/runner/.ccache-step4
+Config file:            /Users/runner/.ccache-step4/ccache.conf
+Directory config file:
+System config file:     /opt/homebrew/etc/ccache.conf
+Stats updated:          Thu Aug 13 21:05:34 2026
+Cacheable calls:        22712 / 22717 (99.98%)
+  Hits:                 20085 / 22712 (88.43%)
+    Direct:             20085 / 20085 (100.0%)
+    Preprocessed:           0 / 20085 ( 0.00%)
+  Misses:                2627 / 22712 (11.57%)
+Uncacheable calls:          5 / 22717 ( 0.02%)
+  Compilation failed:       4 /     5 (80.00%)
+  Preprocessing failed:     1 /     5 (20.00%)
+Successful lookups:
+  Direct:               20085 / 22717 (88.41%)
+  Preprocessed:             0 /  2631 ( 0.00%)
+Local storage:
+  Cache size (GB):        0.5 /   1.5 (34.76%)
+  Files:                 3986
+  Hits:                 20085 / 22712 (88.43%)
+  Misses:                2627 / 22712 (11.57%)
+  Reads:                45433
+  Writes:                5254
++ '[' -f /Users/runner/ccache-step4.log ']'
++ echo '=== results, ranked ==='
+=== results, ranked ===
++ grep -oE 'Result: .*' /Users/runner/ccache-step4.log
++ sort
++ sort -rn
++ uniq -c
++ head -20
+1103 Result: local_storage_read_hit
+ 467 Result: local_storage_hit
+ 467 Result: direct_cache_hit
+ 344 Result: local_storage_write
+ 175 Result: local_storage_read_miss
+ 172 Result: preprocessed_cache_miss
+ 172 Result: local_storage_miss
+ 172 Result: direct_cache_miss
+ 172 Result: cache_miss
++ echo '=== miss reasons, ranked ==='
+=== miss reasons, ranked ===
++ grep -oE '(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)' /Users/runner/ccache-step4.log
++ sed -E 's#/Users/runner[^ ]*/##'
++ sort
++ uniq -c
++ sort -rn
++ head -25
+   1 [2026-08-13T21:05:04.244649 27293] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:05:04.244649 27293] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.644379 26853] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.644379 26853] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.564463 26851] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.564463 26851] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.485529 26850] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.485529 26850] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.401691 26849] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.401691 26849] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.294190 26848] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.294190 26848] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.144728 26847] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.144728 26847] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:50.059355 26846] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:50.059355 26846] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:49.575596 26840] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:49.575596 26840] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:49.489663 26839] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:49.489663 26839] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:49.394087 26838] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:49.394087 26838] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:49.282099 26837] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-13T21:04:49.282099 26837] Config: (default) pch_external_checksum = false
+   1 [2026-08-13T21:04:37.178213 26571] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+sort: Broken pipe

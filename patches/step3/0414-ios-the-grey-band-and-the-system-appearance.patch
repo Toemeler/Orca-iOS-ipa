@@ -1,0 +1,140 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 3e00a13..bac19b5 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -252,6 +252,11 @@ static wxString gs_ios_pending_open_url;
+ 
+ class MainFrame;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_webview_support.mm
++bool orca_ios_system_is_dark();
++#endif
++
+ void start_ping_test()
+ {
+     return;
+@@ -4122,6 +4127,14 @@ void GUI_App::select_machine(const std::string& agent_id)
+ 
+ bool GUI_App::dark_mode()
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Orca compiles its dark mode out: SUPPORT_DARK_MODE is defined nowhere, so
++    // the body below reduces to "return false" and the application is light
++    // whatever the device is set to. iPadOS has a system-wide appearance and
++    // every colour in Orca is chosen through this one function, so answering it
++    // honestly is the whole of the change.
++    return orca_ios_system_is_dark();
++#endif
+ #ifdef SUPPORT_DARK_MODE
+ #if __APPLE__
+     // The check for dark mode returns false positive on 10.12 and 10.13,
+@@ -4805,6 +4818,21 @@ void GUI_App::force_menu_update()
+ #endif //_MSW_DARK_MODE
+ #endif //__WINDOWS__
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// The device switched between light and dark. Everything is re-asked rather
++// than tracked: dark_mode() is a live read of the system, so the colours only
++// need to be recomputed and the windows told to repaint.
++void orca_ios_appearance_changed()
++{
++    GUI_App &app = wxGetApp();
++    app.app_config->set("dark_color_mode", app.dark_mode() ? "1" : "0");
++    app.force_colors_update();
++    app.update_ui_from_settings();
++    if (app.mainframe != nullptr)
++        app.mainframe->Refresh();
++}
++#endif
++
+ void GUI_App::force_colors_update()
+ {
+ #ifdef _MSW_DARK_MODE
+diff --git a/src/slic3r/GUI/Notebook.hpp b/src/slic3r/GUI/Notebook.hpp
+index 450e9e2..b3443c8 100644
+--- a/src/slic3r/GUI/Notebook.hpp
++++ b/src/slic3r/GUI/Notebook.hpp
+@@ -122,7 +122,19 @@ public:
+             flags.Expand();
+         else
+             flags.CentreVertical();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // NOT ADDED AT ALL on this port. Hiding m_bookctrl stops it drawing and
++        // stops it taking space from GetPageRect(), but the sizer item it sits
++        // in still contributes its border - m_controlMargin all round - and the
++        // notebook's own grey shows through that band across the top of the
++        // page. Hiding the control was not enough; the slot has to go too.
++        //
++        // m_controlSizer is still built and still owns m_bookctrl, so nothing
++        // that reaches for either of them changes.
++        (void) flags;
++#else
+         mainSizer->Add(m_controlSizer, flags.Border(wxALL, m_controlMargin));
++#endif
+         SetSizer(mainSizer);
+ 
+         this->Bind(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, [this](wxCommandEvent& evt)
+diff --git a/src/slic3r/GUI/ios_platform_stubs.cpp b/src/slic3r/GUI/ios_platform_stubs.cpp
+index c1d3069..9d01540 100644
+--- a/src/slic3r/GUI/ios_platform_stubs.cpp
++++ b/src/slic3r/GUI/ios_platform_stubs.cpp
+@@ -88,7 +88,9 @@ void staticbox_remove_margin(wxStaticBox * /*sb*/) {}
+ bool is_debugger_present() { return false; }
+ 
+ // --- MacDarkMode / window chrome / WKWebView bridge -------------------------
+-bool   mac_dark_mode() { return false; }
++// Answered for real now, from the same place GUI_App::dark_mode() asks.
++bool   orca_ios_system_is_dark();
++bool   mac_dark_mode() { return orca_ios_system_is_dark(); }
+ double mac_max_scaling_factor() { return 2.0; }
+ void   set_miniaturizable(void * /*window*/) {}
+ void   set_tag_when_enter_full_screen(bool /*isfullscreen*/) {}
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index a7e9a48..a5b8808 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -487,6 +487,9 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+ // Declared here rather than relied on from further down the file: this block is
+ // spliced in ahead of the tab bar's own declarations, so it cannot borrow them.
+ namespace Slic3r { namespace GUI { void orca_ios_side_tool_action(const char *id); } }
++// src/slic3r/GUI/GUI_App.cpp - re-asks every colour after the device switches
++// between light and dark.
++namespace Slic3r { namespace GUI { void orca_ios_appearance_changed(); } }
+ 
+ static const CGFloat kOrcaSideH      = 40;
+ static const CGFloat kOrcaSideGap    = 8;
+@@ -1271,6 +1274,18 @@ static const CGFloat kOrcaTabBarInset = 72;
+ // Re-applied rather than set once: the window's bounds change on rotation, and
+ // wx sets this view's frame itself whenever the frame resizes, so the inset has
+ // to be put back afterwards.
++// Light and dark. Orca reads the system on demand through GUI_App::dark_mode(),
++// so nothing has to be stored here - the windows just have to be told to ask
++// again and repaint.
++- (void)traitCollectionDidChange:(UITraitCollection *)previous
++{
++    [super traitCollectionDidChange:previous];
++    if (previous != nil &&
++        previous.userInterfaceStyle == self.traitCollection.userInterfaceStyle)
++        return;
++    Slic3r::GUI::orca_ios_appearance_changed();
++}
++
+ - (void)viewDidLayoutSubviews
+ {
+     [super viewDidLayoutSubviews];
+@@ -2011,6 +2026,14 @@ static void orca_ios_sync_tabs_guarded()
+     }
+ }
+ 
++// What the device is set to. Read on demand rather than cached: this is what
++// GUI_App::dark_mode() returns, and it is asked for every colour Orca draws.
++bool orca_ios_system_is_dark()
++{
++    return [UITraitCollection currentTraitCollection].userInterfaceStyle ==
++           UIUserInterfaceStyleDark;
++}
++
+ // Tabbook::DoSize asks how much room the floating bar needs, so the Device
+ // page can move its own content down without moving the tab strip beside it.
+ int orca_ios_tab_bar_inset()

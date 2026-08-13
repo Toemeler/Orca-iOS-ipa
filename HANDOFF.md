@@ -6706,3 +6706,32 @@ to 72.
 reads as zero and the iOS branch compiles into the macOS build — the same trap
 0372 documents for Notebook.hpp, and worth checking in every header this stack
 reaches into.
+
+### 0414 — the grey band, and the system appearance
+
+**Hiding the tab strip was not enough to remove it.** `m_bookctrl->Hide()` stops
+it drawing and takes it out of `GetControllerSize()`, so the pages get the whole
+window — but the sizer *item* it sits in still contributes its border,
+`m_controlMargin` all round, and the notebook's own grey shows through that band
+across the top of the page. That is the grey bar, and it survived hiding the two
+orphaned side-tool panels in 0411 because it was never those panels. The item is
+not added to `mainSizer` at all on iOS now. `m_controlSizer` is still built and
+still owns `m_bookctrl`, so nothing that reaches for either changes.
+
+**Dark mode was compiled out, not broken.** `SUPPORT_DARK_MODE` is defined
+nowhere in this tree, so `GUI_App::dark_mode()` reduces to `return false` and
+`mac_dark_mode()` — the iOS stub of which returned `false` as well — was never
+even consulted. Every colour Orca picks goes through `dark_mode()`, so answering
+it honestly is the whole change: on iOS it returns the device's current
+`userInterfaceStyle`. The stub delegates to the same read, and
+`traitCollectionDidChange:` on the tab bar controller re-asks the colours and
+repaints when the device switches.
+
+Nothing is cached. `dark_mode()` is a live read, so a switch needs only a
+recompute and a repaint, not a stored flag that could disagree with the system.
+
+**On the toolbar's hover:** `pointerInteractionEnabled` is set on every button
+in the column. Only some of them light up because only some are *enabled* — with
+no model on the plate, most tools are disabled, and a disabled button does not
+take a pointer effect. That is correct behaviour rather than a gap; load a model
+and the rest light up.

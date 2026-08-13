@@ -1,0 +1,123 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 2724ec6..821f2bc 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -2022,10 +2022,9 @@ void MainFrame::init_tabpanel() {
+     // simply have no tab of their own yet. Delete a line to give one back.
+     orca_ios_hide_tab(m_project);
+     orca_ios_hide_tab(m_calibration);
+-    // The Device page lays its own header across the top, so it is the one
+-    // page that needs the floating bar's height kept clear. The 3D pages do
+-    // not - a bar floating over the space above the plate is the point of it.
+-    orca_ios_inset_tab(m_monitor);
++    // The Device page still needs the floating bar's height kept clear, but it
++    // makes that room inside itself now (Tabbook::DoSize), so that the vertical
++    // strip of tabs down its leading edge can stay at the top of the window.
+ 
+     // The grey bar across the top of the sidebar. create_side_tools() parents
+     // slice_panel and print_panel to the FRAME, not to the tab strip - only
+diff --git a/src/slic3r/GUI/Tabbook.hpp b/src/slic3r/GUI/Tabbook.hpp
+index 0cea1b8..4f2bec1 100644
+--- a/src/slic3r/GUI/Tabbook.hpp
++++ b/src/slic3r/GUI/Tabbook.hpp
+@@ -4,6 +4,11 @@
+ //#ifdef _WIN32
+ 
+ #include <wx/bookctrl.h>
++#ifdef __APPLE__
++// TARGET_OS_OSX is tested below; undefined reads as zero in an #if, which would
++// compile the iOS-only branch into the macOS build.
++#include <TargetConditionals.h>
++#endif
+ #include <wx/sizer.h>
+ #include "wxExtensions.hpp"
+ 
+@@ -47,6 +52,12 @@ private:
+     wxStaticText*                   m_footer_text {nullptr};
+ };
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_webview_support.mm - how much of the top of the window the
++// floating tab bar covers.
++namespace Slic3r { namespace GUI { int orca_ios_tab_bar_inset(); } }
++#endif
++
+ class Tabbook: public wxBookCtrlBase
+ {
+ public:
+@@ -385,8 +396,26 @@ protected:
+     virtual void DoSize() override
+     {
+         wxWindow* const page = GetCurrentPage();
+-        if (page)
+-            page->SetSize(GetPageRect());
++        if (page == nullptr)
++            return;
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // ONLY THE PAGE MOVES DOWN.
++        //
++        // The floating tab bar covers the top of the window, and this book's
++        // page lays its own header - Camera, Control, Printer Parts - straight
++        // across it. Insetting the whole Device page pushed the vertical strip
++        // of tabs beside it down as well, and that strip has nothing above it:
++        // the bar is centred and the strip is at the leading edge. So the inset
++        // goes on the page rect alone. m_bookctrl is positioned by the sizer
++        // and keeps the top.
++        wxRect r = GetPageRect();
++        const int inset = Slic3r::GUI::orca_ios_tab_bar_inset();
++        r.y      += inset;
++        r.height -= inset;
++        page->SetSize(r);
++#else
++        page->SetSize(GetPageRect());
++#endif
+     }
+ 
+     virtual void DoShowPage(wxWindow * page, bool show) override
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 6c8c478..a7e9a48 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -1187,7 +1187,7 @@ void orca_ios_wake_canvas();
+ // vertically in the canvas, so it went off the bottom and the column vanished
+ // from Prepare entirely. The plate does not need the room anyway: the bar
+ // floating over empty space above it is exactly what a floating bar is for.
+-static const CGFloat kOrcaTabBarInset = 56;
++static const CGFloat kOrcaTabBarInset = 72;
+ 
+ @interface OrcaTabBarController : UITabBarController
+ @property (nonatomic, assign) UIView *wxView;   // not retained: the hierarchy holds it
+@@ -1277,15 +1277,10 @@ static const CGFloat kOrcaTabBarInset = 56;
+     if (self.wxView == nil)
+         return;
+ 
+-    CGRect r = self.view.bounds;
+-    if (_book != nullptr && gs_orca_inset_page != nullptr) {
+-        const int sel = _book->GetSelection();
+-        if (sel >= 0 && (size_t) sel < _book->GetPageCount() &&
+-            _book->GetPage((size_t) sel) == gs_orca_inset_page) {
+-            r.origin.y    += kOrcaTabBarInset;
+-            r.size.height -= kOrcaTabBarInset;
+-        }
+-    }
++    // Full bounds, always. The one page that needs room at the top makes it
++    // for itself now, in Tabbook::DoSize, so that its own tab strip can stay
++    // where it belongs instead of being pushed down with everything else.
++    const CGRect r = self.view.bounds;
+     if (!CGRectEqualToRect(self.wxView.frame, r))
+         self.wxView.frame = r;
+ }
+@@ -2016,6 +2011,13 @@ static void orca_ios_sync_tabs_guarded()
+     }
+ }
+ 
++// Tabbook::DoSize asks how much room the floating bar needs, so the Device
++// page can move its own content down without moving the tab strip beside it.
++int orca_ios_tab_bar_inset()
++{
++    return (int) kOrcaTabBarInset;
++}
++
+ // MainFrame::init_tabpanel names the page that wants room at the top for the
+ // floating bar. Exactly one page does - see kOrcaTabBarInset.
+ void orca_ios_inset_tab(wxWindow *page)

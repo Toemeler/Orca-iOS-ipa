@@ -6688,3 +6688,21 @@ sliced-info panel out of the sidebar means either reparenting a wx panel into a
 floating position — which is the class of thing that has gone wrong repeatedly
 here — or reading its values and drawing them in the capsule. The second is the
 right shape and is the next piece of work.
+
+### 0413 — the Device page makes its own room
+
+The floating bar covers the top of the window, and the Device page lays its own
+header across it — but insetting the *whole* page pushed the vertical strip of
+tabs down its leading edge as well, and that strip has nothing above it: the bar
+is centred, the strip is at the edge.
+
+So the inset moved into `Tabbook::DoSize`, onto the **page rect alone**.
+`m_bookctrl` — the vertical strip — is positioned by the sizer and keeps the
+top of the window. The tab bar controller no longer insets wx's view at all,
+`orca_ios_inset_tab()` is no longer called, and the height itself went from 56
+to 72.
+
+`Tabbook.hpp` did not include `TargetConditionals.h`. Without it `TARGET_OS_OSX`
+reads as zero and the iOS branch compiles into the macOS build — the same trap
+0372 documents for Notebook.hpp, and worth checking in every header this stack
+reaches into.

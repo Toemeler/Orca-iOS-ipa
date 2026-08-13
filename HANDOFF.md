@@ -6612,3 +6612,37 @@ at full detail is roughly an order of magnitude past a 120 Hz frame, and about
 2-3x past 60. The honest targets are a solid 30 while moving on a model this
 size, 60 on ordinary ones, and 120 only on small ones — unless the vertex count
 per segment comes down, which is the vertex-buffer question above.
+
+### 0410 — the tab bar follows the notebook from the idle
+
+Of the three things reported together — no Slice button, no toolbar, and a tab
+bar reading Home while Prepare was on screen — **0403 accounts for the first
+two**: the syncs had been written into the `#else` arm of an
+`__APPLE__ && !TARGET_OS_OSX` block, so they were unreachable on every platform.
+Nothing was wrong with the toolbar or the capsule; they were simply never told
+anything after they were built.
+
+The third is separate and is what this patch is for. The bar is updated from
+`wxEVT_BOOKCTRL_PAGE_CHANGED`, and that does not carry every page change —
+`select_tab()` from the New Project menu is one that it misses, which is why the
+bar stayed on Home. `orca_ios_native_tick()` re-reads the notebook every idle,
+so no route can be missed, and the canvas wake hangs off the same selection
+comparison rather than off a tap on the bar.
+
+**It sits above `m_initialized`, and the toolbar sync deliberately does not.**
+The toolbar reads state that only exists once the canvas is up, so under the
+guard is right for it. The tab bar reads the notebook, which is there either
+way — and a canvas that has never rendered is exactly the blank Prepare page,
+so anything the bar needs must not be downstream of that guard.
+
+Two things worth carrying forward from this round:
+
+- **Check which arm of an `#if` a hook lands in.** The generator anchors on
+  source text, and main has restructured `on_idle` into `#if`/`#else` more than
+  once; matching text inside the wrong arm compiles silently and does nothing.
+  The verification for this patch walks the preprocessor stack down to the call
+  and prints the arm rather than trusting the anchor.
+- **The generator writes its file only at the end.** A failed assertion part way
+  through leaves the patch generated from a partly-edited tree, which is how a
+  half-written 0399 was produced earlier in this round. Regenerate from scratch
+  after any script change and re-verify the whole stack.

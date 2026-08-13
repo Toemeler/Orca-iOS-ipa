@@ -1,0 +1,121 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index fb12ce5..90da4e5 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -132,6 +132,9 @@ void orca_ios_toolbar_begin();
+ void orca_ios_toolbar_add(const char *id, const char *icon, const char *tooltip,
+                           bool enabled, bool selected, bool collapsed);
+ void orca_ios_toolbar_commit(void *canvas, void *host_view);
++// src/slic3r/GUI/ios_webview_support.mm - the tab bar's selection, the plus and
++// the canvas wake, driven from the idle rather than from a page-changed event.
++void orca_ios_native_tick();
+ 
+ // Is the canvas being asked to draw at all, and by whom?
+ //
+@@ -3403,6 +3406,15 @@ void GLCanvas3D::on_idle(wxIdleEvent& evt)
+ {
+ #if defined(__APPLE__) && !TARGET_OS_OSX
+     ++orca_ios_canvas_idles;
++
++    // Above the guard below, deliberately: a canvas that has never rendered is
++    // not initialised, and the tab bar's selection must not depend on whether
++    // this canvas has drawn a frame. 0403 moved the toolbar and Slice/Print
++    // syncs into the arm iOS actually compiles; they still sit under the guard,
++    // which is correct for them - they read state that only exists once the
++    // canvas is up - but the tab bar reads the notebook, and the notebook is
++    // there either way.
++    orca_ios_native_tick();
+ #endif
+     if (!m_initialized)
+         return;
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 9179fa8..1aa5017 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -1854,6 +1854,9 @@ std::string orca_ios_repair_container_path(const std::string &path)
+ static bool gs_orca_tab_bar_failed = false;
+ 
+ static void orca_ios_sync_tabs_guarded();
++// The notebook, kept so the idle tick below can drive all of this without
++// waiting for an event that does not always arrive.
++static wxBookCtrlBase *gs_orca_notebook = nullptr;
+ // src/slic3r/GUI/ios_webview_support.mm, further down this file.
+ void orca_ios_home_plus_update(wxBookCtrlBase *book);
+ 
+@@ -1999,10 +2002,11 @@ void orca_ios_hide_tab(wxWindow *page)
+ }
+ 
+ // Notebook.hpp calls this whenever a page is added, removed, or selected.
+-void orca_ios_notebook_sync(wxBookCtrlBase *book)
++static void orca_ios_notebook_sync_impl(wxBookCtrlBase *book, bool may_defer)
+ {
+     if (book == nullptr)
+         return;
++    gs_orca_notebook = book;
+ 
+     if (!gs_orca_tab_bar_failed && orca_ios_install_tab_bar(book))
+         orca_ios_sync_tabs_guarded();
+@@ -2019,6 +2023,24 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
+     // bar failed; it is not inside the tab bar's early return for that reason.
+     orca_ios_home_plus_update(book);
+ 
++    // A PAGE CHANGE BY ANY ROUTE, not only a tap on the bar.
++    //
++    // select_tab() from the New Project menu is one such route, and after it
++    // the bar still read Home while the application was plainly on Prepare -
++    // the page-changed event does not reliably carry that far. Comparing the
++    // selection here catches it whatever moved it, and the canvas gets its wake
++    // from the same place, which is the other thing a page change has to
++    // trigger and the reason Prepare could come up blank.
++    static int last_selection = -2;
++    const int sel = book->GetSelection();
++    if (sel != last_selection) {
++        last_selection = sel;
++        orca_ios_wake_canvas();
++    }
++
++    if (!may_defer)
++        return;
++
+     // ONE RETRY LOOP FOR BOTH, RE-ENTERING THIS FUNCTION.
+     //
+     // The previous version queued a CallAfter that installed the tab bar and
+@@ -2044,10 +2066,37 @@ void orca_ios_notebook_sync(wxBookCtrlBase *book)
+     --retries_left;
+     book->CallAfter([book] {
+         retry_queued = false;
+-        orca_ios_notebook_sync(book);
++        orca_ios_notebook_sync_impl(book, true);
+     });
+ }
+ 
++// Notebook.hpp calls this whenever a page is added, removed, or selected.
++void orca_ios_notebook_sync(wxBookCtrlBase *book)
++{
++    orca_ios_notebook_sync_impl(book, true);
++}
++
++// GLCanvas3D::on_idle calls this every turn, from ABOVE its m_initialized
++// guard.
++//
++// Two reasons for it to be there rather than beside the toolbar sync.
++//
++// The bar has to follow the notebook however the page was changed, and the
++// page-changed event does not always reach here - after a new project the bar
++// stayed on Home while Prepare was on screen. An idle that re-reads the
++// selection cannot miss one.
++//
++// And it must not be downstream of m_initialized. A canvas that has never
++// rendered is not initialised, and a blank Prepare page is exactly that canvas,
++// so anything placed under that guard stops working precisely when the page is
++// in the state that most needs fixing. The retry budget stays with the event
++// path; this one retries every turn and must not spend it.
++void orca_ios_native_tick()
++{
++    if (gs_orca_notebook != nullptr)
++        orca_ios_notebook_sync_impl(gs_orca_notebook, false);
++}
++
+ // -- the toolbar, from the canvas ------------------------------------------
+ 
+ static OrcaToolbar             *gs_orca_toolbar      = nil;

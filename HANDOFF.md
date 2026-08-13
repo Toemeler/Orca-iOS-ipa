@@ -6735,3 +6735,59 @@ in the column. Only some of them light up because only some are *enabled* — wi
 no model on the plate, most tools are disabled, and a disabled button does not
 take a pointer effect. That is correct behaviour rather than a gap; load a model
 and the rest light up.
+## 0410 — draw the toolpath flat
+
+Run 156 corrected run 155: `benchflat` was **18 ms**, not 146. The 146 was the
+first use of that shader and carried its warm-up. Warm, the two shapes are:
+
+| | vertices | time | rate |
+|---|---|---|---|
+| instanced, 8 x 623k instances | 4.98M | 247 ms | **20 M/s** |
+| flat, one glDrawArrays | 14.95M | 18 ms | **830 M/s** |
+
+**Forty times the throughput per vertex, in the same app, the same frame, over
+the same OpenGL ES.** That also answers the Metal question: 830 M vertices/sec
+is the class Nomad works in (~5M polygons interactive on an iPad Pro), and we
+reach it through GL ES three lines away in the same function. The API is not the
+gate; the shape of the draw is. Metal stays a last resort, not a prerequisite.
+
+The earlier "naive flat is a wash" note was computed from the 146 ms warm-up
+number and is wrong.
+
+### What it does
+
+`glDrawElements` per batch of segments instead of `glDrawElementsInstanced` per
+segment. Flat costs 24 vertices per box instead of 8 unless it is indexed, so it
+is indexed: a static index buffer holds `segment * 8 + corner`, the shader
+splits it with `gl_VertexID & 7` and `(gl_VertexID >> 3) + segment_base`, and
+the post-transform cache still shades each of the eight corners once because the
+values repeat inside a segment. The VAO for this path has **no vertex attributes
+at all**.
+
+Batched at 65 536 segments: a whole-model index buffer would be 96 bytes per
+segment - 60 MB here - and would have to be rebuilt whenever the enabled set
+changes. One static 6 MB buffer, ten draw calls, nothing per rebuild.
+
+The one-shot benchmark is removed with this: it drew through the instanced path
+with this shader and cannot survive the change. It has done its job - resolution
+ruled out, shader ruled out (12%), instancing convicted (88%).
+
+### Verified locally, before CI
+
+`idxtest.cpp` in the scratch tree reproduces the index generation and the
+shader's decode and checks they agree - which is the whole correctness argument:
+
+```
+index buffer 1572864 entries, 6.0 MB, 10 batches for 622855 segments
+ALL CHECKS PASSED
+```
+
+* every index decodes back to its own segment and to a corner in 0..7;
+* exactly **8 distinct corners** are referenced per segment, which is what makes
+  the post-transform cache shade 8 instead of 24;
+* `segment_base + local` gives the right global segment across every batch
+  boundary, including the short last batch;
+* the largest index value is the one the buffer is sized for.
+
+Four builds were spent on mistakes CI could not catch and a local check could.
+This is the pattern to keep: the arithmetic gets tested on this machine first.

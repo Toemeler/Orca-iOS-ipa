@@ -1,0 +1,323 @@
+diff --git a/src/libvgcode/src/SegmentTemplate.cpp b/src/libvgcode/src/SegmentTemplate.cpp
+index 9860991db..f8e4d98a7 100644
+--- a/src/libvgcode/src/SegmentTemplate.cpp
++++ b/src/libvgcode/src/SegmentTemplate.cpp
+@@ -3,6 +3,8 @@
+ ///|/ libvgcode is released under the terms of the AGPLv3 or higher
+ ///|/
+ #include "SegmentTemplate.hpp"
++
++#include <vector>
+ #include "OpenGLUtils.hpp"
+ 
+ #include <cstdint>
+@@ -56,6 +58,35 @@ static constexpr const std::array<uint16_t, 24> INDEX_DATA = {
+     5, 7, 6, // back spike
+ };
+ 
++// One glDrawElements per batch of segments, no instancing.
++//
++// The device priced the two shapes directly, with a vertex shader that fetches
++// nothing, lights nothing and multiplies by nothing:
++//
++//   instanced,  8 vertices x 623k instances :  4.98M vertices in 247 ms -  20 M/s
++//   flat,      24 vertices x 623k segments  : 14.95M vertices in  18 ms - 830 M/s
++//
++// Forty times the throughput per vertex, in the same app and the same frame -
++// which is also why a Metal port is not the gate here. Instancing 623000
++// eight-vertex instances was 88% of the toolpath frame; the shader was 12%,
++// which is why four rounds of shader work moved nothing.
++//
++// Flat costs 24 vertices per box instead of 8 unless it is indexed, so it is
++// indexed: the buffer holds `segment * 8 + corner`, which the shader splits
++// with a shift and a mask, and the post-transform cache still shades each of
++// the eight corners once because the values repeat inside a segment.
++//
++// Batched, because a whole-model index buffer would be 96 bytes per segment -
++// 60 MB here - and would have to be rebuilt whenever the enabled set changes.
++// One static 6 MB buffer drawn ceil(N / 65536) times with a segment_base
++// uniform costs ten draw calls and nothing per rebuild.
++static constexpr uint32_t SEGMENTS_PER_BATCH = 65536;
++
++uint32_t SegmentTemplate::segments_per_batch()
++{
++    return SEGMENTS_PER_BATCH;
++}
++
+ void SegmentTemplate::init()
+ {
+     if (m_vao_id != 0)
+@@ -88,12 +119,55 @@ void SegmentTemplate::init()
+     glsafe(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo_id));
+     glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDEX_DATA.size() * sizeof(uint16_t), INDEX_DATA.data(), GL_STATIC_DRAW));
+ 
++#ifdef ENABLE_OPENGL_ES
++    // The flat path: a VAO with no attributes at all, because the corner and
++    // the segment both come out of gl_VertexID.
++    {
++        std::vector<uint32_t> batch_indices;
++        batch_indices.reserve(size_t(SEGMENTS_PER_BATCH) * INDEX_DATA.size());
++        for (uint32_t seg = 0; seg < SEGMENTS_PER_BATCH; ++seg) {
++            for (const uint16_t i : INDEX_DATA)
++                batch_indices.push_back(seg * 8u + uint32_t(i));
++        }
++        m_size_in_bytes_gpu += batch_indices.size() * sizeof(uint32_t);
++
++        glsafe(glGenVertexArrays(1, &m_flat_vao_id));
++        glsafe(glBindVertexArray(m_flat_vao_id));
++        glsafe(glGenBuffers(1, &m_flat_ibo_id));
++        glsafe(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_flat_ibo_id));
++        glsafe(glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch_indices.size() * sizeof(uint32_t),
++                            batch_indices.data(), GL_STATIC_DRAW));
++    }
++#endif // ENABLE_OPENGL_ES
++
+     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
+     glsafe(glBindVertexArray(curr_vertex_array));
+ }
+ 
++void SegmentTemplate::render_batch(size_t count)
++{
++    if (m_flat_vao_id == 0 || m_flat_ibo_id == 0 || count == 0)
++        return;
++
++    int curr_vertex_array;
++    glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
++
++    glsafe(glBindVertexArray(m_flat_vao_id));
++    glsafe(glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(count * INDEX_DATA.size()),
++                          GL_UNSIGNED_INT, (const void*)0));
++    glsafe(glBindVertexArray(curr_vertex_array));
++}
++
+ void SegmentTemplate::shutdown()
+ {
++    if (m_flat_ibo_id != 0) {
++        glsafe(glDeleteBuffers(1, &m_flat_ibo_id));
++        m_flat_ibo_id = 0;
++    }
++    if (m_flat_vao_id != 0) {
++        glsafe(glDeleteVertexArrays(1, &m_flat_vao_id));
++        m_flat_vao_id = 0;
++    }
+     if (m_ibo_id != 0) {
+         glsafe(glDeleteBuffers(1, &m_ibo_id));
+         m_ibo_id = 0;
+diff --git a/src/libvgcode/src/SegmentTemplate.hpp b/src/libvgcode/src/SegmentTemplate.hpp
+index 117ed2b67..28dc37fc2 100644
+--- a/src/libvgcode/src/SegmentTemplate.hpp
++++ b/src/libvgcode/src/SegmentTemplate.hpp
+@@ -6,6 +6,7 @@
+ #define VGCODE_SEGMENTTEMPLATE_HPP
+ 
+ #include <cstddef>
++#include <cstdint>
+ 
+ namespace libvgcode {
+ 
+@@ -28,6 +29,12 @@ public:
+     //
+     void shutdown();
+     void render(size_t count);
++    // Flat and non-instanced: draws `count` segments out of a static index
++    // buffer whose values name segment and corner together, at most
++    // segments_per_batch() at a time. The caller sets the shader's
++    // segment_base uniform to the batch's first segment beforehand.
++    static uint32_t segments_per_batch();
++    void render_batch(size_t count);
+ 
+     //
+     // Return the size of the data sent to gpu, in bytes.
+@@ -41,6 +48,10 @@ private:
+     unsigned int m_vao_id{ 0 };
+     unsigned int m_vbo_id{ 0 };
+     unsigned int m_ibo_id{ 0 };
++    // The flat path's own VAO and index buffer: the element buffer binding is
++    // VAO state, and this VAO deliberately has no vertex attributes at all.
++    unsigned int m_flat_vao_id{ 0 };
++    unsigned int m_flat_ibo_id{ 0 };
+     //
+     // Size of the data sent to gpu, in bytes.
+     //
+diff --git a/src/libvgcode/src/ShadersES.hpp b/src/libvgcode/src/ShadersES.hpp
+index 35ae9fc9d..791fc1ca8 100644
+--- a/src/libvgcode/src/ShadersES.hpp
++++ b/src/libvgcode/src/ShadersES.hpp
+@@ -84,7 +84,16 @@ static const char* Segments_Vertex_Shader_ES =
+ // unfolding is a mask and a shift.
+ "uniform int data_shift;\n"
+ "uniform int index_shift;\n"
+-"in float vertex_id_float;\n"
++// No vertex attribute, and no gl_InstanceID.
++//
++// The toolpath is drawn flat now - one glDrawElements per batch of segments -
++// because the device priced the two shapes against each other with a shader
++// that does nothing at all: 20M vertices/sec instanced against 830M flat,
++// forty times per vertex, in the same app and the same frame. For an indexed
++// draw gl_VertexID is the index value, and the index buffer is built so that
++// value is `local_segment * 8 + corner`; both fall out of one integer with a
++// shift and a mask. segment_base is the first segment of the batch.
++"uniform int segment_base;\n"
+ // mediump: the colour arrives as three 8-bit channels and leaves through an
+ // 8-bit framebuffer, so half precision carries it exactly. It halves what the
+ // tiler has to store and reload per vertex, and at 19.2 million vertices a
+@@ -132,7 +141,8 @@ static const char* Segments_Vertex_Shader_ES =
+ "  vec2(0.0, 0.0)\n"
+ "  );\n"
+ "void main() {\n"
+-"  int vertex_id = int(vertex_id_float);\n"
++"  int vertex_id = gl_VertexID & 7;\n"
++"  int segment_id = (gl_VertexID >> 3) + segment_base;\n"
+ // Clamped, so that a uniform which never got set reads as full detail rather
+ // than as stride 0 - which would put every instance on segment 0 and draw the
+ // whole toolpath as a single smear.
+@@ -141,7 +151,7 @@ static const char* Segments_Vertex_Shader_ES =
+ // (first, last) pair rather than an index whose successor is implied, because
+ // consecutive collinear moves are merged into one segment before upload and the
+ // last vertex is then no longer the first plus one.
+-"  uvec2 ids = texelFetch(segment_index_tex, tex_coord(gl_InstanceID * stride, index_shift), 0).rg;\n"
++"  uvec2 ids = texelFetch(segment_index_tex, tex_coord(segment_id * stride, index_shift), 0).rg;\n"
+ "  int id_a = int(ids.x);\n"
+ "  int id_b = int(ids.y);\n"
+ "  vec3 pos_a = texelFetch(position_tex, tex_coord(id_a, data_shift), 0).xyz;\n"
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index 82e67892b..67351b74c 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -886,6 +886,7 @@ void ViewerImpl::init(const std::string& opengl_context_version)
+     m_uni_segments_instance_stride_id        = glGetUniformLocation(m_segments_shader_id, "instance_stride");
+     m_uni_segments_data_shift_id             = glGetUniformLocation(m_segments_shader_id, "data_shift");
+     m_uni_segments_index_shift_id            = glGetUniformLocation(m_segments_shader_id, "index_shift");
++    m_uni_segments_segment_base_id           = glGetUniformLocation(m_segments_shader_id, "segment_base");
+ #endif // ENABLE_OPENGL_ES
+     glcheck();
+     assert(m_uni_segments_view_matrix_id != -1 &&
+@@ -2379,100 +2380,6 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+     int curr_bound_texture = 0;
+     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
+ 
+-    // What is this draw actually bound by? Measured once, because three rounds
+-    // have now been spent reasoning about it from frame times that include CPU
+-    // submission and whatever the driver decided to block on.
+-    //
+-    // The same geometry is drawn twice more, back to back, with glFinish either
+-    // side so the numbers are GPU time rather than queue depth: once at the real
+-    // viewport, once at a sixteenth of the area. If the small one costs the
+-    // same, the frame is bound by the vertex stage and only fewer or cheaper
+-    // vertices will help. If it is much faster, the frame is bound by fragment
+-    // and tile-store work and the answer is an offscreen target at reduced
+-    // resolution - which is the option 0405's note said would need a
+-    // measurement before anyone built it. This is that measurement.
+-    //
+-    // Both extra draws land in the frame that is about to be overdrawn by the
+-    // real one, so nothing shows on screen. It costs one slow frame, once.
+-    // bind_data is false for the control draw: its program has no samplers and
+-    // none of these uniforms, and the locations here were queried from the real
+-    // program - setting them while another program is current is an error, not
+-    // a no-op.
+-    const auto draw_all_chunks = [&](bool bind_data) {
+-        for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
+-            const auto [bid, bcount] = m_texture_data.get_enabled_segments_tex_id(i);
+-            if (bcount == 0)
+-                continue;
+-            if (bind_data) {
+-                glsafe(glActiveTexture(GL_TEXTURE0));
+-                glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i).first));
+-                glsafe(glActiveTexture(GL_TEXTURE1));
+-                glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i).first));
+-                glsafe(glActiveTexture(GL_TEXTURE2));
+-                glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
+-                glsafe(glActiveTexture(GL_TEXTURE3));
+-                glsafe(glBindTexture(GL_TEXTURE_2D, bid));
+-                glsafe(glUniform1i(m_uni_segments_data_shift_id, m_texture_data.get_data_shift(i)));
+-                glsafe(glUniform1i(m_uni_segments_index_shift_id, m_texture_data.get_enabled_segments_shift(i)));
+-            }
+-            m_segment_template.render((bcount + stride - 1) / stride);
+-        }
+-    };
+-
+-    static bool s_orca_ios_benched = false;
+-    if (!s_orca_ios_benched && m_texture_data.get_enabled_segments_count() > 100000) {
+-        s_orca_ios_benched = true;
+-        GLint vp[4] = { 0, 0, 0, 0 };
+-        glsafe(glGetIntegerv(GL_VIEWPORT, vp));
+-
+-        glFinish();
+-        const auto t0 = std::chrono::steady_clock::now();
+-        draw_all_chunks(true);
+-        glFinish();
+-        const auto t1 = std::chrono::steady_clock::now();
+-
+-        glsafe(glViewport(vp[0], vp[1], std::max(1, vp[2] / 4), std::max(1, vp[3] / 4)));
+-        draw_all_chunks(true);
+-        glFinish();
+-        const auto t2 = std::chrono::steady_clock::now();
+-        glsafe(glViewport(vp[0], vp[1], vp[2], vp[3]));
+-
+-        // Same instances, same vertices per instance, no fetches and no
+-        // lighting. The gap between this and benchfull is what the shader
+-        // costs; this number itself is what the draw's shape costs.
+-        if (m_segments_bench_shader_id != 0) {
+-            glsafe(glUseProgram(m_segments_bench_shader_id));
+-            draw_all_chunks(false);
+-            glFinish();
+-            const auto t3 = std::chrono::steady_clock::now();
+-            orca_ios_bench_null_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
+-
+-            // Same vertex count per segment as the real draw would need without
+-            // an index buffer (24, not 8), no instancing, no attributes. An
+-            // empty VAO because this VAO's attribute 0 is an eight-element
+-            // buffer, and 24 * N vertices would read off the end of it.
+-            if (m_segments_bench_flat_shader_id != 0) {
+-                GLuint empty_vao = 0;
+-                glsafe(glGenVertexArrays(1, &empty_vao));
+-                glsafe(glBindVertexArray(empty_vao));
+-                glsafe(glUseProgram(m_segments_bench_flat_shader_id));
+-                size_t total = 0;
+-                for (size_t i = 0; i < m_texture_data.get_count(); ++i)
+-                    total += m_texture_data.get_enabled_segments_tex_id(i).second;
+-                glsafe(glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(24 * (total / stride ? total / stride : 1))));
+-                glFinish();
+-                const auto t4 = std::chrono::steady_clock::now();
+-                orca_ios_bench_flat_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
+-                glsafe(glBindVertexArray(0));
+-                glsafe(glDeleteVertexArrays(1, &empty_vao));
+-            }
+-            glsafe(glUseProgram(m_segments_shader_id));
+-        }
+-
+-        orca_ios_bench_full_us  = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+-        orca_ios_bench_small_us = (unsigned) std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+-    }
+-
+     for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
+         const auto [id, count] = m_texture_data.get_enabled_segments_tex_id(i);
+         if (count == 0)
+@@ -2492,7 +2399,14 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
+         glsafe(glUniform1i(m_uni_segments_index_shift_id, m_texture_data.get_enabled_segments_shift(i)));
+         // The stride indexes within this chunk's own index texture, so each
+         // chunk is decimated independently and correctly.
+-        m_segment_template.render((count + stride - 1) / stride);
++        // Flat and indexed, in batches: no instancing, and the post-transform
++        // cache still shades each of the eight corners once.
++        const size_t to_draw = (count + stride - 1) / stride;
++        const size_t per_batch = SegmentTemplate::segments_per_batch();
++        for (size_t base = 0; base < to_draw; base += per_batch) {
++            glsafe(glUniform1i(m_uni_segments_segment_base_id, static_cast<int>(base)));
++            m_segment_template.render_batch(std::min(per_batch, to_draw - base));
++        }
+     }
+ #else
+     std::array<int, 4> curr_bound_texture = { 0, 0, 0, 0 };
+diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
+index 6f767118e..400934dc7 100644
+--- a/src/libvgcode/src/ViewerImpl.hpp
++++ b/src/libvgcode/src/ViewerImpl.hpp
+@@ -350,6 +350,7 @@ private:
+     int m_uni_segments_instance_stride_id{ -1 };
+     int m_uni_segments_data_shift_id{ -1 };
+     int m_uni_segments_index_shift_id{ -1 };
++    int m_uni_segments_segment_base_id{ -1 };
+ #endif // ENABLE_OPENGL_ES
+     //
+     // Caches for OpenGL uniforms id for options shader 

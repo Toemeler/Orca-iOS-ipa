@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
-index 13427f8..c47b216 100644
+index ac67f42..c98d747 100644
 --- a/src/slic3r/GUI/GLCanvas3D.cpp
 +++ b/src/slic3r/GUI/GLCanvas3D.cpp
 @@ -3469,6 +3469,10 @@ void GLCanvas3D::on_idle(wxIdleEvent& evt)
@@ -99,10 +99,10 @@ index 6495dea..38396a5 100644
      int         get_calibration_curr_tab();
      void        select_view(const std::string& direction);
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index afc6beb..3eff44e 100644
+index afc6beb..2fbd0e7 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -422,6 +422,163 @@ static UITextField *orca_ios_find_text_field(UIView *view)
+@@ -422,6 +422,167 @@ static UITextField *orca_ios_find_text_field(UIView *view)
  }
  
  
@@ -120,6 +120,10 @@ index afc6beb..3eff44e 100644
 +//
 +// In the window's own controller, not in wx's view tree - the same reason the
 +// plus is there.
++
++// Declared here rather than relied on from further down the file: this block is
++// spliced in ahead of the tab bar's own declarations, so it cannot borrow them.
++namespace Slic3r { namespace GUI { void orca_ios_side_tool_action(const char *id); } }
 +
 +static const CGFloat kOrcaSideH      = 40;
 +static const CGFloat kOrcaSideGap    = 8;
@@ -266,15 +270,7 @@ index afc6beb..3eff44e 100644
  // The plus, top right of the home page.
  //
  // Orca's home page offers "new project" and "open project" as two tiles in the
-@@ -909,6 +1066,7 @@ static bool orca_ios_tab_is_hidden(wxWindow *page)
- // src/slic3r/GUI/ios_webview_support.mm and MainFrame.cpp / GLCanvas3D.cpp,
- // all further down or in another translation unit.
- namespace Slic3r { namespace GUI {
-+void orca_ios_side_tool_action(const char *id);
- void orca_ios_home_plus_update(wxBookCtrlBase *book);
- void orca_ios_select_prepare();
- void orca_ios_wake_canvas();
-@@ -2019,5 +2177,67 @@ void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *
+@@ -2019,5 +2180,67 @@ void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *
      orca_ios_install_home_plus();
  }
  

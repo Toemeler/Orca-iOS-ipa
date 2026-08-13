@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
-index ef6cdde..13427f8 100644
+index ef6cdde..ac67f42 100644
 --- a/src/slic3r/GUI/GLCanvas3D.cpp
 +++ b/src/slic3r/GUI/GLCanvas3D.cpp
 @@ -124,6 +124,15 @@ namespace Slic3r {
@@ -65,7 +65,7 @@ index ef6cdde..13427f8 100644
          if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
              mouse_up_cleanup();
          m_mouse.set_start_position_3D_as_invalid();
-@@ -9054,6 +9077,135 @@ void GLCanvas3D::_render_current_gizmo() const
+@@ -9054,6 +9077,139 @@ void GLCanvas3D::_render_current_gizmo() const
  
  //BBS: GUI refactor: GLToolbar adjust
  //move the size calc to GLCanvas
@@ -185,8 +185,12 @@ index ef6cdde..13427f8 100644
 +    if (plater == nullptr)
 +        return;
 +    if (GLCanvas3D *const canvas = plater->get_current_canvas3D()) {
++        // GLCanvas3D is not a window - it owns one. Refresh() belongs to the
++        // wxGLCanvas underneath, which is what turns this into a paint.
 +        canvas->set_as_dirty();
-+        canvas->Refresh();
++        canvas->request_extra_frame();
++        if (wxGLCanvas *const wx_canvas = canvas->get_wxglcanvas())
++            wx_canvas->Refresh();
 +    }
 +}
 +
@@ -201,7 +205,7 @@ index ef6cdde..13427f8 100644
  void GLCanvas3D::_render_gizmos_overlay()
  {
  /*#if ENABLE_RETINA_GL
-@@ -9066,6 +9218,12 @@ void GLCanvas3D::_render_gizmos_overlay()
+@@ -9066,6 +9222,12 @@ void GLCanvas3D::_render_gizmos_overlay()
      const float size = int(GLGizmosManager::Default_Icons_Size * wxGetApp().toolbar_icon_scale());
      m_gizmos.set_overlay_icon_size(size); //! #ys_FIXME_experiment
  #endif */ /* __WXMSW__ */
@@ -214,7 +218,7 @@ index ef6cdde..13427f8 100644
      m_gizmos.render_overlay();
  
      if (m_gizmo_highlighter.m_render_arrow)
-@@ -9095,6 +9253,14 @@ int GLCanvas3D::get_main_toolbar_offset() const
+@@ -9095,6 +9257,14 @@ int GLCanvas3D::get_main_toolbar_offset() const
  //when rendering, {0, 0} is at the center, left-up is -0.5, 0.5, right-up is 0.5, -0.5
  void GLCanvas3D::_render_main_toolbar()
  {
@@ -229,7 +233,7 @@ index ef6cdde..13427f8 100644
      if (!m_main_toolbar.is_enabled())
          return;
  
-@@ -9541,6 +9707,13 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
+@@ -9541,6 +9711,13 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
  //when rendering, {0, 0} is at the center, {-0.5, 0.5} at the left-up
  void GLCanvas3D::_render_assemble_view_toolbar() const
  {
@@ -243,7 +247,7 @@ index ef6cdde..13427f8 100644
      if (!m_assemble_view_toolbar.is_enabled())
          return;
  
-@@ -9817,6 +9990,12 @@ void GLCanvas3D::_render_canvas_toolbar()
+@@ -9817,6 +9994,12 @@ void GLCanvas3D::_render_canvas_toolbar()
  
  void GLCanvas3D::_render_separator_toolbar_right() const
  {
@@ -256,7 +260,7 @@ index ef6cdde..13427f8 100644
      if (!m_separator_toolbar.is_enabled())
          return;
  
-@@ -9833,6 +10012,9 @@ void GLCanvas3D::_render_separator_toolbar_right() const
+@@ -9833,6 +10016,9 @@ void GLCanvas3D::_render_separator_toolbar_right() const
  
  void GLCanvas3D::_render_separator_toolbar_left() const
  {
@@ -266,7 +270,7 @@ index ef6cdde..13427f8 100644
      if (!m_separator_toolbar.is_enabled())
          return;
  
-@@ -9847,6 +10029,12 @@ void GLCanvas3D::_render_separator_toolbar_left() const
+@@ -9847,6 +10033,12 @@ void GLCanvas3D::_render_separator_toolbar_left() const
  
  void GLCanvas3D::_render_collapse_toolbar() const
  {

@@ -7186,3 +7186,220 @@ writing. The two with the most surface are the dialog chrome (every wxDialog in
 the application changes size by 52 points) and the plate-thumbnail pass (an
 offscreen render started from an idle). If a dialog comes up with its bottom
 row clipped, `GetContentArea()` is the one place to look.
+
+## 0424 — every way the work was lost, and the one hook that was missing
+
+A full walk of saving, loading and autosaving, end to end, because the reports
+kept coming back to the same shape: work that was on the screen and then was
+not. Seven separate faults, of which one is the whole platform and six are
+consequences of not having noticed it.
+
+**The platform fault: there is no quit, and nothing was listening for what
+replaces it.** On a desktop an application is closed by the user and runs
+whatever it likes on the way out. iOS does none of that. Leaving the app
+*suspends* the process - frozen mid-instruction - and the system reclaims it
+later, minutes or days on, without running another line of its code. Before
+this patch the port hooked none of that: `grep` for `didEnterBackground`,
+`willResignActive` or `willTerminate` across `patches/`, `wx-overlay` and
+`orca-overlay` returned nothing at all. Everything that had not reached disk by
+the last ten-second backup tick was gone, and there was no code path that could
+have known.
+
+wx does implement `applicationWillTerminate:`, and it is not the hook. UIKit
+sends that only to an application that is *still running* when it is killed,
+which a suspended one by definition is not.
+
+`UIApplicationWillResignActiveNotification` is the one. It arrives while the
+application is still frontmost and fully alive - the user has started the
+gesture, or pulled a banner down, or taken a call - and it precedes every route
+to suspension there is.
+
+### The three notifications are not interchangeable
+
+| notification | state | what is written |
+|---|---|---|
+| `willResignActive` | foreground, rendering legal | everything: backup 3MF, the copy in Documents, the config |
+| `didEnterBackground` | GL is now grounds for termination by the OS | backup 3MF and config only |
+| `didReceiveMemoryWarning` | foreground, but jetsam is circling | backup 3MF and config only |
+
+The split is the `full` argument of `orca_ios_save_everything_now()`. A 3MF
+export that is not a `Backup` re-renders every plate thumbnail - four offscreen
+GL passes per plate - and that is exactly what must not happen in the
+background, and exactly the allocation a memory warning is warning about. Orca's
+own backup 3MF touches no GL and no thumbnails, so it is written first in every
+case; it is also the one the restore offer on the next launch reads, which makes
+it, not the copy in Documents, the thing standing between a suspend and lost
+work.
+
+### The rate limit was dropping edits, not deferring them
+
+0366 rate-limited the copy into `Documents/Autosave` to once a minute, because a
+full export regenerates thumbnails and the backup tick is every ten seconds.
+That was right. What was wrong is what the caller did next:
+
+```cpp
+if (!up_to_date(false, true)) {
+    export_3mf(backup_path + "/.3mf", SaveStrategy::Backup);
+    orca_ios_autosave_to_documents(m_plater);   // may return immediately
+    up_to_date(true, true);                     // ... and the model is clean anyway
+}
+```
+
+The skipped write was never retried. `up_to_date(true, true)` marked the model
+as backed up, the next tick saw no change and did not call the function at all,
+and an edit made inside the sixty-second shadow of the previous autosave did not
+reach `Documents` late — **it never reached it**. The copy was as much as a
+minute stale and nothing said so.
+
+The flag now outlives the skipped write. `orca_ios_autosave_note_change()` sets
+it, `orca_ios_autosave_to_documents(plater, force)` clears it only on a
+successful export, and the call is made on *every* tick rather than only on
+ticks where the model moved - so a deferred copy is retried ten seconds later
+instead of being forgotten. The limit still decides *when*; it can no longer
+decide *whether*.
+
+### Crash recovery had never once worked on this port
+
+`has_restore_data()` is what puts up "Previously unsaved items have been
+detected. Do you want to restore them?". It refuses when the backup directory
+looks locked by a live process, and it decides that by resolving a pid to an
+executable name:
+
+```cpp
+if (get_process_name(boost::lexical_cast<int>(pid)) == get_process_name(0))
+```
+
+iOS cannot resolve a pid that is not our own - the sandbox forbids inspecting
+another process - so `get_process_name()` there ignores its argument and returns
+our own path from `_NSGetExecutablePath`. **Both sides are the same string for
+every pid that has ever existed.** Every lock read as ours, the function always
+returned `false` with `origin = "<lock>"`, and the offer could not appear. The
+same `<lock>` answer also stopped the caller ever deleting a stale backup
+directory, so they accumulated.
+
+The question is answerable exactly on iOS without asking about other processes
+at all: the system runs one instance of an application at a time, so a lock is
+live if and only if it is ours. `pid == get_current_pid()`, and nothing else.
+
+**And the thing being restored was in `tmp`.** `Model::get_backup_path()` builds
+on `temporary_dir()`, which is `wxFileName::GetTempDir()`, which on iOS is the
+container's `tmp` - purged whenever the system wants the space. That is the same
+root cause 0382 found under projects that "could not be opened", one directory
+over. The backup now lives under `data_dir()` (`Library/Application Support`),
+which is not purged and not shown in the Files app - right for a working
+directory. The copy in `Documents/Autosave` is the one meant to be found by
+hand.
+
+Consequence worth expecting on device: **the restore prompt now appears on any
+launch that follows a session which ended without an explicit save.** That is
+not a regression, it is the feature - there genuinely were unsaved items, and
+this is the only route back to them from inside the app.
+
+### The recent list was written to disk by accident, when at all
+
+`AppConfig::set_recent_projects()` writes straight into `m_storage` instead of
+going through `set()`, so it never marked the config dirty - and `GUI_App`'s
+idle handler only saves when `app_config->dirty()`. The list therefore survived
+only when some unrelated setting happened to change in the same session. On a
+platform that ends sessions by killing the process, that is most of them: the
+autosave file was written and the entry pointing at it was not. One line,
+`m_dirty = true`, and it is a genuine upstream bug rather than an iOS one.
+
+### The container UUID was healed for display but never in the history
+
+0382 splices the current container UUID into recorded paths at two places -
+`get_recent_projects()` and `open_recent_project()` - and both are *downstream*
+of `m_recent_projects`. What wxFileHistory held stayed stale, and two reported
+symptoms follow directly:
+
+* `LoadThumbnails()` reads each 3MF at the path **in the history**. Stale path,
+  no file, no thumbnail - the home page comes up as a column of grey tiles after
+  every install.
+* Opening one of them goes on to `set_project_filename()`, which calls
+  `add_to_recent_projects()` with the **healed** path. `wxFileHistory` dedupes on
+  the exact string, so the healed path is added *beside* the stale one and the
+  project is on the home page twice.
+
+Healing now happens on the way in, in `init_menubar_as_editor()`, into the
+history itself; entries that cannot be healed and do not exist are dropped
+rather than kept as unopenable rows; and the healed list is written back so the
+next launch starts from good paths. The two downstream calls stay where they
+are, as the backstop they were meant to be.
+
+The same splice is now applied to the **origin file** of a restored backup.
+That path was written by the run that died, so it names that install's
+container; restoring left the project pointing at a directory that no longer
+exists, and the next Save reported "Failed to save the project."
+
+### And the autosave copy was the other half of the duplicate
+
+0387 stopped a MakerWorld download being listed as a project. The same shape was
+still live one directory over: a project opened from `Documents/Projects/X.3mf`
+is on the home page under that path, and 0369 added `Documents/Autosave/X.3mf`
+beside it - two tiles, same name, no way to tell them apart. The copy is still
+written; it just does not get a second tile when the project already has a file
+of its own. A project that has *never* been saved still gets its entry, because
+for that one the copy is the only way back.
+
+### The switch that turned the whole safety net off
+
+`backup_switch` is a desktop convenience, and on iOS it was the master switch for
+everything above - the copy in Documents, the restore offer, the save on leaving
+the foreground, all of it hangs off that one timer. Setting the interval to zero
+did not save a resource, it discarded the work.
+
+The timer is now unconditional on iOS, in `MainFrame`'s constructor and at all
+three places in Preferences that could reach zero (the switch, an empty interval
+field, a typed zero). The checkbox is shown ticked and disabled with a tooltip
+that says why, rather than removed: a control that does not do what it says is
+worse than one that is plainly unavailable. How often is still the user's
+choice; whether is not.
+
+Two crashes fixed in passing, both `boost::lexical_cast<long>` on strings that
+come from an editable field: one in the `MainFrame` constructor (a throw there
+is a launch that never finishes) and one in the Preferences OK handler (a dialog
+that cannot be closed).
+
+### Save had no button
+
+Reachable saves before this patch: `Cmd+S`, and File > Save Project in the
+iPadOS menu bar. Both need a hardware keyboard. The home page's `+` offers New
+and Open only, and the native toolbar column mirrors the GL toolbars, which have
+no save on any platform. **An iPad used with a finger could not save its work at
+all.**
+
+`app:save` is now the first item in the toolbar column on the 3D view, using
+Orca's own `menu_save.svg` and enabled from `MainFrame::can_save()` - the same
+test that greys the menu row out. The tap defers through `CallAfter` because
+`save_project()` can put up a picker or an error, and this runs inside a
+`UIButton` action on a view the idle sync owns; 0230 is what a modal loop does
+to the view underneath it. Save As stays in the menu: there is one action on the
+column and it is the one that does not ask anything.
+
+### Where a project lives now, in one place
+
+| path | written by | on the home page |
+|---|---|---|
+| `Documents/<name>.3mf` | Save, on a project with no file yet (0367) | yes |
+| `Documents/Projects/` | Open and Import, moved out of `tmp/*-Inbox` (0382) | yes |
+| `Documents/Downloads/` | MakerWorld deep links (0377) | no, by 0387 |
+| `Documents/Autosave/<name>.3mf` | the autosave copy, ≤ 60 s stale, forced on resign-active | only if the project has no file of its own |
+| `Library/Application Support/OrcaSlicer/backup/…/.3mf` | every backup tick with a change, and every lifecycle hook | no - it is what the restore offer reads |
+
+### Not verified on device
+
+None of this has been through a device build at the time of writing. The two
+with real surface are the lifecycle hooks - if the app is killed while
+backgrounding, `willResignActive` doing a full export on a very large model is
+the first thing to suspect, and the backup written before it is the part that
+must not be moved - and the toolbar's new item, which is the first entry in that
+column that does not come from a `GLToolbar`.
+
+Two things left open on purpose:
+
+* **`Documents/Autosave` is never pruned.** One file per project name, kept for
+  ever. Deleting files out of a directory the user can see in the Files app is
+  not something to do without asking, so it is not done.
+* **pid reuse.** The iOS lock check compares against `get_current_pid()`, and
+  pids wrap. A collision means one missed restore offer, never a lost file -
+  the safe direction - but it is why the check is not exact.

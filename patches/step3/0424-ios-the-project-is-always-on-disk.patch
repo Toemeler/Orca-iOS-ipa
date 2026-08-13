@@ -1,0 +1,718 @@
+--- a/src/libslic3r/AppConfig.cpp
++++ b/src/libslic3r/AppConfig.cpp
+@@ -1458,6 +1458,14 @@ void AppConfig::set_recent_projects(const std::vector<std::string>& recent_proje
+         else if (n.length() == 2) n = "0" + n;
+         it->second[n] = recent_projects[i];
+     }
++    // This writes straight into m_storage rather than through set(), so nothing
++    // marked the config dirty and GUI_App's idle handler - "if (app_config->
++    // dirty()) app_config->save()" - had no reason to write it out. The list
++    // then survived only when some unrelated setting happened to be changed in
++    // the same session. On a platform that ends sessions by killing the
++    // process that is most of them: the file is written, the entry pointing at
++    // it is not, and the work is unreachable from the home page.
++    m_dirty = true;
+ }
+ 
+ void AppConfig::set_mouse_device(const std::string& name, double translation_speed, double translation_deadzone,
+--- a/src/libslic3r/Format/bbs_3mf.cpp
++++ b/src/libslic3r/Format/bbs_3mf.cpp
+@@ -9097,11 +9097,40 @@ bool has_restore_data(std::string & path, std::string& origin)
+         std::string pid;
+         load_string_file(path + "/lock.txt", pid);
+         try {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            // Compare the pid, not the name.
++            //
++            // The test below asks "is a process with that pid still running
++            // this application?", and answers it by resolving the pid to an
++            // executable name. iOS has no way to do that for anything but the
++            // caller - the sandbox forbids inspecting another process - so
++            // get_process_name() ignores its argument there and returns our own
++            // path from _NSGetExecutablePath. Both sides of the comparison are
++            // therefore the same string for every pid that has ever existed,
++            // every lock reads as ours, has_restore_data() always returns false
++            // with origin "<lock>", and the "Previously unsaved items have been
++            // detected" offer can never appear - which is the whole of crash
++            // and kill recovery on the one platform that kills applications as
++            // a matter of routine.
++            //
++            // The question is answerable exactly on iOS without asking about
++            // other processes at all: the system runs one instance of an
++            // application at a time, so a lock is live if and only if it is
++            // ours. Anything else was written by a run that is over.
++            //
++            // The <lock> answer still matters when it is right: it is what
++            // stops the caller deleting the directory we are backing up into.
++            if (boost::lexical_cast<unsigned>(pid) == get_current_pid()) {
++                origin = "<lock>";
++                return false;
++            }
++#else
+             if (get_process_name(boost::lexical_cast<int>(pid)) ==
+                 get_process_name(0)) {
+                 origin = "<lock>";
+                 return false;
+             }
++#endif
+         }
+         catch (...) {
+             return false;
+--- a/src/libslic3r/Model.cpp
++++ b/src/libslic3r/Model.cpp
+@@ -1,5 +1,8 @@
+ #include "Model.hpp"
+ #include "libslic3r.h"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "BuildVolume.hpp"
+ #include "ClipperUtils.hpp"
+ #include "Exception.hpp"
+@@ -960,7 +963,26 @@ std::string Model::get_backup_path()
+     if (backup_path.empty())
+     {
+         auto pid = get_current_pid();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Not tmp on iOS.
++        //
++        // temporary_dir() is wxFileName::GetTempDir(), which on iOS is the
++        // container's tmp - and iOS empties tmp whenever it decides it wants
++        // the space, without asking and without warning. This directory is the
++        // one thing the "Previously unsaved items have been detected" offer on
++        // the next launch reads: a backup kept there is exactly as durable as
++        // it needs not to be. It is the same root cause 0382 found under
++        // projects that "could not be opened".
++        //
++        // data_dir() is Library/Application Support, which is not purged and
++        // not shown to the user in the Files app - which is right for this,
++        // because it is a working directory rather than a document. The copy
++        // in Documents/Autosave is the one meant to be found by hand.
++        boost::filesystem::path parent_path(data_dir().empty() ? temporary_dir()
++                                                               : data_dir() + "/backup");
++#else
+         boost::filesystem::path parent_path(temporary_dir());
++#endif
+         std::time_t t = std::time(0);
+         std::tm* now_time = std::localtime(&t);
+         std::stringstream buf;
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -9266,6 +9266,32 @@ void GLCanvas3D::orca_ios_sync_toolbar()
+ 
+     orca_ios_toolbar_begin();
+ 
++    // Save, first in the column.
++    //
++    // Everything else here mirrors something Orca already draws. This does not:
++    // there is no Save anywhere on the plater, because on the desktop it is
++    // File > Save Project and Ctrl+S. The iPhone port does put that menu into
++    // the iPadOS menu bar, so a keyboard can still reach it - but the menu bar
++    // needs a keyboard, and an iPad used with a finger had no way to save its
++    // work at all. The autosave in MainFrame means nothing is lost either way;
++    // it does not mean the user should have to trust that.
++    //
++    // Plater::save_project() with no argument, which is what the menu item
++    // calls: it saves over the project's own file if it has one and puts a
++    // fresh project into Documents rather than opening the picker (0367). Save
++    // As stays in the menu - there is one action here, and it is the one that
++    // does not ask anything.
++    //
++    // Enabled from MainFrame::can_save(), the same test that greys the menu
++    // item out, so an unmodified project shows the same disabled button the
++    // menu shows a disabled row.
++    if (m_canvas_type == ECanvasType::CanvasView3D && wxGetApp().mainframe != nullptr) {
++        orca_ios_toolbar_add("app:save", "menu_save.svg",
++                             into_u8(_L("Save Project")).c_str(),
++                             wxGetApp().mainframe->can_save(),
++                             false, true);
++    }
++
+     for (const GLToolbarItem *item : m_main_toolbar.get_items()) {
+         if (item == nullptr || item->is_separator() || !item->is_visible())
+             continue;
+@@ -9349,6 +9375,18 @@ void GLCanvas3D::orca_ios_run_toolbar_action(const char *id)
+         return;
+     const std::string item(id);
+ 
++    if (item == "app:save") {
++        // Deferred. save_project() can put a modal dialog up - the picker, or
++        // "Failed to save the project" - and this is running inside a UIButton
++        // action, from an idle-driven sync that owns the view the button is on.
++        // Everything else in this file that opens a window from a tap does the
++        // same; see 0230 on what a modal loop does to the view underneath it.
++        wxGetApp().CallAfter([] {
++            if (wxGetApp().mainframe != nullptr && wxGetApp().mainframe->can_save())
++                wxGetApp().plater()->save_project();
++        });
++        return;
++    }
+     if (item.rfind("main:", 0) == 0) {
+         GLToolbarItem *const found = m_main_toolbar.get_item(item.substr(5));
+         if (found != nullptr && found->is_enabled())
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -16,6 +16,11 @@ void orca_ios_add_home_plus(wxWindow *panel, const char *new_title, const char *
+ // src/slic3r/GUI/ios_webview_support.mm - the one page that needs room kept
+ // clear at the top for the floating tab bar.
+ namespace Slic3r { namespace GUI { void orca_ios_inset_tab(wxWindow *page); } }
++// src/slic3r/GUI/ios_webview_support.mm - the UIApplication notifications that
++// say the work has to be on disk now. They call orca_ios_save_everything_now()
++// below, which is why the hooks are installed from here rather than at launch:
++// there is nothing worth saving until there is a MainFrame.
++namespace Slic3r { namespace GUI { void orca_ios_install_lifecycle_hooks(); } }
+ // src/slic3r/GUI/ios_webview_support.mm - the glass capsule that shows Slice
+ // and Print now that the strip holding them is hidden.
+ namespace Slic3r { namespace GUI {
+@@ -628,10 +633,38 @@ static void orca_ios_drive_step(int step)
+ // worth taking: if nothing changed, nothing is written. The rate limit is
+ // separate, because a full 3MF export regenerates the plate thumbnails and
+ // that is far too much work to repeat on the ten-second backup interval.
+-static void orca_ios_autosave_to_documents(Plater *plater)
++//
++// THE RATE LIMIT DEFERS, IT DOES NOT DROP. That distinction is the whole of
++// 0424. In 0366 the limit was a plain early return, and the caller went on to
++// mark the model as backed up either way:
++//
++//     if (!up_to_date(false, true)) { export backup; autosave; up_to_date(true, true); }
++//
++// so an edit made inside the sixty-second shadow of the previous autosave was
++// written to the backup, declared clean, and never offered to this function
++// again - it did not reach Documents late, it never reached it at all. The
++// pending flag below outlives the skipped write, and every later tick of the
++// same callback retries it, so the only thing the limit still controls is
++// *when* the copy is written, never *whether*.
++static bool s_ios_autosave_pending = false;
++
++// Something changed that the copy in Documents does not have yet. Called from
++// the backup callback, which has already done Orca's own change detection.
++static void orca_ios_autosave_note_change() { s_ios_autosave_pending = true; }
++
++// Write the copy if there is anything to write. `force` skips the rate limit:
++// it is set when the application is about to lose the foreground, where the
++// choice is not "now or in a minute" but "now or never".
++static void orca_ios_autosave_to_documents(Plater *plater, bool force)
+ {
+-    if (plater == nullptr || plater->model().objects.empty())
++    if (!s_ios_autosave_pending)
+         return;
++    if (plater == nullptr || plater->model().objects.empty()) {
++        // An empty plate has nothing to preserve, and writing one would replace
++        // a good autosave with a blank project.
++        s_ios_autosave_pending = false;
++        return;
++    }
+ 
+     const char *const home = ::getenv("HOME");
+     if (home == nullptr)
+@@ -639,9 +672,9 @@ static void orca_ios_autosave_to_documents(Plater *plater)
+ 
+     static std::chrono::steady_clock::time_point last;
+     const auto now = std::chrono::steady_clock::now();
+-    if (last != std::chrono::steady_clock::time_point() &&
++    if (!force && last != std::chrono::steady_clock::time_point() &&
+         std::chrono::duration_cast<std::chrono::seconds>(now - last).count() < 60)
+-        return;
++        return;   // deferred, not dropped: s_ios_autosave_pending stays set
+ 
+     boost::system::error_code ec;
+     const boost::filesystem::path dir = boost::filesystem::path(home) / "Documents" / "Autosave";
+@@ -668,16 +701,105 @@ static void orca_ios_autosave_to_documents(Plater *plater)
+     const boost::filesystem::path out = dir / (stem + ".3mf");
+     const int rc = plater->export_3mf(out, SaveStrategy::Silence);
+     last = now;
++    if (rc == 0)
++        s_ios_autosave_pending = false;
+     BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: " << out.string()
++                             << (force ? " (forced)" : "")
+                              << (rc == 0 ? std::string(" ok")
+                                          : " FAILED rc=" + std::to_string(rc));
++    if (rc != 0)
++        return;
+ 
+     // Put it on the home page too. Writing the file is only half of what
+     // "autosave" is worth - without an entry in the recent list, complete with
+     // its thumbnail, there is no way back to it from inside the app. Silence
+     // keeps the export from taking over the project name; this does not.
+-    if (rc == 0 && wxGetApp().mainframe != nullptr)
+-        wxGetApp().mainframe->add_to_recent_projects(from_path(out));
++    //
++    // ONLY WHEN THE PROJECT HAS NO FILE OF ITS OWN. A project opened from
++    // Documents/Projects/X.3mf is already on the home page under that path, and
++    // adding Documents/Autosave/X.3mf beside it is the second half of the
++    // duplicate 0387 removed for downloads: two entries, same name, no way to
++    // tell them apart. The copy is still written - it is what the restore
++    // offer in 0424 hands back after a kill - it just does not get a second
++    // tile. wxFileHistory compares paths, so nothing else can dedupe this.
++    if (wxGetApp().mainframe == nullptr)
++        return;
++    if (!plater->get_project_filename(".3mf").IsEmpty()) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: not listing the copy, the project is "
++                                 << into_u8(plater->get_project_filename(".3mf"));
++        return;
++    }
++    wxGetApp().mainframe->add_to_recent_projects(from_path(out));
++}
++
++// Everything on disk, right now.
++//
++// Called from the application lifecycle observers in ios_webview_support.mm.
++// iOS suspends an application the moment it stops being frontmost and reclaims
++// it later without running another line of its code, so this is the last point
++// at which anything can be written - there is no "quit" on this platform, and
++// wx's applicationWillTerminate: is only delivered to an app that is still
++// running when it is killed, which a backgrounded one is not.
++//
++// TWO WRITES, AND ONLY ONE OF THEM IS ALWAYS SAFE.
++//
++// Orca's own backup 3MF carries no thumbnails: it serialises the model and
++// stops. The copy in Documents does not - a 3MF export that is not a Backup
++// re-renders every plate thumbnail, which is four offscreen GL passes per
++// plate and a working set to match. `full` is what says whether that second
++// one may be attempted, and there are two separate reasons to say no:
++//
++//   * In the background, OpenGL ES calls made after didEnterBackground:
++//     returns are grounds for immediate termination by the OS.
++//   * Under a memory warning, allocating for thumbnails is the one thing most
++//     likely to turn the warning into a kill.
++//
++// The backup is written first in both cases, because it is the one the restore
++// offer on the next launch reads - which makes it, not the copy, the thing
++// standing between a suspend and lost work.
++void orca_ios_save_everything_now(const char *why, bool full)
++{
++    // One at a time. wxFileDialog on this port drives the document picker
++    // through a nested run loop (0382), so a Save that is waiting on the picker
++    // is still dispatching events - and swiping to the home screen from in
++    // front of that picker delivers willResignActive straight into the middle
++    // of an export. The same guard, for the same reason, as load_project's.
++    static bool s_saving = false;
++    if (s_saving) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-save: re-entered from "
++                                 << (why != nullptr ? why : "?") << ", ignoring";
++        return;
++    }
++    s_saving = true;
++    struct Guard {
++        bool &flag;
++        explicit Guard(bool &f) : flag(f) {}
++        ~Guard() { flag = false; }
++    } guard(s_saving);
++
++    MainFrame *const frame = wxGetApp().mainframe;
++    Plater *const plater = frame != nullptr ? frame->plater() : nullptr;
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-save: " << (why != nullptr ? why : "?")
++                             << " full=" << full << " plater=" << (plater != nullptr);
++
++    if (plater != nullptr && !plater->model().objects.empty()) {
++        if (!plater->up_to_date(false, true)) {
++            plater->export_3mf(plater->model().get_backup_path() + "/.3mf", SaveStrategy::Backup);
++            orca_ios_autosave_note_change();
++            plater->up_to_date(true, true);
++        }
++        // Forced: the rate limit is a way of saying "in a minute", and there
++        // may not be a minute. If this is skipped the pending flag survives it
++        // and the copy is written on the first tick after the application comes
++        // back - the backup above has the same content either way.
++        if (full)
++            orca_ios_autosave_to_documents(plater, true);
++    }
++
++    // The recent-projects list lives in this file and is written by the idle
++    // handler, which will not run again.
++    if (wxGetApp().app_config != nullptr)
++        wxGetApp().app_config->save();
+ }
+ #endif // __WXOSX_IPHONE__
+ 
+@@ -1073,6 +1195,32 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+         update_slice_print_status(eEventSliceUpdate, true, true);
+ 
+         // BBS: backup project
++#ifdef __WXOSX_IPHONE__
++        // The switch is not offered on this platform.
++        //
++        // "Auto-Backup" is a convenience on a desktop, where the alternative is
++        // that the user saves and the application keeps running until they say
++        // otherwise. On iOS it is the only thing between an edit and a suspend:
++        // there is no quit, no shutdown warning and no promise that the process
++        // will ever be resumed rather than reclaimed. Everything else in this
++        // file - the copy in Documents, the restore offer on the next launch,
++        // the save on leaving the foreground - hangs off this one timer, so an
++        // interval of zero would silently switch off the whole safety net.
++        {
++            std::string backup_interval;
++            long        seconds = 0;
++            if (wxGetApp().app_config->get("app", "backup_interval", backup_interval)) {
++                // Not lexical_cast: this string comes from a text field in
++                // Preferences and from a config file the user can edit, and a
++                // throw out of the MainFrame constructor is a launch that never
++                // finishes. An unreadable value simply means the default.
++                try { seconds = std::stol(backup_interval); } catch (...) { seconds = 0; }
++            }
++            if (seconds <= 0)
++                seconds = 10;
++            Slic3r::set_backup_interval(seconds);
++        }
++#else
+         if (wxGetApp().app_config->get("backup_switch") == "true") {
+             std::string backup_interval;
+             if (!wxGetApp().app_config->get("app", "backup_interval", backup_interval))
+@@ -1081,6 +1229,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+         } else {
+             Slic3r::set_backup_interval(0);
+         }
++#endif
+         Slic3r::set_backup_callback([this](int action) {
+             if (action == 0) {
+                 wxPostEvent(this, wxCommandEvent(EVT_BACKUP_POST));
+@@ -1089,15 +1238,25 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 if (!m_plater->up_to_date(false, true)) {
+                     m_plater->export_3mf(m_plater->model().get_backup_path() + "/.3mf", SaveStrategy::Backup);
+ #ifdef __WXOSX_IPHONE__
+-                    orca_ios_autosave_to_documents(m_plater);
++                    orca_ios_autosave_note_change();
+ #endif
+                     m_plater->up_to_date(true, true);
+                 }
++#ifdef __WXOSX_IPHONE__
++                // Outside the change test on purpose. A copy the rate limit
++                // deferred is still owed even on a tick where the model has not
++                // moved since - that retry is the only thing that stops the
++                // deferral becoming a drop.
++                orca_ios_autosave_to_documents(m_plater, false);
++#endif
+             }
+          });
+         Bind(EVT_BACKUP_POST, [](wxCommandEvent& e) {
+             Slic3r::run_backup_ui_tasks();
+             });
++#ifdef __WXOSX_IPHONE__
++        orca_ios_install_lifecycle_hooks();
++#endif
+ ;    }
+     this->Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent &evt) {
+ #ifdef __APPLE__
+@@ -3471,9 +3630,53 @@ void MainFrame::init_menubar_as_editor()
+         std::reverse(recent_projects.begin(), recent_projects.end());
+         for (const std::string& project : recent_projects)
+         {
++#ifdef __WXOSX_IPHONE__
++            // Heal the path HERE, into the history itself, not later when the
++            // home page asks for it.
++            //
++            // Every absolute path in this sandbox names the data container's
++            // UUID, and a sideloaded build gets a new container. 0382 spliced
++            // the current one in at two places - get_recent_projects() and
++            // open_recent_project() - and both are downstream of this list, so
++            // what wxFileHistory held stayed stale. Two things follow from
++            // that, and both were reported from the device:
++            //
++            //   * LoadThumbnails() below reads each 3MF at the path in the
++            //     history. Stale path, no file, no thumbnail: the home page
++            //     comes up as a list of grey tiles after every install.
++            //   * Opening one of them goes on to set_project_filename(), which
++            //     calls add_to_recent_projects() with the *healed* path.
++            //     wxFileHistory dedupes on the exact string, so the healed path
++            //     is added beside the stale one and the project is on the home
++            //     page twice.
++            //
++            // Healing on the way in fixes both at once, and leaves the two
++            // downstream calls as the backstop they were meant to be.
++            const std::string healed = orca_ios_repair_container_path(project);
++            if (!wxFileExists(from_u8(healed))) {
++                // Not stale - gone. tmp is emptied by iOS, and entries written
++                // before 0382 point into it. An entry that cannot be opened is
++                // worth less than the row it occupies.
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-recent: dropping " << project;
++                continue;
++            }
++            m_recent_projects.AddFileToHistory(from_u8(healed));
++#else
+             m_recent_projects.AddFileToHistory(from_u8(project));
++#endif
+         }
+         m_recent_projects.LoadThumbnails();
++#ifdef __WXOSX_IPHONE__
++        // Write the healed list back, so the next launch starts from good
++        // paths rather than doing this again, and so a dropped entry stays
++        // dropped. AddFileToHistory reverses the order once more.
++        {
++            std::vector<std::string> healed_projects;
++            for (size_t i = 0; i < m_recent_projects.GetCount(); ++i)
++                healed_projects.push_back(into_u8(m_recent_projects.GetHistoryFile(i)));
++            wxGetApp().app_config->set_recent_projects(healed_projects);
++        }
++#endif
+ 
+         Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) { evt.Enable(can_open_project() && (m_recent_projects.GetCount() > 0)); }, recent_projects_submenu->GetId());
+ 
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -4,6 +4,17 @@
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
+ #endif
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// src/slic3r/GUI/ios_webview_support.mm - a recorded path carries the data
++// container UUID of the install that wrote it, and every sideload gets a new
++// one. See 0382. Guarded on TARGET_OS_OSX rather than __WXOSX_IPHONE__ because
++// no wx header has been read at this point in the file; the two are the same
++// thing on this build, and the uses further down are inside wx's macro.
++#include <string>
++namespace Slic3r { namespace GUI {
++std::string orca_ios_repair_container_path(const std::string &path);
++} }
++#endif
+ 
+ #include <cstddef>
+ #include <algorithm>
+@@ -12278,8 +12289,28 @@ LoadType determine_load_type(std::string filename, std::string override_setting
+ 
+ // BBS: FIXME, missing resotre logic
+ void Plater::load_project(wxString const& filename2,
+-    wxString const& originfile)
++    wxString const& originfile_)
+ {
++#ifdef __WXOSX_IPHONE__
++    // The origin of a restored backup is a path from the run that died, so it
++    // names that install's data container - and after a sideload there is a new
++    // one. Restoring then leaves the project pointing at a directory that does
++    // not exist: set_project_filename() below takes it as the project's own
++    // file, and the next Save writes into nothing and reports "Failed to save
++    // the project". Same splice as everywhere else a recorded path is read.
++    //
++    // Only when this really is a path. "-", "<loadall>" and "<silence>" are the
++    // three sentinels the strategy below is chosen from, and none of them names
++    // a file - "-" is what every ordinary load passes, so repairing it would
++    // put a "no trace of -" line in the log on every project the user opens.
++    const bool ios_origin_is_path = !originfile_.IsEmpty() && originfile_ != "-" &&
++                                    originfile_ != "<loadall>" && originfile_ != "<silence>";
++    const wxString originfile = ios_origin_is_path
++        ? from_u8(orca_ios_repair_container_path(into_u8(originfile_)))
++        : originfile_;
++#else
++    const wxString &originfile = originfile_;
++#endif
+     model().calib_pa_pattern.reset(nullptr);
+     model().plates_custom_gcodes.clear();
+ 
+--- a/src/slic3r/GUI/Preferences.cpp
++++ b/src/slic3r/GUI/Preferences.cpp
+@@ -1,4 +1,7 @@
+ #include "Preferences.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ #include "OptionsGroup.hpp"
+ #include "GUI_App.hpp"
+ #include "MainFrame.hpp"
+@@ -783,6 +786,26 @@ wxBoxSizer *PreferencesDialog::create_camera_orbit_mult_input(wxString title, wx
+     return m_sizer;
+ }
+ 
++// The backup timer cannot be switched off on iOS.
++//
++// MainFrame's constructor has the reasoning: there is no quit on that platform,
++// the process is suspended when the user leaves and reclaimed without notice,
++// and the autosave, the copy in Documents and the restore offer on the next
++// launch all hang off this one timer. Turning it off there does not save a
++// resource, it discards the work.
++//
++// Every set_backup_interval() in this file goes through here, because there are
++// three ways to reach zero from this dialog - the switch, an empty interval
++// field and a typed zero - and each of them stops the thread just as dead.
++static long orca_effective_backup_interval(long wanted)
++{
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    return wanted > 0 ? wanted : 10;
++#else
++    return wanted;
++#endif
++}
++
+ wxBoxSizer *PreferencesDialog::create_item_backup(wxString title, wxString tooltip)
+ {
+     auto tip = tooltip.IsEmpty() ? title : tooltip; // auto fill tooltips with title if its empty
+@@ -792,6 +815,17 @@ wxBoxSizer *PreferencesDialog::create_item_backup(wxString title, wxString toolt
+     auto checkbox = new ::CheckBox(m_parent);
+     checkbox->SetValue(app_config->get_bool("backup_switch"));
+     checkbox->SetToolTip(tip);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Shown, so the interval beside it still reads as something that belongs to
++    // a switch, and so nobody goes looking for a setting that has disappeared -
++    // but not operable, because a control that does not do what it says is
++    // worse than one that is plainly unavailable.
++    checkbox->SetValue(true);
++    checkbox->Disable();
++    checkbox->SetToolTip(_L("Auto-backup is always on: iOS can close this app at "
++                            "any time without warning, and the backup is what "
++                            "brings the project back."));
++#endif
+ 
+     checkbox->Bind(wxEVT_TOGGLEBUTTON, [this, checkbox](wxCommandEvent &e) {
+         app_config->set_bool("backup_switch", checkbox->GetValue());
+@@ -799,7 +833,8 @@ wxBoxSizer *PreferencesDialog::create_item_backup(wxString title, wxString toolt
+         bool pbool = app_config->get("backup_switch") == "true" ? true : false;
+         std::string backup_interval = "10";
+         app_config->get("backup_interval", backup_interval);
+-        Slic3r::set_backup_interval(pbool ? boost::lexical_cast<long>(backup_interval) : 0);
++        Slic3r::set_backup_interval(orca_effective_backup_interval(
++            pbool ? boost::lexical_cast<long>(backup_interval) : 0));
+         if (m_backup_interval_textinput != nullptr) { m_backup_interval_textinput->Enable(pbool); }
+         e.Skip();
+     });
+@@ -828,7 +863,7 @@ wxBoxSizer *PreferencesDialog::create_item_backup(wxString title, wxString toolt
+         app_config->save();
+         long backup_interval = 0;
+         m_backup_interval_time.ToLong(&backup_interval);
+-        Slic3r::set_backup_interval(backup_interval);
++        Slic3r::set_backup_interval(orca_effective_backup_interval(backup_interval));
+     };
+ 
+     input->GetTextCtrl()->Bind(wxEVT_TEXT_ENTER, [backup_interval](wxCommandEvent &e) {
+@@ -841,7 +876,14 @@ wxBoxSizer *PreferencesDialog::create_item_backup(wxString title, wxString toolt
+         e.Skip();
+     });
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The switch above is pinned on, so the interval is always live - and a
++    // greyed field next to a ticked box reads as a contradiction. How often is
++    // still the user's to choose; whether is not.
++    input->Enable(true);
++#else
+     input->Enable(app_config->get("backup_switch") == "true");
++#endif
+     input->Refresh();
+ 
+     m_backup_interval_textinput = input;
+@@ -2151,7 +2193,14 @@ wxBoxSizer* PreferencesDialog::create_debug_page()
+             // bbs  backup
+             //app_config->set("backup_interval", std::string(m_backup_interval_time.mb_str()));
+             app_config->save();
+-            Slic3r::set_backup_interval(boost::lexical_cast<long>(app_config->get("backup_interval")));
++            {
++                // Was a bare lexical_cast on a string that comes out of a text
++                // field: an empty or half-typed interval threw out of the OK
++                // handler, which is a dialog that cannot be closed.
++                long secs = 0;
++                try { secs = std::stol(app_config->get("backup_interval")); } catch (...) { secs = 0; }
++                Slic3r::set_backup_interval(orca_effective_backup_interval(secs));
++            }
+ 
+             this->Close();
+             break;
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -1450,9 +1450,111 @@ static const CGFloat kOrcaTabBarInset = 72;
+ static OrcaTabBarController *gs_orca_tab_bar = nil;
+ 
+ 
++// -- the application is going away -----------------------------------------
++//
++// There is no quit on this platform, and that is the whole problem.
++//
++// On a desktop the application is closed by the user, gets asked whether it
++// wants to save first, and runs whatever it likes on the way out. iOS does none
++// of that. When the user swipes up to the home screen the process is left
++// running for a moment and then *suspended*: it is frozen mid-instruction, and
++// the system reclaims it later - minutes or days - without running another line
++// of its code. Nothing is delivered when that happens. wx implements
++// applicationWillTerminate:, but UIKit only sends it to an application that is
++// still running when it is killed, which a suspended one by definition is not,
++// so it is not the hook this needs.
++//
++// UIApplicationWillResignActiveNotification is. It arrives while the
++// application is still frontmost and fully alive - the user has just started
++// the gesture, or pulled down a banner, or taken a call - and it precedes every
++// route to suspension there is. That is the last moment at which the work can
++// be written, so that is where it is written.
++//
++// THE THREE NOTIFICATIONS ARE NOT THE SAME, and the `full` argument is where
++// the difference lands - see orca_ios_save_everything_now.
++//
++//   willResignActive       Still foreground, still allowed to render, nothing
++//                          is wrong with the process. Write everything.
++//   didEnterBackground     GL is now grounds for termination by the OS, so the
++//                          copy with the thumbnails in it is out. A backstop
++//                          for whatever changed between the two, and the point
++//                          at which the config has to be on disk.
++//   didReceiveMemoryWarning
++//                          Still foreground, but this may be the only notice
++//                          before jetsam takes the process - which on an iPad
++//                          slicing a large model is a real way to die. Not
++//                          full, for a different reason than the background
++//                          one: rendering four thumbnails per plate is exactly
++//                          the allocation the warning is about.
++//
++// Registered once, from MainFrame's constructor: before that there is no
++// project to save, and the notification would have nothing to do.
++
++// src/slic3r/GUI/MainFrame.cpp
++namespace Slic3r { namespace GUI {
++void orca_ios_save_everything_now(const char *why, bool full);
++} }
++
++@interface OrcaLifecycleObserver : NSObject
++@end
++
++@implementation OrcaLifecycleObserver
++
++- (void)willResignActive:(NSNotification *)n
++{
++    (void) n;
++    Slic3r::GUI::orca_ios_save_everything_now("willResignActive", true);
++}
++
++- (void)didEnterBackground:(NSNotification *)n
++{
++    (void) n;
++    Slic3r::GUI::orca_ios_save_everything_now("didEnterBackground", false);
++}
++
++- (void)didReceiveMemoryWarning:(NSNotification *)n
++{
++    (void) n;
++    Slic3r::GUI::orca_ios_save_everything_now("memoryWarning", false);
++}
++
++@end
++
++static OrcaLifecycleObserver *gs_orca_lifecycle = nil;
++
++
+ namespace Slic3r {
+ namespace GUI {
+ 
++void orca_ios_install_lifecycle_hooks()
++{
++    if (gs_orca_lifecycle != nil)
++        return;
++
++    @try {
++        gs_orca_lifecycle = [[OrcaLifecycleObserver alloc] init];
++        NSNotificationCenter *const nc = [NSNotificationCenter defaultCenter];
++        [nc addObserver:gs_orca_lifecycle
++               selector:@selector(willResignActive:)
++                   name:UIApplicationWillResignActiveNotification
++                 object:nil];
++        [nc addObserver:gs_orca_lifecycle
++               selector:@selector(didEnterBackground:)
++                   name:UIApplicationDidEnterBackgroundNotification
++                 object:nil];
++        [nc addObserver:gs_orca_lifecycle
++               selector:@selector(didReceiveMemoryWarning:)
++                   name:UIApplicationDidReceiveMemoryWarningNotification
++                 object:nil];
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-save: lifecycle hooks installed";
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-save: lifecycle hooks THREW "
++                                 << [[e name] UTF8String] << ": " << [[e reason] UTF8String];
++        gs_orca_lifecycle = nil;
++    }
++}
++
+ void WKWebView_evaluateJavaScript(void *web, wxString const &script,
+                                   void (*callback)(wxString const &))
+ {

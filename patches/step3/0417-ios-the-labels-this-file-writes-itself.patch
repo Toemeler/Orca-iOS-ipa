@@ -1,0 +1,52 @@
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 1cce48358..014ac7432 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -33,6 +33,7 @@
+ // GetPageCount()/GetPageText()/GetPage()/SetSelection(), on the notebook the
+ // tab bar drives.
+ #include <wx/bookctrl.h>
++#include <wx/translation.h>
+ #include <algorithm>
+ #include <cmath>
+ #include <vector>
+@@ -42,6 +43,21 @@
+ #include <boost/log/trivial.hpp>
+ #include <atomic>
+ 
++// The labels this file writes itself.
++//
++// Everything else it shows arrives already translated from the C++ side -
++// tab titles, tooltips, the two entries under the plus - because _L() is not
++// reachable from here. These few are ours, and _L(s) is only
++// wxGetTranslation(wxString(s, wxConvUTF8)), which is reachable, so they go
++// through the same catalogue as the rest of the interface. Their msgids are
++// carried in orca-overlay/localization/i18n/de/OrcaSlicer_de.po; an msgid the
++// catalogue does not have comes back unchanged, and that is the English.
++static NSString *orca_ios_tr(const char *s)
++{
++    const wxString t = wxGetTranslation(wxString(s, wxConvUTF8));
++    return [NSString stringWithUTF8String:t.utf8_str().data()];
++}
++
+ // A CADisplayLink, so that frames are paced by the display instead of by luck.
+ //
+ // Rendering is driven by wxIdle, and wx processes idle from a run-loop observer
+@@ -952,7 +968,7 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+     UIImage *const img = [UIImage systemImageNamed:(_open ? @"chevron.up" : @"chevron.down")];
+     [_chevron setImage:img forState:UIControlStateNormal];
+     _chevron.tintColor = [UIColor secondaryLabelColor];
+-    _chevron.accessibilityLabel = _open ? @"Fewer tools" : @"More tools";
++    _chevron.accessibilityLabel = orca_ios_tr(_open ? "Fewer tools" : "More tools");
+ }
+ 
+ - (void)toggle:(id)sender
+@@ -2337,7 +2353,7 @@ static bool orca_ios_install_home_plus()
+         [button setImage:[UIImage systemImageNamed:@"plus" withConfiguration:glyph]
+                 forState:UIControlStateNormal];
+         button.tintColor          = [UIColor whiteColor];
+-        button.accessibilityLabel = @"New";
++        button.accessibilityLabel = orca_ios_tr("New");
+         button.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
+         // The pointer effect, which was missing along with the touches for the
+         // same reason: nothing was reaching this control at all.

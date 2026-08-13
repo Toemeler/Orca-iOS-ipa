@@ -80,6 +80,10 @@ jobs:
           # and harmless for a compile-only run.
           cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
           test "$(ls resources/shaders/ES | wc -l)" -eq 38
+          # The German catalogue rides in on the same overlay copy; upstream's
+          # gettext_po_to_mo target is not in `all` and nothing here builds it.
+          python3 "$GITHUB_WORKSPACE"/tools/i18n/build-de-catalog.py --check
+          test -s resources/i18n/de/OrcaSlicer.mo
           # libslic3r and libslic3r_gui are the only two targets that build a
           # precompiled header, and they are exactly the 563 objects that never
           # hit the ccache: ccache hashes the .pch, and a .pch embeds the size

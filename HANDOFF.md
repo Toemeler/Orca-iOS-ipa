@@ -7403,3 +7403,65 @@ Two things left open on purpose:
 * **pid reuse.** The iOS lock check compares against `get_current_pid()`, and
   pids wrap. A collision means one missed restore offer, never a lost file -
   the safe direction - but it is why the check is not exact.
+### 0417 and the catalog that was never built — German, third attempt
+
+The log line 0415 added would have said `NOT FOUND`, because **no `.mo` was
+ever produced anywhere in this repository.**
+
+Orca keeps its translations as `localization/i18n/<lang>/OrcaSlicer_<lang>.po`
+and compiles them to `resources/i18n/<lang>/OrcaSlicer.mo` through the
+`gettext_po_to_mo` CMake target. That target is `add_custom_target` without
+`ALL`, so it is not part of `all`, and every workflow here builds exactly
+`libslic3r_gui` and `OrcaSlicer` — never it. Upstream's `resources/i18n/`
+holds one file, `placeholder.txt`, and that is precisely what
+`cp -R orca/resources "$APP/orca-resources"` has been shipping. So
+`localization_dir()` in the bundle was an empty directory, `AddCatalog()`
+had nothing to find, and the app was English however firmly 0412 and 0415
+asked for German. Nothing about wxLocale was ever the reason.
+
+**The catalog is now committed, compiled, in the overlay.**
+`orca-overlay/resources/i18n/{de,de_DE}/OrcaSlicer.mo` is copied into the Orca
+tree by the `cp -R orca-overlay/. .` every step-3/step-4 workflow already runs,
+and from there into the bundle. Both directory names are shipped because 0415
+loads the catalog itself with `SetLanguage("de")` while Orca's ordinary path
+asks for the config value `de_DE`; whichever runs first, it is where it looks.
+No gettext on the runner, no CMake target, nothing to remember in CI.
+
+`tools/i18n/build-de-catalog.py` compiles the `.po` (pure Python — the MO
+format is a header, two sorted string tables and an index; verified byte-for-
+byte against GNU `msgfmt` after `msgunfmt`). **Run it after editing the `.po`.**
+`--check` recompiles to memory and compares, and the step-3/step-4 workflows
+run it right after the overlay copy, so a `.po` edited without rebuilding the
+`.mo` fails the build instead of silently shipping the old strings. Step 4 also
+asserts both catalogs are in the payload after `orca-resources` is copied.
+
+**The translation itself.** The source is now
+`orca-overlay/localization/i18n/de/OrcaSlicer_de.po`, which overrides upstream's
+on the same overlay copy. Upstream's was 5506 of 5551 messages and rough in
+places; it is now 5553 of 5553, and the pass over it fixed, among others:
+
+- 45 untranslated messages, including the whole chamber-temperature group.
+- Sentences that stopped in the middle — "…ist mit den gewählten Druckerprofilen
+  nicht", "…um den Filamenttyp" — and one message with a second message glued
+  onto its end (`Project downloaded %d%%`).
+- Labels that lost the `: ` or the trailing space the value is appended to, so
+  the calibration dialogs read "Starttemperatur220" (51 of them).
+- Translations that said something else than the English: `Face recognition` →
+  "Gesichtserkennung", `This is the number of top interface layers.` → "Anzahl
+  der langsamen Schichten", `Maximum acceleration for travel` → "Maximale
+  Fahrgeschwindigkeit", `Boldness` → "Durchschlag", `Open Preferences` →
+  "Einstellungen.", `Undo translation` → "Übersetzung rückgängig machen".
+- `%1%` invented for a msgid that has no placeholder, printed literally.
+- One term per concept: Skirt is "Schürze" and no longer collides with Brim's
+  "Umrandung"; Travel is "Verfahrweg"; Preset is "Profil"; Modifier is
+  "Modifikator"; flushing is "spülen"; plug-in is "Plug-in".
+- The informal "du" in a catalog that is otherwise "Sie", and the "wählen sie"
+  that should be "wählen Sie".
+
+**0417 — the labels this file writes itself.** Everything the native UI shows
+arrives already translated from the C++ side, because `_L()` is not reachable
+from `ios_webview_support.mm`. Three labels were its own and stayed English.
+`_L(s)` is only `wxGetTranslation(wxString(s, wxConvUTF8))`, which *is*
+reachable, so they go through the same catalog now; their msgids are carried in
+our `.po` (an msgid the catalog does not have comes back unchanged, which is
+the English, so this is safe for the other languages).

@@ -133,6 +133,15 @@ jobs:
           # path asks for an "ES/" set that upstream has never had, so supply it.
           cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
           test "$(ls resources/shaders/ES | wc -l)" -eq 38
+          # The German catalogue. Orca builds resources/i18n/<lang>/OrcaSlicer.mo
+          # from localization/i18n/ only through the gettext_po_to_mo CMake
+          # target, which is not in `all` and which this workflow never builds -
+          # so resources/i18n/ used to reach the IPA holding placeholder.txt and
+          # nothing else, and the app came up in English whatever patch 0412 and
+          # 0415 asked for. The overlay carries the compiled .mo instead; this
+          # checks it is the one the committed .po compiles to.
+          python3 "$GITHUB_WORKSPACE"/tools/i18n/build-de-catalog.py --check
+          test -s resources/i18n/de/OrcaSlicer.mo
 
       - name: "[3/9] Restore device deps cache"
         uses: actions/cache/restore@v4
@@ -510,6 +519,14 @@ jobs:
           cp "$BIN" "$APP/OrcaSlicer"
           # Orca reads profiles/shaders/icons out of resources/ at runtime.
           cp -R orca/resources "$APP/orca-resources"
+          # localization_dir() is orca-resources/i18n, and that is the only
+          # place wxTranslations looks. Without the catalogue the app is in
+          # English no matter which language it asks for, and that is a silent
+          # failure at runtime - so fail here instead.
+          for L in de de_DE; do
+            test -s "$APP/orca-resources/i18n/$L/OrcaSlicer.mo" || {
+              echo "::error::$L catalogue missing from the bundle"; exit 1; }
+          done
           # A top-level "resources" directory is "Resources" on a case-insensitive
           # filesystem, and CFBundle then reads the flat bundle as an old-style
           # one whose Info.plist lives inside it - the installer reports the

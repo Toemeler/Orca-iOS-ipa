@@ -88,6 +88,10 @@ jobs:
           # path asks for an "ES/" set that upstream has never had, so supply it.
           cp -R "$GITHUB_WORKSPACE"/orca-overlay/. .
           test "$(ls resources/shaders/ES | wc -l)" -eq 38
+          # The German catalogue rides in on the same overlay copy; upstream's
+          # gettext_po_to_mo target is not in `all` and nothing here builds it.
+          python3 "$GITHUB_WORKSPACE"/tools/i18n/build-de-catalog.py --check
+          test -s resources/i18n/de/OrcaSlicer.mo
 
           # boost::filesystem::absolute(p) is absolute(p, current_path()), and
           # the default argument is evaluated even when p is already absolute.

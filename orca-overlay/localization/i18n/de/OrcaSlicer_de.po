@@ -639,8 +639,8 @@ msgstr "Fehlerhafte Verbinder gefunden"
 #, c-format, boost-format
 msgid "%1$d connector is out of cut contour"
 msgid_plural "%1$d connectors are out of cut contour"
-msgstr[0] "%1$d Verbinder ist außerhalb des Schnittkontur"
-msgstr[1] "%1$d Verbinder sind außerhalb des Schnittkontur"
+msgstr[0] "%1$d Verbinder ist außerhalb der Schnittkontur"
+msgstr[1] "%1$d Verbinder sind außerhalb der Schnittkontur"
 
 #, c-format, boost-format
 msgid "%1$d connector is out of object"
@@ -4018,7 +4018,7 @@ msgid "Cleaning nozzle tip"
 msgstr "Reinigen der Düse"
 
 msgid "Checking extruder temperature"
-msgstr "Überprüfen der Extruder Temperatur"
+msgstr "Extrudertemperatur wird geprüft"
 
 msgid "Paused by the user"
 msgstr "Vom Benutzer pausiert"

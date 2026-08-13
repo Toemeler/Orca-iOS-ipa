@@ -3375,7 +3375,7 @@ msgid "Close"
 msgstr "Schließen"
 
 msgid "Nozzle\nTemperature"
-msgstr "Düsentemperatur"
+msgstr "Düsen-\ntemperatur"
 
 msgid "max"
 msgstr "max"
@@ -5558,7 +5558,7 @@ msgid "Reload the plater from disk"
 msgstr "Druckplatte neu von der Festplatte laden"
 
 msgid "Export &Toolpaths as OBJ"
-msgstr "Werkzeugwege als OBJ exportieren"
+msgstr "Werkzeugwege als OBJ e&xportieren"
 
 msgid "Open &Slicer"
 msgstr "&Slicer öffnen"
@@ -10979,7 +10979,7 @@ msgid "Bridge flow ratio"
 msgstr "Flussverhältnis für Brücken"
 
 msgid "This value governs the thickness of the external (visible) bridge layer.\nValues above 1.0: Increase the amount of material while maintaining line spacing. This can improve line contact and strength.\nValues below 1.0: Reduce the amount of material while adjusting line spacing to maintain contact. This can improve sagging.\n\nThe actual bridge flow used is calculated by multiplying this value with the filament flow ratio, and if set, the object's flow ratio."
-msgstr "Der tatsächliche Brückenfluss wird berechnet, indem dieser Wert mit dem Filamentflussverhältnis und, falls festgelegt, dem Objektflussverhältnis multipliziert wird."
+msgstr "Dieser Wert bestimmt die Dicke der äußeren (sichtbaren) Brückenschicht.\nWerte über 1,0: mehr Material bei gleichbleibendem Linienabstand. Das kann den Kontakt zwischen den Linien und die Festigkeit verbessern.\nWerte unter 1,0: weniger Material bei angepasstem Linienabstand, damit der Kontakt erhalten bleibt. Das kann das Durchhängen verringern.\n\nDer tatsächlich verwendete Brückenfluss ergibt sich aus diesem Wert multipliziert mit dem Flussverhältnis des Filaments und, falls gesetzt, dem des Objekts."
 
 msgid "Line width of the Bridge. If expressed as a %, it will be computed over the nozzle diameter.\nRecommended to use with a higher Bridge density or Bridge flow ratio.\n\nThe maximum value is 100% or the nozzle diameter.\nIf set to 0, the line width will match the Internal solid infill width."
 msgstr "Linienbreite der Brücke. Wenn als % angegeben, wird sie über den Düsendurchmesser berechnet.\nEmpfohlen in Verbindung mit einer höheren Brückendichte oder einer höheren Brückenflussrate.\n\nDer maximale Wert beträgt 100% oder der Düsendurchmesser.\nWenn auf 0 gesetzt, entspricht die Linienbreite der Breite der inneren festen Füllung."
@@ -11237,7 +11237,7 @@ msgstr "Eine boolesche Ausdruck, der die Konfigurationswerte eines aktiven Druck
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "This determines the print sequence, allowing you to print layer-by-layer or object-by-object."
-msgstr "Druckreihenfolge, Schicht für Schicht oder Objekt für Objekt."
+msgstr "Legt die Druckreihenfolge fest: Schicht für Schicht oder Objekt für Objekt."
 
 msgid "By layer"
 msgstr "Nach Schicht"
@@ -11954,7 +11954,7 @@ msgstr "Richtung der Füllung"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "This is the angle for sparse infill pattern, which controls the start or main direction of lines."
-msgstr "Winkel des Füllmusters, das die Richtung der Linien bestimmt."
+msgstr "Winkel des Füllmusters. Er bestimmt die Start- bzw. Hauptrichtung der Linien."
 
 msgid "Solid infill direction"
 msgstr "Richtung des massiven Füllmusters"
@@ -15349,7 +15349,7 @@ msgid "When to use Flow Rate Calibration"
 msgstr "Wann soll die Flussratenkalibrierung verwendet werden"
 
 msgid "After using Flow Dynamics Calibration, there might still be some extrusion issues, such as:\n1. Over-Extrusion: Excess material on your printed object, forming blobs or zits, or the layers seem thicker than expected and not uniform\n2. Under-Extrusion: Very thin layers, weak infill strength, or gaps in the top layer of the model, even when printing slowly\n3. Poor Surface Quality: The surface of your prints seems rough or uneven\n4. Weak Structural Integrity: Prints break easily or don't seem as sturdy as they should be"
-msgstr "Nach der Verwendung der Flussdynamik-Kalibrierung kann es immer noch zu einigen Extrusionsproblemen kommen, wie z.B.:\n1. Überextrusion: Überschüssiges Material auf Ihrem gedruckten Objekt, das Klumpen oder Pickel bildet, oder die Schichten scheinen dicker als erwartet"
+msgstr "Auch nach der Flussdynamik-Kalibrierung können noch Extrusionsprobleme auftreten, zum Beispiel:\n1. Überextrusion: überschüssiges Material am Druck, das Klumpen oder Pickel bildet, oder Schichten, die dicker als erwartet und ungleichmäßig wirken\n2. Unterextrusion: sehr dünne Schichten, schwache Füllung oder Lücken in der obersten Schicht, selbst bei langsamem Druck\n3. Mangelhafte Oberflächenqualität: die Oberfläche der Drucke wirkt rau oder uneben\n4. Geringe Festigkeit: die Drucke brechen leicht oder wirken weniger stabil, als sie sein sollten"
 
 msgid "In addition, Flow Rate Calibration is crucial for foaming materials like LW-PLA used in RC planes. These materials expand greatly when heated, and calibration provides a useful reference flow rate."
 msgstr "Darüber hinaus ist die Flussratenkalibrierung für schäumende Materialien wie LW-PLA, die in RC-Flugzeugen verwendet werden, von entscheidender Bedeutung. Diese Materialien dehnen sich stark aus, wenn sie erhitzt werden, und die Kalibrierung bietet eine nützliche Referenzflussrate."
@@ -20415,3 +20415,11 @@ msgstr "Mehr Werkzeuge"
 #. Orca-iOS: written by src/slic3r/GUI/ios_webview_support.mm (patch 0417)
 msgid "Fewer tools"
 msgstr "Weniger Werkzeuge"
+
+#. Orca-iOS: added by patch 0367
+msgid "Printer reported %s.\n\nNo description is available for this code - the message tables for this printer model could not be downloaded. Search the code on the Bambu Lab wiki for details."
+msgstr "Der Drucker meldet %s.\n\nZu diesem Code liegt keine Beschreibung vor - die Meldungstabellen für dieses Druckermodell konnten nicht heruntergeladen werden. Suchen Sie den Code im Bambu Lab Wiki, um Näheres zu erfahren."
+
+#. Orca-iOS: added by patch 0424
+msgid "Auto-backup is always on: iOS can close this app at any time without warning, and the backup is what brings the project back."
+msgstr "Die automatische Sicherung ist immer aktiv: iOS kann diese App jederzeit ohne Vorwarnung beenden, und die Sicherung ist das, was das Projekt zurückholt."

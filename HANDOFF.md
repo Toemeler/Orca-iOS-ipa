@@ -7465,3 +7465,49 @@ from `ios_webview_support.mm`. Three labels were its own and stayed English.
 reachable, so they go through the same catalog now; their msgids are carried in
 our `.po` (an msgid the catalog does not have comes back unchanged, which is
 the English, so this is safe for the other languages).
+
+### 0425/0426 — the last English in a German app
+
+Two more places the catalog does not reach, found by walking the whole
+interface rather than the .po.
+
+**0425 — the labels `ios_webview_support.mm` writes itself.** Everything else
+the native UI shows arrives already translated from the C++ side (tab titles,
+tooltips, the two entries under the plus) because `_L()` is not reachable from
+that file. Three labels were its own and stayed English: the plus button's
+accessibility label and the tool column's chevron ("More tools" / "Fewer
+tools"). `_L(s)` is only `wxGetTranslation(wxString(s, wxConvUTF8))` — see
+`I18N.hpp` — and *that* is reachable, so they go through the same catalog now.
+Their msgids are carried in our `.po`; an msgid the catalog does not have comes
+back unchanged, so this is safe for every other language.
+
+**0426 — the web pages have a second translation table, and German had holes.**
+The home page and the whole setup wizard are HTML under `resources/web/`, and
+they do not use gettext at all: `TranslatePage()` in `resources/web/data/text.js`
+swaps every `.trans` node against `LangText[<lang>]`, where `<lang>` is the
+`?lang=` the C++ side appends — `current_language_code_safe()`, which maps
+`de` to **`de_DE`**, the key the table uses. A tid missing from that block
+leaves the English in the page.
+
+78 tids are used by the pages. Seven were missing from `de_DE` (`orca3`,
+`orca4`, `orca5`, `orca12` — the Stealth Mode page of the wizard; `t109`,
+`t110`, `t111` — the filament page) and four more were still English
+(`orca1`, `orca2`, `orca7`, `orca8`, plus the two plug-in paragraphs `t65`
+and `t75`). All filled. What is left identical is "Bambu Cloud" and "China",
+which are names.
+
+**Not touched: `_L("Get Started")` in MainFrame.cpp (0340).** It is a lookup
+key for the simulator drive harness (`ORCA_IOS_DRIVE`, never set on a device),
+and the button it looks for is an HTML anchor in the wizard whose text comes
+from `text.js` (`t24`, now "Loslegen"). "Get Started" is not in Orca's `.pot`
+either, so `_L()` returns it unchanged — adding it to our catalog would change
+a search string and fix nothing.
+
+**Where the German comes from, in one place:**
+
+| surface | mechanism | source |
+|---|---|---|
+| wx UI, menus, parameters, dialogs | gettext | `orca-overlay/localization/i18n/de/…po` → `resources/i18n/{de,de_DE}/OrcaSlicer.mo` |
+| home page, setup wizard | `LangText` in JS | `resources/web/data/text.js`, key `de_DE` (patch 0426) |
+| the native tab bar, toolbar, capsule | strings passed in from C++ | already translated by the first row |
+| three labels written in ObjC++ | `wxGetTranslation` | first row, via patch 0425 |

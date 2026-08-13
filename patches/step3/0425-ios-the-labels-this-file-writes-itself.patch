@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 1cce48358..014ac7432 100644
+index 6671717ec..6d452c8c7 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -33,6 +33,7 @@
@@ -10,7 +10,7 @@ index 1cce48358..014ac7432 100644
  #include <algorithm>
  #include <cmath>
  #include <vector>
-@@ -42,6 +43,21 @@
+@@ -41,6 +42,21 @@
  #include <boost/log/trivial.hpp>
  #include <atomic>
  
@@ -32,7 +32,7 @@ index 1cce48358..014ac7432 100644
  // A CADisplayLink, so that frames are paced by the display instead of by luck.
  //
  // Rendering is driven by wxIdle, and wx processes idle from a run-loop observer
-@@ -952,7 +968,7 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+@@ -957,7 +973,7 @@ static UIImage *orca_ios_tool_icon(const char *icon)
      UIImage *const img = [UIImage systemImageNamed:(_open ? @"chevron.up" : @"chevron.down")];
      [_chevron setImage:img forState:UIControlStateNormal];
      _chevron.tintColor = [UIColor secondaryLabelColor];
@@ -41,7 +41,7 @@ index 1cce48358..014ac7432 100644
  }
  
  - (void)toggle:(id)sender
-@@ -2337,7 +2353,7 @@ static bool orca_ios_install_home_plus()
+@@ -2483,7 +2499,7 @@ static bool orca_ios_install_home_plus()
          [button setImage:[UIImage systemImageNamed:@"plus" withConfiguration:glyph]
                  forState:UIControlStateNormal];
          button.tintColor          = [UIColor whiteColor];

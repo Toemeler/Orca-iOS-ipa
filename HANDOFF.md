@@ -6286,3 +6286,93 @@ but the layout changed under 0397-0401 too, so that is not proof either.
 It does not matter much yet: at 534 ms a frame with 99.8% in `paths_ms`, a 26%
 cut in fragment and tile cost is not the lever. It should be logged
 unconditionally next time it is touched.
+
+## Run 151: the counters earned their place immediately
+
+```
+segs 1372290->846372   cut g758093  a87814  m464  c0
+paths_ms 3269 over 10 renders -> 327 ms a frame
+```
+
+| cut by | runs | share |
+|---|---|---|
+| gap in the enabled list | 758 093 | **89.6%** |
+| appearance | 87 814 | 10.4% |
+| geometry | 464 | **0.1%** |
+| MAX_RUN_SEGMENTS | 0 | 0% |
+
+Two things fall straight out of that table.
+
+**The toolpath is collinear.** 464 geometric cuts in 1.37M segments settles the
+premise the whole merge was built on — the mesh really does over-sample straight
+lines, and 0.01 mm is nowhere near the binding constraint. The epsilon is not
+the dial and never was.
+
+**The index list is shredded.** An average run of 1.62 segments, with 90% of
+runs ended by a hole rather than by anything about the geometry. Narrowing
+`same_appearance` was right — it went from cutting 100% of runs to 10% — but it
+uncovered the real limiter rather than being it.
+
+The merge is worth 1.62x, so 534 ms became 327 ms. Still ~3 fps.
+
+## 0406 — step over the holes nothing moved across
+
+`Retract`, `Unretract` and `Seam` are move types emitted **at a point**: the
+nozzle does not move. On top of being options in their own right, they also
+invalidate the lines either side of them, because `extract_pos_and_or_hwa()`
+only accepts a line whose two ends share a move type:
+
+```cpp
+const bool this_line_valid = i + 1 < vertices.size() &&
+                             vertices[i + 1].position != v.position &&
+                             vertices[i + 1].type == move_type &&
+                             move_type != EMoveType::Seam;
+```
+
+So one seam at the end of a perimeter loop removes three consecutive indices
+while the extruder stands still, and a model with a loop per island per layer
+has hundreds of thousands of them.
+
+Stepping over a hole like that is **exact, not approximate**: if every skipped
+vertex sits at the same position, the merged chord passes through an identical
+set of points and draws no line that was not drawn before. A hidden *travel* has
+real spatial extent and fails the test, so the one thing that must never happen
+— a chord painted across open air where the nozzle moved without extruding —
+cannot. That is the whole safety argument, and it rests on a position
+comparison rather than on a list of move types to trust.
+
+The report gains `br<N>` (holes stepped over) and `gv<N>` (vertices lost to the
+holes that could not be). **`gv / g` is the diagnostic**: about 1-2 means the
+remaining gaps are markers and something is still wrong with the bridge; a large
+number means they are genuine travels, which are supposed to cut runs, and the
+merge is then doing everything it can.
+
+### What this is worth, and what it still will not reach
+
+If the gap cuts collapse to near zero, the runs are bounded by appearance
+(87 814) and geometry (464) — about **15.5x**, or ~34 ms a frame at the
+currently measured cost per segment.
+
+That is ~29 fps, not 120, and the gap matters: **the per-segment cost has not
+moved at all.** 0.389 us before the merge, 0.386 us after — the merge makes the
+frame smaller without making a segment cheaper. 846 372 drawn segments at 8
+vertices each is 6.8M vertices in 327 ms, which is **20.7M vertices/sec** on an
+M4. That is roughly twenty times slower than the part should manage, and it is
+the same signature as before: `swap_ms` at 0, `worst_ms` barely above the mean,
+cost linear in segment count.
+
+So there are two independent problems and only one of them is being worked:
+
+1. **The scene is too big.** The merge addresses this, and 0406 is the rest of
+   it. A perfect merge lands around 29 fps on the current cost curve.
+2. **Each segment costs ~20x what it should.** Untouched, unexplained. If the
+   frame is being split into partial renders, dropping under that threshold
+   would take the cost per segment down with it and 1 would be worth far more
+   than 15.5x — the win would be superlinear. If it is not partial renders, this
+   needs its own investigation, and instancing is the first suspect: 846k
+   instances of 8 vertices is a shape Apple's tiler is known to dislike, and
+   `gl_VertexID`-based addressing of one flat draw would remove instancing
+   entirely without changing a pixel.
+
+Number 2 is where the next round should go if 0406 lands and the frame is still
+tens of milliseconds.

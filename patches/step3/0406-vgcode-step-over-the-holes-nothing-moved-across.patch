@@ -1,0 +1,125 @@
+diff --git a/src/libvgcode/src/ViewerImpl.cpp b/src/libvgcode/src/ViewerImpl.cpp
+index 7fbc4b420..a7888bba1 100644
+--- a/src/libvgcode/src/ViewerImpl.cpp
++++ b/src/libvgcode/src/ViewerImpl.cpp
+@@ -1287,6 +1287,12 @@ std::atomic<unsigned> orca_ios_vg_cut_gap{0};
+ std::atomic<unsigned> orca_ios_vg_cut_appearance{0};
+ std::atomic<unsigned> orca_ios_vg_cut_geometry{0};
+ std::atomic<unsigned> orca_ios_vg_cut_cap{0};
++// Gaps stepped over because nothing moved across them, and the vertices lost
++// to the gaps that could not be stepped over. The second is what says whether a
++// gap is a marker or a real travel: divided by the gap count it is the average
++// number of vertices in one.
++std::atomic<unsigned> orca_ios_vg_bridged{0};
++std::atomic<unsigned> orca_ios_vg_cut_gap_verts{0};
+ 
+ static constexpr float COLLINEAR_EPS_MM = 0.01f;
+ // Bounds the anchor-line drift and keeps merged indices local.
+@@ -1346,6 +1352,39 @@ static std::pair<float, float> project_on_line(const Vec3& p, const Vec3& anchor
+     return { t, std::sqrt(perp[0] * perp[0] + perp[1] * perp[1] + perp[2] * perp[2]) };
+ }
+ 
++// Did the path move at all between these two vertex indices, inclusive?
++//
++// The enabled list is full of holes, and 90% of runs were being cut by one:
++// 1372290 segments came out of the first working merge as 846372, an average
++// run of 1.62, with 758093 of those runs ended by a gap and only 464 by
++// geometry. The toolpath is collinear; the index list is shredded.
++//
++// Most of those holes have no spatial extent. Retract, Unretract and Seam are
++// move types emitted *at a point* - the nozzle does not move - and on top of
++// being options in their own right they invalidate the lines either side of
++// them, because extract_pos_and_or_hwa() only accepts a line whose two ends
++// share a move type. So one seam at the end of a perimeter loop removes three
++// consecutive indices while the extruder stands still, and a model with a loop
++// per island per layer has hundreds of thousands of them.
++//
++// Stepping over a hole like that is exact rather than approximate: if every
++// skipped vertex sits at the same place, the merged chord passes through the
++// identical set of points and no line is drawn that was not drawn before. A
++// hidden *travel* has real extent and fails this test, so the one thing that
++// must never happen - a chord painted across open air where the nozzle moved
++// without extruding - cannot.
++bool ViewerImpl::zero_extent_span(uint32_t from, uint32_t to) const
++{
++    if (to >= static_cast<uint32_t>(m_vertices.size()))
++        return false;
++    const Vec3& at = m_vertices[from].position;
++    for (uint32_t k = from + 1; k <= to; ++k) {
++        if (m_vertices[k].position != at)
++            return false;
++    }
++    return true;
++}
++
+ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint32_t>& enabled_segments) const
+ {
+     // Pairs: two entries per drawn segment, its first and last vertex. Where
+@@ -1358,6 +1397,8 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+     orca_ios_vg_cut_appearance = 0;
+     orca_ios_vg_cut_geometry = 0;
+     orca_ios_vg_cut_cap = 0;
++    orca_ios_vg_bridged = 0;
++    orca_ios_vg_cut_gap_verts = 0;
+ 
+     size_t i = 0;
+     while (i < enabled_segments.size()) {
+@@ -1386,8 +1427,16 @@ std::vector<uint32_t> ViewerImpl::coalesce_collinear_runs(const std::vector<uint
+                     break;
+                 }
+                 if (enabled_segments[j + 1] != enabled_segments[j] + 1) {
+-                    ++orca_ios_vg_cut_gap;
+-                    break;
++                    // A hole. Step over it only if the path stood still across
++                    // it - see zero_extent_span(). The span runs from this
++                    // segment's far end to the next enabled segment's near end,
++                    // which are the two points the chord would join.
++                    if (!zero_extent_span(enabled_segments[j] + 1, enabled_segments[j + 1])) {
++                        orca_ios_vg_cut_gap_verts += enabled_segments[j + 1] - enabled_segments[j] - 1;
++                        ++orca_ios_vg_cut_gap;
++                        break;
++                    }
++                    ++orca_ios_vg_bridged;
+                 }
+                 if (!same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1]]) ||
+                     !same_appearance(m_vertices[first], m_vertices[enabled_segments[j + 1] + 1])) {
+diff --git a/src/libvgcode/src/ViewerImpl.hpp b/src/libvgcode/src/ViewerImpl.hpp
+index ea107fb82..7ec3ca08c 100644
+--- a/src/libvgcode/src/ViewerImpl.hpp
++++ b/src/libvgcode/src/ViewerImpl.hpp
+@@ -526,6 +526,9 @@ private:
+     // more than m_detail_budget instances are submitted. 1 means draw them all.
+     uint32_t detail_stride(size_t count) const;
+ #ifdef ENABLE_OPENGL_ES
++    // Did the path move at all between these two vertex indices, inclusive?
++    // A hole in the enabled list can be stepped over only if it did not.
++    bool zero_extent_span(uint32_t from, uint32_t to) const;
+     // Would these two vertices be drawn identically? Needs the viewer, not
+     // just the pair, because the colour is derived from the current view type.
+     bool same_appearance(const PathVertex& a, const PathVertex& b) const;
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index e2fe8bde0..71748a764 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -82,6 +82,8 @@ extern std::atomic<unsigned> orca_ios_vg_cut_gap;
+ extern std::atomic<unsigned> orca_ios_vg_cut_appearance;
+ extern std::atomic<unsigned> orca_ios_vg_cut_geometry;
+ extern std::atomic<unsigned> orca_ios_vg_cut_cap;
++extern std::atomic<unsigned> orca_ios_vg_bridged;
++extern std::atomic<unsigned> orca_ios_vg_cut_gap_verts;
+ }
+ namespace Slic3r { namespace GUI {
+ } }
+@@ -1321,6 +1323,12 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 << " a" << libvgcode::orca_ios_vg_cut_appearance.load()
+                 << " m" << libvgcode::orca_ios_vg_cut_geometry.load()
+                 << " c" << libvgcode::orca_ios_vg_cut_cap.load()
++                // Holes stepped over because nothing moved across them, and
++                // the vertices lost to the ones that could not be. gv/g is the
++                // average size of a real gap: ~1-2 is a marker, large is a
++                // travel.
++                << " br" << libvgcode::orca_ios_vg_bridged.load()
++                << " gv" << libvgcode::orca_ios_vg_cut_gap_verts.load()
+                 // Why the canvas was asked to draw at all. At rest, on a
+                 // preview nothing has changed, every one of these should be
+                 // zero and the render count should be zero with them.

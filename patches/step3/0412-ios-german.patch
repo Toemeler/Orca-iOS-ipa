@@ -1,0 +1,29 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index a977b27..3e00a13 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -7971,6 +7971,24 @@ bool GUI_App::load_language(wxString language, bool initial)
+ 	    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(from_u8(localization_dir()));
+     	// Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
+         language = app_config->get("language");
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // German, and not by asking the system.
++        //
++        // The device's locale IS German, and every launch log still says
++        // "Cannot set locale to language English (Switzerland)" - wxLocale
++        // cannot set the regional locale this iPad reports, so the system-
++        // language branch below produced English. Naming the language outright
++        // skips that guess: the catalog asked for is resources/i18n/de, which
++        // ships in the bundle, and wxTranslations loads it whether or not the
++        // C locale can be set.
++        //
++        // Written back to the config as well, so Preferences shows the language
++        // actually in use instead of an empty box, and so the choice survives
++        // into every later launch through the ordinary path above.
++        language = "de_DE";
++        if (app_config->get("language") != "de_DE")
++            app_config->set("language", "de_DE");
++#endif
+         if (! language.empty())
+         	BOOST_LOG_TRIVIAL(info) << boost::format("language provided by OrcaSlicer.conf: %1%") % language;
+         else {

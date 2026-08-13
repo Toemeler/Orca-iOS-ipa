@@ -6646,3 +6646,45 @@ Two things worth carrying forward from this round:
   through leaves the patch generated from a partly-edited tree, which is how a
   half-written 0399 was produced earlier in this round. Regenerate from scratch
   after any script change and re-verify the whole stack.
+
+### 0411 — the strays, the dropdowns, the hover and the room
+
+**The grey bar over the sidebar was two orphaned panels.**
+`create_side_tools()` parents `slice_panel` and `print_panel` to the **frame**,
+not to the tab strip — only their *sizer* goes into the strip. Hiding the strip
+therefore left two dark grey panels as stray children of MainFrame, unpositioned,
+sitting at the top left. They are hidden now. Their buttons keep their own
+`IsShown()` flag, because `wxWindow::IsShown()` reports that window alone, so
+what the capsule reads to decide whether Orca wants the pair on this tab is
+undisturbed.
+
+**The dropdowns do not do anything by themselves.** Orca's little chevron sets
+`m_slice_select` / `m_print_select` and the main button then acts on that mode.
+So each capsule button carries a `UIMenu` with the two entries, which set the
+same field and fall through to the same click — "Slice all" from the menu is
+identical to choosing it from the real dropdown and pressing Slice.
+
+**The toolbar icons had no pointer effect** — `pointerInteractionEnabled` was
+set on the plus and on the capsule but never on the column's own buttons.
+
+**And the column opened underneath the capsule.** Both live in the trailing
+corner; the column is centred vertically, so expanded it ran up under the Slice
+capsule and lost its top icons. It starts below the capsule now and takes its
+available height from there.
+
+### 0412 — German
+
+The device's locale is German, and every launch log still said `Cannot set
+locale to language "English (Switzerland)"` — wxLocale cannot set the regional
+locale this iPad reports, so `load_language`'s system-language branch fell
+through to English. Naming the language outright skips that guess: the catalog
+asked for is `resources/i18n/de`, which ships in the bundle, and wxTranslations
+loads it whether or not the C locale can be set. It is written back to the
+config so Preferences shows what is in use and later launches take the ordinary
+path.
+
+**Still not done: the sliced-info box under the Slice button.** Moving Orca's
+sliced-info panel out of the sidebar means either reparenting a wx panel into a
+floating position — which is the class of thing that has gone wrong repeatedly
+here — or reading its values and drawing them in the capsule. The second is the
+right shape and is the next piece of work.

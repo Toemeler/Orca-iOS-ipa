@@ -1,0 +1,163 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 8cf7acc..2724ec6 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -20,7 +20,8 @@ namespace Slic3r { namespace GUI { void orca_ios_inset_tab(wxWindow *page); } }
+ // and Print now that the strip holding them is hidden.
+ namespace Slic3r { namespace GUI {
+ void orca_ios_side_tools_begin();
+-void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bool primary);
++void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bool primary,
++                             const char *plate_title, const char *all_title);
+ void orca_ios_side_tools_commit();
+ } }
+ #include <atomic>
+@@ -2025,6 +2026,21 @@ void MainFrame::init_tabpanel() {
+     // page that needs the floating bar's height kept clear. The 3D pages do
+     // not - a bar floating over the space above the plate is the point of it.
+     orca_ios_inset_tab(m_monitor);
++
++    // The grey bar across the top of the sidebar. create_side_tools() parents
++    // slice_panel and print_panel to the FRAME, not to the tab strip - only
++    // their sizer goes into the strip - so hiding the strip left two dark grey
++    // panels as stray children of MainFrame, unpositioned, sitting at the top
++    // left. Their buttons are read and run by the native capsule; the panels
++    // themselves have nothing left to draw.
++    //
++    // The buttons keep their own IsShown() flag: wxWindow::IsShown() reports
++    // that window alone, so hiding the parent does not disturb what the capsule
++    // reads to decide whether Orca wants the pair on this tab.
++    if (m_slice_btn != nullptr && m_slice_btn->GetParent() != nullptr)
++        m_slice_btn->GetParent()->Hide();
++    if (m_print_btn != nullptr && m_print_btn->GetParent() != nullptr)
++        m_print_btn->GetParent()->Hide();
+ #endif
+ 
+     if (m_plater) {
+@@ -2052,10 +2068,14 @@ void MainFrame::orca_ios_sync_side_tools()
+     orca_ios_side_tools_begin();
+     if (m_slice_btn != nullptr && m_slice_btn->IsShown())
+         orca_ios_side_tools_add("slice", into_u8(m_slice_btn->GetLabel()).c_str(),
+-                                m_slice_btn->IsEnabled(), true);
++                                m_slice_btn->IsEnabled(), true,
++                                into_u8(_L("Slice plate")).c_str(),
++                                into_u8(_L("Slice all")).c_str());
+     if (m_print_btn != nullptr && m_print_btn->IsShown())
+         orca_ios_side_tools_add("print", into_u8(m_print_btn->GetLabel()).c_str(),
+-                                m_print_btn->IsEnabled(), false);
++                                m_print_btn->IsEnabled(), false,
++                                into_u8(_L("Print plate")).c_str(),
++                                into_u8(_L("Print all")).c_str());
+     orca_ios_side_tools_commit();
+ }
+ 
+@@ -2066,7 +2086,19 @@ void MainFrame::orca_ios_run_side_tool(const char *id)
+ {
+     if (id == nullptr)
+         return;
+-    const std::string item(id);
++    std::string item(id);
++
++    // The dropdown in Orca does not do anything by itself: it sets which of the
++    // two modes the main button is in - m_slice_select / m_print_select - and
++    // the button then acts on that. So the menu entries here set the same
++    // fields and fall through to the same click, which is why "Slice all"
++    // behaves identically to choosing it from the real dropdown and pressing
++    // Slice.
++    if (item == "slice.plate")      { m_slice_select = eSlicePlate; item = "slice"; }
++    else if (item == "slice.all")   { m_slice_select = eSliceAll;   item = "slice"; }
++    else if (item == "print.plate") { m_print_select = ePrintPlate; item = "print"; }
++    else if (item == "print.all")   { m_print_select = ePrintAll;   item = "print"; }
++
+     SideButton *const btn = item == "slice" ? m_slice_btn
+                           : item == "print" ? m_print_btn : nullptr;
+     if (btn == nullptr || !btn->IsEnabled())
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 1aa5017..6c8c478 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -571,6 +571,29 @@ static const CGFloat kOrcaSideMargin = 14;
+         b.pointerInteractionEnabled = YES;
+         [b addTarget:self action:@selector(tapped:)
+             forControlEvents:UIControlEventTouchUpInside];
++
++        // The dropdown Orca puts beside each of these, as a menu on the button
++        // itself. A long press gets the two modes; a plain tap still runs
++        // whichever mode is current, exactly as the main button does.
++        NSString *const plate = [item objectForKey:@"plate"];
++        NSString *const all   = [item objectForKey:@"all"];
++        if (plate.length > 0 && all.length > 0) {
++            NSString *const base = b.itemId;
++            UIAction *const a_plate = [UIAction actionWithTitle:plate image:nil identifier:nil
++                                                        handler:^(__kindof UIAction *x) {
++                (void) x;
++                Slic3r::GUI::orca_ios_side_tool_action(
++                    [[base stringByAppendingString:@".plate"] UTF8String]);
++            }];
++            UIAction *const a_all = [UIAction actionWithTitle:all image:nil identifier:nil
++                                                      handler:^(__kindof UIAction *x) {
++                (void) x;
++                Slic3r::GUI::orca_ios_side_tool_action(
++                    [[base stringByAppendingString:@".all"] UTF8String]);
++            }];
++            b.menu = [UIMenu menuWithTitle:@"" children:@[ a_plate, a_all ]];
++        }
++
+         [_glass.contentView addSubview:b];
+         [_buttons addObject:b];
+     }
+@@ -978,6 +1001,9 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+         b.enabled            = [[item objectForKey:@"enabled"] boolValue];
+         b.accessibilityLabel = [item objectForKey:@"tooltip"];
+         b.layer.cornerRadius = kOrcaToolCorner;
++        // The pointer effect each icon should have had from the start: this is
++        // a bar of buttons and a trackpad ought to light them one at a time.
++        b.pointerInteractionEnabled = YES;
+         b.layer.cornerCurve  = kCACornerCurveContinuous;
+         // Glass is the panel, not the keys - the same rule the keypad in 0381
+         // follows. A selected gizmo gets the tint instead, which is how the GL
+@@ -1013,15 +1039,20 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+     const CGFloat w = kOrcaToolSize + 2 * kOrcaToolInset;
+     CGFloat h = rows * kOrcaToolSize + (rows - 1) * kOrcaToolGap + 2 * kOrcaToolInset;
+ 
+-    // Never taller than the canvas: an open column on a small iPad in landscape
+-    // can ask for more room than there is, and a panel running off both ends is
+-    // worse than a shorter one.
+-    const CGFloat room = hb.size.height - safe.top - safe.bottom - 2 * kOrcaToolMargin;
++    // The Slice and Print capsule is in the same corner, so the column starts
++    // below it rather than behind it. Expanded, it was running up under the
++    // capsule and losing its top few icons entirely.
++    const CGFloat top = safe.top + kOrcaSideMargin + kOrcaSideH + kOrcaToolMargin;
++
++    // Never taller than what is left: an open column on a small iPad in
++    // landscape can ask for more room than there is, and a panel running off
++    // both ends is worse than a shorter one.
++    const CGFloat room = hb.size.height - top - safe.bottom - kOrcaToolMargin;
+     if (h > room)
+         h = room;
+ 
+     const CGFloat x = hb.size.width - safe.right - kOrcaToolMargin - w;
+-    const CGFloat y = safe.top + (hb.size.height - safe.top - safe.bottom - h) * 0.5f;
++    const CGFloat y = top + (hb.size.height - top - safe.bottom - h) * 0.5f;
+     self.frame = CGRectMake(x, y, w, h);
+     [self layoutIfNeeded];
+ }
+@@ -2378,7 +2409,8 @@ void orca_ios_side_tools_begin()
+     gs_orca_side_pending = [[NSMutableArray alloc] init];
+ }
+ 
+-void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bool primary)
++void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bool primary,
++                             const char *plate_title, const char *all_title)
+ {
+     if (gs_orca_side_pending == nil || id == nullptr || title == nullptr || *title == '\0')
+         return;
+@@ -2387,6 +2419,8 @@ void orca_ios_side_tools_add(const char *id, const char *title, bool enabled, bo
+         @"title"   : [NSString stringWithUTF8String:title],
+         @"enabled" : [NSNumber numberWithBool:enabled ? YES : NO],
+         @"primary" : [NSNumber numberWithBool:primary ? YES : NO],
++        @"plate"   : [NSString stringWithUTF8String:plate_title != nullptr ? plate_title : ""],
++        @"all"     : [NSString stringWithUTF8String:all_title   != nullptr ? all_title   : ""],
+     }];
+ }
+ 

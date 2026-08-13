@@ -1,0 +1,33 @@
+--- a/src/slic3r/GUI/GCodeViewer.cpp
++++ b/src/slic3r/GUI/GCodeViewer.cpp
+@@ -2460,9 +2460,10 @@
+         ImGuiWrapper& imgui = *wxGetApp().imgui();
+         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+ #if defined(__APPLE__) && !TARGET_OS_OSX
+-        // Same corner, same reason as the legend below.
++        // Same corner, same reason as the legend below - and the same points
++        // into pixels with it.
+         imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()),
+-                                  float(orca_ios_tab_bar_inset()),
++                                  float(orca_ios_tab_bar_inset()) * m_scale,
+                                   ImGuiCond_Always, 1.0f, 0.0f);
+ #else
+         imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 1.0f, 0.0f);
+@@ -3277,8 +3278,16 @@
+     // the same corner the capsule floats in, so it was being drawn underneath
+     // it. It is ImGui inside the GL canvas rather than a view, so it cannot be
+     // reordered against the capsule; it has to start lower instead.
++    //
++    // TIMES m_scale, because the two numbers are in different units and 0416
++    // added them as if they were not. orca_ios_tab_bar_inset() is UIKit, so it
++    // is in POINTS - it is the height of a view. This coordinate is ImGui
++    // inside the canvas, so it is in canvas PIXELS, which is what the 4.0f
++    // beside it is scaled into. On a 2x screen the legend therefore cleared 36
++    // points where 72 were asked for, and came up half under the capsule: "the
++    // summary is a little bit too high".
+     imgui.set_next_window_pos(float(canvas_width - right_margin * m_scale),
+-                              4.0f * m_scale + float(orca_ios_tab_bar_inset()),
++                              (4.0f + float(orca_ios_tab_bar_inset())) * m_scale,
+                               ImGuiCond_Always, 1.0f, 0.0f);
+ #else
+     imgui.set_next_window_pos(float(canvas_width - right_margin * m_scale), 4.0f * m_scale, ImGuiCond_Always, 1.0f, 0.0f); // ORCA add a small gap to top to create seperation with main toolbar

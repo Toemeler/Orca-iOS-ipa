@@ -11,7 +11,7 @@
  // src/slic3r/GUI/ios_webview_support.mm - the tab bar's selection, the plus and
  // the canvas wake, driven from the idle rather than from a page-changed event.
  void orca_ios_native_tick();
-@@ -9255,7 +9257,24 @@
+@@ -9260,7 +9262,31 @@
                               collapsed);
      }
  
@@ -24,19 +24,67 @@
 +    // while this column is a UIKit view above that scene. There is no z-order
 +    // between the two to fix and no way to make the slider narrower without
 +    // changing what it looks like on every other platform, so the column moves
-+    // in by the width of the slider's window instead. Same number the slider
-+    // itself uses, in the same units, taken from the same place.
++    // in instead.
++    //
++    // BY THE TRACK, NOT BY THE WINDOW. The slider's window is 164 wide because
++    // the label boxes hang off to the left of the groove; the groove and its
++    // handle live in the last forty of it. Clearing the whole window pushes the
++    // column a hundred points into the canvas for the sake of two labels that
++    // are only drawn level with the handles - which is a column that has
++    // visibly wandered off its edge. Clearing the track is what actually
++    // matters, because that is the part the drag has to reach.
 +    float right_inset_px = 0.0f;
 +    if (m_canvas_type == ECanvasType::CanvasPreview && m_gcode_viewer.has_data()) {
 +        const IMSlider *const layers_slider = m_gcode_viewer.get_layers_slider();
 +        if (layers_slider != nullptr && !layers_slider->is_horizontal())
-+            right_inset_px = IMSlider::vertical_slider_window_width() * layers_slider->m_scale;
++            right_inset_px = IMSlider::vertical_slider_track_width() * layers_slider->m_scale;
 +    }
 +
 +    orca_ios_toolbar_commit(this, (void *) m_canvas->GetHandle(), right_inset_px);
  }
  
  // A tap. Both branches end in the very call the GL toolbars made on a click, so
+--- a/src/slic3r/GUI/IMSlider.cpp
++++ b/src/slic3r/GUI/IMSlider.cpp
+@@ -40,6 +40,26 @@
+     return VERTICAL_SLIDER_WINDOW_WIDTH;
+ }
+ 
++// The part of that window the slider is actually *drawn* in, measured from its
++// right hand edge: the groove, the handle that runs in it, and the few pixels
++// of rail either side.
++//
++// The window is 164 wide because the label boxes hang off to the left of the
++// groove and need the room; the track itself lives in the last forty of it.
++// Anything positioning itself beside the slider wants this number rather than
++// the window width - keeping clear of the track is what stops it swallowing the
++// drag, and keeping clear of the whole window costs a hundred points of canvas
++// for the sake of two labels that are only drawn where the handles are.
++//
++// Derived from the same terms vertical_slider() builds groove_start from, in
++// the same order, so the two cannot drift apart: the one-layer margin, half the
++// half-size one-layer button, half the groove, and the six-pixel rail border
++// the handle radius also reaches.
++float IMSlider::vertical_slider_track_width()
++{
++    return ONE_LAYER_MARGIN.x + ONE_LAYER_BUTTON_SIZE.x * 0.25f + GROOVE_WIDTH * 0.5f + 6.0f;
++}
++
+ bool equivalent_areas(const double& bottom_area, const double& top_area)
+ {
+     return fabs(bottom_area - top_area) <= miscalculation();
+--- a/src/slic3r/GUI/IMSlider.hpp
++++ b/src/slic3r/GUI/IMSlider.hpp
+@@ -130,6 +130,9 @@
+     void set_scale(float scale = 1.0);
+     // ORCA: expose vertical slider width for right-margin alignment in the preview UI.
+     static float vertical_slider_window_width();
++    // The groove and handle only, from the window's right edge - what something
++    // placed beside the slider has to clear. See the definition.
++    static float vertical_slider_track_width();
+     void on_change_color_mode(bool is_dark);
+     void set_menu_enable(bool enable = true) { m_menu_enable = enable; }
+ 
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -891,6 +891,12 @@

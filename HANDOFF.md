@@ -7055,8 +7055,18 @@ right of the canvas by `IMSlider::render()`; it is ImGui *inside* the GL scene
 and the toolbar is a UIKit view *above* that scene, so there is no z-order
 between them — the same shape as the legend problem in 0416. The canvas passes
 the width it has already spoken for on that edge, in canvas pixels, and the
-column moves in by it. Same constant the slider uses, converted to points with
-the host view's `contentScaleFactor`.
+column moves in by it, converted to points with the host view's
+`contentScaleFactor`.
+
+**By the track, not by the window.** The first cut of this moved the column in
+by the slider's whole window — 164 units, about a hundred points — and the
+device answered "the toolbar is too far left", which it was: the window is that
+wide because the label boxes hang off to the *left* of the groove, and the
+groove and its handle live in the last forty of it. `IMSlider` now exposes that
+forty (`vertical_slider_track_width()`, built from the same terms
+`vertical_slider()` derives `groove_start` from, so the two cannot drift), and
+the column clears the track with a gap rather than the window. The labels can
+pass under it; the drag can always be reached, which is the part that matters.
 
 ### The plate pictures in Preview were never rendered
 
@@ -7132,6 +7142,19 @@ name does not resolve, and the build fails. wx is built by more than one
 workflow here and `ios-step2-wxwidgets` / `ios-wx-only` still build at
 `IOS_MIN=17.0` on purpose. `__IPHONE_OS_VERSION_MAX_ALLOWED >= 260000` decides
 whether the glass path exists at all, and a system material stands in below it.
+
+### 0422 — the summary was half a screen's worth of points too high
+
+`orca_ios_tab_bar_inset()` is UIKit: it returns the height of a view, in
+**points**. 0416 added it to an ImGui window position, which is in canvas
+**pixels** — right next to a `4.0f * m_scale` that does the conversion
+properly. On a 2x screen the legend therefore cleared 36 points where 72 were
+asked for and came up half under the Slice/Print capsule. Multiplying by
+`m_scale` is the whole fix, in the legend and in the debug window beside it.
+
+Worth keeping as a rule for this port: **anything that crosses between UIKit
+and ImGui changes units.** The toolbar inset in 0419 goes the other way and
+divides by `contentScaleFactor` for the same reason.
 
 ### Not verified on device yet
 

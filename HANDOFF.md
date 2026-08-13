@@ -7156,6 +7156,28 @@ Worth keeping as a rule for this port: **anything that crosses between UIKit
 and ImGui changes units.** The toolbar inset in 0419 goes the other way and
 divides by `contentScaleFactor` for the same reason.
 
+### 0423 — the grey bar above the sidebar is an AUI caption
+
+Reported from the device as "a grey bar at the top left", and it is eighteen
+pixels of empty grey across the top of the sidebar, above "Printer".
+
+It is a **wxAUI pane caption**. Orca makes the sidebar a docked AUI pane
+("Orca: Make sidebar dockable"), and `wxAuiPaneInfo`'s default constructor runs
+`DefaultPane()`, which sets `optionCaption` along with the dockable and
+floatable flags. Nothing ever sets a caption *string*, so the pane draws a bar
+with nothing in it, whose only function is to be dragged — tear the sidebar off
+into a floating window, or re-dock it on the other side.
+
+There is nowhere to drag it to on this port: the window is the screen.
+
+**Through the art metric, not through `CaptionVisible(false)`.** The pane's
+flags are written into the saved perspective (`app_config` "window_layout") and
+restored by `LoadPerspective()` forty lines further down, so a flag cleared at
+`AddPane()` comes straight back on any device that has run the application
+before — which is every device. `wxAUI_DOCKART_CAPTION_SIZE` is layout art, not
+part of the perspective, and a caption of zero height cannot be laid out, drawn
+or hit-tested whatever the flags say.
+
 ### Not verified on device yet
 
 All of the above is reasoned from the sources and from the counters the earlier

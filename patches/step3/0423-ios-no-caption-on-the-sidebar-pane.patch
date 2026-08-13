@@ -1,0 +1,35 @@
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -5122,7 +5122,32 @@
+ #endif
+     //m_aui_mgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_PANE_BORDER_SIZE, 0);
+     //m_aui_mgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_SASH_SIZE, 2);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // No caption bar on the sidebar.
++    //
++    // THE GREY BAR ACROSS THE TOP OF THE SIDEBAR IS A wxAUI PANE CAPTION. The
++    // sidebar is a docked AUI pane - "Orca: Make sidebar dockable" - and
++    // wxAuiPaneInfo's default constructor runs DefaultPane(), which sets
++    // optionCaption along with the dockable and floatable flags. Nothing sets
++    // a caption *string*, so the pane draws eighteen pixels of empty grey above
++    // "Printer" whose only purpose is to be dragged: grab it and the sidebar
++    // tears off into a floating window, or re-docks on the other side.
++    //
++    // There is nothing to drag it to here. The window is the screen, floating
++    // panes are a desktop idea, and a strip that does nothing is the first
++    // thing the eye lands on when the application opens.
++    //
++    // Done through the METRIC rather than through CaptionVisible(false) on the
++    // pane, deliberately: the pane's flags are also written into the saved
++    // perspective (app_config "window_layout") and restored by LoadPerspective
++    // a few lines below, so a flag cleared at AddPane() comes back on any
++    // device that has run the application before. The metric is layout art, it
++    // is not part of the perspective, and a caption of zero height cannot be
++    // laid out, drawn or hit-tested whatever the flags say.
++    m_aui_mgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_CAPTION_SIZE, 0);
++#else
+     m_aui_mgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_CAPTION_SIZE, 18);
++#endif
+     m_aui_mgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_GRADIENT_TYPE, wxAUI_GRADIENT_NONE);
+ 
+     this->q->SetFont(Slic3r::GUI::wxGetApp().normal_font());

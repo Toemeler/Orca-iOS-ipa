@@ -1,0 +1,294 @@
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -732,10 +732,231 @@
+     wxOSXSendGestureEvent(self, wxevent, gesture);
+ }
+ 
++// ---------------------------------------------------------------------------
++// A long press is a right click
++// ---------------------------------------------------------------------------
++//
++// There is no second mouse button on a finger and none on a pencil, and until
++// now this port had no other way to produce one: SetupMouseEvent() above turns
++// UIEventButtonMaskSecondary into wxEVT_RIGHT_DOWN, and that mask only ever
++// arrives from a mouse or a trackpad. Every context menu in every application
++// built on this port was therefore reachable only with hardware attached -
++// which on this hardware means most of them were not reachable at all. In
++// OrcaSlicer that is the object menu (delete, duplicate, fill bed with copies,
++// per-object settings), the plate menu, the part menu and the whole of the
++// per-object configuration.
++//
++// The platform's own answer to "no second button" is a long press, so that is
++// what this is: half a second on one spot, from a finger or a pencil, becomes
++// wxEVT_RIGHT_DOWN followed by wxEVT_RIGHT_UP at that point. Everything above
++// then behaves exactly as it does on a desktop, because it is the same event:
++// wxWindowMac::OnMouseEvent() turns the down into wxEVT_CONTEXT_MENU, the
++// generic wxDataViewCtrl raises wxEVT_DATAVIEW_ITEM_CONTEXT_MENU from the up,
++// and application handlers bound to either see what they expect.
++//
++// It is installed on every view wx wraps (InstallEventHandler below), not on
++// one control that asked for it, because "right click" is not a per-control
++// feature - a port either has it or every menu in the application is dead.
++//
++// THREE THINGS MAKE IT BEHAVE.
++//
++// It never fires for a mouse or a trackpad. allowedTouchTypes is direct and
++// stylus only: a pointer has a real secondary button, and hijacking a held
++// left button would break dragging - the one thing a pointer is for.
++//
++// It gives way to anything that has its own press behaviour. The delegate
++// below refuses to begin over a text field, a text view or a web view, where
++// the loupe, the selection handles and the link menu are the system's and are
++// what the user expects. Refusing before recognition matters: a recognizer
++// that begins and then decides to do nothing has already cancelled the touch
++// underneath it.
++//
++// And only one of them acts per press. wx hangs a recognizer off every view it
++// wraps, so a press over a control deep in a window is seen by that view's
++// recognizer and by every ancestor's. Rather than depend on UIKit's
++// arbitration order between views, all of them resolve the same target - the
++// deepest wx window under the point - and a time guard lets only the first
++// through. Two menus for one press is the failure this avoids.
++
++static char wxOSXContextMenuGestureKey;
++
++// The classes whose long press is already spoken for. Walked up from the view
++// the touch actually landed on, so the internal content view of a web view is
++// caught by its WKWebView ancestor.
++static bool wxOSXIPhoneOwnsItsLongPress(UIView* view)
++{
++    if ( [view conformsToProtocol:@protocol(UITextInput)] )
++        return true;    // selection, the loupe and the edit menu
++
++    Class const webView = NSClassFromString(@"WKWebView");
++    if ( webView != nil && [view isKindOfClass:webView] )
++        return true;    // link preview, image menu, text selection
++
++    // A view carrying a UIContextMenuInteraction has already said, in the
++    // platform's own terms, what its long press means. An application is free
++    // to put native chrome inside a wx window - this port's own does, with a
++    // collection view of recent projects - and two menus for one press is
++    // worse than either of them.
++    for ( id<UIInteraction> interaction in view.interactions )
++    {
++        if ( [interaction isKindOfClass:[UIContextMenuInteraction class]] )
++            return true;
++    }
++
++    return false;
++}
++
++// The wx window a press at this point belongs to: the deepest one under it,
++// which is the window a mouse click at the same point would have reached.
++// Returns nullptr when the point is over something that is not wx at all (the
++// native chrome an application may have put in the same window) or over one of
++// the views above.
++static wxWidgetIPhoneImpl* wxOSXIPhoneContextMenuTarget(UIView* view, CGPoint inView,
++                                                        CGPoint* ptInTarget)
++{
++    UIWindow* const window = view.window;
++    if ( window == nil )
++        return nullptr;
++
++    const CGPoint inWindow = [view convertPoint:inView toView:window];
++    UIView* hit = [window hitTest:inWindow withEvent:nil];
++
++    // Outside this view's subtree the press is not this recognizer's business:
++    // the touch was delivered somewhere else entirely.
++    if ( hit == nil || !(hit == view || [hit isDescendantOfView:view]) )
++        return nullptr;
++
++    for ( UIView* cur = hit; cur != nil; cur = cur.superview )
++    {
++        if ( wxOSXIPhoneOwnsItsLongPress(cur) )
++            return nullptr;
++
++        wxWidgetIPhoneImpl* const impl =
++            (wxWidgetIPhoneImpl*) wxWidgetImpl::FindFromWXWidget(cur);
++        if ( impl != nullptr && impl->GetWXPeer() != nullptr )
++        {
++            if ( ptInTarget != nullptr )
++                *ptInTarget = [cur convertPoint:inWindow fromView:window];
++            return impl;
++        }
++
++        if ( cur == view )
++            break;      // walked out of the subtree without finding a peer
++    }
++
++    return nullptr;
++}
++
++@interface wxOSXContextMenuGestureDelegate : NSObject <UIGestureRecognizerDelegate>
++@end
++
++@implementation wxOSXContextMenuGestureDelegate
++
++- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gesture
++{
++    UIView* const view = gesture.view;
++    if ( view == nil )
++        return NO;
++
++    // A press that is part of a two-finger gesture is not a press. The zoom
++    // and rotate recognizers a 3D view installs are allowed to run alongside
++    // everything else (wxOSXSharedGestureDelegate), so without this a pinch
++    // that starts with one finger resting would raise a menu mid-zoom.
++    if ( gesture.numberOfTouches != 1 )
++        return NO;
++
++    return wxOSXIPhoneContextMenuTarget(view, [gesture locationInView:view], nullptr)
++                != nullptr;
++}
++
++// Deliberately not simultaneous with anything: this one ends in a menu, and a
++// menu on top of a gesture that is still running is not a state to be in.
++- (BOOL)gestureRecognizer:(UIGestureRecognizer *)a
++        shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)b
++{
++    (void) a; (void) b;
++    return NO;
++}
++
++@end
++
++static id wxOSXSharedContextMenuGestureDelegate()
++{
++    static wxOSXContextMenuGestureDelegate* delegate = nil;
++    if ( delegate == nil )
++        delegate = [[wxOSXContextMenuGestureDelegate alloc] init];
++    return delegate;
++}
++
++void wxOSX_contextMenuGesture(UIView* self, SEL _cmd, UILongPressGestureRecognizer* gesture)
++{
++    if ( [gesture state] != UIGestureRecognizerStateBegan )
++        return;
++
++    // One press, one menu. Every recognizer up the chain of views resolves the
++    // same target, so whichever of them UIKit lets through first is the one
++    // that acts and the rest are the same press arriving again. Half a second
++    // is what a long press costs, so nothing a user can do produces two
++    // genuine presses inside this window.
++    static NSTimeInterval s_lastFired = 0;
++    const NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
++    if ( now - s_lastFired < 0.75 )
++        return;
++    s_lastFired = now;
++
++    CGPoint inTarget = CGPointZero;
++    wxWidgetIPhoneImpl* const impl =
++        wxOSXIPhoneContextMenuTarget(self, [gesture locationInView:self], &inTarget);
++    if ( impl == nullptr )
++        return;
++
++    wxWindowMac* const peer = impl->GetWXPeer();
++    UIView* const target = (UIView*) impl->GetWXWidget();
++    if ( peer == nullptr || target == nil )
++        return;
++
++    UIKeyModifierFlags modifiers = 0;
++    if ( @available(iOS 13.4, *) )
++        modifiers = [gesture modifierFlags];
++
++    const wxPoint origin = impl->GetDeviceLocalOrigin();
++    const wxPoint pt = wxFromNSPoint( target, inTarget );
++
++    // Before the events, not after: a menu raised from them asks where the
++    // pointer is - wxWindowMac::DoPopupMenu() does it for every PopupMenu()
++    // call that does not name a position, and OrcaSlicer's object list
++    // hit-tests against it to decide which row was clicked.
++    wxOSXIPhoneRecordPointerPosition( target, inTarget );
++
++    const wxEventType types[] = { wxEVT_RIGHT_DOWN, wxEVT_RIGHT_UP };
++    for ( size_t i = 0; i < WXSIZEOF(types); ++i )
++    {
++        wxMouseEvent wxevent(types[i]);
++        wxevent.m_x = pt.x + origin.x;
++        wxevent.m_y = pt.y + origin.y;
++        wxevent.m_clickCount = 1;
++        wxevent.SetRightDown(types[i] == wxEVT_RIGHT_DOWN);
++        wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
++        wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
++        wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
++        wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++        wxevent.m_metaDown       = (modifiers & UIKeyModifierCommand) != 0;
++        // The same clock UITouch.timestamp is on, so these events sit in the
++        // same sequence as the ones the touch path sends.
++        wxevent.SetTimestamp( (long) ([[NSProcessInfo processInfo] systemUptime] * 1000) );
++        wxevent.SetEventObject( peer );
++        wxevent.SetId( peer->GetId() );
++
++        wxOSXIPhoneRecordPointerState( wxevent );
++        peer->HandleWindowEvent( wxevent );
++    }
++}
++
+ void wxOSXIPhoneClassAddWXMethods(Class c)
+ {
+     class_addMethod(c, @selector(WX_scrollGesture:), (IMP) wxOSX_scrollGesture, "v@:@");
+     class_addMethod(c, @selector(WX_hoverGesture:), (IMP) wxOSX_hoverGesture, "v@:@");
++    class_addMethod(c, @selector(WX_contextMenuGesture:), (IMP) wxOSX_contextMenuGesture, "v@:@");
+     class_addMethod(c, @selector(WX_panGesture:), (IMP) wxOSX_panGesture, "v@:@");
+     class_addMethod(c, @selector(WX_trackpadPanGesture:), (IMP) wxOSX_trackpadPanGesture, "v@:@");
+     class_addMethod(c, @selector(WX_zoomGesture:), (IMP) wxOSX_zoomGesture, "v@:@");
+@@ -1287,6 +1508,43 @@
+         hover.cancelsTouchesInView = NO;
+         [view addGestureRecognizer:hover];
+         [hover release];
++
++        // And the right click this platform does not otherwise have. Same
++        // reason the two above are per-view; see wxOSX_contextMenuGesture().
++        if ( ![view respondsToSelector:@selector(WX_contextMenuGesture:)] )
++            class_addMethod(viewClass, @selector(WX_contextMenuGesture:),
++                            (IMP) wxOSX_contextMenuGesture, "v@:@");
++
++        // This can be called twice for one view - once for the view and once
++        // for a control inside it - and two of these on the same view would be
++        // two recognizers racing for one press. Replace rather than stack.
++        UIGestureRecognizer* const previous =
++            objc_getAssociatedObject(view, &wxOSXContextMenuGestureKey);
++        if ( previous != nil )
++            [view removeGestureRecognizer:previous];
++
++        UILongPressGestureRecognizer* contextMenu =
++            [[UILongPressGestureRecognizer alloc] initWithTarget:view
++                                                          action:@selector(WX_contextMenuGesture:)];
++        // A finger and a pencil. A mouse and a trackpad have a secondary
++        // button of their own, which SetupMouseEvent() already reports, and
++        // taking their held primary button would break every drag.
++        contextMenu.allowedTouchTypes = @[ @(UITouchTypeDirect), @(UITouchTypeStylus) ];
++        // Take the touch when the press is recognised. The cancelled-touch
++        // path turns it into a LEFT_UP, so the tap that was already in
++        // progress completes - selecting the row, the object or the plate
++        // under the finger, which is the order a desktop right click happens
++        // in - and no stray release arrives when the finger finally lifts. A
++        // press that fails because the finger moved cancels nothing, so
++        // dragging, scrolling and orbiting are untouched.
++        contextMenu.cancelsTouchesInView = YES;
++        contextMenu.delegate = wxOSXSharedContextMenuGestureDelegate();
++        [view addGestureRecognizer:contextMenu];
++        // Kept so that EnableTouchEvents() can stand it down for a window that
++        // handles wxEVT_LONG_PRESS itself.
++        objc_setAssociatedObject(view, &wxOSXContextMenuGestureKey, contextMenu,
++                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++        [contextMenu release];
+     }
+ }
+ 
+@@ -1341,6 +1599,15 @@
+         [view removeGestureRecognizer:g];
+     objc_setAssociatedObject(view, &wxOSXTouchGesturesKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+ 
++    // A window that asks for wxEVT_LONG_PRESS is saying it has its own use for
++    // a press, so the automatic long-press-is-a-right-click installed for
++    // every view (InstallEventHandler above) stands down here rather than
++    // raising a second menu behind the window's own answer. It comes back if
++    // the window later gives the press gestures up.
++    UIGestureRecognizer* const contextMenu =
++        objc_getAssociatedObject(view, &wxOSXContextMenuGestureKey);
++    contextMenu.enabled = (eventsMask & wxTOUCH_PRESS_GESTURES) ? NO : YES;
++
+     if ( eventsMask == wxTOUCH_NONE )
+         return true;
+ 

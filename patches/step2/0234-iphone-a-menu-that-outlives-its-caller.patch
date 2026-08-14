@@ -1,0 +1,171 @@
+--- a/src/osx/iphone/menu.mm
++++ b/src/osx/iphone/menu.mm
+@@ -32,6 +32,7 @@
+ #include "wx/osx/private.h"
+ #include "wx/window.h"
+ #include "wx/translation.h"
++#include "wx/weakref.h"
+ 
+ // other standard headers
+ // ----------------------
+@@ -71,8 +72,62 @@
+ // that goes through wx, and the point is that there is no longer such a thing
+ // as a menu in this port that does nothing.
+ 
++// ---------------------------------------------------------------------------
++// A SHEET OUTLIVES THE CALL THAT RAISED IT, AND THE MENU MAY NOT.
++//
++// This is the one thing about the presentation above that no caller expects.
++// PopupMenu() blocks on every other platform: it runs its own event loop and
++// returns after the user has chosen, so a menu built on the stack of the
++// function that shows it is alive for exactly as long as it is on screen, and
++// wxWidgets applications are written that way. Here PopupMenu() returns as soon
++// as the sheet has been asked for. The menu can be - and in code written for a
++// blocking PopupMenu(), routinely is - destroyed before the user's finger comes
++// down, and every raw pointer the action handlers captured is then a pointer
++// into freed memory. It does not crash while the developer is testing, because
++// the menu that a stack frame freed is usually still readable; it crashes
++// later, on someone else's iPad.
++//
++// So nothing here holds a raw pointer to anything that belongs to wx. The menu
++// and the invoking window are held as wxWeakRef, which wxEvtHandler supports
++// (it derives from wxTrackable) and which becomes null the moment either is
++// destroyed. The item is not tracked at all - it is looked up again by id in
++// the menu that is still alive, so an item removed from a menu that survived is
++// caught by the same test.
++//
++// And a menu that dies while its sheet is up takes the sheet with it: a menu
++// nobody can act on has no business staying on screen.
++// ---------------------------------------------------------------------------
++
+ static void wxOSXIPhonePresentMenu(wxMenu* menu, wxWindow* win, UIView* view, CGPoint pt);
+ 
++// Retained: the sheet has to be dismissable after the menu behind it is gone,
++// which is the moment UIKit would otherwise be the only owner left.
++static UIAlertController* gs_presentedSheet = nil;
++// Compared, never dereferenced.
++static wxMenu* gs_presentedMenu = nullptr;
++
++static void wxOSXIPhoneForgetSheet()
++{
++    [gs_presentedSheet release];
++    gs_presentedSheet = nil;
++    gs_presentedMenu = nullptr;
++}
++
++// Called from ~wxMenuIPhoneImpl(), which is to say from ~wxMenu().
++static void wxOSXIPhoneMenuDestroyed(wxMenu* menu)
++{
++    if ( menu == nullptr || menu != gs_presentedMenu )
++        return;
++
++    UIAlertController* const sheet = gs_presentedSheet;
++    gs_presentedSheet = nil;
++    gs_presentedMenu = nullptr;
++
++    if ( sheet.presentingViewController != nil )
++        [sheet dismissViewControllerAnimated:YES completion:nil];
++    [sheet release];
++}
++
+ // The controller a modal presentation has to be made from: the deepest one
+ // that is not already presenting something else. Presenting from a controller
+ // that has a presented controller throws, and this port stacks dialogs of its
+@@ -113,11 +168,17 @@
+ 
+     UIAlertAction* action = nil;
+ 
++    // What the handlers below are allowed to remember of all this: see the
++    // block comment above wxOSXIPhonePresentMenu(). Both go null on their own
++    // if the object is destroyed while the sheet is up, and the item is found
++    // again by id rather than remembered.
++    wxWeakRef<wxMenu> menuRef(menu);
++    wxWeakRef<wxWindow> winRef(win);
++
+     if ( item->IsSubMenu() )
+     {
+         // "More…" is what a nested list looks like on this platform: the row
+         // opens the submenu as a sheet of its own, anchored at the same point.
+-        wxMenu* const submenu = item->GetSubMenu();
+         action = [UIAlertAction actionWithTitle:cfLabel.AsNSString()
+                                           style:UIAlertActionStyleDefault
+                                         handler:^(UIAlertAction* a) {
+@@ -127,7 +188,16 @@
+             // in the middle of a dismissal is the "already presenting"
+             // exception.
+             dispatch_async(dispatch_get_main_queue(), ^{
+-                wxOSXIPhonePresentMenu(submenu, win, view, pt);
++                wxMenu* const owner = menuRef.get();
++                wxWindow* const invoker = winRef.get();
++                if ( owner == nullptr || invoker == nullptr )
++                    return;
++
++                wxMenuItem* const current = owner->FindChildItem(itemid);
++                if ( current == nullptr || !current->IsSubMenu() )
++                    return;
++
++                wxOSXIPhonePresentMenu(current->GetSubMenu(), invoker, view, pt);
+             });
+         }];
+     }
+@@ -137,6 +207,15 @@
+                                           style:style
+                                         handler:^(UIAlertAction* a) {
+             (void) a;
++            wxMenu* const owner = menuRef.get();
++            wxWindow* const invoker = winRef.get();
++            if ( owner == nullptr || invoker == nullptr )
++                return;     // the menu or its window went away with the sheet up
++
++            wxMenuItem* const current = owner->FindChildItem(itemid);
++            if ( current == nullptr )
++                return;
++
+             // THE INVOKING WINDOW HAS TO BE PUT BACK.
+             //
+             // wxWindowBase::PopupMenu() sets it for the duration of
+@@ -147,14 +226,14 @@
+             // immediately, so by the time this handler runs the menu no longer
+             // knows which window it belongs to, and the command would be sent
+             // to nothing. Restored for the send, and only for the send.
+-            wxMenuInvokingWindowSetter setInvokingWin(*menu, win);
++            wxMenuInvokingWindowSetter setInvokingWin(*owner, invoker);
+             int checked = -1;
+-            if ( item->IsCheckable() )
++            if ( current->IsCheckable() )
+             {
+-                checked = item->IsChecked() ? 0 : 1;
+-                item->Check(checked != 0);
++                checked = current->IsChecked() ? 0 : 1;
++                current->Check(checked != 0);
+             }
+-            menu->SendEvent(itemid, checked);
++            owner->SendEvent(itemid, checked);
+         }];
+         action.enabled = item->IsEnabled() ? YES : NO;
+     }
+@@ -219,6 +298,12 @@
+         popover.permittedArrowDirections = UIPopoverArrowDirectionAny;
+     }
+ 
++    // Only one sheet is ever up: a submenu replaces the sheet it was opened
++    // from, and this is the one that a menu being destroyed has to take down.
++    wxOSXIPhoneForgetSheet();
++    gs_presentedSheet = [sheet retain];
++    gs_presentedMenu = menu;
++
+     [presenter presentViewController:sheet animated:YES completion:nil];
+ }
+ 
+@@ -329,6 +414,11 @@
+ 
+ wxMenuIPhoneImpl::~wxMenuIPhoneImpl()
+ {
++    // ~wxMenu() is what brings us here, and a sheet built from that menu can
++    // still be on screen. Its actions are already harmless - they hold weak
++    // references - but a menu whose items can no longer do anything should not
++    // go on offering them.
++    wxOSXIPhoneMenuDestroyed(m_peer);
+ }
+ 
+ wxMenuImpl* wxMenuImpl::Create( wxMenu* peer, const wxString& title )

@@ -7995,3 +7995,129 @@ of the restore dialog on the launch after a swipe-up close. The first launch
 *after installing this build* is expected to offer the restore one last time —
 the directory the old build left behind still has its `.3mf`, and answering
 "Nein" is both correct and enough to have it removed.
+## 0232, 0233, 0234, 0433 — the right click a finger and a pencil never had
+
+Reported as "Rechtsklick geht mit touch oder pencil nicht", with the context
+menu as the example. It is not one bug. Three separate things stood between a
+finger and a context menu, and each of them is enough on its own to make every
+menu in the application unreachable.
+
+### There was no way to produce a right click at all, except on the 3D canvas
+
+`SetupMouseEvent()` in `src/osx/iphone/window.mm` turns
+`UIEventButtonMaskSecondary` into `wxEVT_RIGHT_DOWN` (patch 0209). That mask
+exists only on a `UITouchTypeIndirectPointer` — a mouse or a trackpad. A finger
+and an Apple Pencil are `UITouchTypeDirect` and `UITouchTypeStylus`, they carry
+no button mask, and every touch they make is a left click. Nothing else in the
+port synthesised a secondary click.
+
+Patch 0380 gave the 3D canvas a long press of its own: `GLCanvas3D` asks for
+`wxTOUCH_PRESS_GESTURES` and turns `wxEVT_LONG_PRESS` into a right click by
+hand. That is one control. Everything else — the object list with the object,
+part, instance and plate menus, the project-file list, every custom widget that
+binds `wxEVT_RIGHT_DOWN` — had no trigger whatsoever.
+
+**0233 makes the long press a port feature rather than a control feature.**
+`wxWidgetIPhoneImpl::InstallEventHandler()` already hangs a scroll recognizer
+and a hover recognizer off every view wx wraps, for the same reason: desktop
+pointer behaviour has to be opted into per view on this platform. A
+`UILongPressGestureRecognizer` joins them, and half a second on one spot becomes
+`wxEVT_RIGHT_DOWN` + `wxEVT_RIGHT_UP` at that point. From there nothing is
+iOS-specific any more, because it is the same event the desktop sends:
+`wxWindowMac::OnMouseEvent()` turns the down into `wxEVT_CONTEXT_MENU`, the
+generic `wxDataViewCtrl` raises `wxEVT_DATAVIEW_ITEM_CONTEXT_MENU` from the up
+(`datavgen.cpp`, `if (event.RightUp())`), and Orca's own handlers see what they
+were written for.
+
+Four decisions in it are worth keeping:
+
+| decision | why |
+|---|---|
+| `allowedTouchTypes` = direct + stylus | a pointer has a real secondary button; hijacking its held left button breaks every drag |
+| the delegate refuses to *begin* over a text field, a text view, a `WKWebView` or any view carrying a `UIContextMenuInteraction` | those already have a long press — the loupe, the link menu, 0430's gallery. Refusing before recognition matters: a recognizer that begins and then does nothing has already cancelled the touch under it |
+| every recognizer in the chain resolves the *deepest* wx window under the point, and a 0.75 s guard lets only the first through | a press over a control deep in a window is seen by that view's recognizer and by every ancestor's; this does not depend on UIKit's arbitration order between views, and two menus for one press cannot happen |
+| `EnableTouchEvents(wxTOUCH_PRESS_GESTURES)` stands it down on that view | a window that handles `wxEVT_LONG_PRESS` itself has said what a press means there — this is what keeps 0380's canvas path the only one on the canvas |
+
+`cancelsTouchesInView` stays `YES`, for the reason 0226 gives: the cancelled
+touch becomes a clean `LEFT_UP` (0223), so the tap already in progress completes
+and selects the row, the object or the plate under the finger — the order a
+desktop right click happens in — and no stray release arrives on lift. A press
+that fails because the finger moved cancels nothing, so dragging, orbiting and
+scrolling are untouched.
+
+### `wxGetMousePosition()` returned (0,0), and the object list checked it
+
+This one had nothing to do with touch: **the object list's context menu could
+not open from a mouse either.**
+
+```cpp
+// src/osx/iphone/utils.mm, as shipped
+void wxGetMousePosition( int* x, int* y ) { if (x) *x = 0; if (y) *y = 0; }
+wxMouseState wxGetMouseState() { wxMouseState ms; return ms; }
+```
+
+Nothing can tell that apart from a pointer resting in the corner of the screen,
+and two things read it on every context menu:
+
+- `ObjectList::get_mouse_position_in_control()` is
+  `wxGetMousePosition() - GetScreenPosition()`, and
+  `ObjectList::list_manipulation()` opens with `if (mouse_pos.x < 0) return;`.
+  The list is never at the screen origin, so that subtraction was always
+  negative and the function returned before it could show anything.
+- `wxWindowMac::DoPopupMenu()` substitutes this position whenever `PopupMenu()`
+  is called without one — which is most of them, `ObjectList::show_context_menu()`
+  included. Every such menu was anchored at the top left corner of the screen.
+
+**0232 records where the pointer, the finger or the pencil last was** — in the
+touch path, in the hover path and in the long press above, in the screen
+coordinates `wxNonOwnedWindowIPhoneImpl::WindowToScreen()` produces so that a
+round trip through `ScreenToClient()` survives — and answers both functions from
+it. `wxGetMouseState()` reports the real buttons and modifiers with it, which is
+what `GLGizmoMeasure` and `FilamentPickerDialog` poll.
+
+### An action sheet outlives the call that raised it
+
+0231 presents the menu as a `UIAlertController` and returns. That is the only
+thing UIKit offers, and it quietly breaks the contract every wxWidgets caller is
+written against: `PopupMenu()` blocks everywhere else, so a menu built on the
+stack of the function that shows it is alive for exactly as long as it is on
+screen. Here it is freed before the user's finger comes down, and the action
+handlers 0231 installs captured `wxMenu*`, `wxMenuItem*` and `wxWindow*` raw.
+
+**0234 stops holding raw pointers.** The menu and the invoking window are held
+as `wxWeakRef` — `wxEvtHandler` derives from `wxTrackable`, so both go null on
+destruction — and the item is not tracked at all: it is looked up again by id in
+the menu that is still alive, which also catches an item removed from a menu
+that survived. A menu destroyed while its sheet is up dismisses the sheet from
+`~wxMenuIPhoneImpl()`, because a menu whose items can no longer do anything has
+no business staying on screen.
+
+**0433 fixes the one caller in Orca that did this** — `CheckList::ShowMenu()`
+built a `wxMenu` on its stack — by making the menu a member rebuilt on each
+press. It also stops `Plater::priv::show_right_click_menu()` clearing the popup
+position on iOS: that position is read when an item is *chosen* ("Add text",
+"Add SVG" place the new volume where the click was), and clearing it on the way
+out of a non-blocking `PopupMenu()` cleared it before the user had chosen.
+
+### What this makes reachable
+
+Long press, or press with the pencil, anywhere:
+
+| where | what appears |
+|---|---|
+| the plate, on an object | object / part / instance menu (0380's canvas path, unchanged) |
+| the plate, empty space | plate menu, default menu |
+| the object list, on a row's name | the same menus, through `wxEVT_DATAVIEW_ITEM_CONTEXT_MENU` — this is the one that could not open even with a mouse |
+| the object list, empty space | default menu |
+| the project-file list (`AuxiliaryList`) | its rename/delete menu |
+| any widget binding `wxEVT_RIGHT_DOWN` | `CheckList`'s filter menu, `SkipPartCanvas`, the camera button in `StatusPanel`, the colour picker in `Field` |
+| a text field, a web page, the home gallery | nothing new — the system's own long press, which is what those should have |
+
+### What is not verified
+
+None of it has been run on device. In order: whether a long press on an object
+list row raises the sheet at the finger (that is 0232 and 0233 together — the
+sheet appearing in the corner means 0232 did not take, no sheet at all means
+0233 did not); whether choosing an item in it reaches Orca (0231's
+invoking-window restore, now behind 0234's weak references); and whether a
+pencil raises it as a finger does.

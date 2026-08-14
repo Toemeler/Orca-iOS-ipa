@@ -1,0 +1,166 @@
+--- a/include/wx/osx/iphone/private.h
++++ b/include/wx/osx/iphone/private.h
+@@ -24,9 +24,53 @@
+ #if wxUSE_GUI
+ 
+ #include "wx/bmpbndl.h"
++#include "wx/gdicmn.h"
+ 
+ typedef CGRect WXRect;
+ 
++// ----------------------------------------------------------------------------
++// Where the pointer last was.
++//
++// wxGetMousePosition() and wxGetMouseState() were stubs returning (0,0) and a
++// default-constructed state, and nothing in an application can tell that apart
++// from a pointer resting in the top left corner of the screen. What that costs
++// is not obvious until it is looked for:
++//
++//   - wxWindowMac::DoPopupMenu() substitutes this position whenever PopupMenu()
++//     is called without one, which is how most context menus are raised. Every
++//     one of them came up in the corner of the screen instead of under the
++//     finger.
++//   - Controls that hit-test against it decide the pointer is nowhere near
++//     themselves and do nothing at all. OrcaSlicer's object list is one:
++//     ObjectList::list_manipulation() starts with
++//     `if (mouse_pos.x < 0) return;`, and mouse_pos is
++//     wxGetMousePosition() - GetScreenPosition(), so the list's context menu
++//     could not open even from a mouse with a real right button.
++//
++// There is no cursor on this platform to ask, so the last place a finger, a
++// pencil or a pointer was seen is recorded as it passes through - in screen
++// coordinates, which is what both functions are documented to return - and
++// both answer from here. Written in src/osx/iphone/window.mm.
++// ----------------------------------------------------------------------------
++
++struct wxOSXIPhonePointerState
++{
++    wxPoint pos;
++    bool leftDown = false;
++    bool middleDown = false;
++    bool rightDown = false;
++    bool shiftDown = false;
++    bool controlDown = false;       // the physical Control key
++    bool altDown = false;
++    bool cmdDown = false;
++};
++
++extern WXDLLIMPEXP_DATA_CORE(wxOSXIPhonePointerState) g_wxOSXIPhonePointer;
++
++// Record a position given in the coordinates of `view`, which is where every
++// caller already has it.
++void WXDLLIMPEXP_CORE wxOSXIPhoneRecordPointerPosition( WXWidget view, CGPoint inView );
++
+ OSStatus WXDLLIMPEXP_CORE wxMacDrawCGImage(
+                                CGContextRef    inContext,
+                                const CGRect *  inBounds,
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -181,6 +181,46 @@
+ // be attributed from what went down.
+ static UInt32 gs_lastPointerButton = 0;
+ 
++// Where that pointer, finger or pencil last was, in screen coordinates. See
++// the long comment on the declaration in wx/osx/iphone/private.h: this is what
++// wxGetMousePosition() and wxGetMouseState() answer from, and a great deal
++// more of an application depends on those than one would expect.
++WXDLLIMPEXP_DATA_CORE(wxOSXIPhonePointerState) g_wxOSXIPhonePointer;
++
++// "Screen" here is what wxNonOwnedWindowIPhoneImpl::WindowToScreen() produces,
++// because that is what every wx coordinate conversion on this port goes
++// through: the point in the window's own space, then converted out of the
++// window into the fixed coordinate space. A point recorded any other way would
++// not survive a round trip through wxWindow::ScreenToClient().
++void wxOSXIPhoneRecordPointerPosition( WXWidget widget, CGPoint inView )
++{
++    UIView* const view = (UIView*) widget;
++    if ( view == nil )
++        return;
++
++    UIWindow* const window = view.window;
++    if ( window == nil )
++        return;     // not on screen: there is no screen point to record
++
++    CGPoint p = [view convertPoint:inView toView:nil];
++    p = [window convertPoint:p toWindow:nil];
++
++    g_wxOSXIPhonePointer.pos = wxPoint((int) lround(p.x), (int) lround(p.y));
++}
++
++// The buttons and modifiers of the event about to be sent. Kept beside the
++// position so that wxGetMouseState() describes one consistent moment.
++static void wxOSXIPhoneRecordPointerState( const wxMouseEvent& wxevent )
++{
++    g_wxOSXIPhonePointer.leftDown    = wxevent.m_leftDown;
++    g_wxOSXIPhonePointer.middleDown  = wxevent.m_middleDown;
++    g_wxOSXIPhonePointer.rightDown   = wxevent.m_rightDown;
++    g_wxOSXIPhonePointer.shiftDown   = wxevent.m_shiftDown;
++    g_wxOSXIPhonePointer.controlDown = wxevent.m_rawControlDown;
++    g_wxOSXIPhonePointer.altDown     = wxevent.m_altDown;
++    g_wxOSXIPhonePointer.cmdDown     = wxevent.m_controlDown;
++}
++
+ void SetupMouseEvent( wxMouseEvent &wxevent , NSSet* touches, UIEvent * nsEvent )
+ {
+     UITouch *touch = [touches anyObject];
+@@ -528,6 +568,11 @@
+     wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
+     wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
+ 
++    // A hovering pointer is exactly the case wxGetMousePosition() was written
++    // for, and the only one on this platform where nothing is being touched.
++    wxOSXIPhoneRecordPointerPosition( self, where );
++    wxOSXIPhoneRecordPointerState( wxevent );
++
+     wxevent.SetEventObject(peer);
+     wxevent.SetId(peer->GetId());
+     peer->HandleWindowEvent(wxevent);
+@@ -1541,6 +1586,8 @@
+         SetupMouseEvent( wxevent , touches, event ) ;
+         wxevent.m_x = pt.x + m_deviceLocalOrigin.x;
+         wxevent.m_y = pt.y + m_deviceLocalOrigin.y;
++        wxOSXIPhoneRecordPointerPosition( slf, clickLocation );
++        wxOSXIPhoneRecordPointerState( wxevent );
+         wxevent.SetEventObject( GetWXPeer() ) ;
+         //?wxevent.SetId( GetWXPeer()->GetId() ) ;
+ 
+--- a/src/osx/iphone/utils.mm
++++ b/src/osx/iphone/utils.mm
+@@ -208,17 +208,35 @@
+     return (CFArrayRef) [[UIFont familyNames] retain];
+ }
+ 
++// Both of these answered (0,0) with no buttons down, whatever the user was
++// doing. They are answered from the last position a finger, a pencil or a
++// pointer was seen at instead - recorded in src/osx/iphone/window.mm, where
++// the explanation of how much depends on them also lives.
+ void wxGetMousePosition( int* x, int* y )
+ {
+     if ( x )
+-        *x = 0;
++        *x = g_wxOSXIPhonePointer.pos.x;
+     if ( y )
+-        *y = 0;
++        *y = g_wxOSXIPhonePointer.pos.y;
+ };
+ 
+ wxMouseState wxGetMouseState()
+ {
+     wxMouseState ms;
++
++    ms.SetPosition(g_wxOSXIPhonePointer.pos);
++    ms.SetLeftDown(g_wxOSXIPhonePointer.leftDown);
++    ms.SetMiddleDown(g_wxOSXIPhonePointer.middleDown);
++    ms.SetRightDown(g_wxOSXIPhonePointer.rightDown);
++    ms.SetShiftDown(g_wxOSXIPhonePointer.shiftDown);
++    ms.SetRawControlDown(g_wxOSXIPhonePointer.controlDown);
++    ms.SetAltDown(g_wxOSXIPhonePointer.altDown);
++    // The same mapping the mouse and key paths use: Command is what
++    // wxKeyboardState::ControlDown() and CmdDown() report on this family of
++    // ports, and the physical Control key is the raw one set just above.
++    ms.SetControlDown(g_wxOSXIPhonePointer.cmdDown);
++    ms.SetMetaDown(g_wxOSXIPhonePointer.cmdDown);
++
+     return ms;
+ }
+ 

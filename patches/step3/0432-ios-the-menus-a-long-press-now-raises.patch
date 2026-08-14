@@ -1,0 +1,70 @@
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -10759,7 +10759,17 @@
+     canvas.apply_retina_scale(mouse_position);
+     canvas.set_popup_menu_position(mouse_position);
+     q->PopupMenu(menu, position);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Not cleared here on iOS, where PopupMenu() presents an action sheet and
++    // returns instead of running the menu to a choice. The position is read
++    // when an item is CHOSEN - "Add text" and "Add SVG" place the new volume
++    // where the click was (GUI_Factories.cpp) - so clearing it on the way out
++    // clears it before the user has chosen anything, and both land in the
++    // middle of the plate instead. The next right click sets it again, and
++    // nothing else reads it.
++#else
+     canvas.clear_popup_menu_position();
++#endif
+ }
+ 
+ void Plater::priv::on_right_click(RBtnEvent& evt)
+--- a/src/slic3r/GUI/Widgets/CheckList.cpp
++++ b/src/slic3r/GUI/Widgets/CheckList.cpp
+@@ -195,7 +195,13 @@
+     bool filtering  = !m_filter_ctrl->GetValue().IsEmpty();
+     bool list_empty = m_info->IsShown();
+ 
+-    wxMenu m;
++    // Owned by the control, not by this stack frame: see m_popup_menu in the
++    // header. A menu shown here is still on screen after ShowMenu() returns on
++    // a platform where PopupMenu() does not block, and every item of a menu
++    // that has been freed does nothing at best.
++    m_popup_menu.reset(new wxMenu());
++    wxMenu& m = *m_popup_menu;
++
+     m.Append(wxID_FILE1, _L("Select All"  ))->Enable(!filtering);
+     m.Append(wxID_FILE2, _L("Deselect All"))->Enable(!filtering);
+     m.AppendSeparator();
+@@ -221,5 +227,5 @@
+     if (!src) return;
+     wxPoint screen_pos = src->ClientToScreen(evt.GetPosition());
+     wxPoint local_pos  = ScreenToClient(screen_pos);
+-    PopupMenu(&m, local_pos);
++    PopupMenu(m_popup_menu.get(), local_pos);
+ }
+\ No newline at end of file
+--- a/src/slic3r/GUI/Widgets/CheckList.hpp
++++ b/src/slic3r/GUI/Widgets/CheckList.hpp
+@@ -7,6 +7,7 @@
+ #include "TextInput.hpp"
+ 
+ #include <wx/wx.h>
++#include <memory>
+ #include <vector>
+ #include <wx/scrolwin.h>
+ #include <wx/menu.h>
+@@ -54,6 +55,14 @@
+ 
+     ScalableBitmap    m_search;
+     ScalableBitmap    m_menu;
++
++    // The menu ShowMenu() raises. It used to live on that function's stack,
++    // which assumes PopupMenu() blocks until the user has chosen - true on the
++    // desktop, and not true on iOS, where the menu becomes an action sheet
++    // that is presented while the call returns straight away. The menu has to
++    // outlive the call that shows it, so it is owned here and rebuilt on each
++    // press; the previous one has long been dismissed by then.
++    std::unique_ptr<wxMenu> m_popup_menu;
+ };
+ 
+ #endif // !slic3r_GUI_CheckList_hpp_

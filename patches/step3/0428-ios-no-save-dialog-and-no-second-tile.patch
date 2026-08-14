@@ -1,0 +1,290 @@
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -652,6 +652,87 @@ static bool s_ios_autosave_pending = false;
+ // the backup callback, which has already done Orca's own change detection.
+ static void orca_ios_autosave_note_change() { s_ios_autosave_pending = true; }
+ 
++// Where the autosave belongs for the project as it stands.
++//
++// A project that has a file of its own is written *to that file*. This is the
++// correction to 0424, which always wrote a separate copy under
++// Documents/Autosave and only stopped listing it on the home page once the
++// project had a path. Not listing a second file is not the same as not having
++// one: the project the user opens in the Files app was still the stale one,
++// and the fresh work was in a directory they never chose. On a platform whose
++// whole document model is "the file is always current", the autosave has to be
++// the file.
++//
++// Only for a project inside our own Documents tree, which since 0382 is every
++// project the application can open - anything picked from elsewhere is copied
++// into Documents/Projects on the way in. A path outside it is a grant this
++// process may no longer hold, and a failed write there would be worse than a
++// copy that is merely somewhere else.
++//
++// A project with no path yet has nowhere to be written except
++// Documents/Autosave, which is what that directory is for.
++static boost::filesystem::path orca_ios_autosave_target(Plater *plater, const char *home,
++                                                        bool &to_own_file)
++{
++    to_own_file = false;
++
++    const std::string documents = std::string(home) + "/Documents/";
++    const std::string own = into_u8(plater->get_project_filename(".3mf"));
++    if (!own.empty() && own.compare(0, documents.size(), documents) == 0) {
++        to_own_file = true;
++        return boost::filesystem::path(own);
++    }
++
++    // The project name reaches this from the imported file's name, so it can
++    // contain anything - and a "/" in it would quietly write outside dir.
++    std::string stem = into_u8(plater->get_project_name());
++    if (stem.size() > 4 && stem.compare(stem.size() - 4, 4, ".3mf") == 0)
++        stem.erase(stem.size() - 4);
++    for (char &c : stem)
++        if (c == '/' || c == '\\' || c == ':')
++            c = '_';
++    if (stem.empty())
++        stem = "Untitled";
++
++    return boost::filesystem::path(documents) / "Autosave" / (stem + ".3mf");
++}
++
++// Retire the shadow copy of a project that now has a file of its own.
++//
++// Reported from the device: close a project, answer Yes, and it is on the home
++// page twice. Both tiles say the same name because they are the same project -
++// Documents/Autosave/X.3mf, written and listed while the project had no path,
++// and Documents/X.3mf, which the save has just created. wxFileHistory compares
++// paths and these are two, so nothing upstream can collapse them.
++//
++// The copy has done its job the moment the project has a real file: from here
++// on the autosave writes that file directly. Deleting it is not pruning the
++// user's documents - it is removing this application's own scratch copy of a
++// file that now exists, under the name the application chose, at the moment it
++// became redundant.
++void orca_ios_retire_autosave_copy(const wxString &project_path)
++{
++    const char *const home = ::getenv("HOME");
++    if (home == nullptr || project_path.IsEmpty())
++        return;
++
++    const boost::filesystem::path own(into_u8(project_path));
++    const boost::filesystem::path copy =
++        boost::filesystem::path(std::string(home) + "/Documents") / "Autosave" / own.filename();
++    if (copy == own)
++        return;   // the project *is* the autosave - restored from one, most likely
++
++    if (MainFrame *const frame = wxGetApp().mainframe)
++        frame->remove_from_recent_projects(from_path(copy));
++
++    boost::system::error_code ec;
++    if (boost::filesystem::exists(copy, ec)) {
++        boost::filesystem::remove(copy, ec);
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: retired the copy " << copy.string()
++                                 << (ec ? " FAILED: " + ec.message() : std::string(" ok"));
++    }
++}
++
+ // Write the copy if there is anything to write. `force` skips the rate limit:
+ // it is set when the application is about to lose the foreground, where the
+ // choice is not "now or in a minute" but "now or never".
+@@ -676,29 +757,20 @@ static void orca_ios_autosave_to_documents(Plater *plater, bool force)
+         std::chrono::duration_cast<std::chrono::seconds>(now - last).count() < 60)
+         return;   // deferred, not dropped: s_ios_autosave_pending stays set
+ 
++    bool to_own_file = false;
++    const boost::filesystem::path out = orca_ios_autosave_target(plater, home, to_own_file);
++
+     boost::system::error_code ec;
+-    const boost::filesystem::path dir = boost::filesystem::path(home) / "Documents" / "Autosave";
+-    boost::filesystem::create_directories(dir, ec);
++    boost::filesystem::create_directories(out.parent_path(), ec);
+     if (ec) {
+-        BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: cannot create " << dir.string()
+-                                 << ": " << ec.message();
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: cannot create "
++                                 << out.parent_path().string() << ": " << ec.message();
+         return;
+     }
+ 
+-    // The project name reaches this from the imported file's name, so it can
+-    // contain anything - and a "/" in it would quietly write outside dir.
+-    std::string stem = into_u8(plater->get_project_name());
+-    if (stem.size() > 4 && stem.compare(stem.size() - 4, 4, ".3mf") == 0)
+-        stem.erase(stem.size() - 4);
+-    for (char &c : stem)
+-        if (c == '/' || c == '\\' || c == ':')
+-            c = '_';
+-    if (stem.empty())
+-        stem = "Untitled";
+-
+-    // Silence, so this does not take over the project name or clear the dirty
+-    // state: an autosave is a copy, not the user saving their work.
+-    const boost::filesystem::path out = dir / (stem + ".3mf");
++    // Silence either way. Writing the project's own file must not re-run
++    // set_project_filename() - the path has not changed, and that call ends in
++    // add_to_recent_projects() and a title update on a timer tick.
+     const int rc = plater->export_3mf(out, SaveStrategy::Silence);
+     last = now;
+     if (rc == 0)
+@@ -710,25 +782,35 @@ static void orca_ios_autosave_to_documents(Plater *plater, bool force)
+     if (rc != 0)
+         return;
+ 
++    if (wxGetApp().mainframe == nullptr)
++        return;
++
++    if (to_own_file) {
++        // The project's own file is current, so the "unsaved changes" the title
++        // and the Save button report are no longer true. Saying otherwise on a
++        // platform that has just been told it never has to ask about saving is
++        // how the user ends up not trusting either of them.
++        //
++        // Not up_to_date(true, true): that is the *backup* timestamp, and it
++        // belongs to the caller that took the backup a moment ago.
++        plater->up_to_date(true, false);
++        plater->reset_project_dirty_after_save();
++        plater->update_title_dirty_status();
++        // And clear any copy left over from before this project had a file -
++        // from an earlier build, or from the minutes before it was first saved.
++        // save_project() does this too; this is the path for a project that is
++        // never explicitly saved again because the autosave keeps it clean.
++        orca_ios_retire_autosave_copy(from_path(out));
++        return;
++    }
++
+     // Put it on the home page too. Writing the file is only half of what
+     // "autosave" is worth - without an entry in the recent list, complete with
+     // its thumbnail, there is no way back to it from inside the app. Silence
+     // keeps the export from taking over the project name; this does not.
+     //
+-    // ONLY WHEN THE PROJECT HAS NO FILE OF ITS OWN. A project opened from
+-    // Documents/Projects/X.3mf is already on the home page under that path, and
+-    // adding Documents/Autosave/X.3mf beside it is the second half of the
+-    // duplicate 0387 removed for downloads: two entries, same name, no way to
+-    // tell them apart. The copy is still written - it is what the restore
+-    // offer in 0424 hands back after a kill - it just does not get a second
+-    // tile. wxFileHistory compares paths, so nothing else can dedupe this.
+-    if (wxGetApp().mainframe == nullptr)
+-        return;
+-    if (!plater->get_project_filename(".3mf").IsEmpty()) {
+-        BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: not listing the copy, the project is "
+-                                 << into_u8(plater->get_project_filename(".3mf"));
+-        return;
+-    }
++    // Only reached for a project with no file of its own, which is the only
++    // case that still writes a separate copy at all.
+     wxGetApp().mainframe->add_to_recent_projects(from_path(out));
+ }
+ 
+@@ -5061,6 +5143,23 @@ void MainFrame::add_to_recent_projects(const wxString& filename)
+     }
+ }
+ 
++void MainFrame::remove_from_recent_projects(const wxString& filename)
++{
++    const size_t file_id = m_recent_projects.FindFileInHistory(filename);
++    if (file_id == size_t(-1))
++        return;
++
++    m_recent_projects.RemoveFileFromHistory(file_id);
++    std::vector<std::string> recent_projects;
++    const size_t count = m_recent_projects.GetCount();
++    for (size_t i = 0; i < count; ++i)
++        recent_projects.push_back(into_u8(m_recent_projects.GetHistoryFile(i)));
++    wxGetApp().app_config->set_recent_projects(recent_projects);
++    if (m_webview != nullptr)
++        m_webview->SendRecentList(0);
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-recent: removed " << into_u8(filename);
++}
++
+ std::wstring MainFrame::FileHistory::GetThumbnailUrl(int index) const
+ {
+     if (m_thumbnails[index].empty()) return L"";
+--- a/src/slic3r/GUI/MainFrame.hpp
++++ b/src/slic3r/GUI/MainFrame.hpp
+@@ -350,6 +350,9 @@ public:
+     bool save_project_as(const wxString& filename = wxString());
+ 
+     void        add_to_recent_projects(const wxString& filename);
++    // Drop one entry by path, leaving the file alone. The counterpart to the
++    // above: something that was worth listing has stopped being so.
++    void        remove_from_recent_projects(const wxString& filename);
+     void        get_recent_projects(boost::property_tree::wptree &tree, int images);
+     void        open_recent_project(size_t file_id, wxString const & filename);
+     void        remove_recent_project(size_t file_id, wxString const &filename);
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -13,6 +13,9 @@
+ #include <string>
+ namespace Slic3r { namespace GUI {
+ std::string orca_ios_repair_container_path(const std::string &path);
++// src/slic3r/GUI/MainFrame.cpp - the shadow copy a project keeps until it has
++// a file of its own.
++void orca_ios_retire_autosave_copy(const wxString &project_path);
+ } }
+ #endif
+ 
+@@ -12551,6 +12554,15 @@ int Plater::save_project(bool saveAs)
+     p->set_project_filename(filename);
+     BOOST_LOG_TRIVIAL(trace) << __FUNCTION__ << __LINE__ << " call set_project_filename: " << filename;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The project has a file now, so the shadow copy under Documents/Autosave
++    // is redundant - and until it is gone it is a second tile on the home page
++    // with the same name as this one. Must come after set_project_filename():
++    // that is what added the real entry, and the order decides which of the two
++    // survives.
++    orca_ios_retire_autosave_copy(filename);
++#endif
++
+     up_to_date(true, false);
+     up_to_date(true, true);
+ 
+@@ -14855,6 +14867,46 @@ int GUI::Plater::close_with_confirm(std::function<bool(bool)> second_check)
+         return wxID_NO;
+     }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Nothing to ask. The project is saved.
++    //
++    // "The current project has unsaved changes. Would you like to save before
++    // continuing?" is a question that only makes sense where not saving is a
++    // real state. On this port it is not: every ten seconds the backup runs,
++    // the copy in Documents follows it, and since 0424 leaving the application
++    // forces both. By the time this dialog could be shown, the work is already
++    // on disk in two places - so the dialog is asking the user to decide
++    // something that has already been decided, and both answers lead to the
++    // same place.
++    //
++    // It was also the last thing standing between a project and being on the
++    // home page twice: answering Yes here saves a never-saved project to
++    // Documents/<name>.3mf while the autosave copy of the same project is
++    // already listed as Documents/Autosave/<name>.3mf, and the two are
++    // different paths with the same name. save_project() below retires that
++    // copy, which is the other half of this fix.
++    //
++    // Save and carry on. save_project() does not open a picker on this port -
++    // 0367 gives a project with no path one in Documents instead - so this
++    // costs no interaction at all.
++    {
++        int ios_result = save_project();
++        if (ios_result == wxID_CANCEL) {
++            // The save reported its own failure and the user has seen it. Going
++            // on anyway is right: the backup and the copy in Documents both
++            // still hold this work, and refusing to continue would strand the
++            // user in a project they cannot leave.
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-save: close-time save failed, continuing";
++            ios_result = wxID_NO;
++        }
++        if (second_check && !second_check(ios_result == wxID_YES)) return wxID_CANCEL;
++        model().set_backup_path("");
++        up_to_date(true, false);
++        up_to_date(true, true);
++        return ios_result;
++    }
++#endif
++
+     MessageDialog dlg(static_cast<wxWindow*>(this), _L("The current project has unsaved changes. Would you like to save before continuing\?"),
+         wxString(SLIC3R_APP_FULL_NAME) + " - " + _L("Save"), wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxCENTRE);
+     dlg.show_dsa_button(_L("Remember my choice."));

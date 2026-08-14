@@ -7615,3 +7615,78 @@ time of writing. The two worth looking at first are the 3D view against the
 plate in light mode — cream is brighter than the `#E7E7E7` it replaces, and the
 bed texture sits on it — and the web view reload on a live switch, which is the
 one step in the sequence that throws away page state.
+## 0428 — the dialog that had nothing left to ask, and the second tile
+
+Two reports from the device, one cause between them: *"wenn ich eine Datei
+schliesse kommt immer noch der Datei-speichern-Dialog und wenn ich Ja drücke ist
+die Datei zweimal da."*
+
+### The dialog
+
+`close_with_confirm()` asks "The current project has unsaved changes. Would you
+like to save before continuing?" on the way into New Project and Open Project.
+It is the right question on a desktop, where not saving is a state a project can
+actually be in. It is not one here. Since 0424 the backup runs every ten
+seconds, the copy in Documents follows it, and leaving the application forces
+both — by the time this dialog could appear the work is already on disk twice,
+and the two answers lead to the same place.
+
+On iOS it now saves and carries on. That costs no interaction at all, because
+`save_project()` on this port does not open a picker: 0367 gives a project with
+no path one in `Documents/` instead. A save that fails is logged and the close
+proceeds — the backup and the copy both still hold the work, and refusing to
+continue would strand the user in a project they cannot leave.
+
+### The second tile, which 0424 only half fixed
+
+0424 stopped *listing* the autosave copy once a project had a file of its own.
+That is not the same as not having one, and the reported sequence goes around
+it entirely:
+
+1. New project, no path yet. The autosave writes `Documents/Autosave/X.3mf` and
+   lists it — correct, it is the only way back to that work.
+2. Close. Answer Yes. `save_project()` has no path either, so 0367 sends it to
+   `Documents/X.3mf` and lists **that**.
+
+Two entries, same name, different directories, and `wxFileHistory` compares
+paths — so nothing upstream can collapse them. `orca_ios_retire_autosave_copy()`
+drops the copy's entry and deletes the copy at the moment the project gains a
+file. That is not pruning the user's documents: it is this application removing
+its own scratch copy, under the name it chose, once the file it was standing in
+for exists.
+
+### And the copy should not have existed in the first place
+
+The deeper half. A project that already has a file was still having a *second*
+full copy written under `Documents/Autosave` every minute — so the file the user
+opens in the Files app was the stale one and the fresh work sat in a directory
+they never chose. On a platform whose entire document model is "the file is
+always current", the autosave has to *be* the file.
+
+`orca_ios_autosave_target()` now returns the project's own path when it has one
+inside our Documents tree — which since 0382 is every project the application
+can open, because anything picked from elsewhere is copied into
+`Documents/Projects` on the way in. `Documents/Autosave` is left for the one
+case that has nowhere else to go: a project that has never been saved.
+
+Writing the project's own file also makes the dirty state honest again —
+`up_to_date(true, false)`, `reset_project_dirty_after_save()`,
+`update_title_dirty_status()` — so the title and the Save button stop reporting
+unsaved changes to a file that is current. Not `up_to_date(true, true)`: that is
+the *backup* timestamp and it belongs to the caller that took the backup.
+
+Still `SaveStrategy::Silence` in both cases. Writing the project's own file must
+not re-run `set_project_filename()`, which ends in `add_to_recent_projects()`
+and a title update — on a timer tick.
+
+### One file per project, now
+
+| the project | autosaved to | on the home page |
+|---|---|---|
+| never saved | `Documents/Autosave/<name>.3mf` | that copy |
+| has a file | its own file, in place | the project itself, once |
+
+The dirty-state clearing has a consequence worth expecting: `close_with_confirm`
+will now usually find the project clean and skip its save entirely, because the
+autosave got there first. That is the intended shape — the save at close is the
+backstop, not the mechanism.

@@ -7588,6 +7588,26 @@ produced, so the two directions needed two mappings. Six tokens whose Orca
 value crossed two tones (`--bg-color-alt`, `--icon-color`, and the dark
 `--bg-color-secondary`) are set outright.
 
+**The white boxes, from the device.** Reported against the first build that
+could actually show dark mode: the sidebar's "Printer", "Filament" and
+"Process" titles sat in white boxes. `GUI_App::UpdateDarkUI()` was translating
+a colour no window had chosen. `GetBackgroundColour()` answers for a window
+that was never given one - it returns the system's, and on iOS that is
+`UIColor.systemBackground`: pure black in dark, pure white in light. The
+palette reads `#000000` as text, because that is what black means everywhere
+in Orca's source, so a `Label` nobody had ever coloured came back near-white -
+and setting the answer turned a `UIView` that was transparent
+(`backgroundColor` nil, showing whatever it sits on) into an opaque one. Two
+wrongs, one line apart.
+
+`UseBackgroundColour()` and `UseForegroundColour()` say whether the window
+chose, and all four assignments in that function are gated on them now. Left
+alone the labels stay transparent and show the panel they sit on, which is
+what they did before anything translated them. Off iOS both flags are
+hardcoded true, so nothing changes there. Worth remembering as a class of bug
+rather than one instance: any colour read *back* out of a window may be the
+system's, and the palette cannot tell that apart from a colour Orca meant.
+
 **Not verified on device.** The two to look at first are the sidebar in light -
 white cards on a warm page is the whole design and it is where Orca's
 hardcoded near-whites were densest - and a live appearance switch, which now

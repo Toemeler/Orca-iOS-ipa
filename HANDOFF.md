@@ -7988,6 +7988,20 @@ and two things read it on every context menu:
   is called without one — which is most of them, `ObjectList::show_context_menu()`
   included. Every such menu was anchored at the top left corner of the screen.
 
+**A third thing read it, and this one was not about menus at all.**
+`ObjectList`'s `wxEVT_DATAVIEW_SELECTION_CHANGED` handler opens with
+
+```cpp
+if (!GetScreenRect().Contains(wxGetMousePosition())) return;
+```
+
+which was false for every selection this port has ever made, so the handler
+returned before `selection_changed()` and picking a row in the object list
+never reached the 3D scene or the manipulation panel. With the position
+answered properly the test means what it means on the desktop - "the pointer is
+over this list" - and the handler runs. Expect the object list to start driving
+the selection; that is the behaviour it always had everywhere else.
+
 **0232 records where the pointer, the finger or the pencil last was** — in the
 touch path, in the hover path and in the long press above, in the screen
 coordinates `wxNonOwnedWindowIPhoneImpl::WindowToScreen()` produces so that a
@@ -8011,6 +8025,16 @@ the menu that is still alive, which also catches an item removed from a menu
 that survived. A menu destroyed while its sheet is up dismisses the sheet from
 `~wxMenuIPhoneImpl()`, because a menu whose items can no longer do anything has
 no business staying on screen.
+
+One thing an async menu still cannot do is return the user's choice to the
+caller: `wxWindow::GetPopupMenuSelectionFromUser()` shows the menu and reads a
+global the handler sets, so on iOS it always answers `wxID_NONE`. Nothing in
+this application reaches it — wx uses it in three places, the wxAuiToolBar
+overflow chevron (the topbar is not in the frame's sizer on Apple), the
+wxAuiNotebook tab list (Orca draws its own tabs, and 0397 replaced them with a
+native bar), and the header ctrl's hide-columns menu (needs `wxHD_ALLOW_HIDE`,
+which nothing here sets) — but a fourth caller would need a nested event loop
+around the sheet, which is the thing 0231 deliberately did not build.
 
 **0432 fixes the one caller in Orca that did this** — `CheckList::ShowMenu()`
 built a `wxMenu` on its stack — by making the menu a member rebuilt on each

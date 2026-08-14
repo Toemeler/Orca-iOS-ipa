@@ -7511,3 +7511,107 @@ a search string and fix nothing.
 | home page, setup wizard | `LangText` in JS | `resources/web/data/text.js`, key `de_DE` (patch 0426) |
 | the native tab bar, toolbar, capsule | strings passed in from C++ | already translated by the first row |
 | three labels written in ObjC++ | `wxGetTranslation` | first row, via patch 0425 |
+
+### 0427 — one base colour: charcoal grey and cream white
+
+**Cream white `#FAF5EA` in light, charcoal grey `#3C4043` in dark.** The base
+colour only — the page every surface is painted on. Nothing else moved: the
+ORCA green, the button greys, the input borders, the separators, the disabled
+greys and every text colour are still Orca's.
+
+**Orca has no "background colour" to set.** It has a white it paints the page
+with — `*wxWHITE`, 364 direct `SetBackgroundColour` calls plus everything that
+goes through `StateColor` — and one entry in `StateColor.cpp`'s table,
+`{"#FFFFFF", "#2D2D31"}`, that answers with a dark grey when the appearance is
+dark. Both ends of that one pair are what "the base colour" means here, and
+both are replaced. The table's other 40 entries are untouched, which is what
+keeps everything else Orca's.
+
+**Light mode had to be taught to translate at all.** `darkModeColorFor2()`
+opens with `if (!gDarkMode) return color;` — upstream's light mode is the
+identity, because upstream's light *is* the white in the source. So the light
+branch now answers exactly one colour, the base, and returns everything else
+untouched. `lightModeColorFor()` — which is what `UpdateDarkUI()` translates
+plain wx windows with on the way back from dark — answers the base ahead of its
+reverted table, because two colours map onto the dark base now and which one
+comes back out of a reverted `std::map` is insertion order rather than an
+answer.
+
+**Where the base is asked for:**
+
+| surface | asks | 
+|---|---|
+| every widget Orca draws itself | `StateColor::colorForStates` / `darkModeColorFor` |
+| plain wx windows | `GUI_App::UpdateDarkUI`, through the same two functions |
+| About, system info, the preview slider's labels, Plater's tooltip | `m_color_window_default`, set in `init_label_colours()` |
+| the 3D view — the largest single piece of base colour in the app | `GLCanvas3D::_render_background()` |
+| the web pages | their own stylesheets, below |
+
+`m_color_window_default` was `wxSYS_COLOUR_WINDOW` in light, which on iOS is
+`UIColor.systemBackground`: pure white in light and pure **black** in dark.
+Neither is this port's page.
+
+**The 3D view was the point of the exercise.** It was `#E7E7E7` in light and
+`#54545A` in dark — a viewport grey of its own, unrelated to the chrome around
+it, and the biggest thing on the screen. It is the base colour now, read per
+frame from the same place everything else reads it, so there is nothing to keep
+in step when the appearance changes. The plate stays clearly separate from it
+in both modes: `UNSELECT_COLOR` is `0.82` against cream, `UNSELECT_DARK_COLOR`
+`0.384` against charcoal — more contrast in dark than there was.
+
+**Sync with the system was three-quarters missing.** 0414 made
+`GUI_App::dark_mode()` a live read of `UIUserInterfaceStyle` and asked for a
+repaint, and that is right for anything built *after* a switch — but three
+things downstream of `dark_mode()` are copies that only change when they are
+told to, and none of them was:
+
+* `StateColor::SetDarkMode()` is called from exactly one place,
+  `init_label_colours()`. Without it the table above keeps answering in the
+  appearance we just left, and that table is what every widget Orca draws
+  itself asks. This alone meant the switch did essentially nothing.
+* `m_is_dark_mode` is the flag `UpdateDarkUI()` branches on, and only
+  `Update_dark_mode_flag()` sets it — so the walk that repaints plain wx
+  windows was repainting them into the old mode.
+* `EVT_GLCANVAS_COLOR_MODE_CHANGED` is what carries a change into the 3D view,
+  the bed, the toolpath viewer, the sliders, the notifications and ImGui. Its
+  handler reads `dark_color_mode` out of the config, which is why that is set
+  first.
+
+`orca_ios_appearance_changed()` is now `MainFrame::on_sys_color_changed()`'s
+sequence in its order, minus the parts that need a menu bar or a Windows title
+bar, plus `WebView::RecreateAll()` — the web pages carry light or dark in their
+*user agent* (`BBL-Slicer/v… (dark)`), and `home.js` reads it back out of
+`navigator.userAgent` to decide whether to load `dark.css`. Re-setting the
+agent and reloading is how that function does it, and `SetUserAgent` reaches
+`m_webView.customUserAgent` on iOS because 0210 builds `src/osx/webview_webkit.mm`
+for this port.
+
+**And the callback itself is deprecated.** `traitCollectionDidChange:` has been
+deprecated since iOS 17 and is documented to stop being called in a future
+release; this app's deployment target is **26.0**, so
+`registerForTraitChanges:withHandler:` is available unconditionally and is now
+registered alongside it in `OrcaTabBarController`. Both land in the same
+function, which applies a change once — `applied` is seeded from the appearance
+the app was started in, so the call that arrives during launch, when the view
+first gets a trait collection, does nothing rather than walking a widget tree
+that is still being built.
+
+**The two values live in five places, and this is the list.** A stylesheet
+cannot ask a C++ function for a colour, so:
+
+| where | what |
+|---|---|
+| `src/slic3r/GUI/Widgets/StateColor.cpp` | `gBaseLight` / `gBaseDark` — the definition everything C++ reads |
+| `resources/web/include/global.css` | `--bg-color`, in both `:root` blocks (`prefers-color-scheme` already picks between them) |
+| `resources/web/{homepage,guide,dialog,model,orca,flush}/…` | the page-level `body` background, light and dark |
+
+Light-mode pages that painted no background at all — the home page was one —
+say it now rather than showing whatever wx paints behind the transparent web
+view, because that window is a plain `wxPanel` whose default is
+`wxSYS_COLOUR_WINDOW` again.
+
+**Not verified on device.** Nothing here has been through a device build at the
+time of writing. The two worth looking at first are the 3D view against the
+plate in light mode — cream is brighter than the `#E7E7E7` it replaces, and the
+bed texture sits on it — and the web view reload on a live switch, which is the
+one step in the sequence that throws away page state.

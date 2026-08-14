@@ -1,0 +1,485 @@
+diff --git a/resources/web/dialog/css/common.css b/resources/web/dialog/css/common.css
+index b8bee5d..43a4613 100644
+--- a/resources/web/dialog/css/common.css
++++ b/resources/web/dialog/css/common.css
+@@ -22,7 +22,7 @@ body
+ 	border: 0;
+ 	margin: 0;	
+ 	overflow: hidden;
+-	background-color: #fff;
++	background-color: #FAF5EA;	/* iPadOS: the one base colour - see StateColor.cpp */
+ 	font-size: 14px;
+ 	line-height: 22px;
+ }
+diff --git a/resources/web/dialog/css/dark.css b/resources/web/dialog/css/dark.css
+index de55d6c..3931b7d 100644
+--- a/resources/web/dialog/css/dark.css
++++ b/resources/web/dialog/css/dark.css
+@@ -29,7 +29,7 @@
+ 
+ body
+ {
+-	background-color:#2D2D31; /* ORCA match background color */
++	background-color:#3C4043; /* iPadOS: the one base colour - see StateColor.cpp */
+ 	color: #efeff0;
+ }
+ 
+diff --git a/resources/web/flush/WipingDialog.html b/resources/web/flush/WipingDialog.html
+index 8575086..bfbf70b 100644
+--- a/resources/web/flush/WipingDialog.html
++++ b/resources/web/flush/WipingDialog.html
+@@ -13,7 +13,7 @@
+         margin: 0px;
+         padding: 0px;
+         height: 100%;
+-        background: #f5f5f5;
++        background: #FAF5EA;  /* iPadOS: the one base colour - see StateColor.cpp */
+         font-family: sans-serif;
+         overscroll-behavior: none;
+       }
+@@ -178,7 +178,7 @@
+ 
+       /* 暗色模式样式 */
+       body.dark-mode {
+-        background-color: #2d2d31;
++        background-color: #3C4043;  /* iPadOS: the one base colour - see StateColor.cpp */
+         color: #e0e0e0;
+       }
+ 
+diff --git a/resources/web/guide/1/1.css b/resources/web/guide/1/1.css
+index 941ab77..b489d26 100644
+--- a/resources/web/guide/1/1.css
++++ b/resources/web/guide/1/1.css
+@@ -1,6 +1,6 @@
+ html
+ {
+-	background-color: #fff;
++	background-color: #FAF5EA;	/* iPadOS: the one base colour - see StateColor.cpp */
+ }
+ 
+ body
+diff --git a/resources/web/guide/css/common.css b/resources/web/guide/css/common.css
+index 8e6798d..e3f35e3 100644
+--- a/resources/web/guide/css/common.css
++++ b/resources/web/guide/css/common.css
+@@ -23,7 +23,7 @@ body
+ 	border: 0;
+ 	margin: 0;	
+ 	overflow: hidden;
+-	background-color: #fff;
++	background-color: #FAF5EA;	/* iPadOS: the one base colour - see StateColor.cpp */
+ 	font-size: 14px;
+ 	line-height: 22px;
+ }
+diff --git a/resources/web/guide/css/dark.css b/resources/web/guide/css/dark.css
+index 0cbb395..ceb4a03 100644
+--- a/resources/web/guide/css/dark.css
++++ b/resources/web/guide/css/dark.css
+@@ -6,7 +6,7 @@
+ 
+ body
+ {
+-	background-color:#2D2D31; /* ORCA match background color */
++	background-color:#3C4043; /* iPadOS: the one base colour - see StateColor.cpp */
+ 	color: #efeff0;
+ }
+ 
+diff --git a/resources/web/homepage/css/dark.css b/resources/web/homepage/css/dark.css
+index d4950c9..6a0fc86 100644
+--- a/resources/web/homepage/css/dark.css
++++ b/resources/web/homepage/css/dark.css
+@@ -1,6 +1,6 @@
+ body
+ {
+-	background-color:#242428;
++	background-color:#3C4043;	/* iPadOS: the one base colour - see StateColor.cpp */
+ }
+ 
+ *
+diff --git a/resources/web/homepage/css/home.css b/resources/web/homepage/css/home.css
+index e99d22e..0806a8d 100644
+--- a/resources/web/homepage/css/home.css
++++ b/resources/web/homepage/css/home.css
+@@ -67,6 +67,7 @@ body
+ {
+ 	display:flex;
+ 	justify-content: flex-start;
++	background-color: #FAF5EA;	/* iPadOS: the one base colour - see StateColor.cpp */
+ }
+ 
+ #LeftBoard
+diff --git a/resources/web/include/global.css b/resources/web/include/global.css
+index 7448cfd..fbe9f14 100644
+--- a/resources/web/include/global.css
++++ b/resources/web/include/global.css
+@@ -15,7 +15,7 @@
+ 	--main-color			: #009688;
+ 	--main-color-hover		: #26A69A;
+ 	--main-color-fixed		: #009688;
+-	--bg-color				: #FFFFFF;
++	--bg-color				: #FAF5EA;	/*----iPadOS: the one base colour, cream white----*/
+ 	--bg-color-secondary	: #F4F4F4;
+ 	--bg-color-alt			: #F0F0F0;
+ 	--fg-color-text			: #262E30;
+@@ -39,7 +39,7 @@
+ 	--main-color			: #00675B;
+ 	--main-color-hover		: #008172;
+ 	--main-color-fixed		: #009688;
+-	--bg-color				: #2D2D31;
++	--bg-color				: #3C4043;	/*----iPadOS: the one base colour, charcoal grey----*/
+ 	--bg-color-secondary	: #36363B;
+ 	--bg-color-alt			: #242428;
+ 	--fg-color-text			: #EFEFF0;
+diff --git a/resources/web/model/css/dark.css b/resources/web/model/css/dark.css
+index 8df6946..b90634f 100644
+--- a/resources/web/model/css/dark.css
++++ b/resources/web/model/css/dark.css
+@@ -1,6 +1,6 @@
+ body
+ {
+-	background-color:#242428;
++	background-color:#3C4043;	/* iPadOS: the one base colour - see StateColor.cpp */
+ 	color: #B3B3B5;
+ }
+ 
+diff --git a/resources/web/orca/css/dark.css b/resources/web/orca/css/dark.css
+index 0a0c637..b6e2c3e 100644
+--- a/resources/web/orca/css/dark.css
++++ b/resources/web/orca/css/dark.css
+@@ -1,5 +1,5 @@
+ body {
+-    background-color:#4c4c54;
++    background-color:#3C4043;  /* iPadOS: the one base colour - see StateColor.cpp */
+     font-family: Arial, sans-serif;
+     display: flex;
+     justify-content: center;
+diff --git a/resources/web/orca/css/home.css b/resources/web/orca/css/home.css
+index 3f4cc4e..e368d6a 100644
+--- a/resources/web/orca/css/home.css
++++ b/resources/web/orca/css/home.css
+@@ -1,6 +1,6 @@
+ body
+ {
+-    background-color:#eeeeee;
++    background-color:#FAF5EA;  /* iPadOS: the one base colour - see StateColor.cpp */
+     font-family: Arial, sans-serif;
+     display: flex;
+     justify-content: center;
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index 64b942c..ebf202b 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -56,6 +56,8 @@
+ #include <TargetConditionals.h>
+ #endif
+ #if defined(__APPLE__) && !TARGET_OS_OSX
++// The one base colour of the interface, for _render_background() below.
++#include "Widgets/StateColor.hpp"
+ // src/slic3r/GUI/ios_gl_compat.cpp
+ extern void orca_ios_note_default_framebuffer();
+ extern unsigned orca_ios_default_framebuffer();
+@@ -8359,7 +8361,18 @@ void GLCanvas3D::_render_background()
+     // Draws a bottom to top gradient over the complete screen.
+     glsafe(::glDisable(GL_DEPTH_TEST));
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The base colour of the interface, not a grey of the viewport's own. This
++    // is the largest single piece of base colour in the application, and the
++    // one the sidebar and the floating bars sit against - see StateColor.cpp
++    // for where the two values live. Read per frame rather than stored: it is
++    // one map lookup against a value that is already in cache, and there is
++    // then nothing to keep in step when the appearance changes.
++    const wxColour base = StateColor::baseColorFor(m_is_dark);
++    ColorRGBA background_color(base.Red(), base.Green(), base.Blue(), (unsigned char) 255);
++#else
+     ColorRGBA background_color = m_is_dark ? DEFAULT_BG_LIGHT_COLOR_DARK : DEFAULT_BG_LIGHT_COLOR;
++#endif
+     ColorRGBA error_background_color = m_is_dark ? ERROR_BG_LIGHT_COLOR_DARK : ERROR_BG_LIGHT_COLOR;
+     const ColorRGBA bottom_color = use_error_color ? error_background_color : background_color;
+ 
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 992ea7e..0f5d61e 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -137,6 +137,11 @@
+ #include "Notebook.hpp"
+ #include "Widgets/Label.hpp"
+ #include "Widgets/ProgressDialog.hpp"
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// orca_ios_appearance_changed() reloads the web views, which carry light or
++// dark in their user agent.
++#include "Widgets/WebView.hpp"
++#endif
+ 
+ //BBS: DailyTip and UserGuide Dialog
+ #include "WebDownPluginDlg.hpp"
+@@ -4185,7 +4190,17 @@ void GUI_App::init_label_colours()
+ #else
+     m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
+ #endif
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The same base colour as everything else - see StateColor.cpp. Upstream's
++    // light answer here is wxSYS_COLOUR_WINDOW, which on iOS is
++    // UIColor.systemBackground: pure white in light and pure black in dark.
++    // Neither is this port's page, and this colour is what the About and
++    // system-info dialogs, the preview slider's labels and Plater's tooltip
++    // are painted with.
++    m_color_window_default          = StateColor::baseColorFor(is_dark_mode);
++#else
+     m_color_window_default          = is_dark_mode ? wxColour(43, 43, 43)   : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
++#endif
+     StateColor::SetDarkMode(is_dark_mode);
+ }
+ 
+@@ -4819,17 +4834,69 @@ void GUI_App::force_menu_update()
+ #endif //__WINDOWS__
+ 
+ #if defined(__APPLE__) && !TARGET_OS_OSX
+-// The device switched between light and dark. Everything is re-asked rather
+-// than tracked: dark_mode() is a live read of the system, so the colours only
+-// need to be recomputed and the windows told to repaint.
++// The device switched between light and dark.
++//
++// Nothing is cached - dark_mode() is a live read of the system - but a live
++// read is not enough on its own, because three things downstream of it are
++// copies that only change when they are told to. 0414 asked for the repaint
++// and not for those, so the switch did almost nothing until the app was
++// restarted:
++//
++//   * init_label_colours() is the only place StateColor::SetDarkMode() is
++//     called, and StateColor is what every widget Orca draws itself asks for
++//     its colours. Without this the whole interface keeps the old appearance;
++//   * Update_dark_mode_flag() sets m_is_dark_mode, which is the flag
++//     UpdateDarkUI() branches on - so without it the walk below repaints
++//     every plain wx window in the mode we have just left;
++//   * EVT_GLCANVAS_COLOR_MODE_CHANGED is what carries the change into the 3D
++//     view, the bed, the toolpath viewer, the sliders, the notifications and
++//     ImGui. Its handler reads "dark_color_mode" out of the config, which is
++//     why that is set first.
++//
++// This is MainFrame::on_sys_color_changed()'s sequence, in its order, without
++// the parts that need a menu bar or a Windows title bar. The web pages carry
++// light/dark in their user agent, so they are reloaded the way that function
++// reloads them.
+ void orca_ios_appearance_changed()
+ {
+-    GUI_App &app = wxGetApp();
+-    app.app_config->set("dark_color_mode", app.dark_mode() ? "1" : "0");
++    GUI_App   &app  = wxGetApp();
++    const bool dark = app.dark_mode();
++
++    // Once per switch. UIKit reports trait changes for more than the
++    // appearance - size class and dynamic type come through the same
++    // callbacks - and this is reached from two of them.
++    //
++    // Seeded from the appearance the application was started in rather than
++    // from nothing, because the first call arrives during launch, when the
++    // view first gets a trait collection. There is nothing to re-ask then:
++    // every window is being built and is asking already.
++    static int applied = -1;
++    if (applied < 0)
++        applied = (app.app_config != nullptr &&
++                   app.app_config->get("dark_color_mode") == "1") ? 1 : 0;
++    if (applied == (dark ? 1 : 0))
++        return;
++    applied = dark ? 1 : 0;
++
++    if (app.app_config != nullptr)
++        app.app_config->set("dark_color_mode", dark ? "1" : "0");
++    app.init_label_colours();
++    app.Update_dark_mode_flag();
++
++    // Nothing below this exists until the frame does, and nothing below it is
++    // needed then either: every window built afterwards asks for its colours
++    // as it is built.
++    if (app.mainframe == nullptr)
++        return;
++
+     app.force_colors_update();
+     app.update_ui_from_settings();
+-    if (app.mainframe != nullptr)
+-        app.mainframe->Refresh();
++    if (app.plater() != nullptr) {
++        SimpleEvent evt(EVT_GLCANVAS_COLOR_MODE_CHANGED);
++        wxPostEvent(app.plater(), evt);
++    }
++    WebView::RecreateAll();
++    app.mainframe->Refresh();
+ }
+ #endif
+ 
+diff --git a/src/slic3r/GUI/Widgets/StateColor.cpp b/src/slic3r/GUI/Widgets/StateColor.cpp
+index 2a9d91f..d6e1a2d 100644
+--- a/src/slic3r/GUI/Widgets/StateColor.cpp
++++ b/src/slic3r/GUI/Widgets/StateColor.cpp
+@@ -5,6 +5,41 @@ static bool gDarkMode = false;
+ 
+ static bool operator<(wxColour const &l, wxColour const &r) { return l.GetRGBA() < r.GetRGBA(); }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// ---------------------------------------------------------------------------
++// THE ONE BASE COLOUR OF THE INTERFACE.
++//
++// Orca has no single background colour to set: it has a white it paints "the
++// page" with, and the table below, which answers with a dark grey when the
++// appearance is dark. Both ends of that one pair are replaced here - cream
++// white and charcoal grey - and nothing else in the table is touched. The ORCA
++// green, the button greys, the input borders, the separators and every text
++// colour are still Orca's.
++//
++// Everything that paints the base asks for it here:
++//
++//   * this file, which is what every widget Orca draws itself goes through
++//     (StateColor::colorForStates, darkModeColorFor, lightModeColorFor) and
++//     what GUI_App::UpdateDarkUI() translates plain wx windows with;
++//   * GUI_App::init_label_colours(), for m_color_window_default - the same
++//     surface under a second name, and upstream's light answer for it is
++//     wxSYS_COLOUR_WINDOW, which on iOS is UIColor.systemBackground: pure
++//     white in light and pure black in dark, neither of which is this page;
++//   * GLCanvas3D::_render_background(), for the 3D view - the largest single
++//     piece of base colour in the application.
++//
++// The web pages carry the same two values, because a stylesheet cannot ask a
++// C++ function for them: resources/web/include/global.css (--bg-color, chosen
++// by prefers-color-scheme) and the page-level `body` background in each of
++// resources/web/{homepage,guide,dialog,model,orca}/css/. Change one, change
++// them all - that list is the whole of it.
++static const wxColour gBaseWhite("#FFFFFF"); // what Orca asks for
++static const wxColour gBaseLight("#FAF5EA"); // cream white
++static const wxColour gBaseDark("#3C4043");  // charcoal grey
++
++wxColour StateColor::baseColorFor(bool dark) { return dark ? gBaseDark : gBaseLight; }
++#endif
++
+ static std::map<wxColour, wxColour> gDarkColors{
+     {"#009688", "#00675b"}, // rgb(0, 150, 136)    ORCA color
+     {"#1F8EEA", "#2778D2"}, // rgb(31, 142, 234)   ???
+@@ -22,7 +57,14 @@ static std::map<wxColour, wxColour> gDarkColors{
+     {"#EEEEEE", "#4C4C55"}, // rgb(238, 238, 238)  Separator Line | Title Line Color
+     {"#E8E8E8", "#3E3E45"}, // rgb(232, 232, 232)  ???
+     {"#323A3D", "#E5E5E4"}, // rgb(50, 58, 61)     Softer text color
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    {gBaseWhite, gBaseDark}, // Window background -> charcoal grey, not #2D2D31
++    // And the same surface once it has been made cream: a window that was
++    // built, or last painted, in light mode arrives here carrying that.
++    {gBaseLight, gBaseDark},
++#else
+     {"#FFFFFF", "#2D2D31"}, // rgb(255, 255, 255)  Window background
++#endif
+     {"#F8F8F8", "#36363C"}, // rgb(248, 248, 248)  Sidebar > Titlebar > Gradient Top | BBL monitor page titlebar bg
+     {"#F1F1F1", "#36363B"}, // rgb(241, 241, 241)  Sidebar > Titlebar > Gradient Bottom
+     {"#3B4446", "#2D2D30"}, // rgb(59, 68, 78)     Top Bar / Main tab bar bg color
+@@ -189,8 +231,17 @@ void StateColor::SetDarkMode(bool dark) { gDarkMode = dark; }
+ 
+ inline wxColour darkModeColorFor2(wxColour const &color)
+ {
+-    if (!gDarkMode)
++    if (!gDarkMode) {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // Light mode translates one colour and leaves every other alone: the
++        // base surface, which is cream rather than white on this port. The
++        // dark base is answered too, because a window painted before the
++        // appearance changed still carries it.
++        return (color == gBaseWhite || color == gBaseDark) ? gBaseLight : color;
++#else
+         return color;
++#endif
++    }
+     auto iter = gDarkColors.find(color);
+     if (iter != gDarkColors.end()) return iter->second;
+     return color;
+@@ -206,6 +257,12 @@ std::map<wxColour, wxColour> revert(std::map<wxColour, wxColour> const & map)
+ wxColour StateColor::lightModeColorFor(wxColour const &color)
+ {
+     static std::map<wxColour, wxColour> gLightColors = revert(gDarkColors);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Ahead of the reverted table rather than through it: two colours map onto
++    // the dark base now, so which of them comes back out is the map's
++    // insertion order rather than an answer. Both mean the base.
++    if (color == gBaseWhite || color == gBaseDark) return gBaseLight;
++#endif
+     auto iter = gLightColors.find(color);
+     if (iter != gLightColors.end()) return iter->second;
+     return color;
+diff --git a/src/slic3r/GUI/Widgets/StateColor.hpp b/src/slic3r/GUI/Widgets/StateColor.hpp
+index 8aa8cb4..c4cbb03 100644
+--- a/src/slic3r/GUI/Widgets/StateColor.hpp
++++ b/src/slic3r/GUI/Widgets/StateColor.hpp
+@@ -5,6 +5,14 @@
+ 
+ #include <map>
+ 
++#ifdef __APPLE__
++// baseColorFor() below is declared for iOS only, and the guard tests
++// TARGET_OS_OSX. Without this header the macro is undefined, an #if reads it as
++// zero, and the declaration lands in the macOS build with nothing to link
++// against - the trap 0413 and 0421 both walked into.
++#include <TargetConditionals.h>
++#endif
++
+ class StateColor
+ {
+ public:
+@@ -36,6 +44,13 @@ public:
+     static wxColour darkModeColorFor(wxColour const &color);
+     static wxColour lightModeColorFor(wxColour const &color);
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The one base colour of the interface: what every surface that is "the
++    // page" is painted with. Cream white in light, charcoal grey in dark.
++    // StateColor.cpp holds the two values and the list of what asks for them.
++    static wxColour baseColorFor(bool dark);
++#endif
++
+ public:
+     template<typename ...Colors>
+     StateColor(std::pair<Colors, int>... colors) {
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 6d452c8..3e00fd9 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -1321,12 +1321,31 @@ static const CGFloat kOrcaTabBarInset = 72;
+     [super dealloc];
+ }
+ 
+-// Re-applied rather than set once: the window's bounds change on rotation, and
+-// wx sets this view's frame itself whenever the frame resizes, so the inset has
+-// to be put back afterwards.
+ // Light and dark. Orca reads the system on demand through GUI_App::dark_mode(),
+ // so nothing has to be stored here - the windows just have to be told to ask
+ // again and repaint.
++//
++// On the supported API as well as the deprecated one. traitCollectionDidChange:
++// has been deprecated since iOS 17 and is documented to stop being called in a
++// future release; this application's deployment target is 26.0, so the
++// registration below is available unconditionally and is what will still be
++// delivering the switch when that happens. Both land in the same function,
++// which applies a change once and ignores the second telling.
++//
++// Nothing of self is captured, so the block the registration copies does not
++// keep this controller alive.
++- (void)viewDidLoad
++{
++    [super viewDidLoad];
++    [self registerForTraitChanges:@[ UITraitUserInterfaceStyle.class ]
++                      withHandler:^(id<UITraitEnvironment> environment,
++                                    UITraitCollection     *previous) {
++                          (void) environment;
++                          (void) previous;
++                          Slic3r::GUI::orca_ios_appearance_changed();
++                      }];
++}
++
+ - (void)traitCollectionDidChange:(UITraitCollection *)previous
+ {
+     [super traitCollectionDidChange:previous];
+@@ -1336,6 +1355,9 @@ static const CGFloat kOrcaTabBarInset = 72;
+     Slic3r::GUI::orca_ios_appearance_changed();
+ }
+ 
++// Re-applied rather than set once: the window's bounds change on rotation, and
++// wx sets this view's frame itself whenever the frame resizes, so the inset has
++// to be put back afterwards.
+ - (void)viewDidLayoutSubviews
+ {
+     [super viewDidLayoutSubviews];

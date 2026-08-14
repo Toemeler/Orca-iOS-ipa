@@ -234,7 +234,7 @@ msgid "Reset"
 msgstr "Zurücksetzen"
 
 msgid "Enter"
-msgstr "Eingabe"
+msgstr "Enter"
 
 msgid "Shortcut Key "
 msgstr "Tastenkürzel "
@@ -860,7 +860,7 @@ msgid "Default font"
 msgstr "Standard-Schriftart"
 
 msgid "Advanced"
-msgstr "Erweiterte Einstellungen"
+msgstr "Erweitert"
 
 msgid "Reset all options except the text and operation"
 msgstr "Alle Optionen außer dem Text und der Operation zurücksetzen"
@@ -1018,16 +1018,16 @@ msgid "Style \"%1%\" can't be used and will be removed from a list."
 msgstr "Stil \"%1%\" kann nicht verwendet werden und wird aus der Liste entfernt."
 
 msgid "Unset italic"
-msgstr "Kursiven Text aufheben"
+msgstr "Kursiv aufheben"
 
 msgid "Set italic"
-msgstr "Setze kursiven Text"
+msgstr "Kursiv setzen"
 
 msgid "Unset bold"
-msgstr "Schriftstärke aufheben"
+msgstr "Fett aufheben"
 
 msgid "Set bold"
-msgstr "Setze fette Schrift"
+msgstr "Fett setzen"
 
 msgid "Revert text size."
 msgstr "Rückgängig machen der Textgröße."
@@ -3468,7 +3468,7 @@ msgstr "mm³"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Start"
-msgstr "Kalibrierung starten"
+msgstr "Starten"
 
 msgid "Next"
 msgstr "Weiter"
@@ -3711,7 +3711,7 @@ msgid "Failed to install the plug-in. The plug-in file may be in use. Please res
 msgstr "Die Installation des Plug-ins ist fehlgeschlagen. Die Plug-in-Datei könnte in Verwendung sein. Bitte starten Sie OrcaSlicer neu und versuchen Sie es erneut. Überprüfen Sie auch, ob sie von Antivirensoftware blockiert oder gelöscht wird."
 
 msgid "Click here to see more info"
-msgstr "Klicken Sie hier, um weitere Informationen zu erhalten"
+msgstr "Weitere Informationen"
 
 msgid "The network plug-in was installed but could not be loaded. Please restart the application."
 msgstr "Das Netzwerk-Plug-in wurde installiert, konnte aber nicht geladen werden. Bitte starten Sie die Anwendung neu."
@@ -3726,7 +3726,7 @@ msgid ") to locate the toolhead's position. This prevents device moving beyond t
 msgstr "), um die Position des Werkzeugkopfs zu ermitteln. Dadurch wird verhindert, dass sich das Gerät über die Bewegungsgrenzen bewegt und das Gerät beschädigt wird."
 
 msgid "Go Home"
-msgstr "Werkzeugkopf zur Referenzposition fahren"
+msgstr "Referenzfahrt"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "An error occurred. The system may have run out of memory, or a bug may have occurred."
@@ -4399,7 +4399,7 @@ msgid "Invalid format. Expected vector format: \"%1%\""
 msgstr "Ungültiges Format. Erwartetes Vektorformat: \"%1%\""
 
 msgid "N/A"
-msgstr "Nicht verfügbar"
+msgstr "N/A"
 
 msgid "Pick"
 msgstr "Auswählen"
@@ -4444,7 +4444,7 @@ msgid "Pressure Advance"
 msgstr "Pressure Advance"
 
 msgid "Noop"
-msgstr "Keine Operation"
+msgstr "Noop"
 
 msgid "Retract"
 msgstr "Rückzug"
@@ -4777,7 +4777,7 @@ msgid "Quality / Speed"
 msgstr "Qualität / Geschwindigkeit"
 
 msgid "Smooth"
-msgstr "Höhenunterschiede glätten"
+msgstr "Glätten"
 
 msgid "Radius"
 msgstr "Radius"
@@ -4792,7 +4792,7 @@ msgid "Remove detail"
 msgstr "Detail entfernen"
 
 msgid "Reset to base"
-msgstr "Auf Ausgangsposition zurücksetzen"
+msgstr "Auf Ausgang zurücksetzen"
 
 msgid "Smoothing"
 msgstr "Glättung"
@@ -4927,7 +4927,7 @@ msgid "Slicing"
 msgstr "Slicen"
 
 msgid "Slice all"
-msgstr "Alle Platten slicen"
+msgstr "Alle slicen"
 
 msgid "Failed"
 msgstr "Fehlgeschlagen"
@@ -5068,10 +5068,10 @@ msgid "Partial flushing volume set to 0. Multi-color printing may cause color mi
 msgstr "Teilweise Spülvolumen auf 0 eingestellt. Mehrfarbdruck kann zu Farbvermischungen in Modellen führen. Bitte passen Sie die Spüleinstellungen erneut an."
 
 msgid "Click Wiki for help."
-msgstr "Klicken Sie auf Wiki für Hilfe."
+msgstr "Hilfe im Wiki."
 
 msgid "Click here to regroup"
-msgstr "Klicken Sie hier, um neu zu gruppieren"
+msgstr "Neu gruppieren"
 
 msgid "Flushing Volume"
 msgstr "Spülvolumen"
@@ -5117,10 +5117,10 @@ msgid "Auto-record Monitoring"
 msgstr "Überwachung automatisch aufzeichnen"
 
 msgid "Go Live"
-msgstr "Live-Übertragung starten"
+msgstr "Live starten"
 
 msgid "Liveview Retry"
-msgstr "Live-Ansicht erneut versuchen"
+msgstr "Erneut versuchen"
 
 msgid "Resolution"
 msgstr "Auflösung"
@@ -5194,31 +5194,31 @@ msgid "will be closed before creating a new model. Do you want to continue?"
 msgstr "wird geschlossen, bevor ein neues Modell erstellt wird. Möchten Sie fortfahren?"
 
 msgid "Slice plate"
-msgstr "Aktuelle Platte slicen"
+msgstr "Slicen"
 
 msgid "Print plate"
-msgstr "Aktuelle Platte drucken"
+msgstr "Drucken"
 
 msgid "Export G-code file"
-msgstr "G-Code als Datei exportieren"
+msgstr "G-Code exportieren"
 
 msgid "Export plate sliced file"
-msgstr "Aktuelle Platte als Slice-Datei exportieren"
+msgstr "Slice-Datei exportieren"
 
 msgid "Send"
 msgstr "Senden"
 
 msgid "Export all sliced file"
-msgstr "Alle Platten als Slice-Dateien exportieren"
+msgstr "Alle exportieren"
 
 msgid "Print all"
-msgstr "Alle Platten drucken"
+msgstr "Alle drucken"
 
 msgid "Send all"
 msgstr "Alle senden"
 
 msgid "Send to Multi-device"
-msgstr "An mehrere Geräte senden"
+msgstr "An mehrere senden"
 
 msgid "Keyboard Shortcuts"
 msgstr "Tastaturkürzel"
@@ -5388,7 +5388,7 @@ msgid "Quit"
 msgstr "Beenden"
 
 msgid "Undo"
-msgstr "Rückgängig machen"
+msgstr "Rückgängig"
 
 msgid "Redo"
 msgstr "Wiederholen"
@@ -6164,7 +6164,7 @@ msgid "Turning off the lights during the task will cause the failure of AI monit
 msgstr "Das Ausschalten der Lichter während der Aufgabe führt zum Ausfall der KI- Überwachung, wie z.B. Spaghettierkennung. Bitte wählen Sie sorgfältig."
 
 msgid "Keep it On"
-msgstr "Eingeschaltet lassen"
+msgstr "Anlassen"
 
 msgid "Turn it Off"
 msgstr "Ausschalten"
@@ -6249,7 +6249,7 @@ msgid "At least one successful print record of this print profile is required \n
 msgstr "Um eine positive Bewertung (4 oder 5 Sterne) abzugeben, ist mindestens ein erfolgreicher Druck dieses Druckprofils erforderlich."
 
 msgid "click to add machine"
-msgstr "Klicken Sie hier, um eine Maschine hinzuzufügen"
+msgstr "Gerät hinzufügen"
 
 msgid "Status"
 msgstr "Status"
@@ -6560,7 +6560,7 @@ msgstr "Inspektion der ersten Schicht"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Auto-recover from step loss"
-msgstr "Automatische Wiederherstellung bei Positionsverlust (Schrittverlust)"
+msgstr "Wiederherstellung nach Schrittverlust"
 
 msgid "Store Sent Files on External Storage"
 msgstr "Gesendete Dateien auf externem Speicher speichern"
@@ -6764,7 +6764,7 @@ msgid "Synchronize nozzle information and the number of AMS"
 msgstr "Synchronisiere Düseninformationen und die Anzahl der AMS"
 
 msgid "Click to edit preset"
-msgstr "Klicken Sie hier, um das Profil zu bearbeiten"
+msgstr "Profil bearbeiten"
 
 msgid "Project Filaments"
 msgstr "Projektfilamente"
@@ -6849,7 +6849,7 @@ msgid "Collapse sidebar"
 msgstr "Seitenleiste reduzieren"
 
 msgid "Tab"
-msgstr "Registerkarte"
+msgstr "Tab"
 
 #, c-format, boost-format
 msgid "Loading file: %s"
@@ -7735,13 +7735,13 @@ msgid "Clear my choice on..."
 msgstr "Meine Auswahl löschen bei ..."
 
 msgid "Unsaved projects"
-msgstr "nicht gespeicherte Projekte"
+msgstr "Nicht gespeicherte Projekte"
 
 msgid "Clear my choice on the unsaved projects."
 msgstr "Meine Auswahl für nicht gespeicherte Projekte löschen."
 
 msgid "Unsaved presets"
-msgstr "nicht gespeicherte Profile"
+msgstr "Nicht gespeicherte Profile"
 
 msgid "Clear my choice on the unsaved presets."
 msgstr "Meine Auswahl für nicht gespeicherte Profile löschen."
@@ -8344,7 +8344,7 @@ msgid "Your filament grouping method in the sliced file is not optimal."
 msgstr "Ihre Filament-Gruppierungsmethode in der gesliceten Datei ist nicht optimal."
 
 msgid "Auto Bed Leveling"
-msgstr "Automatische Bett-Nivellierung"
+msgstr "Automatische Bettnivellierung"
 
 msgid "This checks the flatness of heatbed. Leveling makes extruded height uniform.\n*Automatic mode: Run a leveling check(about 10 seconds). Skip if surface is fine."
 msgstr "Es wird die Ebenheit des Heizbetts überprüft. Die Nivellierung sorgt für eine gleichmäßige Extrusionshöhe.\n*Automatikmodus: Führen Sie eine Nivellierungsprüfung durch (ca. 10 Sekunden). Überspringen, wenn die Oberfläche in Ordnung ist."
@@ -8574,7 +8574,7 @@ msgid "Send to Printer storage"
 msgstr "An Druckerspeicher senden"
 
 msgid "Try to connect"
-msgstr "Versuchen zu verbinden"
+msgstr "Verbinden"
 
 msgid "Internal Storage"
 msgstr "Interner Speicher"
@@ -8657,7 +8657,7 @@ msgid "Please Find the Pin Code in Account page on printer screen,\n and type in
 msgstr "Bitte finden Sie den Pin-Code auf der Konto-Seite auf dem Druckerbildschirm und geben Sie den Pin-Code unten ein."
 
 msgid "Can't find Pin Code?"
-msgstr "Können Sie den Pin-Code nicht finden?"
+msgstr "Pin-Code nicht gefunden?"
 
 msgid "Pin Code"
 msgstr "Pin-Code"
@@ -8907,7 +8907,7 @@ msgid "First layer speed"
 msgstr "Geschwindigkeit der ersten Schicht"
 
 msgid "Other layers speed"
-msgstr "Geschwindigkeit der restlichen Schichten"
+msgstr "Geschwindigkeit der übrigen Schichten"
 
 msgid "Overhang speed"
 msgstr "Überhanggeschwindigkeit"
@@ -9062,7 +9062,7 @@ msgid "The part cooling fan will run at the minimum fan speed when the estimated
 msgstr "Der Bauteillüfter beginnt mit der Mindestdrehzahl zu laufen, wenn die geschätzte Schichtzeit nicht länger als der dafür eingestellte Wert ist. Wenn die Schichtzeit kürzer als der eingestellte Wert ist, wird die Lüftergeschwindigkeit zwischen der minimalen und maximalen Geschwindigkeit entsprechend der Schichtzeit interpoliert."
 
 msgid "Max fan speed threshold"
-msgstr "Schwellenwert für die maximale Lüftergeschwindigkeit"
+msgstr "Schwelle für maximale Lüfterdrehzahl"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "The part cooling fan will run at maximum speed when the estimated layer time is shorter than the threshold value."
@@ -9239,7 +9239,7 @@ msgid "The Retract before wipe option could be only 100% when using the Firmware
 msgstr "Die Option Rückzug vor Wischen kann nur 100% sein, wenn der Modus Filament Rückzug durch Firmware verwendet wird.\n\nSoll ich es auf 100% setzen, um den Filament Rückzug durch Firmware zu aktivieren?"
 
 msgid "Firmware Retraction"
-msgstr "Filament Rückzug durch Firmware"
+msgstr "Firmware-Rückzug"
 
 msgid "Switching to a printer with different extruder types or numbers will discard or reset changes to extruder or multi-nozzle-related parameters."
 msgstr "Der Wechsel zu einem Drucker mit anderen Extrudertypen oder -anzahlen verwirft oder setzt Änderungen an extruder- oder multi-düsenbezogenen Parametern zurück."
@@ -9536,7 +9536,7 @@ msgid "Some faces don't have color defined."
 msgstr "Einige Flächen haben keine definierte Farbe."
 
 msgid "MTL file exist error, could not find the material:"
-msgstr "Fehler bei der Existenz der mtl-Datei, Material konnte nicht gefunden werden:"
+msgstr "Die MTL-Datei fehlt, das Material wurde nicht gefunden:"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Please check OBJ or MTL file."
@@ -10688,7 +10688,7 @@ msgid "The number of layers on which the elephant foot compensation will be acti
 msgstr "Die Anzahl der Schichten, in denen die Elefantenfußkompensation aktiv ist. Die erste Schicht wird um den Wert der Elefantenfußkompensation verkleinert, dann werden die nächsten Schichten linear weniger verkleinert, bis zur Schicht, die durch diesen Wert angegeben ist."
 
 msgid "Elephant foot layers density"
-msgstr "Dichte der Schichten für die Elefantenfußkompensation"
+msgstr "Dichte der Elefantenfuß-Schichten"
 
 msgid "Density of internal solid infill for Elephant foot layers compensation.\nThe initial value for the second layer is set.\nSubsequent layers become linearly denser by the height specified in elefant_foot_compensation_layers."
 msgstr "Dichte der internen festen Füllung für die Kompensation der Elefantenfuß-Schichten.\nDer Anfangswert für die zweite Schicht wird gesetzt.\nDie nachfolgenden Schichten werden linear dichter, bis zur Höhe, die in elefant_foot_compensation_layers angegeben ist."
@@ -11492,7 +11492,7 @@ msgid "Outer/Inner"
 msgstr "Außen/Innen"
 
 msgid "Inner/Outer/Inner"
-msgstr "Innenwand/Außenwand/Innenwand"
+msgstr "Innen/Außen/Innen"
 
 msgid "Print infill first"
 msgstr "Füllung zuerst drucken"
@@ -11665,10 +11665,10 @@ msgid "Filament map to extruder."
 msgstr "Filament-Zuordnung zum Extruder."
 
 msgid "Auto For Flush"
-msgstr "Automatisch für Spülen"
+msgstr "Automatisch (Spülen)"
 
 msgid "Auto For Match"
-msgstr "Automatisch für Übereinstimmung"
+msgstr "Automatisch (Abgleich)"
 
 msgid "Flush temperature"
 msgstr "Spültemperatur"
@@ -11714,7 +11714,7 @@ msgid "By First filament"
 msgstr "Nach dem ersten Filament"
 
 msgid "By Highest Temp"
-msgstr "Nach der höchsten Temperatur"
+msgstr "Nach höchster Temperatur"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Filament diameter is used to calculate extrusion variables in G-code, so it is important that this is accurate and precise."
@@ -15943,7 +15943,7 @@ msgid "Filename"
 msgstr "Dateiname"
 
 msgid "Cancel selected"
-msgstr "Ausgewählten abbrechen"
+msgstr "Auswahl abbrechen"
 
 msgid "Show error message"
 msgstr "Fehlermeldung Anzeigen"
@@ -16945,7 +16945,7 @@ msgid "Sent Time"
 msgstr "Sendezeit"
 
 msgid "There are no tasks to be sent!"
-msgstr "Es gibt keine Aufgaben, die gesendet werden sollen!"
+msgstr "Keine Aufgaben zum Senden."
 
 msgid "No historical tasks!"
 msgstr "Keine historischen Aufgaben!"

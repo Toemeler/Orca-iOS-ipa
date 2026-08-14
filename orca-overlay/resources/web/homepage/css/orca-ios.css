@@ -64,3 +64,22 @@
 #BtnArea .BtnShortcut {
     display: none !important;
 }
+
+/* -- The recent files board, which the native gallery replaces.
+      #RightBoard is the whole right hand side of this page: the "recent open"
+      heading, the Clear all button and #FileList, the grid of .FileItem divs
+      home.js writes. All three are drawn by UIKit now (patch 0430) - a
+      UICollectionView in the tab bar controller's view, above this page - so
+      that a long press opens the system's context menu, a pointer hovering
+      over a tile gets the system's hover effect, and several projects can be
+      picked at once. None of that is reachable in a web page on a tablet:
+      there is no right click for the jQuery context menu #recnet_context_menu
+      is bound to, and no way to express a multiple selection.
+
+      The page itself is deliberately still loaded and still running. The plus
+      in the corner calls OnClickNewProject() and OnClickOpenProject() on it,
+      and those work whether or not anything on the page is visible.
+      Delete this block to bring the web list back. ------------------------- */
+#RightBoard {
+    display: none !important;
+}

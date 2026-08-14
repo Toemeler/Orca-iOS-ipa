@@ -7704,3 +7704,156 @@ pages before it exist — hence the Monitor check, and when they do not exist
 `show_device()` is about to build the whole set anyway. And removing the page
 while it is the selected one takes the notebook with it, so it steps to the
 3D editor first.
+
+## 0231, 0430, 0431 — the menu, the gallery and the drop
+
+Three reports, one shape between them: the parts of this application that a
+tablet reaches by touching something were never finished, because wx does not
+implement them on iOS and the home page is a web page.
+
+### 0231 — every context menu in the application did nothing
+
+**`wxMenuIPhoneImpl::PopUp()` is `#if 0 // TODO wxIOS` in wxWidgets 3.3.2.**
+The whole Cocoa body is commented out and the function returns having shown
+nothing, so `wxWindow::PopupMenu()` reports success and no menu appears. That
+is every context menu Orca has: the object menu with delete, duplicate, "fill
+bed with copies", "export as STL" and the per-object settings; the plate menu;
+the filament menu behind the edit button in the sidebar. Patch 0380 taught the
+3D canvas to turn a long press into the right click those menus hang off, and
+it has been correctly synthesising a right click into a function that draws
+nothing ever since.
+
+There is no error and no log line for this, which is why it survived four
+months of testing on device: the menu is *asked for* on every long press, and
+the answer is silence.
+
+**Why the menu is a `UIAlertController` and not a `UIMenu`.** wx already turns
+a wxMenu into a real UIMenu — `wxMenuIPhoneImpl::GetHMenu()` builds the tree
+and `wxMenuItemImpl::Create` wires each `UIAction` to
+`HandleCommandProcess(peer)`. It cannot be used, because **UIKit has no API
+that presents a UIMenu programmatically.** A UIMenu appears only when the
+system's own gesture drives it — a `UIButton` with `showsMenuAsPrimaryAction`,
+a `UIBarButtonItem`, a `UIContextMenuInteraction` the user has long-pressed.
+`PopupMenu()` is a command: *show this menu, at this point, now*. Nothing in
+UIMenu answers a command.
+
+`UIAlertController` in its action-sheet style does. It is presentable at an
+arbitrary point, and at regular width — which an iPad always is — UIKit draws
+it as a popover anchored exactly where the finger was. Long menus scroll,
+disabled items are drawn disabled, `wxID_DELETE`/`wxID_REMOVE`/`wxID_CLEAR`
+come out red, check items carry a ✓ in the title (there is no checked style on
+a `UIAlertAction` and the key that fakes one is private), and a submenu opens
+as a second sheet at the same point — dispatched a turn late, because
+presenting from a controller that is still dismissing the first sheet is the
+"already presenting" exception.
+
+**The invoking window has to be put back.** `wxWindowBase::PopupMenu()` sets
+the menu's invoking window for the duration of `DoPopupMenu()` and clears it on
+the way out. On every other platform that is the duration of the menu, because
+`DoPopupMenu()` runs its own event loop and returns only once an item has been
+chosen. Here the sheet is presented and the call returns immediately, so by the
+time the handler runs the menu no longer knows which window it belongs to and
+`SendEvent()` would deliver the command to nothing. A
+`wxMenuInvokingWindowSetter` inside the handler restores it for the send.
+
+A view that wants the blurred UIMenu with icons can still have one by owning a
+`UIContextMenuInteraction` of its own — 0430's gallery does exactly that. This
+is the floor: there is no longer a menu in this port that does nothing.
+
+### 0430 — the home page is a gallery
+
+The recent projects were `<div class="FileItem">` rows written by
+`ShowRecentFileList()` into a WKWebView, with a hand-drawn
+`#recnet_context_menu` bound to jQuery's `contextmenu`. On a tablet none of it
+is reachable. There is no right click, so the menu has no trigger. There is no
+way for a web page to draw the hover state the platform draws for a pointer.
+And there is no way to express "these four projects" at all.
+
+`#RightBoard` is hidden (`css/orca-ios.css`) and a `UICollectionView` stands in
+its place, in the tab bar controller's view beside the plus and for the same
+reason 0400 gives: wx hangs gesture recognisers off every view it wraps, and a
+UIKit control buried under those never gets a clean touch.
+
+| what it does | what draws it |
+|---|---|
+| hover over a tile | `UIHoverStyle` with `UIHoverLiftEffect` — the pointer lifts the tile, nothing here tracks the pointer |
+| long press, or a trackpad's secondary click | `UIContextMenuInteraction`, the collection view's own: Open, Share…, Export…, Duplicate, Rename…, Remove from list, Delete |
+| Select, the chip left of the plus | selection mode: the tiles become checkboxes and a glass bar rises with Share, Export, Duplicate, Select all, Delete |
+| the grid itself | `UICollectionViewCompositionalLayout`, as many columns as fit at 176 pt, reflowing on rotation and in Split View with nothing being told it happened |
+
+**Share and Export are different things and both are here.** Share is
+`UIActivityViewController` — AirDrop, Messages, another app. Export is
+`UIDocumentPickerViewController` in exporting mode, `asCopy:YES`: put a copy
+where I choose, and leave the original where the recent list says it is.
+
+**"Remove from list" and "Delete" are different things too**, and the web
+page's menu only ever had the first while calling it *clear* — which is why a
+project "deleted" from the home page kept coming back the next time it was
+opened. One drops the entry, the other drops the entry *and* unlinks the file,
+in that order, because `remove_recent_project()` writes the whole list back to
+the app config and an entry pointing at a file that has just been unlinked
+would be written out with it.
+
+**Where the data comes from.** `MainFrame::orca_ios_push_gallery()`, called
+from `WebViewPanel::SendRecentList` — the one function every path that changes
+the recent list already ends in, so the grid and the page can never disagree.
+The thumbnails are the bytes `bbs_3mf_get_thumbnail()` already cached in
+`FileHistory::m_thumbnails`, handed over as PNG rather than as the base64
+`data:` URL the web page needed: going through base64 to decode it again on the
+other side is the web page's detour taken for no reason.
+
+The page is deliberately still loaded and still running. The plus calls
+`OnClickNewProject()` and `OnClickOpenProject()` on it, and those work whether
+or not anything on the page is visible.
+
+### 0431 — a drop, anywhere in the window
+
+On the desktop Orca takes files through `PlaterDropTarget`, a
+`wxFileDropTarget` on the 3D canvas. Neither half of that survives the port.
+
+**It is on one view.** A drag on iPadOS comes out of the Files app, out of
+Safari, out of another application's share sheet, and it is let go of wherever
+the finger happens to be — which on a five-page application is usually not the
+plate.
+
+**And wx cannot see it at all.** The iPhone port has no drag-and-drop plumbing:
+`wxDropTarget` is not implemented, so a file dragged onto this application
+bounced back to where it came from with no indication that anything had been
+refused.
+
+So the interaction is a `UIDropInteraction` on the view the tab bar controller
+owns — the topmost thing in the window, spanning all of it — and what the drop
+*means* is read off the page it landed on:
+
+| where it lands | what happens |
+|---|---|
+| Prepare, Preview | the model joins the project that is open |
+| Home, Device, anything else | it gets a project of its own, and the application goes there to show it |
+| **any `.3mf`, anywhere** | a project, always — a 3MF *is* a project, with its plates, its presets and its settings, and merging one into another silently throws all of that away |
+
+Accepted: `3mf stl step stp obj amf oltp svg zip drc ply gcode g` — the same
+set as `Plater::load_files`' own regex plus the G-code pair it keeps
+separately. Accepting a file the loader will silently drop is worse than
+refusing the drag, because the refusal is the only feedback a drag gives.
+
+**The bytes are copied before anything else happens.** What a drop hands over
+is a URL into a staging area that is valid for the length of the callback and
+no longer, and a project remembers its path (0382). A `.3mf` is copied into
+`Documents/Projects` because that is where projects live; everything else into
+`Documents/Imports`, so Documents does not fill up with parts that were never
+projects. A second copy of the same name is numbered rather than overwriting
+the one that may be open.
+
+A drag carrying several files is one action, not several: a `dispatch_group`
+waits for every item to load, sorts them the way the Files app showed them,
+and hands the whole set over in one `orca_ios_drop_begin/add/commit`.
+
+### What is not verified
+
+None of this has been run. The three to look at first on device are: whether
+the action sheet from 0231 comes up under the finger on a long press on the
+plate (and whether the item it then runs actually reaches Orca — that is the
+invoking-window restore); whether the gallery installs at all, which the log
+says outright as `orca-ios-gallery: installed under …`; and whether a drag from
+the Files app is accepted on each of the five pages, which the log names as
+`orca-ios-drop: N file(s) on page P`.

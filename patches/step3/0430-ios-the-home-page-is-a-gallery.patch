@@ -1,0 +1,1253 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 3ea134b3..c706f46f 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -125,6 +125,14 @@ bool orca_ios_is_downloaded_copy(const std::string &path)
+ namespace Slic3r { namespace GUI {
+ // src/slic3r/GUI/ios_webview_support.mm
+ std::string orca_ios_repair_container_path(const std::string &path);
++// src/slic3r/GUI/ios_webview_support.mm - the native home gallery. Described
++// one entry at a time, the way the toolbar and the slice capsule are, so that
++// nothing but const char* and a byte count has to be agreed between the two
++// translation units.
++void orca_ios_gallery_begin();
++void orca_ios_gallery_add(const char *path, const char *name, const char *when,
++                          const void *png, size_t png_len);
++void orca_ios_gallery_commit();
+ } }
+ #endif
+ 
+@@ -5196,6 +5204,12 @@ void MainFrame::remove_from_recent_projects(const wxString& filename)
+     BOOST_LOG_TRIVIAL(error) << "orca-ios-recent: removed " << into_u8(filename);
+ }
+ 
++const std::string &MainFrame::FileHistory::GetThumbnailPng(size_t index) const
++{
++    static const std::string none;
++    return index < m_thumbnails.size() ? m_thumbnails[index] : none;
++}
++
+ std::wstring MainFrame::FileHistory::GetThumbnailUrl(int index) const
+ {
+     if (m_thumbnails[index].empty()) return L"";
+@@ -5289,6 +5303,167 @@ void MainFrame::get_recent_projects(boost::property_tree::wptree &tree, int imag
+     }
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++// -- the native home gallery ------------------------------------------------
++//
++// The home page's file list is hidden on this port (css/orca-ios.css) and a
++// UICollectionView stands in its place. It needs the same three fields the
++// page was given, plus the thumbnail as PNG bytes rather than as a base64
++// data: URL, and it needs them from the same event - so this is called from
++// WebViewPanel::SendRecentList and from nowhere else.
++//
++// The filtering and the healing are get_recent_projects()'s, for the reason
++// given there: an entry from before the last install names a container
++// directory that no longer exists, and a MakerWorld staging copy is not a
++// project. Duplicated rather than shared because the two differ in what they
++// do with a missing file - the page prints "File is missing" into the date and
++// keeps the row, and so does this, so a project that is only temporarily out
++// of reach does not silently vanish from the grid.
++void MainFrame::orca_ios_push_gallery()
++{
++    orca_ios_gallery_begin();
++    for (size_t i = 0; i < m_recent_projects.GetCount(); ++i) {
++        std::string proj = into_u8(m_recent_projects.GetHistoryFile(i));
++        if (orca_ios_is_downloaded_copy(proj))
++            continue;
++        proj = orca_ios_repair_container_path(proj);
++
++        boost::system::error_code ec;
++        const std::time_t t = boost::filesystem::last_write_time(proj, ec);
++        const std::string when = ec ? into_u8(_L("File is missing"))
++                                    : into_u8(wxDateTime(t).FormatISOCombined(' '));
++        const std::string name = boost::filesystem::path(proj).stem().string();
++        const std::string &png = m_recent_projects.GetThumbnailPng(i);
++
++        orca_ios_gallery_add(proj.c_str(), name.c_str(), when.c_str(),
++                             png.empty() ? nullptr : png.data(), png.size());
++    }
++    orca_ios_gallery_commit();
++}
++
++// What the gallery's context menu and its selection bar do, in the words the
++// rest of the application already has for them. Everything here is deferred:
++// each one is called from inside a UIKit action, several of them open a modal
++// window, and 0230 covers what a modal loop does to the view it was opened
++// from.
++void orca_ios_gallery_open(const char *path)
++{
++    if (path == nullptr)
++        return;
++    const std::string p(path);
++    wxGetApp().CallAfter([p] { wxGetApp().request_open_project(p); });
++}
++
++// Out of the list, leaving the file where it is.
++void orca_ios_gallery_forget(const char *path)
++{
++    if (path == nullptr)
++        return;
++    const std::string p(path);
++    wxGetApp().CallAfter([p] { wxGetApp().request_remove_project(p); });
++}
++
++// Out of the list AND off the disk. Two steps, in that order: the entry has to
++// go first, because remove_recent_project() writes the whole list back to the
++// app config and an entry pointing at a file that has just been unlinked would
++// be written out with it.
++void orca_ios_gallery_delete(const char *path)
++{
++    if (path == nullptr)
++        return;
++    const std::string p(path);
++    wxGetApp().CallAfter([p] {
++        wxGetApp().request_remove_project(p);
++        boost::system::error_code ec;
++        boost::filesystem::remove(p, ec);
++        if (ec)
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-gallery: could not delete " << p
++                                     << ": " << ec.message();
++        else
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-gallery: deleted " << p;
++    });
++}
++
++// A copy beside the original, named the way the Files app names one, and put
++// on the home page straight away - a duplicate that cannot be seen until the
++// next launch is a duplicate nobody believes happened.
++void orca_ios_gallery_duplicate(const char *path)
++{
++    if (path == nullptr)
++        return;
++    const std::string p(path);
++    wxGetApp().CallAfter([p] {
++        const boost::filesystem::path src(p);
++        boost::system::error_code ec;
++        boost::filesystem::path dest;
++        for (int n = 2; n < 1000; ++n) {
++            const std::string suffix = n == 2 ? " copy" : " copy " + std::to_string(n - 1);
++            dest = src.parent_path() / (src.stem().string() + suffix + src.extension().string());
++            if (!boost::filesystem::exists(dest, ec))
++                break;
++        }
++        boost::filesystem::copy_file(src, dest, ec);
++        if (ec) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-gallery: could not duplicate " << p
++                                     << ": " << ec.message();
++            return;
++        }
++        if (wxGetApp().mainframe != nullptr)
++            wxGetApp().mainframe->add_to_recent_projects(from_u8(dest.string()));
++    });
++}
++
++// The new name is a stem: the extension is this application's business, and a
++// project that stops being a .3mf stops being openable.
++void orca_ios_gallery_rename(const char *path, const char *new_stem)
++{
++    if (path == nullptr || new_stem == nullptr || *new_stem == '\0')
++        return;
++    const std::string p(path), stem(new_stem);
++    wxGetApp().CallAfter([p, stem] {
++        const boost::filesystem::path src(p);
++        const boost::filesystem::path dest = src.parent_path() /
++                                             (stem + src.extension().string());
++        if (dest == src)
++            return;
++        boost::system::error_code ec;
++        if (boost::filesystem::exists(dest, ec)) {
++            show_error(nullptr, _L("A project with that name is already there."));
++            return;
++        }
++        boost::filesystem::rename(src, dest, ec);
++        if (ec) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-gallery: could not rename " << p
++                                     << ": " << ec.message();
++            return;
++        }
++        if (wxGetApp().mainframe != nullptr) {
++            wxGetApp().mainframe->remove_from_recent_projects(from_u8(p));
++            wxGetApp().mainframe->add_to_recent_projects(from_u8(dest.string()));
++        }
++    });
++}
++
++void orca_ios_gallery_new_project()
++{
++    wxGetApp().CallAfter([] { wxGetApp().request_open_project("<new>"); });
++}
++
++void orca_ios_gallery_import()
++{
++    wxGetApp().CallAfter([] { wxGetApp().request_open_project({}); });
++}
++
++// The grid asking to be filled - on install, and after anything it did itself
++// that changes the list.
++void orca_ios_gallery_refresh()
++{
++    if (wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->orca_ios_push_gallery();
++}
++
++#endif // __WXOSX_IPHONE__
++
+ void MainFrame::open_recent_project(size_t file_id, wxString const & filename)
+ {
+     if (file_id == size_t(-1)) {
+diff --git a/src/slic3r/GUI/MainFrame.hpp b/src/slic3r/GUI/MainFrame.hpp
+index b5e5ff56..15fc74ab 100644
+--- a/src/slic3r/GUI/MainFrame.hpp
++++ b/src/slic3r/GUI/MainFrame.hpp
+@@ -164,6 +164,11 @@ class MainFrame : public DPIFrame
+     {
+         FileHistory(int max) : wxFileHistory(max) {}
+         std::wstring GetThumbnailUrl(int index) const;
++        // The same bytes GetThumbnailUrl() base64-encodes for the web page.
++        // The native gallery wants the PNG itself - going through base64 to
++        // decode it again on the other side would be the web page's detour
++        // taken for no reason.
++        const std::string &GetThumbnailPng(size_t index) const;
+ 
+         virtual void AddFileToHistory(const wxString &file);
+         virtual void RemoveFileFromHistory(size_t i);
+@@ -334,6 +339,10 @@ public:
+     // no vtable change, the trap 0379 had to undo.
+     void        orca_ios_sync_side_tools();
+     void        orca_ios_run_side_tool(const char *id);
++    // The recent projects, described to the native gallery that replaces the
++    // home page's file list. Called from WebViewPanel::SendRecentList, so the
++    // grid and the page are always fed from the same event.
++    void        orca_ios_push_gallery();
+ #endif
+     void        request_select_tab(TabPosition pos);
+     int         get_calibration_curr_tab();
+diff --git a/src/slic3r/GUI/WebViewDialog.cpp b/src/slic3r/GUI/WebViewDialog.cpp
+index 98f1077b..0a5d5a2e 100644
+--- a/src/slic3r/GUI/WebViewDialog.cpp
++++ b/src/slic3r/GUI/WebViewDialog.cpp
+@@ -434,6 +434,13 @@ void WebViewPanel::SetLoginPanelVisibility(bool bshow)
+ }
+ void WebViewPanel::SendRecentList(int images)
+ {
++#ifdef __WXOSX_IPHONE__
++    // The native grid that stands in for the page's file list. Fed from here
++    // rather than from its own timer so that the two can never disagree: every
++    // path that changes the recent list already ends up in this function.
++    if (wxGetApp().mainframe != nullptr)
++        wxGetApp().mainframe->orca_ios_push_gallery();
++#endif
+     boost::property_tree::wptree req;
+     boost::property_tree::wptree data;
+     wxGetApp().mainframe->get_recent_projects(data, images);
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index dfa406de..06c33a38 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -775,6 +775,798 @@ static void orca_ios_home_run(NSString *script)
+     }];
+ }
+ 
++// -- the home gallery ------------------------------------------------------
++//
++// WHAT THIS REPLACES.
++//
++// The home page draws the recent projects as `<div class="FileItem">` rows in
++// a WKWebView (resources/web/homepage/js/home.js, ShowRecentFileList) and hangs
++// a hand-drawn `#recnet_context_menu` off a jQuery contextmenu handler. On a
++// tablet none of that is reachable: there is no right click to open the menu,
++// no pointer hover state a web page can draw the way the platform draws one,
++// and no way to pick several files at once. The list is hidden
++// (css/orca-ios.css) and this is what stands in its place - a
++// UICollectionView, so the long press, the hover, the multiple selection, the
++// drag and the share sheet are all the system's own and behave the way they do
++// in every other application on the device.
++//
++// It is fed from MainFrame::orca_ios_push_gallery(), which is called from
++// WebViewPanel::SendRecentList - the one function every path that changes the
++// recent list already ends in. Nothing here polls.
++//
++// WHERE IT LIVES. In the tab bar controller's view, beside the plus, and for
++// the same reason (see orca_ios_plus_host): wx hangs gesture recognisers off
++// every view it wraps, and a UIKit control buried under those does not get a
++// clean touch. That also means it is not inside the home page, so its
++// visibility has to follow the notebook - orca_ios_gallery_update() does that
++// from the tab bar's sync, exactly as the plus does.
++
++// src/slic3r/GUI/MainFrame.cpp - what a row does when it is chosen, in the
++// words the application already has for them. Everything here is deferred on
++// that side, because these are called from inside UIKit actions.
++namespace Slic3r { namespace GUI {
++void orca_ios_gallery_open(const char *path);
++void orca_ios_gallery_forget(const char *path);
++void orca_ios_gallery_delete(const char *path);
++void orca_ios_gallery_duplicate(const char *path);
++void orca_ios_gallery_rename(const char *path, const char *new_stem);
++void orca_ios_gallery_new_project();
++void orca_ios_gallery_import();
++void orca_ios_gallery_refresh();
++// src/slic3r/GUI/MainFrame.cpp - the tab to land on once a project is open.
++void orca_ios_select_prepare();
++} }
++
++static const CGFloat kOrcaTileMin    = 176;  // the narrowest a tile may get
++static const CGFloat kOrcaTileGap    = 16;
++static const CGFloat kOrcaTileCorner = 14;
++static const CGFloat kOrcaGalleryPad = 20;
++
++// One project, as the C++ side describes it.
++@interface OrcaProject : NSObject
++@property (nonatomic, copy)   NSString *path;
++@property (nonatomic, copy)   NSString *name;
++@property (nonatomic, copy)   NSString *when;
++@property (nonatomic, retain) UIImage  *thumb;
++@end
++
++@implementation OrcaProject
++- (void)dealloc
++{
++    [_path release];
++    [_name release];
++    [_when release];
++    [_thumb release];
++    [super dealloc];
++}
++@end
++
++// -- a tile -----------------------------------------------------------------
++
++@interface OrcaProjectCell : UICollectionViewCell
++@property (nonatomic, retain) UIView      *card;
++@property (nonatomic, retain) UIImageView *shot;
++@property (nonatomic, retain) UILabel     *title;
++@property (nonatomic, retain) UILabel     *subtitle;
++@property (nonatomic, retain) UIImageView *tick;
++- (void)fillWith:(OrcaProject *)project selecting:(BOOL)selecting picked:(BOOL)picked;
++@end
++
++@implementation OrcaProjectCell
++
++- (instancetype)initWithFrame:(CGRect)frame
++{
++    self = [super initWithFrame:frame];
++    if (self == nil)
++        return nil;
++
++    _card                  = [[UIView alloc] initWithFrame:CGRectZero];
++    _card.backgroundColor  = [UIColor secondarySystemBackgroundColor];
++    _card.layer.cornerRadius  = kOrcaTileCorner;
++    _card.layer.cornerCurve   = kCACornerCurveContinuous;
++    _card.layer.borderWidth   = 1.0 / [UIScreen mainScreen].scale;
++    _card.layer.borderColor   = [UIColor separatorColor].CGColor;
++    _card.clipsToBounds       = YES;
++    _card.translatesAutoresizingMaskIntoConstraints = NO;
++
++    _shot             = [[UIImageView alloc] initWithFrame:CGRectZero];
++    _shot.contentMode = UIViewContentModeScaleAspectFit;
++    _shot.translatesAutoresizingMaskIntoConstraints = NO;
++
++    _title                  = [[UILabel alloc] initWithFrame:CGRectZero];
++    _title.font             = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
++    _title.textColor        = [UIColor labelColor];
++    _title.lineBreakMode    = NSLineBreakByTruncatingMiddle;
++    _title.translatesAutoresizingMaskIntoConstraints = NO;
++
++    _subtitle               = [[UILabel alloc] initWithFrame:CGRectZero];
++    _subtitle.font          = [UIFont preferredFontForTextStyle:UIFontTextStyleCaption1];
++    _subtitle.textColor     = [UIColor secondaryLabelColor];
++    _subtitle.translatesAutoresizingMaskIntoConstraints = NO;
++
++    _tick                   = [[UIImageView alloc] initWithFrame:CGRectZero];
++    _tick.tintColor         = [UIColor whiteColor];
++    _tick.hidden            = YES;
++    _tick.translatesAutoresizingMaskIntoConstraints = NO;
++
++    [self.contentView addSubview:_card];
++    [_card addSubview:_shot];
++    [self.contentView addSubview:_title];
++    [self.contentView addSubview:_subtitle];
++    [self.contentView addSubview:_tick];
++
++    UIView *const content = self.contentView;
++    [NSLayoutConstraint activateConstraints:@[
++        [_card.leadingAnchor  constraintEqualToAnchor:content.leadingAnchor],
++        [_card.trailingAnchor constraintEqualToAnchor:content.trailingAnchor],
++        [_card.topAnchor      constraintEqualToAnchor:content.topAnchor],
++        [_card.heightAnchor   constraintEqualToAnchor:_card.widthAnchor multiplier:0.72],
++
++        [_shot.leadingAnchor  constraintEqualToAnchor:_card.leadingAnchor  constant:6],
++        [_shot.trailingAnchor constraintEqualToAnchor:_card.trailingAnchor constant:-6],
++        [_shot.topAnchor      constraintEqualToAnchor:_card.topAnchor      constant:6],
++        [_shot.bottomAnchor   constraintEqualToAnchor:_card.bottomAnchor   constant:-6],
++
++        [_title.leadingAnchor  constraintEqualToAnchor:content.leadingAnchor constant:2],
++        [_title.trailingAnchor constraintEqualToAnchor:content.trailingAnchor constant:-2],
++        [_title.topAnchor      constraintEqualToAnchor:_card.bottomAnchor constant:7],
++
++        [_subtitle.leadingAnchor  constraintEqualToAnchor:_title.leadingAnchor],
++        [_subtitle.trailingAnchor constraintEqualToAnchor:_title.trailingAnchor],
++        [_subtitle.topAnchor      constraintEqualToAnchor:_title.bottomAnchor constant:1],
++
++        [_tick.trailingAnchor constraintEqualToAnchor:_card.trailingAnchor constant:-8],
++        [_tick.bottomAnchor   constraintEqualToAnchor:_card.bottomAnchor   constant:-8],
++        [_tick.widthAnchor    constraintEqualToConstant:26],
++        [_tick.heightAnchor   constraintEqualToConstant:26],
++    ]];
++
++    // THE HOVER, and it is the platform's rather than ours. A trackpad, a
++    // mouse or an Apple Pencil hovering over a tile lifts it the way the
++    // pointer lifts an icon on the Home Screen; nothing here has to track the
++    // pointer, draw a highlight or undo one. Off the card rather than the
++    // whole cell so the label underneath does not lift with it.
++    self.hoverStyle = [UIHoverStyle styleWithEffect:[UIHoverLiftEffect effect]
++                                              shape:[UIShape rectShapeWithCornerRadius:kOrcaTileCorner]];
++    return self;
++}
++
++- (void)dealloc
++{
++    [_card release];
++    [_shot release];
++    [_title release];
++    [_subtitle release];
++    [_tick release];
++    [super dealloc];
++}
++
++- (void)fillWith:(OrcaProject *)project selecting:(BOOL)selecting picked:(BOOL)picked
++{
++    self.title.text    = project.name;
++    self.subtitle.text = project.when;
++    self.shot.image    = project.thumb;
++
++    // A project with no thumbnail is a project whose 3MF could not be read -
++    // it is missing, or it was written by something that did not put a preview
++    // in it. Say which of those with the glyph rather than leaving a grey box.
++    if (project.thumb == nil) {
++        UIImageSymbolConfiguration *const cfg =
++            [UIImageSymbolConfiguration configurationWithPointSize:34
++                                                            weight:UIImageSymbolWeightRegular];
++        self.shot.image     = [UIImage systemImageNamed:@"cube.transparent" withConfiguration:cfg];
++        self.shot.tintColor = [UIColor tertiaryLabelColor];
++    }
++
++    self.tick.hidden = !selecting;
++    if (selecting) {
++        UIImageSymbolConfiguration *const cfg =
++            [UIImageSymbolConfiguration configurationWithPointSize:24
++                                                            weight:UIImageSymbolWeightSemibold];
++        self.tick.image = [UIImage systemImageNamed:picked ? @"checkmark.circle.fill" : @"circle"
++                                  withConfiguration:cfg];
++        self.tick.tintColor = picked ? orca_ios_accent() : [UIColor secondaryLabelColor];
++    }
++    self.card.layer.borderColor = (selecting && picked ? orca_ios_accent()
++                                                       : [UIColor separatorColor]).CGColor;
++    self.card.layer.borderWidth = (selecting && picked ? 2.0
++                                                       : 1.0 / [UIScreen mainScreen].scale);
++}
++
++@end
++
++// -- the grid ---------------------------------------------------------------
++
++@interface OrcaGallery : UIView <UICollectionViewDataSource, UICollectionViewDelegate>
++@property (nonatomic, retain) UICollectionView            *grid;
++@property (nonatomic, retain) NSMutableArray<OrcaProject *> *items;
++@property (nonatomic, retain) NSMutableSet<NSString *>    *picked;
++@property (nonatomic, retain) UILabel                     *heading;
++@property (nonatomic, retain) UILabel                     *nothing;
++@property (nonatomic, retain) UIVisualEffectView           *bar;
++@property (nonatomic, assign) UIStackView                  *barRow;   // the bar holds it
++@property (nonatomic, assign) BOOL                         selecting;
+++ (UICollectionViewLayout *)layout;
++- (void)setProjects:(NSArray<OrcaProject *> *)projects;
++- (void)toggleSelecting;
++@end
++
++// The controller a sheet, a picker or a share sheet has to be presented from:
++// the deepest one that is not already presenting something.
++static UIViewController *orca_ios_presenter(UIView *view)
++{
++    UIWindow *const window = view != nil ? view.window : nil;
++    UIViewController *vc = window != nil ? window.rootViewController : nil;
++    while (vc != nil && vc.presentedViewController != nil)
++        vc = vc.presentedViewController;
++    return vc;
++}
++
++@implementation OrcaGallery
++
++- (instancetype)initWithFrame:(CGRect)frame
++{
++    self = [super initWithFrame:frame];
++    if (self == nil)
++        return nil;
++
++    _items  = [[NSMutableArray alloc] init];
++    _picked = [[NSMutableSet alloc] init];
++
++    // The page behind this is a WKWebView with nothing left on it, so the
++    // gallery paints the background it stands on rather than letting the web
++    // page's white show through under a dark appearance.
++    self.backgroundColor = [UIColor systemBackgroundColor];
++
++    _heading           = [[UILabel alloc] initWithFrame:CGRectZero];
++    _heading.font      = [UIFont preferredFontForTextStyle:UIFontTextStyleTitle2];
++    _heading.textColor = [UIColor labelColor];
++    _heading.text      = orca_ios_tr("Recent projects");
++    _heading.translatesAutoresizingMaskIntoConstraints = NO;
++
++    _nothing               = [[UILabel alloc] initWithFrame:CGRectZero];
++    _nothing.font          = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
++    _nothing.textColor     = [UIColor secondaryLabelColor];
++    _nothing.textAlignment = NSTextAlignmentCenter;
++    _nothing.numberOfLines = 0;
++    _nothing.text          = orca_ios_tr("No projects yet. Use + to make one, or drop a model here.");
++    _nothing.hidden        = YES;
++    _nothing.translatesAutoresizingMaskIntoConstraints = NO;
++
++    _grid = [[UICollectionView alloc] initWithFrame:CGRectZero
++                               collectionViewLayout:[OrcaGallery layout]];
++    _grid.backgroundColor           = [UIColor clearColor];
++    _grid.dataSource                = self;
++    _grid.delegate                  = self;
++    _grid.alwaysBounceVertical      = YES;
++    _grid.allowsMultipleSelection   = NO;
++    [_grid registerClass:[OrcaProjectCell class] forCellWithReuseIdentifier:@"tile"];
++    _grid.translatesAutoresizingMaskIntoConstraints = NO;
++
++    [self addSubview:_heading];
++    [self addSubview:_grid];
++    [self addSubview:_nothing];
++
++    [NSLayoutConstraint activateConstraints:@[
++        [_heading.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:kOrcaGalleryPad],
++        [_heading.topAnchor     constraintEqualToAnchor:self.topAnchor],
++
++        [_grid.leadingAnchor  constraintEqualToAnchor:self.leadingAnchor  constant:kOrcaGalleryPad],
++        [_grid.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-kOrcaGalleryPad],
++        [_grid.topAnchor      constraintEqualToAnchor:_heading.bottomAnchor constant:10],
++        [_grid.bottomAnchor   constraintEqualToAnchor:self.bottomAnchor],
++
++        [_nothing.centerXAnchor constraintEqualToAnchor:_grid.centerXAnchor],
++        [_nothing.centerYAnchor constraintEqualToAnchor:_grid.centerYAnchor],
++        [_nothing.widthAnchor   constraintLessThanOrEqualToAnchor:_grid.widthAnchor multiplier:0.7],
++    ]];
++
++    return self;
++}
++
++- (void)dealloc
++{
++    [_grid release];
++    [_items release];
++    [_picked release];
++    [_heading release];
++    [_nothing release];
++    [_bar release];
++    [super dealloc];
++}
++
++// As many columns as fit at kOrcaTileMin or wider, and the tile height follows
++// the width the columns worked out to - so the grid reflows on rotation and on
++// a split screen without anything here being told that it happened.
+++ (UICollectionViewLayout *)layout
++{
++    return [[[UICollectionViewCompositionalLayout alloc] initWithSectionProvider:
++        ^NSCollectionLayoutSection *(NSInteger section, id<NSCollectionLayoutEnvironment> env) {
++            (void) section;
++            const CGFloat width = env.container.effectiveContentSize.width;
++            NSInteger cols = (NSInteger) floor((width + kOrcaTileGap) / (kOrcaTileMin + kOrcaTileGap));
++            if (cols < 2)
++                cols = 2;
++            const CGFloat tile   = (width - kOrcaTileGap * (cols - 1)) / cols;
++            const CGFloat height = floor(tile * 0.72) + 46;
++
++            NSCollectionLayoutItem *const item = [NSCollectionLayoutItem itemWithLayoutSize:
++                [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
++                                              heightDimension:[NSCollectionLayoutDimension fractionalHeightDimension:1.0]]];
++            NSCollectionLayoutGroup *const group = [NSCollectionLayoutGroup horizontalGroupWithLayoutSize:
++                [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
++                                              heightDimension:[NSCollectionLayoutDimension absoluteDimension:height]]
++                                                                                        repeatingSubitem:item
++                                                                                                   count:(int) cols];
++            group.interItemSpacing = [NSCollectionLayoutSpacing fixedSpacing:kOrcaTileGap];
++
++            NSCollectionLayoutSection *const sec = [NSCollectionLayoutSection sectionWithGroup:group];
++            sec.interGroupSpacing = kOrcaTileGap;
++            sec.contentInsets     = NSDirectionalEdgeInsetsMake(2, 0, 28, 0);
++            return sec;
++        }] autorelease];
++}
++
++- (void)setProjects:(NSArray<OrcaProject *> *)projects
++{
++    [self.items setArray:projects];
++
++    // Anything picked that is no longer listed stops being picked - a delete
++    // that took several rows would otherwise leave the count wrong.
++    NSMutableSet *const live = [NSMutableSet set];
++    for (OrcaProject *p in self.items)
++        [live addObject:p.path];
++    [self.picked intersectSet:live];
++
++    self.nothing.hidden = self.items.count > 0;
++    [self.grid reloadData];
++    [self syncBar];
++}
++
++- (OrcaProject *)projectAt:(NSIndexPath *)path
++{
++    const NSUInteger i = (NSUInteger) path.item;
++    return i < self.items.count ? self.items[i] : nil;
++}
++
++- (NSURL *)urlFor:(OrcaProject *)project
++{
++    return project != nil ? [NSURL fileURLWithPath:project.path] : nil;
++}
++
++// -- the data ---------------------------------------------------------------
++
++- (NSInteger)collectionView:(UICollectionView *)cv numberOfItemsInSection:(NSInteger)section
++{
++    (void) cv; (void) section;
++    return (NSInteger) self.items.count;
++}
++
++- (UICollectionViewCell *)collectionView:(UICollectionView *)cv
++                  cellForItemAtIndexPath:(NSIndexPath *)indexPath
++{
++    OrcaProjectCell *const cell =
++        (OrcaProjectCell *) [cv dequeueReusableCellWithReuseIdentifier:@"tile" forIndexPath:indexPath];
++    OrcaProject *const project = [self projectAt:indexPath];
++    [cell fillWith:project
++         selecting:self.selecting
++            picked:project != nil && [self.picked containsObject:project.path]];
++    return cell;
++}
++
++// -- a tap ------------------------------------------------------------------
++
++- (void)collectionView:(UICollectionView *)cv didSelectItemAtIndexPath:(NSIndexPath *)indexPath
++{
++    [cv deselectItemAtIndexPath:indexPath animated:NO];
++
++    OrcaProject *const project = [self projectAt:indexPath];
++    if (project == nil)
++        return;
++
++    if (self.selecting) {
++        if ([self.picked containsObject:project.path])
++            [self.picked removeObject:project.path];
++        else
++            [self.picked addObject:project.path];
++        [cv reloadItemsAtIndexPaths:@[ indexPath ]];
++        [self syncBar];
++        return;
++    }
++
++    [self open:project];
++}
++
++- (void)open:(OrcaProject *)project
++{
++    if (project == nil)
++        return;
++    Slic3r::GUI::orca_ios_gallery_open([project.path UTF8String]);
++    // And go and look at it. Opening a project and being left on the home page
++    // is the dead end the plus already avoids the same way.
++    dispatch_async(dispatch_get_main_queue(), ^{
++        Slic3r::GUI::orca_ios_select_prepare();
++    });
++}
++
++// -- the long press ---------------------------------------------------------
++//
++// A real UIContextMenuInteraction, which the collection view owns: the system
++// draws the menu, previews the tile behind it, handles the dismissal, the
++// pointer's secondary click and the keyboard, and gives the whole thing its
++// haptics. Nothing here paints a popup.
++
++- (UIContextMenuConfiguration *)collectionView:(UICollectionView *)cv
++    contextMenuConfigurationForItemsAtIndexPaths:(NSArray<NSIndexPath *> *)indexPaths
++                                           point:(CGPoint)point
++{
++    (void) point;
++    if (self.selecting || indexPaths.count != 1)
++        return nil;   // in selection mode the tap already means something else
++
++    OrcaProject *const project = [self projectAt:indexPaths.firstObject];
++    if (project == nil)
++        return nil;
++
++    UIView *const source = [cv cellForItemAtIndexPath:indexPaths.firstObject];
++
++    return [UIContextMenuConfiguration configurationWithIdentifier:nil
++                                                  previewProvider:nil
++                                                   actionProvider:^UIMenu *(NSArray<UIMenuElement *> *suggested) {
++        (void) suggested;
++        return [self menuFor:project from:source];
++    }];
++}
++
++- (UIMenu *)menuFor:(OrcaProject *)project from:(UIView *)source
++{
++    OrcaGallery *const me = self;
++
++    UIAction *const open = [UIAction actionWithTitle:orca_ios_tr("Open")
++                                               image:[UIImage systemImageNamed:@"folder"]
++                                          identifier:nil
++                                             handler:^(__kindof UIAction *a) {
++        (void) a;
++        [me open:project];
++    }];
++
++    UIAction *const share = [UIAction actionWithTitle:orca_ios_tr("Share…")
++                                                image:[UIImage systemImageNamed:@"square.and.arrow.up"]
++                                           identifier:nil
++                                              handler:^(__kindof UIAction *a) {
++        (void) a;
++        [me share:@[ project ] from:source];
++    }];
++
++    UIAction *const save = [UIAction actionWithTitle:orca_ios_tr("Export…")
++                                               image:[UIImage systemImageNamed:@"arrow.down.doc"]
++                                          identifier:nil
++                                             handler:^(__kindof UIAction *a) {
++        (void) a;
++        [me exportProjects:@[ project ]];
++    }];
++
++    UIAction *const copy = [UIAction actionWithTitle:orca_ios_tr("Duplicate")
++                                               image:[UIImage systemImageNamed:@"plus.square.on.square"]
++                                          identifier:nil
++                                             handler:^(__kindof UIAction *a) {
++        (void) a;
++        Slic3r::GUI::orca_ios_gallery_duplicate([project.path UTF8String]);
++    }];
++
++    UIAction *const rename = [UIAction actionWithTitle:orca_ios_tr("Rename…")
++                                                 image:[UIImage systemImageNamed:@"pencil"]
++                                            identifier:nil
++                                               handler:^(__kindof UIAction *a) {
++        (void) a;
++        [me rename:project];
++    }];
++
++    // Two different things, and the difference matters enough to say it in the
++    // titles: one takes the project off this page, the other takes it off the
++    // device. The web page's menu only ever had the first and called it
++    // "clear", which is why a file "deleted" from the home page kept coming
++    // back the next time it was opened.
++    UIAction *const forget = [UIAction actionWithTitle:orca_ios_tr("Remove from list")
++                                                 image:[UIImage systemImageNamed:@"eye.slash"]
++                                            identifier:nil
++                                               handler:^(__kindof UIAction *a) {
++        (void) a;
++        Slic3r::GUI::orca_ios_gallery_forget([project.path UTF8String]);
++    }];
++
++    UIAction *const erase = [UIAction actionWithTitle:orca_ios_tr("Delete")
++                                                image:[UIImage systemImageNamed:@"trash"]
++                                           identifier:nil
++                                              handler:^(__kindof UIAction *a) {
++        (void) a;
++        [me confirmDelete:@[ project ] from:source];
++    }];
++    erase.attributes = UIMenuElementAttributesDestructive;
++
++    UIMenu *const first  = [UIMenu menuWithTitle:@"" image:nil identifier:nil
++                                         options:UIMenuOptionsDisplayInline
++                                        children:@[ open, share, save ]];
++    UIMenu *const second = [UIMenu menuWithTitle:@"" image:nil identifier:nil
++                                         options:UIMenuOptionsDisplayInline
++                                        children:@[ copy, rename ]];
++    UIMenu *const third  = [UIMenu menuWithTitle:@"" image:nil identifier:nil
++                                         options:UIMenuOptionsDisplayInline
++                                        children:@[ forget, erase ]];
++
++    return [UIMenu menuWithTitle:project.name children:@[ first, second, third ]];
++}
++
++// -- what the menu and the selection bar do ---------------------------------
++
++- (void)share:(NSArray<OrcaProject *> *)projects from:(UIView *)source
++{
++    NSMutableArray *const urls = [NSMutableArray array];
++    for (OrcaProject *p in projects) {
++        NSURL *const url = [self urlFor:p];
++        if (url != nil)
++            [urls addObject:url];
++    }
++    if (urls.count == 0)
++        return;
++
++    UIViewController *const presenter = orca_ios_presenter(self);
++    if (presenter == nil)
++        return;
++
++    UIActivityViewController *const sheet =
++        [[[UIActivityViewController alloc] initWithActivityItems:urls
++                                          applicationActivities:nil] autorelease];
++    UIPopoverPresentationController *const popover = sheet.popoverPresentationController;
++    if (popover != nil) {
++        popover.sourceView = source != nil ? source : self;
++        popover.sourceRect = source != nil ? source.bounds
++                                           : CGRectMake(CGRectGetMidX(self.bounds),
++                                                        CGRectGetMidY(self.bounds), 1, 1);
++    }
++    [presenter presentViewController:sheet animated:YES completion:nil];
++}
++
++// Export is not share: it is "put a copy of this where I choose", which on
++// this platform is the document picker in its exporting mode. asCopy, because
++// the original has to stay where the recent list says it is.
++- (void)exportProjects:(NSArray<OrcaProject *> *)projects
++{
++    NSMutableArray *const urls = [NSMutableArray array];
++    for (OrcaProject *p in projects) {
++        NSURL *const url = [self urlFor:p];
++        if (url != nil)
++            [urls addObject:url];
++    }
++    if (urls.count == 0)
++        return;
++
++    UIViewController *const presenter = orca_ios_presenter(self);
++    if (presenter == nil)
++        return;
++
++    UIDocumentPickerViewController *const picker =
++        [[[UIDocumentPickerViewController alloc] initForExportingURLs:urls asCopy:YES] autorelease];
++    [presenter presentViewController:picker animated:YES completion:nil];
++}
++
++- (void)rename:(OrcaProject *)project
++{
++    UIViewController *const presenter = orca_ios_presenter(self);
++    if (presenter == nil || project == nil)
++        return;
++
++    UIAlertController *const ask =
++        [UIAlertController alertControllerWithTitle:orca_ios_tr("Rename project")
++                                            message:nil
++                                     preferredStyle:UIAlertControllerStyleAlert];
++    [ask addTextFieldWithConfigurationHandler:^(UITextField *field) {
++        field.text                   = project.name;
++        field.clearButtonMode        = UITextFieldViewModeWhileEditing;
++        field.autocorrectionType     = UITextAutocorrectionTypeNo;
++        field.autocapitalizationType = UITextAutocapitalizationTypeNone;
++    }];
++    [ask addAction:[UIAlertAction actionWithTitle:orca_ios_tr("Cancel")
++                                            style:UIAlertActionStyleCancel
++                                          handler:nil]];
++    [ask addAction:[UIAlertAction actionWithTitle:orca_ios_tr("Rename")
++                                            style:UIAlertActionStyleDefault
++                                          handler:^(UIAlertAction *a) {
++        (void) a;
++        NSString *const name = [ask.textFields.firstObject.text
++            stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
++        if (name.length == 0 || [name containsString:@"/"])
++            return;
++        Slic3r::GUI::orca_ios_gallery_rename([project.path UTF8String], [name UTF8String]);
++    }]];
++    [presenter presentViewController:ask animated:YES completion:nil];
++}
++
++// Deleting a file is the one thing on this page that cannot be undone, so it
++// asks - once, for however many were picked.
++- (void)confirmDelete:(NSArray<OrcaProject *> *)projects from:(UIView *)source
++{
++    UIViewController *const presenter = orca_ios_presenter(self);
++    if (presenter == nil || projects.count == 0)
++        return;
++
++    NSString *const title = projects.count == 1
++        ? [NSString stringWithFormat:@"%@ “%@”?", orca_ios_tr("Delete"),
++                                     projects.firstObject.name]
++        : [NSString stringWithFormat:orca_ios_tr("Delete %lu projects?"),
++                                     (unsigned long) projects.count];
++
++    UIAlertController *const ask =
++        [UIAlertController alertControllerWithTitle:title
++                                            message:orca_ios_tr("This removes the file from this device.")
++                                     preferredStyle:UIAlertControllerStyleActionSheet];
++    [ask addAction:[UIAlertAction actionWithTitle:orca_ios_tr("Delete")
++                                            style:UIAlertActionStyleDestructive
++                                          handler:^(UIAlertAction *a) {
++        (void) a;
++        for (OrcaProject *p in projects)
++            Slic3r::GUI::orca_ios_gallery_delete([p.path UTF8String]);
++        [self.picked removeAllObjects];
++        [self syncBar];
++    }]];
++    [ask addAction:[UIAlertAction actionWithTitle:orca_ios_tr("Cancel")
++                                            style:UIAlertActionStyleCancel
++                                          handler:nil]];
++
++    UIPopoverPresentationController *const popover = ask.popoverPresentationController;
++    if (popover != nil) {
++        popover.sourceView = source != nil ? source : self;
++        popover.sourceRect = source != nil ? source.bounds
++                                           : CGRectMake(CGRectGetMidX(self.bounds),
++                                                        CGRectGetMaxY(self.bounds) - 40, 1, 1);
++    }
++    [presenter presentViewController:ask animated:YES completion:nil];
++}
++
++// -- selecting several ------------------------------------------------------
++//
++// Procreate's gallery, and every iOS gallery since Photos: a Select button in
++// the corner turns the tiles into checkboxes and puts what can be done to
++// several of them at once on a bar along the bottom.
++
++- (void)toggleSelecting
++{
++    self.selecting = !self.selecting;
++    if (!self.selecting)
++        [self.picked removeAllObjects];
++    [self.grid reloadData];
++    [self syncBar];
++}
++
++- (NSArray<OrcaProject *> *)pickedProjects
++{
++    NSMutableArray *const out = [NSMutableArray array];
++    for (OrcaProject *p in self.items) {
++        if ([self.picked containsObject:p.path])
++            [out addObject:p];
++    }
++    return out;
++}
++
++- (void)syncBar
++{
++    if (!self.selecting) {
++        [self.bar removeFromSuperview];
++        self.bar    = nil;
++        self.barRow = nil;
++        self.grid.contentInset = UIEdgeInsetsZero;
++        return;
++    }
++
++    if (self.bar == nil) {
++        UIVisualEffectView *const glass = [[UIVisualEffectView alloc] initWithEffect:
++            [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThickMaterial]];
++        glass.layer.cornerRadius  = 24;
++        glass.layer.cornerCurve   = kCACornerCurveContinuous;
++        glass.clipsToBounds       = YES;
++        glass.translatesAutoresizingMaskIntoConstraints = NO;
++
++        UIStackView *const row = [[[UIStackView alloc] initWithFrame:CGRectZero] autorelease];
++        row.axis         = UILayoutConstraintAxisHorizontal;
++        row.alignment    = UIStackViewAlignmentCenter;
++        row.distribution = UIStackViewDistributionFillEqually;
++        row.spacing      = 4;
++        row.translatesAutoresizingMaskIntoConstraints = NO;
++
++        [row addArrangedSubview:[self barButton:@"square.and.arrow.up"
++                                          title:orca_ios_tr("Share")
++                                            tag:1]];
++        [row addArrangedSubview:[self barButton:@"arrow.down.doc"
++                                          title:orca_ios_tr("Export")
++                                            tag:2]];
++        [row addArrangedSubview:[self barButton:@"plus.square.on.square"
++                                          title:orca_ios_tr("Duplicate")
++                                            tag:3]];
++        [row addArrangedSubview:[self barButton:@"checklist"
++                                          title:orca_ios_tr("Select all")
++                                            tag:4]];
++        [row addArrangedSubview:[self barButton:@"trash"
++                                          title:orca_ios_tr("Delete")
++                                            tag:5]];
++
++        [glass.contentView addSubview:row];
++        [self addSubview:glass];
++        [NSLayoutConstraint activateConstraints:@[
++            [glass.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
++            [glass.bottomAnchor  constraintEqualToAnchor:self.bottomAnchor constant:-18],
++            [glass.heightAnchor  constraintEqualToConstant:62],
++            [glass.widthAnchor   constraintLessThanOrEqualToAnchor:self.widthAnchor constant:-2 * kOrcaGalleryPad],
++            [row.leadingAnchor   constraintEqualToAnchor:glass.contentView.leadingAnchor constant:10],
++            [row.trailingAnchor  constraintEqualToAnchor:glass.contentView.trailingAnchor constant:-10],
++            [row.topAnchor       constraintEqualToAnchor:glass.contentView.topAnchor],
++            [row.bottomAnchor    constraintEqualToAnchor:glass.contentView.bottomAnchor],
++        ]];
++        self.bar    = glass;
++        self.barRow = row;
++        [glass release];   // self.bar holds it, and so does the view hierarchy
++        self.grid.contentInset = UIEdgeInsetsMake(0, 0, 92, 0);
++    }
++
++    // Nothing picked, nothing to do to it - except pick everything.
++    const BOOL any = self.picked.count > 0;
++    for (UIView *v in self.barRow.arrangedSubviews) {
++        if (![v isKindOfClass:[UIButton class]])
++            continue;
++        UIButton *const b = (UIButton *) v;
++        b.enabled = b.tag == 4 ? YES : any;
++    }
++    [self bringSubviewToFront:self.bar];
++}
++
++- (UIButton *)barButton:(NSString *)symbol title:(NSString *)title tag:(NSInteger)tag
++{
++    UIButtonConfiguration *cfg = [UIButtonConfiguration plainButtonConfiguration];
++    cfg.image      = [UIImage systemImageNamed:symbol];
++    cfg.title      = title;
++    cfg.imagePlacement       = NSDirectionalRectEdgeTop;
++    cfg.imagePadding         = 3;
++    cfg.titleTextAttributesTransformer =
++        ^NSDictionary<NSAttributedStringKey, id> *(NSDictionary<NSAttributedStringKey, id> *attrs) {
++            NSMutableDictionary *out = [[attrs mutableCopy] autorelease];
++            out[NSFontAttributeName] = [UIFont preferredFontForTextStyle:UIFontTextStyleCaption2];
++            return out;
++        };
++
++    UIButton *const b = [UIButton buttonWithConfiguration:cfg primaryAction:nil];
++    b.tag = tag;
++    b.tintColor = tag == 5 ? [UIColor systemRedColor] : orca_ios_accent();
++    b.pointerInteractionEnabled = YES;
++    [b addTarget:self action:@selector(barTapped:) forControlEvents:UIControlEventTouchUpInside];
++    return b;
++}
++
++- (void)barTapped:(UIButton *)sender
++{
++    NSArray<OrcaProject *> *const chosen = [self pickedProjects];
++    switch (sender.tag) {
++        case 1: [self share:chosen from:sender]; break;
++        case 2: [self exportProjects:chosen]; break;
++        case 3:
++            for (OrcaProject *p in chosen)
++                Slic3r::GUI::orca_ios_gallery_duplicate([p.path UTF8String]);
++            break;
++        case 4:
++            if (self.picked.count == self.items.count) {
++                [self.picked removeAllObjects];
++            } else {
++                for (OrcaProject *p in self.items)
++                    [self.picked addObject:p.path];
++            }
++            [self.grid reloadData];
++            [self syncBar];
++            break;
++        case 5: [self confirmDelete:chosen from:sender]; break;
++        default: break;
++    }
++}
++
++@end
++
+ // -- the plater toolbar ----------------------------------------------------
+ //
+ // The same nanosvg GLTexture uses to build the toolbar atlas, so the buttons
+@@ -2619,6 +3411,138 @@ static bool orca_ios_install_home_plus()
+     }
+ }
+ 
++// -- the gallery, and the Select chip beside the plus ------------------------
++
++static OrcaGallery *gs_orca_gallery = nil;
++// The chip left of the plus. Two references, because the glyph has to change
++// when selection mode goes on and off and the button is not the chip.
++static UIView   *gs_orca_home_select        = nil;
++static UIButton *gs_orca_home_select_button = nil;
++
++// What the C++ side has described, and what is on screen. Two arrays rather
++// than one because a description arrives an entry at a time and the grid must
++// not be reloaded five times on the way through.
++static NSMutableArray<OrcaProject *> *gs_orca_gallery_items   = nil;
++static NSMutableArray<OrcaProject *> *gs_orca_gallery_pending = nil;
++
++static void orca_ios_home_select_sync()
++{
++    if (gs_orca_home_select_button == nil)
++        return;
++    const BOOL on = gs_orca_gallery != nil && gs_orca_gallery.selecting;
++    UIImageSymbolConfiguration *const glyph =
++        [UIImageSymbolConfiguration configurationWithPointSize:17
++                                                        weight:UIImageSymbolWeightSemibold];
++    [gs_orca_home_select_button setImage:[UIImage systemImageNamed:on ? @"checkmark"
++                                                                     : @"checklist"
++                                                 withConfiguration:glyph]
++                                forState:UIControlStateNormal];
++    gs_orca_home_select_button.accessibilityLabel = on ? orca_ios_tr("Done")
++                                                       : orca_ios_tr("Select");
++}
++
++// The grid and the Select chip, installed into the same host the plus is in
++// and for the same reasons. Called after the plus, so the plus already proved
++// there is a window and found the host.
++static bool orca_ios_install_gallery(UIView *host)
++{
++    if (host == nil)
++        return false;
++    if (gs_orca_gallery != nil && gs_orca_gallery.superview == host &&
++        gs_orca_home_select != nil && gs_orca_home_select.superview == host)
++        return true;
++
++    // The host changed under them - which is what the tab bar controller
++    // taking the window does. Build both again against the host they should
++    // have, exactly as the plus does.
++    [gs_orca_gallery removeFromSuperview];
++    [gs_orca_gallery release];
++    gs_orca_gallery = nil;
++    [gs_orca_home_select removeFromSuperview];
++    [gs_orca_home_select release];
++    gs_orca_home_select        = nil;
++    gs_orca_home_select_button = nil;
++
++    @try {
++        OrcaGallery *const gallery = [[OrcaGallery alloc] initWithFrame:CGRectZero];
++        gallery.translatesAutoresizingMaskIntoConstraints = NO;
++        [host addSubview:gallery];
++
++        // BELOW THE FLOATING BAR, not under it. kOrcaTabBarInset is the room
++        // the Device page already asks for, and this page needs exactly the
++        // same: the bar floats over the top of the window and a grid that
++        // started at the safe area would put its first row of tiles behind it.
++        [NSLayoutConstraint activateConstraints:@[
++            [gallery.leadingAnchor  constraintEqualToAnchor:host.safeAreaLayoutGuide.leadingAnchor],
++            [gallery.trailingAnchor constraintEqualToAnchor:host.safeAreaLayoutGuide.trailingAnchor],
++            [gallery.topAnchor      constraintEqualToAnchor:host.safeAreaLayoutGuide.topAnchor
++                                                   constant:kOrcaTabBarInset],
++            [gallery.bottomAnchor   constraintEqualToAnchor:host.safeAreaLayoutGuide.bottomAnchor],
++        ]];
++        gs_orca_gallery = gallery;   // the +1 from -alloc is this reference
++
++        // The Select chip, built like the plus and sitting immediately left of
++        // it. Same size, same material, same dark override - two chips that do
++        // not match read as one control and one decoration.
++        UIView *const circle = [[UIView alloc] initWithFrame:CGRectZero];
++        circle.backgroundColor    = [UIColor colorWithWhite:0.35f alpha:0.80f];
++        circle.layer.cornerRadius = kOrcaPlusSize * 0.5f;
++        circle.clipsToBounds      = YES;
++        circle.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
++        circle.translatesAutoresizingMaskIntoConstraints = NO;
++
++        UIButton *const button = [UIButton buttonWithType:UIButtonTypeSystem];
++        button.tintColor          = [UIColor whiteColor];
++        button.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
++        button.pointerInteractionEnabled  = YES;
++        button.translatesAutoresizingMaskIntoConstraints = NO;
++        [button addAction:[UIAction actionWithHandler:^(__kindof UIAction *a) {
++            (void) a;
++            [gs_orca_gallery toggleSelecting];
++            orca_ios_home_select_sync();
++        }] forControlEvents:UIControlEventTouchUpInside];
++
++        [circle addSubview:button];
++        [host addSubview:circle];
++
++        [NSLayoutConstraint activateConstraints:@[
++            [circle.trailingAnchor constraintEqualToAnchor:gs_orca_home_plus.leadingAnchor
++                                                  constant:-10],
++            [circle.centerYAnchor  constraintEqualToAnchor:gs_orca_home_plus.centerYAnchor],
++            [circle.widthAnchor    constraintEqualToConstant:kOrcaPlusSize],
++            [circle.heightAnchor   constraintEqualToConstant:kOrcaPlusSize],
++            [button.leadingAnchor  constraintEqualToAnchor:circle.leadingAnchor],
++            [button.trailingAnchor constraintEqualToAnchor:circle.trailingAnchor],
++            [button.topAnchor      constraintEqualToAnchor:circle.topAnchor],
++            [button.bottomAnchor   constraintEqualToAnchor:circle.bottomAnchor],
++        ]];
++
++        gs_orca_home_select        = circle;   // the +1 from -alloc
++        gs_orca_home_select_button = button;
++        orca_ios_home_select_sync();
++
++        // Whatever was described before there was a grid to describe it to.
++        // There usually is: the recent list is sent long before the tab bar
++        // has taken the window.
++        if (gs_orca_gallery_items != nil)
++            [gs_orca_gallery setProjects:gs_orca_gallery_items];
++        else
++            orca_ios_gallery_refresh();
++
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-gallery: installed under "
++                                 << [NSStringFromClass([host class]) UTF8String];
++        return true;
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-gallery: THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++        gs_orca_gallery            = nil;
++        gs_orca_home_select        = nil;
++        gs_orca_home_select_button = nil;
++        return false;
++    }
++}
++
+ // Called from the tab bar's sync, which runs on every page change and every
+ // notebook rebuild - so this is both the install's retry and its visibility.
+ // The chip is in the window, and the window is not the home page.
+@@ -2626,6 +3550,7 @@ void orca_ios_home_plus_update(wxBookCtrlBase *book)
+ {
+     if (!orca_ios_install_home_plus())
+         return;
++    orca_ios_install_gallery(gs_orca_home_plus.superview);
+     if (book == nullptr || gs_orca_home_panel == nullptr)
+         return;
+ 
+@@ -2636,7 +3561,57 @@ void orca_ios_home_plus_update(wxBookCtrlBase *book)
+         BOOST_LOG_TRIVIAL(error) << "orca-ios-home: plus " << (on_home ? "shown" : "hidden")
+                                  << " for page " << sel;
+     [gs_orca_home_plus setHidden:on_home ? NO : YES];
++    [gs_orca_home_select setHidden:on_home ? NO : YES];
++    [gs_orca_gallery setHidden:on_home ? NO : YES];
++
++    // All three above wx's view, and the two chips above the grid. In that
++    // order, every sync: wx reorders the host's subviews underneath whenever
++    // it rebuilds a page, and a grid that ends up behind the web view it
++    // replaces looks exactly like a grid that was never installed.
++    [gs_orca_gallery.superview bringSubviewToFront:gs_orca_gallery];
+     [gs_orca_home_plus.superview bringSubviewToFront:gs_orca_home_plus];
++    [gs_orca_home_select.superview bringSubviewToFront:gs_orca_home_select];
++}
++
++// -- what MainFrame describes ----------------------------------------------
++//
++// One entry at a time, so that nothing but const char* and a byte count has to
++// be agreed between this translation unit and MainFrame.cpp.
++
++void orca_ios_gallery_begin()
++{
++    [gs_orca_gallery_pending release];
++    gs_orca_gallery_pending = [[NSMutableArray alloc] init];
++}
++
++void orca_ios_gallery_add(const char *path, const char *name, const char *when,
++                          const void *png, size_t png_len)
++{
++    if (gs_orca_gallery_pending == nil || path == nullptr)
++        return;
++
++    OrcaProject *const project = [[[OrcaProject alloc] init] autorelease];
++    project.path = [NSString stringWithUTF8String:path];
++    project.name = [NSString stringWithUTF8String:name != nullptr ? name : ""];
++    project.when = [NSString stringWithUTF8String:when != nullptr ? when : ""];
++    // The bytes are the 3MF's own preview PNG, as bbs_3mf_get_thumbnail read
++    // them - copied here because the std::string they came from is a local in
++    // the caller and the tile outlives the call.
++    if (png != nullptr && png_len > 0) {
++        NSData *const data = [NSData dataWithBytes:png length:png_len];
++        project.thumb = [UIImage imageWithData:data];
++    }
++    [gs_orca_gallery_pending addObject:project];
++}
++
++void orca_ios_gallery_commit()
++{
++    if (gs_orca_gallery_pending == nil)
++        return;
++    [gs_orca_gallery_items release];
++    gs_orca_gallery_items   = gs_orca_gallery_pending;   // the +1 moves across
++    gs_orca_gallery_pending = nil;
++    [gs_orca_gallery setProjects:gs_orca_gallery_items];
+ }
+ 
+ // MainFrame::init_tabpanel, with the two titles already translated - _L() is

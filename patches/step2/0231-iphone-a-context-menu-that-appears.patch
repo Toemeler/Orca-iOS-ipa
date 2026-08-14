@@ -1,0 +1,12 @@
+diff --git a/src/osx/iphone/menu.mm b/src/osx/iphone/menu.mm
+index 9d1a4a9..ed4e4cc 100644
+--- a/src/osx/iphone/menu.mm
++++ b/src/osx/iphone/menu.mm
+@@ -31,6 +31,7 @@
+ 
+ #include "wx/osx/private.h"
+ #include "wx/window.h"
++#include "wx/translation.h"
+ 
+ // other standard headers
+ // ----------------------

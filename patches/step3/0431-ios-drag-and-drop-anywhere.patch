@@ -1,0 +1,340 @@
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index c706f46f..6c1d21a4 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -5462,6 +5462,99 @@ void orca_ios_gallery_refresh()
+         wxGetApp().mainframe->orca_ios_push_gallery();
+ }
+ 
++// -- something was dropped on the window ------------------------------------
++//
++// The desktop's answer to this is PlaterDropTarget, a wxFileDropTarget on the
++// 3D canvas: it exists only there, and it always means "add to what is open".
++// Neither half of that is right here. A drop on iPadOS comes from the Files
++// app, from Safari, from another application's share sheet, and it lands
++// wherever the finger let go of it - which is most often not the plate,
++// because the plate is one of five pages. So the whole window takes drops
++// (patch 0431) and what the drop MEANS is read off the page it landed on:
++//
++//   Prepare, Preview   the model joins the project that is open
++//   Home, Device, …    there is nothing to join, so it gets a project of
++//                      its own, and the application goes there to show it
++//   any .3mf           a project, always, whatever page it landed on - a 3MF
++//                      *is* a project, with its plates, its presets and its
++//                      settings, and merging one into another silently throws
++//                      all of that away
++//
++// The files themselves have already been copied into Documents by the time
++// this is called: what the drop hands over is a URL that is only valid for
++// the length of the callback.
++namespace {
++std::vector<std::string> gs_orca_dropped;
++
++bool orca_ios_is_gcode(const std::string &path)
++{
++    return boost::iends_with(path, ".gcode") || boost::iends_with(path, ".g");
++}
++} // namespace
++
++void orca_ios_drop_begin() { gs_orca_dropped.clear(); }
++
++void orca_ios_drop_add(const char *path)
++{
++    if (path != nullptr && *path != '\0')
++        gs_orca_dropped.emplace_back(path);
++}
++
++void orca_ios_drop_commit()
++{
++    if (gs_orca_dropped.empty())
++        return;
++    const std::vector<std::string> files = gs_orca_dropped;
++    gs_orca_dropped.clear();
++
++    // Deferred, like everything else that arrives from UIKit: this runs inside
++    // the drop interaction's completion, and load_project() can put a modal
++    // window up.
++    wxGetApp().CallAfter([files] {
++        MainFrame *const mf     = wxGetApp().mainframe;
++        Plater    *const plater = wxGetApp().plater();
++        if (mf == nullptr || plater == nullptr)
++            return;
++
++        const int page = mf->m_tabpanel != nullptr ? mf->m_tabpanel->GetSelection() : -1;
++        const bool on_plate = page == MainFrame::tp3DEditor || page == MainFrame::tpPreview;
++
++        std::string   project;      // the first 3MF, if any was dropped
++        wxArrayString others;
++        bool          gcode = false;
++        for (const std::string &f : files) {
++            if (boost::iends_with(f, ".3mf") && project.empty())
++                project = f;
++            else {
++                gcode = gcode || orca_ios_is_gcode(f);
++                others.Add(from_u8(f));
++            }
++        }
++
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: " << files.size() << " file(s) on page "
++                                 << page << ", project=" << project
++                                 << ", others=" << others.GetCount();
++
++        if (!project.empty()) {
++            if (!wxGetApp().can_load_project())
++                return;
++            plater->load_project(from_u8(project));
++        } else if (!on_plate) {
++            // skip_confirm: 0428 established that there is nothing to confirm
++            // on this port - the project on screen is already on disk, twice.
++            plater->new_project(true);
++        }
++
++        if (!others.IsEmpty())
++            plater->load_files(others);
++
++        // A G-code file takes itself to the preview; anything else belongs on
++        // the plate, and a drop that appears to do nothing because the page
++        // did not change is the whole feature failing quietly.
++        if (!gcode && !on_plate)
++            mf->select_tab(size_t(MainFrame::tp3DEditor));
++    });
++}
+ #endif // __WXOSX_IPHONE__
+ 
+ void MainFrame::open_recent_project(size_t file_id, wxString const & filename)
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 06c33a38..45414aac 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -775,6 +775,180 @@ static void orca_ios_home_run(NSString *script)
+     }];
+ }
+ 
++// -- a drop, anywhere in the window -----------------------------------------
++//
++// On the desktop Orca takes files through PlaterDropTarget, a wxFileDropTarget
++// on the 3D canvas. Two things about that do not carry over.
++//
++// It is on ONE view. A drag on iPadOS comes out of the Files app, out of
++// Safari, out of another application's share sheet, and it is let go of
++// wherever the finger happens to be - which on a five-page application is
++// usually not the plate. So the interaction goes on the window's top view,
++// the one the tab bar controller owns, and every page can be dropped on.
++//
++// And wx cannot see it at all. The iPhone port has no drag and drop plumbing:
++// wxDropTarget is not implemented, so a file dragged onto this application
++// bounced back to where it came from with no indication that anything was
++// wrong. This is UIDropInteraction, which is what the platform actually
++// offers, and it hands the paths to MainFrame.cpp - which decides what the
++// drop means from the page it landed on. See orca_ios_drop_commit().
++
++#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
++
++// src/slic3r/GUI/MainFrame.cpp
++namespace Slic3r { namespace GUI {
++void orca_ios_drop_begin();
++void orca_ios_drop_add(const char *path);
++void orca_ios_drop_commit();
++} }
++
++// What this application can do something with. Deliberately the same set as
++// Plater::load_files' own regex, plus the G-code pair it keeps separately -
++// accepting a file the loader will silently drop is worse than refusing the
++// drag, because the refusal is the only feedback a drag gives.
++static BOOL orca_ios_droppable_name(NSString *name)
++{
++    static NSSet<NSString *> *kinds = nil;
++    if (kinds == nil) {
++        kinds = [[NSSet alloc] initWithArray:@[
++            @"3mf", @"stl", @"step", @"stp", @"obj", @"amf", @"oltp",
++            @"svg", @"zip", @"drc", @"ply", @"gcode", @"g",
++        ]];
++    }
++    NSString *const ext = name.pathExtension.lowercaseString;
++    return ext.length > 0 && [kinds containsObject:ext];
++}
++
++// Where a dropped file is put. The drag hands over a URL that is valid for the
++// length of the callback and no longer - it is in a staging area the system
++// takes back - so the bytes have to be copied before anything is done with
++// them, and copied somewhere that survives, because a project remembers its
++// path (0382).
++//
++// A 3MF is a project and goes where projects go. Everything else is a model
++// being imported into one, and gets its own directory so that Documents does
++// not fill up with parts that were never projects.
++static NSString *orca_ios_drop_destination(NSString *name)
++{
++    NSString *const home = NSHomeDirectory();
++    NSString *const kind = [name.pathExtension.lowercaseString isEqualToString:@"3mf"]
++                         ? @"Projects" : @"Imports";
++    NSString *const dir  = [[home stringByAppendingPathComponent:@"Documents"]
++                                  stringByAppendingPathComponent:kind];
++    [[NSFileManager defaultManager] createDirectoryAtPath:dir
++                              withIntermediateDirectories:YES
++                                               attributes:nil
++                                                    error:nil];
++
++    NSString *path = [dir stringByAppendingPathComponent:name];
++    // Dropping the same file twice must not overwrite the copy that is open,
++    // and must not silently become a second tile with the same name either -
++    // so the second one is numbered, the way every file dialogue numbers one.
++    NSFileManager *const fm = [NSFileManager defaultManager];
++    for (int n = 2; n < 1000 && [fm fileExistsAtPath:path]; ++n) {
++        NSString *const stem = [NSString stringWithFormat:@"%@ %d",
++                                name.stringByDeletingPathExtension, n];
++        path = [dir stringByAppendingPathComponent:
++                [stem stringByAppendingPathExtension:name.pathExtension]];
++    }
++    return path;
++}
++
++@interface OrcaDropTarget : NSObject <UIDropInteractionDelegate>
++@end
++
++@implementation OrcaDropTarget
++
++- (BOOL)dropInteraction:(UIDropInteraction *)interaction canHandleSession:(id<UIDropSession>)session
++{
++    (void) interaction;
++    if (![session hasItemsConformingToTypeIdentifiers:@[ UTTypeItem.identifier ]])
++        return NO;
++    for (UIDragItem *item in session.items) {
++        NSString *const name = item.itemProvider.suggestedName;
++        // No name to judge by is not a reason to refuse: the provider is
++        // allowed to have none, and the extension is checked again on the way
++        // out, where the real file name is known.
++        if (name == nil || orca_ios_droppable_name(name))
++            return YES;
++    }
++    return NO;
++}
++
++- (UIDropProposal *)dropInteraction:(UIDropInteraction *)interaction
++                   sessionDidUpdate:(id<UIDropSession>)session
++{
++    (void) interaction; (void) session;
++    // Copy, not move: the file in the other application stays where it is.
++    return [[[UIDropProposal alloc] initWithDropOperation:UIDropOperationCopy] autorelease];
++}
++
++- (void)dropInteraction:(UIDropInteraction *)interaction performDrop:(id<UIDropSession>)session
++{
++    (void) interaction;
++
++    // Several files can arrive in one drag, each loaded asynchronously, and
++    // the application has to be told about all of them at once - a drop of
++    // three parts is one action, not three. The group is what waits for them.
++    dispatch_group_t const group = dispatch_group_create();
++    NSMutableArray<NSString *> *const landed = [NSMutableArray array];
++
++    for (UIDragItem *item in session.items) {
++        NSItemProvider *const provider = item.itemProvider;
++        if (provider == nil)
++            continue;
++
++        dispatch_group_enter(group);
++        [provider loadFileRepresentationForTypeIdentifier:UTTypeItem.identifier
++                                       completionHandler:^(NSURL *url, NSError *error) {
++            // THE COPY HAPPENS HERE, inside the handler, on whatever thread
++            // the system called it on. The URL is gone the moment this block
++            // returns.
++            if (url != nil && error == nil) {
++                NSString *const name = url.lastPathComponent.length > 0
++                                     ? url.lastPathComponent
++                                     : (provider.suggestedName ?: @"model");
++                if (orca_ios_droppable_name(name)) {
++                    NSString *const dest = orca_ios_drop_destination(name);
++                    NSError *copyError = nil;
++                    if ([[NSFileManager defaultManager] copyItemAtURL:url
++                                                                toURL:[NSURL fileURLWithPath:dest]
++                                                                error:&copyError]) {
++                        @synchronized (landed) { [landed addObject:dest]; }
++                    } else {
++                        BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: could not copy "
++                            << [name UTF8String] << ": "
++                            << [[copyError localizedDescription] UTF8String];
++                    }
++                } else {
++                    BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: ignoring "
++                                             << [name UTF8String];
++                }
++            } else if (error != nil) {
++                BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: the drag gave nothing: "
++                                         << [[error localizedDescription] UTF8String];
++            }
++            dispatch_group_leave(group);
++        }];
++    }
++
++    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
++        if (landed.count == 0)
++            return;
++        // Sorted, so that dropping a folder's worth of parts loads them in the
++        // order the Files app showed them rather than in whatever order the
++        // copies happened to finish.
++        NSArray<NSString *> *const files =
++            [landed sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
++        Slic3r::GUI::orca_ios_drop_begin();
++        for (NSString *path in files)
++            Slic3r::GUI::orca_ios_drop_add([path UTF8String]);
++        Slic3r::GUI::orca_ios_drop_commit();
++    });
++}
++
++@end
++
+ // -- the home gallery ------------------------------------------------------
+ //
+ // WHAT THIS REPLACES.
+@@ -3546,11 +3720,50 @@ static bool orca_ios_install_gallery(UIView *host)
+ // Called from the tab bar's sync, which runs on every page change and every
+ // notebook rebuild - so this is both the install's retry and its visibility.
+ // The chip is in the window, and the window is not the home page.
++// The window takes drops, not any one page. Installed once, on the view the
++// tab bar controller owns - the same host the plus and the gallery are in,
++// which is the topmost thing in the window and spans all of it.
++static OrcaDropTarget    *gs_orca_drop_target = nil;
++static UIDropInteraction *gs_orca_drop         = nil;
++// The view it is on. Not retained - the hierarchy holds it - and compared
++// rather than remembered as a flag, because the tab bar controller replaces
++// the window's views when it takes the window and an interaction left on the
++// old one stops hearing about anything.
++static UIView            *gs_orca_drop_host    = nil;
++
++static void orca_ios_install_drop(UIView *host)
++{
++    if (host == nil || host == gs_orca_drop_host)
++        return;
++    @try {
++        if (gs_orca_drop != nil) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: the host changed, moving the interaction";
++            [gs_orca_drop_host removeInteraction:gs_orca_drop];
++            [gs_orca_drop release];
++            gs_orca_drop = nil;
++        }
++        if (gs_orca_drop_target == nil)
++            gs_orca_drop_target = [[OrcaDropTarget alloc] init];
++        gs_orca_drop = [[UIDropInteraction alloc] initWithDelegate:gs_orca_drop_target];
++        [host addInteraction:gs_orca_drop];
++        gs_orca_drop_host = host;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: listening on "
++                                 << [NSStringFromClass([host class]) UTF8String];
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-drop: THREW " << [[e name] UTF8String]
++                                 << ": " << [[e reason] UTF8String];
++        gs_orca_drop      = nil;
++        gs_orca_drop_host = nil;
++    }
++}
++
+ void orca_ios_home_plus_update(wxBookCtrlBase *book)
+ {
+     if (!orca_ios_install_home_plus())
+         return;
+     orca_ios_install_gallery(gs_orca_home_plus.superview);
++    orca_ios_install_drop(gs_orca_home_plus.superview);
+     if (book == nullptr || gs_orca_home_panel == nullptr)
+         return;
+ 

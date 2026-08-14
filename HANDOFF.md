@@ -7608,6 +7608,43 @@ hardcoded true, so nothing changes there. Worth remembering as a class of bug
 rather than one instance: any colour read *back* out of a window may be the
 system's, and the palette cannot tell that apart from a colour Orca meant.
 
+**The white boxes, second attempt — and why the first one missed.** The first
+fix gated `UpdateDarkUI()` on `UseBackgroundColour()`, on the theory that the
+labels had never chosen a background. They had: `Label`'s constructor calls
+`SetBackgroundColour(StaticBox::GetParentBackgroundColor(parent))`, so the
+colour is *stored at construction* and kept for life. That changes the
+question from "what does the walk do" to "what was true when the window was
+built", and three things could be wrong there. All three are fixed:
+
+* **`currentTraitCollection` is not an answer during startup.** It is only
+  meaningful inside a UIKit callback that sets it - `traitCollectionDidChange:`,
+  `layoutSubviews`, `drawRect:` - and outside one it can report Unspecified,
+  which is not Dark. `init_label_colours()` builds the whole palette from it
+  while the main frame is still being constructed. `orca_ios_system_is_dark()`
+  now asks a `UIWindowScene`, which knows at any time, and falls back to
+  `currentTraitCollection`.
+* **`GetParentBackgroundColor()` handed out the system's colour.** Its
+  fallback is `parent->GetBackgroundColour()`, which answers with
+  `UIColor.systemBackground` for any parent that never chose one - black in
+  dark, white in light. The palette reads `#000000` as text, so a label that
+  stored it came back near-white the next time anything translated it. It now
+  walks up to an ancestor that actually chose, and answers with the page tone
+  if none did.
+* **The interface was never walked once it was up.** `applied` was seeded from
+  the config, so a device that started dark and stayed dark never triggered
+  the walk that repairs a stored colour. It is no longer seeded, and is not
+  latched until a walk has actually happened; `viewDidAppear:` on the tab bar
+  controller calls in once the interface is on screen.
+
+Plus a belt in `UpdateDarkUI()`: a *background* of pure black is never
+something Orca chose, so it is answered with the page rather than with the
+text tone.
+
+Worth stating as a rule, because this cost two rounds: **a colour stored at
+construction is only as good as the appearance was at that moment**, and on
+iOS the appearance is not knowable that early unless you ask something that
+owns a window.
+
 **Not verified on device.** The two to look at first are the sidebar in light -
 white cards on a warm page is the whole design and it is where Orca's
 hardcoded near-whites were densest - and a live appearance switch, which now

@@ -1,8 +1,25 @@
 diff --git a/resources/web/data/text.js b/resources/web/data/text.js
-index 33fbc8908..b380d1f69 100644
+index 33fbc8908..79734a63c 100644
 --- a/resources/web/data/text.js
 +++ b/resources/web/data/text.js
-@@ -527,7 +527,7 @@ var LangText = {
+@@ -118,6 +118,7 @@ var LangText = {
+     orca10: "Not connected",
+     orca11: "Connected",
+     orca12: "Note: When Stealth Mode is enabled, your user profiles will not be backed up to Orca Cloud.",
++    orca13: "Clear all",
+   },
+   ca_ES: {
+     t1: "Benvingut a Orca Slicer",
+@@ -481,7 +482,7 @@ var LangText = {
+     t9: "Weiter",
+     t10: "Druckerauswahl",
+     t11: "Alle",
+-    t12: "Keinen",
++    t12: "Alle abwählen",
+     t13: "mm Düse",
+     t14: "Filamentauswahl",
+     t15: "Drucker",
+@@ -527,7 +528,7 @@ var LangText = {
      t62: "Andere",
      t63: "Nach Ändern der Region wird Ihr Konto abgemeldet. Bitte melden Sie sich später erneut an.",
      t64: "Bambu Network-Plug-in",
@@ -11,7 +28,7 @@ index 33fbc8908..b380d1f69 100644
      t66: "Vollständige Fernsteuerung",
      t67: "Live-View-Streaming",
      t68: "Synchronisierung von Benutzerdaten",
-@@ -537,7 +537,7 @@ var LangText = {
+@@ -537,7 +538,7 @@ var LangText = {
      t72: "Herunterladen fehlgeschlagen",
      t73: "Installation erfolgreich.",
      t74: "Neustart",
@@ -20,7 +37,7 @@ index 33fbc8908..b380d1f69 100644
      t76: "Das Bambu Network-Plug-in wurde nicht erkannt. Klicken Sie ",
      t77: "hier",
      t78: ", um es zu installieren.",
-@@ -569,14 +569,25 @@ var LangText = {
+@@ -569,14 +570,26 @@ var LangText = {
      t105: "Profilautor",
      t106: "Profilbeschreibung",
      t126: "Laden……",
@@ -50,6 +67,20 @@ index 33fbc8908..b380d1f69 100644
 +    t111: "Neu erstellen",
 +    t112: "Am Programm teilnehmen",
 +    t113: "Sie können Ihre Wahl jederzeit in den Einstellungen ändern.",
++    orca13: "Liste leeren",
    },
    cs_CZ: {
      t1: "Vítejte v Orca Slicer",
+diff --git a/resources/web/homepage/index.html b/resources/web/homepage/index.html
+index 24eb8285a..0d5fefb51 100644
+--- a/resources/web/homepage/index.html
++++ b/resources/web/homepage/index.html
+@@ -127,7 +127,7 @@
+ 	<div id="RecentFileArea">
+ 		<div id="RecentTitleBlock">
+ 		    <div id="RecentTitle" class="Content-Title trans TextS1" tid="t35">recent open</div>
+-			<div id="RecentClearAllBtn" class="ButtonStyleRegular ButtonTypeWindow trans" tid="t12" onClick="OnDeleteAllRecentFiles()">Clear all</div>
++			<div id="RecentClearAllBtn" class="ButtonStyleRegular ButtonTypeWindow trans" tid="orca13" onClick="OnDeleteAllRecentFiles()">Clear all</div>
+ 		</div>
+ 		<div id="FileList">
+ <!--		    <div class="FileItem" onClick="OnOpenRecentFile('aaaa')" fpath='d:\model\11.3mf'>

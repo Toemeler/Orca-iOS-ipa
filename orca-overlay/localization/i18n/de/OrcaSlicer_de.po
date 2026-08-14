@@ -1960,26 +1960,26 @@ msgid "Speed"
 msgstr "Geschwindigkeit"
 
 msgid "Strength"
-msgstr "Festigkeit"
+msgstr "Stärke"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Top solid layers"
-msgstr "Obere massive Schichten"
+msgstr "Massive Schichten oben"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Top minimum shell thickness"
-msgstr "Obere minimale Schalendicke"
+msgstr "Mindestdicke oben"
 
 msgid "Top Surface Density"
 msgstr "Dichte der Oberseite"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Bottom solid layers"
-msgstr "Untere volle Schichten"
+msgstr "Massive Schichten unten"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "Bottom minimum shell thickness"
-msgstr "Minimale Dicke der unteren Schichten"
+msgstr "Mindestdicke unten"
 
 msgid "Bottom Surface Density"
 msgstr "Dichte der Unterseite"
@@ -10896,17 +10896,17 @@ msgid "This G-code is inserted at every layer change before the Z lift."
 msgstr "Dieser G-Code wird bei jedem Schichtwechsel vor dem anheben von Z eingefügt."
 
 msgid "Bottom shell layers"
-msgstr "Untere Schalenschichten"
+msgstr "Massive Schichten unten"
 
 msgid "This is the number of solid layers of bottom shell, including the bottom surface layer. When the thickness calculated by this value is thinner than bottom shell thickness, the bottom shell layers will be increased."
-msgstr "Dies ist die Anzahl der massiven Schichten der Unterschale, einschließlich der ersten Schicht. Wenn die mit diesem Wert berechnete Dicke dünner ist als die Dicke der unteren Schale, werden die unteren Schalenschichten erhöht."
+msgstr "Anzahl der massiven Schichten unten, die erste Schicht eingeschlossen. Ergibt dieser Wert eine geringere Dicke als die eingestellte Mindestdicke unten, werden mehr Schichten gedruckt."
 
 msgid "Bottom shell thickness"
-msgstr "Dicke der unteren Schale"
+msgstr "Mindestdicke unten"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "The number of bottom solid layers is increased when slicing if the thickness calculated by bottom shell layers is thinner than this value. This can avoid having too thin a shell when layer height is small. 0 means that this setting is disabled and the thickness of the bottom shell is determined simply by the number of bottom shell layers."
-msgstr "Die Anzahl der unteren festen Schichten wird beim Slicen erhöht, wenn die untere Schalenstärke dünner als dieser Wert ist. Dies kann verhindern, dass die Schale zu dünn wird, wenn eine geringe Schichthöhe verwendet wird. 0 bedeutet, dass diese Einstellung deaktiviert ist und die Dicke der unteren Schale absolut durch die unteren Schalenschichten bestimmt wird."
+msgstr "Beim Slicen werden unten mehr massive Schichten erzeugt, wenn die aus der Schichtzahl errechnete Dicke unter diesem Wert liegt. Das verhindert einen zu dünnen Boden bei geringer Schichthöhe. 0 schaltet die Einstellung ab; dann zählt allein die Anzahl der massiven Schichten unten."
 
 msgid "Apply gap fill"
 msgstr "Lückenfüllung anwenden"
@@ -11066,7 +11066,7 @@ msgid "Precise wall"
 msgstr "Exakte Wand"
 
 msgid "Improve shell precision by adjusting outer wall spacing. This also improves layer consistency. NOTE: This option will be ignored for outer-inner or inner-outer-inner wall sequences."
-msgstr "Verbessern Sie die Schalengenauigkeit, indem Sie den Abstand der äußeren Wand anpassen. Dies verbessert auch die Konsistenz der Schichten. HINWEIS: Diese Option wird für Außen-Innen- oder Innen-Außen-Innen-Wand-Sequenzen ignoriert."
+msgstr "Verbessert die Maßhaltigkeit der Außenhaut über den Abstand der Außenwand und macht die Schichten gleichmäßiger. Hinweis: Bei den Wandreihenfolgen Außen/Innen und Innen/Außen/Innen wird diese Option übergangen."
 
 msgid "Only one wall on top surfaces"
 msgstr "Nur eine Wand auf den oberen Flächen"
@@ -11393,7 +11393,7 @@ msgid "Add end G-code when finishing the printing of this filament."
 msgstr "End-G-Code hinzufügen, wenn der Druck dieses Filaments beenden ist."
 
 msgid "Ensure vertical shell thickness"
-msgstr "Vertikale Schalendicke sicherstellen"
+msgstr "Vertikale Dicke der massiven Schichten"
 
 msgid "Add solid infill near sloping surfaces to guarantee the vertical shell thickness (top+bottom solid layers)\nNone: No solid infill will be added anywhere. Caution: Use this option carefully if your model has sloped surfaces\nCritical Only: Avoid adding solid infill for walls\nModerate: Add solid infill for heavily sloping surfaces only\nAll: Add solid infill for all suitable sloping surfaces\nDefault value is All."
 msgstr "Fügen Sie massive Füllung in der Nähe von geneigten Oberflächen hinzu, um die vertikale Wanddicke (obere + untere feste Schichten) zu garantieren\nKeine: Kein massive Füllung wird irgendwo hinzugefügt. Vorsicht: Verwenden Sie diese Option vorsichtig, wenn Ihr Modell geneigte Oberflächen hat\nNur kritisch: Vermeiden Sie das Hinzufügen von massiver Füllung für Wände\nModerat: Fügen Sie massive Füllung nur für stark geneigte Oberflächen hinzu\nAlle: Fügen Sie massive Füllung für alle geeigneten geneigten Oberflächen hinzu\nDer Standardwert ist Alle."
@@ -11982,10 +11982,10 @@ msgid "Insert solid infill at specific layers. Use N to insert every Nth layer, 
 msgstr "Fügt an bestimmten Schichten massive Füllung ein. Verwenden Sie N, um jede N-te Schicht einzufügen, N#K, um K aufeinanderfolgende massive Schichten alle N Schichten einzufügen (K ist optional, z.B. '5#' entspricht '5#1'), oder eine kommagetrennte Liste (z.B. 1,7,9), um sie in expliziten Schichten einzufügen. Schichten sind 1-basiert."
 
 msgid "Fill Multiline"
-msgstr "Mehrzeilige Füllung"
+msgstr "Parallele Füllungslinien"
 
 msgid "Using multiple lines for the infill pattern, if supported by infill pattern."
-msgstr "Verwendung mehrerer Linien für das Füllmuster, wenn vom Füllmuster unterstützt."
+msgstr "Zeichnet jede Linie des Füllmusters als mehrere parallele Linien, sofern das Muster das unterstützt."
 
 msgid "Z-buckling bias optimization (experimental)"
 msgstr "Z-Buckling-Bias-Optimierung (experimentell)"
@@ -13247,7 +13247,7 @@ msgid "Alternate extra wall"
 msgstr "Abwechselnde zusätzliche Wand"
 
 msgid "This setting adds an extra wall to every other layer. This way the infill gets wedged vertically between the walls, resulting in stronger prints.\n\nWhen this option is enabled, the ensure vertical shell thickness option needs to be disabled.\n\nUsing lightning infill together with this option is not recommended as there is limited infill to anchor the extra perimeters to."
-msgstr "Diese Einstellung fügt jeder zweiten Schicht eine zusätzliche Wand hinzu. Damit wird die Füllung vertikal zwischen den Wänden eingeklemmt, was zu stärkeren Drucken führt.\n\nWenn diese Option aktiviert ist, muss die Option zur Sicherstellung der vertikalen Schalendicke deaktiviert werden.\n\nDie Verwendung von Blitzfüllung zusammen mit dieser Option wird nicht empfohlen, da die Füllung begrenzt ist, um die zusätzlichen Umfänge zu verankern."
+msgstr "Fügt jeder zweiten Schicht eine zusätzliche Wand hinzu. Die Füllung wird dadurch senkrecht zwischen den Wänden verklemmt, was den Druck fester macht.\n\nIst diese Option aktiv, muss \"Vertikale Dicke der massiven Schichten\" abgeschaltet sein.\n\nZusammen mit der Blitzfüllung ist sie nicht zu empfehlen, weil dann zu wenig Füllung vorhanden ist, um die zusätzlichen Wände zu verankern."
 
 msgid "If you want to process the output G-code through custom scripts, just list their absolute paths here. Separate multiple scripts with a semicolon. Scripts will be passed the absolute path to the G-code file as the first argument, and they can access the Orca Slicer config settings by reading environment variables."
 msgstr "Wenn Sie die Ausgabe-G-Code-Datei durch benutzerdefinierte Skripts verarbeiten möchten, geben Sie hier die absoluten Pfade auf. Trennen Sie mehrere Skripts durch ein Semikolon. Die Skripts erhalten den absoluten Pfad zur G-Code-Datei als erstes Argument und können die Orca Slicer-Konfigurationseinstellungen durch Lesen von Umgebungsvariablen abrufen."
@@ -14199,18 +14199,18 @@ msgid "This is the speed for solid top surface infill."
 msgstr "Geschwindigkeit der massiven Füllung der Oberseite."
 
 msgid "Top shell layers"
-msgstr "Obere Schalenschichten"
+msgstr "Massive Schichten oben"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "This is the number of solid layers of top shell, including the top surface layer. When the thickness calculated by this value is thinner than the top shell thickness, the top shell layers will be increased"
-msgstr "Dies ist die Anzahl der massiven Schichten der oberen Schale, einschließlich der Oberflächenschicht. Wenn die mit diesem Wert berechnete Dicke dünner ist als die Dicke der oberen Schale, werden die Schichten der oberen Schale erhöht."
+msgstr "Anzahl der massiven Schichten oben, die oberste Fläche eingeschlossen. Ergibt dieser Wert eine geringere Dicke als die eingestellte Mindestdicke oben, werden mehr Schichten gedruckt"
 
 msgid "Top shell thickness"
-msgstr "Dicke der oberen Schale"
+msgstr "Mindestdicke oben"
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "The number of top solid layers is increased when slicing if the thickness calculated by top shell layers is thinner than this value. This can avoid having too thin a shell when layer height is small. 0 means that this setting is disabled and thickness of top shell is determined simply by the number of top shell layers."
-msgstr "Die Anzahl der oberen festen Schichten wird beim Slicen erhöht, wenn die obere Schalenstärke dünner als dieser Wert ist. Dies kann verhindern, dass die Schale zu dünn wird, wenn eine geringe Schichthöhe verwendet wird. 0 bedeutet, dass diese Einstellung deaktiviert ist und die Dicke der oberen Schale absolut durch die oberen Schalenschichten bestimmt wird."
+msgstr "Beim Slicen werden oben mehr massive Schichten erzeugt, wenn die aus der Schichtzahl errechnete Dicke unter diesem Wert liegt. Das verhindert eine zu dünne Decke bei geringer Schichthöhe. 0 schaltet die Einstellung ab; dann zählt allein die Anzahl der massiven Schichten oben."
 
 # TODO: Review, changed by lang refactor. PR 14254
 msgid "This is the speed at which traveling is done."

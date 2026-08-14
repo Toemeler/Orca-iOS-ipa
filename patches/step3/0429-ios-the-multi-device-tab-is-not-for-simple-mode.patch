@@ -1,0 +1,95 @@
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 0f5d61e10..2c2e78b32 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -8396,6 +8396,10 @@ void GUI_App::update_mode()
+ {
+     sidebar().update_mode();
+ 
++    // Simple mode does not show the Multi-device tab.
++    if (mainframe != nullptr)
++        mainframe->orca_update_multi_device_tab();
++
+     //BBS: GUI refactor
+     if (mainframe->m_param_panel)
+         mainframe->m_param_panel->update_mode();
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index ebf0107b4..3ea134b3b 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -2242,7 +2242,8 @@ void MainFrame::init_tabpanel() {
+     });
+     m_printer_view->Hide();
+ 
+-    if (wxGetApp().is_enable_multi_machine()) {
++    // Simple mode does not get this tab; see orca_update_multi_device_tab().
++    if (wxGetApp().is_enable_multi_machine() && wxGetApp().get_mode() != comSimple) {
+         m_multi_machine = new MultiMachinePage(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+         m_multi_machine->SetBackgroundColour(*wxWHITE);
+         // TODO: change the bitmap
+@@ -2366,6 +2367,40 @@ void orca_ios_select_prepare()
+ #endif
+ 
+ // SoftFever
++// Add or remove the Multi-device tab for the mode now in force.
++//
++// The page goes in at tpMultiDevice, an index that is only right once the
++// three pages before it are in the notebook - that is what the Monitor check
++// stands for. When they are not there, either init_tabpanel() or show_device()
++// is about to build the whole set, and both carry the same condition.
++void MainFrame::orca_update_multi_device_tab()
++{
++    if (m_tabpanel == nullptr)
++        return;
++    const bool want = wxGetApp().is_enable_multi_machine() && wxGetApp().get_mode() != comSimple;
++    const int  idx  = m_multi_machine == nullptr ? wxNOT_FOUND : m_tabpanel->FindPage(m_multi_machine);
++    if (want == (idx != wxNOT_FOUND))
++        return;
++    if (want) {
++        if (m_monitor == nullptr || m_tabpanel->FindPage(m_monitor) == wxNOT_FOUND)
++            return;
++        if (m_multi_machine == nullptr) {
++            m_multi_machine = new MultiMachinePage(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
++            m_multi_machine->SetBackgroundColour(*wxWHITE);
++        }
++        m_multi_machine->Show(false);
++        m_tabpanel->InsertPage(tpMultiDevice, m_multi_machine, _L("Multi-device"),
++                               std::string("tab_multi_active"), std::string("tab_multi_active"), false);
++    } else {
++        // Removing the selected page takes the notebook with it, so step off
++        // it first.
++        if (m_tabpanel->GetSelection() == idx)
++            select_tab(size_t(tp3DEditor));
++        m_multi_machine->Show(false);
++        m_tabpanel->RemovePage(idx);
++    }
++}
++
+ void MainFrame::show_device(bool bBBLPrinter) {
+     auto idx = -1;
+     if (bBBLPrinter) {
+@@ -2387,7 +2422,8 @@ void MainFrame::show_device(bool bBBLPrinter) {
+         m_monitor->Show(false);
+         m_tabpanel->InsertPage(tpMonitor, m_monitor, _L("Device"), std::string("tab_monitor_active"), std::string("tab_monitor_active"));
+ 
+-        if (wxGetApp().is_enable_multi_machine()) {
++        // Simple mode does not get this tab; see orca_update_multi_device_tab().
++        if (wxGetApp().is_enable_multi_machine() && wxGetApp().get_mode() != comSimple) {
+             if (!m_multi_machine) {
+                 m_multi_machine = new MultiMachinePage(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+                 m_multi_machine->SetBackgroundColour(*wxWHITE);
+diff --git a/src/slic3r/GUI/MainFrame.hpp b/src/slic3r/GUI/MainFrame.hpp
+index a2ba22f44..b5e5ff562 100644
+--- a/src/slic3r/GUI/MainFrame.hpp
++++ b/src/slic3r/GUI/MainFrame.hpp
+@@ -370,6 +370,10 @@ public:
+ 
+     //SoftFever
+     void show_device(bool bBBLPrinter);
++    // The Multi-device tab belongs to Advanced and Expert. Simple mode is one
++    // printer and one plate, and a page for driving a farm of them is noise
++    // there. Re-evaluated whenever the mode changes.
++    void orca_update_multi_device_tab();
+     void fit_tab_labels(); // ORCA
+ 
+     PA_Calibration_Dlg* m_pa_calib_dlg{ nullptr };

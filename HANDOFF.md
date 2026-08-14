@@ -7668,3 +7668,39 @@ The dirty-state clearing has a consequence worth expecting: `close_with_confirm`
 will now usually find the project clean and skip its save entirely, because the
 autosave got there first. That is the intended shape — the save at close is the
 backstop, not the mechanism.
+
+### 0428 and the words nobody outside the source code knows
+
+Feedback from the device, four wordings and one tab.
+
+**"Keinen", next to "Zuletzt geöffnet" on the home page.** Not gettext at all:
+`text.js` gives the home page's *Clear all* button and the wizard's
+*deselect all filaments* button the **same key**, `t12`, and the German
+translated it for the wizard — "Keinen" — which on the home page is nonsense.
+0426 splits them: the home button carries its own `orca13` ("Liste leeren"),
+`t12` becomes "Alle abwählen" for the two wizard pages that use it. `orca13`
+is in the `en` block too, so the other languages fall back to the same English
+they show today.
+
+**Shell.** "Top shell layers" was "Obere Schalenschichten". The setting is the
+number of solid layers on top, so it says **"Massive Schichten oben"** now, and
+"Top minimum shell thickness" — the same setting under its object-list name —
+is **"Mindestdicke oben"**. Their tooltips were rewritten to match; four of
+them still explained "die obere Schale".
+
+**"Fill Multiline"** is `coInt` 1..10: how many parallel lines each infill line
+is drawn as. "Mehrzeilige Füllung" said nothing; it is **"Parallele
+Füllungslinien"**.
+
+**"Strength"** is **"Stärke"**, by request.
+
+**0428 — the Multi-device tab is not for Simple mode.** The insert in
+`show_device()` is gated on the mode as well as on `is_enable_multi_machine()`,
+and `MainFrame::orca_update_multi_device_tab()` adds or removes the page when
+the mode changes, called from `GUI_App::update_mode()` next to the other
+panels that already react there. Two things it has to respect: the page is
+inserted at `tpMultiDevice`, an index that is only correct once the three
+pages before it exist — hence the Monitor check, and when they do not exist
+`show_device()` is about to build the whole set anyway. And removing the page
+while it is the selected one takes the notebook with it, so it steps to the
+3D editor first.

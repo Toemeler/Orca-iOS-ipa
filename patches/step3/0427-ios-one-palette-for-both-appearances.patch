@@ -1,0 +1,1309 @@
+diff --git a/resources/web/dialog/css/common.css b/resources/web/dialog/css/common.css
+index b8bee5d..6621cf8 100644
+--- a/resources/web/dialog/css/common.css
++++ b/resources/web/dialog/css/common.css
+@@ -22,7 +22,7 @@ body
+ 	border: 0;
+ 	margin: 0;	
+ 	overflow: hidden;
+-	background-color: #fff;
++	background-color: #FAF9F5;	/* the page tone - see StateColor.cpp */
+ 	font-size: 14px;
+ 	line-height: 22px;
+ }
+@@ -135,16 +135,16 @@ label:has(input[type="checkbox"])>span{
+ input[type="checkbox"] {
+ 	-webkit-appearance: none;
+ 	appearance: none;
+-	background-color:#FFFFFF;
++	background-color:#FAF9F5;
+ 	margin:0;
+ 	margin-right: 6px;
+ 	width: 1em;
+ 	height: 1em;
+-	border: 0.1em solid #DBDBDB;
++	border: 0.1em solid #D2CEC1;
+ 	border-radius: 0.15em;
+ 	display: inline-flex;
+ 	place-content: center;
+-	background-color:#FFFFFF;
++	background-color:#FAF9F5;
+ }
+ 
+ input[type="checkbox"]::before {
+@@ -152,7 +152,7 @@ input[type="checkbox"]::before {
+ 	width: 0.8em;
+ 	height: 0.8em;
+ 	transform: scale(0);
+-	box-shadow: inset 1em 1em #FFFFFF;
++	box-shadow: inset 1em 1em #FAF9F5;
+ 	clip-path: polygon(7% 37%, 0 45%, 33% 78%, 100% 30%, 95% 21%, 33% 64%);
+ }
+ 
+diff --git a/resources/web/dialog/css/dark.css b/resources/web/dialog/css/dark.css
+index de55d6c..52bf3c9 100644
+--- a/resources/web/dialog/css/dark.css
++++ b/resources/web/dialog/css/dark.css
+@@ -23,14 +23,14 @@
+ 
+ *
+ {
+-	color: #efeff0;
++	color: #F5F4EF;
+ 	border-color: #B9B9BC;
+ }
+ 
+ body
+ {
+-	background-color:#2D2D31; /* ORCA match background color */
+-	color: #efeff0;
++	background-color:#262624; /* ORCA match background color */
++	color: #F5F4EF;
+ }
+ 
+ .ZScrol::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+@@ -43,21 +43,21 @@ body
+ 
+ #Title div
+ {
+-	color: #009688;
++	color: #2CA898;
+ }
+ 
+ .search>input[type=text]{
+-	background-color:#2D2D31;
++	background-color:#262624;
+ }
+ 
+ /*---Checkboxes ORCA---*/
+ input[type=checkbox]{
+-	background-color:#2D2D31;
+-	border-color:#4A4A51;
++	background-color:#262624;
++	border-color:#514F4A;
+ }
+ 
+ input[type=checkbox]:checked{
+-	background-color:#009688;
++	background-color:#2CA898;
+ }
+ 
+ /*-------Text------*/
+@@ -75,20 +75,20 @@ input[type=checkbox]:checked{
+ /*---Policy---*/
+ .TextArea1
+ {
+-	background-color: #4A4A51;
++	background-color: #514F4A;
+ 	color: #BEBEC0;
+ }
+ 
+ /*----Region---*/
+ .RegionItem:hover
+ {
+-	background-color:#4C4C55;
++	background-color:#3E3E3B;
+ }
+ 
+ .RegionSelected:hover
+ {
+-	background-color:#009688;
+-	color: #fff;	
++	background-color:#2CA898;
++	color: #262624;	
+ }
+ 
+ /*----Menu----*/
+diff --git a/resources/web/flush/WipingDialog.html b/resources/web/flush/WipingDialog.html
+index 8575086..f450f58 100644
+--- a/resources/web/flush/WipingDialog.html
++++ b/resources/web/flush/WipingDialog.html
+@@ -27,7 +27,7 @@
+         display: flex;
+         flex-direction: column;
+         height: 100%;
+-        background: #fff;
++        background: #FAF9F5;
+         padding: 20px;
+         padding-bottom: 10px;
+         border: 1px solid #ccc;
+@@ -38,7 +38,7 @@
+       }
+ 
+       .tip-panel {
+-        background: #eeeeee;
++        background: #E2DFD5;
+         padding: 10px;
+         margin-bottom: 10px;
+         font-size: 12px;
+@@ -84,23 +84,23 @@
+       thead th {
+         position: sticky;
+         top: 0;
+-        background: #eee;
++        background: #E2DFD5;
+         z-index: 10;
+       }
+ 
+       tbody th {
+         position: sticky;
+         left: 0;
+-        background: #eee;
++        background: #E2DFD5;
+         z-index: 9;
+       }
+ 
+       tbody tr:nth-child(even) {
+-        background: #ffffff;
++        background: #FAF9F5;
+       }
+ 
+       tbody tr:nth-child(odd) {
+-        background: #eeeeee;
++        background: #E2DFD5;
+       }
+ 
+       tbody td:first-child,
+@@ -108,7 +108,7 @@
+         position: sticky;
+         top: 0;
+         left: 0;
+-        background: #eee;
++        background: #E2DFD5;
+         z-index: 11;
+       }
+ 
+@@ -119,7 +119,7 @@
+         border: 1px solid #999;
+         text-align: center;
+         line-height: 15px;
+-        color: #fff;
++        color: #FAF9F5;
+         font-weight: bold;
+         font-size: 12px;
+         border-radius: 4px;
+@@ -149,7 +149,7 @@
+       }
+       body.dark-mode input[type="number"].multiplier-input {
+         width: 60px;
+-        background-color: #4c4c55;
++        background-color: #3E3E3B;
+         color: white;
+       }
+ 
+@@ -178,27 +178,27 @@
+ 
+       /* 暗色模式样式 */
+       body.dark-mode {
+-        background-color: #2d2d31;
++        background-color: #262624;
+         color: #e0e0e0;
+       }
+ 
+       body.dark-mode .container {
+         background: inherit;
+-        border-color: #2d2d31;
++        border-color: #262624;
+       }
+ 
+       body.dark-mode .tip-panel {
+-        background: #4c4c55;
++        background: #3E3E3B;
+         color: #ccc;
+       }
+ 
+       body.dark-mode .scroll-container {
+-        border-color: #4c4c55;
++        border-color: #3E3E3B;
+       }
+ 
+       body.dark-mode table {
+         background: inherit;
+-        border-color: #4c4c55;
++        border-color: #3E3E3B;
+       }
+ 
+       body.dark-mode input[type="number"].table-input {
+@@ -229,11 +229,11 @@
+       }
+ 
+       body.dark-mode tbody tr:nth-child(even) {
+-        background: #2d2d31;
++        background: #262624;
+       }
+ 
+       body.dark-mode tbody tr:nth-child(odd) {
+-        background: #4c4c55;
++        background: #3E3E3B;
+       }
+ 
+       body.dark-mode tbody td:first-child,
+@@ -251,7 +251,7 @@
+       }
+ 
+       body.dark-mode .icon-button {
+-        background-color: #4c4c55;
++        background-color: #3E3E3B;
+       }
+     </style>
+   </head>
+diff --git a/resources/web/guide/1/1.css b/resources/web/guide/1/1.css
+index 941ab77..4706556 100644
+--- a/resources/web/guide/1/1.css
++++ b/resources/web/guide/1/1.css
+@@ -1,6 +1,6 @@
+ html
+ {
+-	background-color: #fff;
++	background-color: #FAF9F5;
+ }
+ 
+ body
+diff --git a/resources/web/guide/21/common.css b/resources/web/guide/21/common.css
+index e7cd57a..f2e1d98 100644
+--- a/resources/web/guide/21/common.css
++++ b/resources/web/guide/21/common.css
+@@ -136,7 +136,7 @@
+ 	background: var(--main-color);
+ 	border: 1px solid var(--main-color);
+ 	z-index: 9999;
+-	color: #FFF;
++	color: #FAF9F5;
+ 	text-align: center;
+ }
+ 
+@@ -200,7 +200,7 @@ img.ModelThumbnail {
+ 
+ .LayoutSelector .TabButton.selected         {background: var(--main-color)}
+ .LayoutSelector .TabButton.selected:hover   {background: var(--main-color-hover)}
+-.LayoutSelector .TabButton.selected .icon16 {background: #FFF}
++.LayoutSelector .TabButton.selected .icon16 {background: #FAF9F5}
+ 
+ .LayoutSelector .TabButton:nth-of-type(1) .icon16 {--icon-url: var(--icon-layout-list)}
+ .LayoutSelector .TabButton:nth-of-type(2) .icon16 {--icon-url: var(--icon-layout-compact)}
+@@ -399,7 +399,7 @@ img.ModelThumbnail {
+ 
+ /* NOTICE POPUP */
+ #NoticeMask {
+-	background-color: #000;
++	background-color: #1F1E1D;
+ 	position: absolute;
+ 	top: 0px;
+ 	left: 0px;
+@@ -426,7 +426,7 @@ img.ModelThumbnail {
+ 	background-color:#00f0d8;
+ 	height: 40px;
+ 	line-height: 40px;
+-	color: #fff;
++	color: #FAF9F5;
+ 	text-align: center;
+ }
+ 
+diff --git a/resources/web/guide/css/common.css b/resources/web/guide/css/common.css
+index 8e6798d..3c61b34 100644
+--- a/resources/web/guide/css/common.css
++++ b/resources/web/guide/css/common.css
+@@ -23,7 +23,7 @@ body
+ 	border: 0;
+ 	margin: 0;	
+ 	overflow: hidden;
+-	background-color: #fff;
++	background-color: #FAF9F5;	/* the page tone - see StateColor.cpp */
+ 	font-size: 14px;
+ 	line-height: 22px;
+ }
+@@ -153,7 +153,7 @@ input[type="checkbox"]::before {
+ 	width: 0.8em;
+ 	height: 0.8em;
+ 	transform: scale(0);
+-	box-shadow: inset 1em 1em #FFFFFF;
++	box-shadow: inset 1em 1em #FAF9F5;
+ }
+ 
+ input[type="checkbox"]:is(:checked, :indeterminate) {
+diff --git a/resources/web/guide/css/dark.css b/resources/web/guide/css/dark.css
+index 0cbb395..fb300e7 100644
+--- a/resources/web/guide/css/dark.css
++++ b/resources/web/guide/css/dark.css
+@@ -1,13 +1,13 @@
+ *
+ {
+-	color: #efeff0;
++	color: #F5F4EF;
+ 	border-color: #B9B9BC;
+ }
+ 
+ body
+ {
+-	background-color:#2D2D31; /* ORCA match background color */
+-	color: #efeff0;
++	background-color:#262624; /* ORCA match background color */
++	color: #F5F4EF;
+ }
+ 
+ .ZScrol::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+@@ -20,7 +20,7 @@ body
+ 
+ #Title div
+ {
+-	color: #009688;
++	color: #2CA898;
+ }
+ 
+ /*-------Text------*/
+@@ -38,20 +38,20 @@ body
+ /*---Policy---*/
+ .TextArea1
+ {
+-	background-color: #4A4A51;
++	background-color: #514F4A;
+ 	color: #BEBEC0;
+ }
+ 
+ /*----Region---*/
+ .RegionItem:hover
+ {
+-	background-color:#4C4C55;
++	background-color:#3E3E3B;
+ }
+ 
+ .RegionSelected:hover
+ {
+-	background-color:#009688;
+-	color: #fff;	
++	background-color:#2CA898;
++	color: #262624;	
+ }
+ 
+ /*----Menu----*/
+diff --git a/resources/web/homepage/css/dark.css b/resources/web/homepage/css/dark.css
+index d4950c9..dcaf323 100644
+--- a/resources/web/homepage/css/dark.css
++++ b/resources/web/homepage/css/dark.css
+@@ -1,22 +1,22 @@
+ body
+ {
+-	background-color:#242428;
++	background-color:#262624;	/* the page tone - see StateColor.cpp */
+ }
+ 
+ *
+ {
+-	border-color: #3E3E45;
++	border-color: #3A3A37;
+ }
+ 
+ 
+ .TextS1
+ {
+-	color:#efeff0;
++	color:#F5F4EF;
+ }
+ 
+ .TextS2
+ {
+-	color:#B3B3B5;
++	color:#B4B2AA;
+ }
+ 
+ .ZScrol::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+@@ -33,13 +33,13 @@ body
+ /*----Left Menu Button----*/
+ .BtnItem
+ {
+-	color:#B3B3B5;
++	color:#B4B2AA;
+ }
+ 
+ .BtnItem:hover
+ {
+-	color: #efeff0;
+-	background-color: #223C3C;
++	color: #F5F4EF;
++	background-color: #1E3A36;
+ }
+ 
+ .BtnItem:hover .LeftIcon
+@@ -49,8 +49,8 @@ body
+ 
+ .BtnItemSelected
+ {
+-	color: #efeff0;
+-	background-color: #223C3C;
++	color: #F5F4EF;
++	background-color: #1E3A36;
+ }
+ 
+ .BtnItemSelected .LeftIcon
+@@ -61,32 +61,32 @@ body
+ /*-----Right Top MenuBtn-----*/
+ .MenuItem:hover
+ {
+-	border-color: #00675b;
+-	background-color: #223C3C;
++	border-color: #2CA898;
++	background-color: #1E3A36;
+ }
+ 
+ .FileImg
+ {
+-	background-color: #36363C; /*ORCA use darker color for dark theme for thumbnails*/
++	background-color: #3A3A37; /*ORCA use darker color for dark theme for thumbnails*/
+ }
+ 
+ #recnet_context_menu
+ {
+-	color: #efeff0;
+-	background-color:#242428;
++	color: #F5F4EF;
++	background-color:#30302E;
+ 	border: 0px;
+ 	box-shadow: 0px 0px 3px #DCDCDC;
+ }
+ 
+ .CT_Item:hover
+ {
+-	background-color:#00675b; /*ORCA color*/
++	background-color:#2CA898; /*ORCA color*/
+ }
+ 
+ /*----User Manual------*/
+ .UG_DESC
+ {
+-	color:#818183;
++	color:#7C7A74;
+ }
+ 
+ /*---Staff PIck----*/
+@@ -102,19 +102,19 @@ body
+ 
+ .HotModelPiece
+ {
+-	border: 1px solid #4C4C55;
++	border: 1px solid #3E3E3B;
+ 	box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.04);
+-	background-color: #4C4C55;
++	background-color: #3E3E3B;
+ }
+ 
+ #HotModel_RIGHT_Title
+ {
+-	color: #818183;
++	color: #7C7A74;
+ }
+ 
+ .swiper
+ {
+-    --swiper-navigation-color: #EFEFF0;/* 单独设置按钮颜色 */
++    --swiper-navigation-color: #F5F4EF;/* 单独设置按钮颜色 */
+ }
+ 
+ .swiper-button-prev
+@@ -130,11 +130,11 @@ body
+ }
+ 
+ /*--- Account Sections ---*/
+-.AccountSectionLabel    { color: #818183; }
+-.OrcaAccountText        { color: #efeff0; }
+-.AccountStatusText      { color: #818183; }
++.AccountSectionLabel    { color: #7C7A74; }
++.OrcaAccountText        { color: #F5F4EF; }
++.AccountStatusText      { color: #7C7A74; }
+ 
+ /*--- Bambu Cloud Section ---*/
+-#BambuCloudHeader       { color: #818183; }
+-#BambuCloudHeader:hover { color: #efeff0; }
++#BambuCloudHeader       { color: #7C7A74; }
++#BambuCloudHeader:hover { color: #F5F4EF; }
+ .bambu-chevron svg path { stroke: currentColor; }
+diff --git a/resources/web/homepage/css/home.css b/resources/web/homepage/css/home.css
+index e99d22e..074f579 100644
+--- a/resources/web/homepage/css/home.css
++++ b/resources/web/homepage/css/home.css
+@@ -67,6 +67,7 @@ body
+ {
+ 	display:flex;
+ 	justify-content: flex-start;
++	background-color: #FAF9F5;	/* the page tone - see StateColor.cpp */
+ }
+ 
+ #LeftBoard
+@@ -320,12 +321,12 @@ body
+ 
+ .BtnItem:hover
+ {
+-	background-color: #BFE1DE; /*ORCA color with %25 opacity*/
++	background-color: #DCEFEC; /*ORCA color with %25 opacity*/
+ }
+ 
+ .BtnItemSelected
+ {
+-	background-color: #BFE1DE; /*ORCA color with %25 opacity*/
++	background-color: #DCEFEC; /*ORCA color with %25 opacity*/
+ }
+ 
+ .BtnIcon
+@@ -427,7 +428,7 @@ body
+ .MenuItem:hover
+ {
+ 	border-color: #009688;		/*ORCA color*/
+-	background-color: #E5F0EE; /*ORCA color with %25 opacity*/
++	background-color: #EDF6F4; /*ORCA color with %25 opacity*/
+ }
+ 
+ .MenuIcon
+@@ -549,7 +550,7 @@ body
+ .FileImg
+ {
+ 	text-align: center;
+-	background-color: #E4E4E4;
++	background-color: #EDEAE0;
+ 	border-radius: 8px;
+ 	width: 184px;
+ 	height: 184px;	
+@@ -587,8 +588,8 @@ body
+ 	border: 1px solid #D7D7D7;
+     top: 100px;
+ 	border-radius: 5px;
+-	color: #323A3D;
+-	background-color: #fff;
++	color: #3F3E3A;
++	background-color: #FAF9F5;
+     display: none;
+ 	z-index: 1;
+ }
+@@ -606,7 +607,7 @@ body
+ 	cursor: pointer;
+ 	background-color:#009688; /*ORCA color*/
+ 	border-radius: 4px;
+-	color: #fff;
++	color: #FAF9F5;
+ }
+ 
+ 
+@@ -672,7 +673,7 @@ body
+ {
+ 	width: 100%;
+ 	height: 95%;
+-	border: 1px solid #D9D9D9;
++	border: 1px solid #EDEAE0;
+ }
+ 
+ /*------Manual------*/
+@@ -689,7 +690,7 @@ body
+ {
+ 	width: 100%;
+ 	height: 95%;
+-	border: 1px solid #D9D9D9;
++	border: 1px solid #EDEAE0;
+ }
+ 
+ 
+@@ -849,7 +850,7 @@ body
+ 	display:flex;
+ 	flex-direction: column;
+ 	cursor: pointer;
+-	border: 1px solid #EEEEEE;
++	border: 1px solid #E2DFD5;
+ 	box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.04);
+     border-radius: 8px;
+ }
+diff --git a/resources/web/include/global.css b/resources/web/include/global.css
+index 7448cfd..4140273 100644
+--- a/resources/web/include/global.css
++++ b/resources/web/include/global.css
+@@ -13,47 +13,47 @@
+ /*/// COLORS ///*/
+ :root { 
+ 	--main-color			: #009688;
+-	--main-color-hover		: #26A69A;
++	--main-color-hover		: #00897B;
+ 	--main-color-fixed		: #009688;
+-	--bg-color				: #FFFFFF;
+-	--bg-color-secondary	: #F4F4F4;
+-	--bg-color-alt			: #F0F0F0;
+-	--fg-color-text			: #262E30;
+-	--fg-color-label		: #363636;
+-	--fg-color-disabled		: #ACACAC;
+-	--focus-bg-item			: #BFE1DE;
+-	--focus-bg-box			: #E5F0EE;
+-	--border-color			: #DBDBDB;
+-	--icon-color			: #7C8282;
++	--bg-color				: #FAF9F5;
++	--bg-color-secondary	: #FFFEFB;
++	--bg-color-alt			: #F2F0E9;
++	--fg-color-text			: #1F1E1D;
++	--fg-color-label		: #3F3E3A;
++	--fg-color-disabled		: #A3A099;
++	--focus-bg-item			: #DCEFEC;
++	--focus-bg-box			: #EDF6F4;
++	--border-color			: #D2CEC1;
++	--icon-color			: #6F6E69;
+ 	--button-fg-light		: #FEFEFE;
+-	--button-fg-text		: #262E30;
+-	--button-fg-disabled	: #6B6B6B;
+-	--button-bg-normal		: #DFDFDF;
+-	--button-bg-hover		: #D4D4D4;
++	--button-fg-text		: #1F1E1D;
++	--button-fg-disabled	: #A3A099;
++	--button-bg-normal		: #EDEAE0;
++	--button-bg-hover		: #E4E0D3;
+ 	--button-bg-disabled	: var(--button-bg-normal);
+ 	--button-bg-alert		: #E14747;
+ }
+   
+ @media (prefers-color-scheme: dark) { 
+ :root {
+-	--main-color			: #00675B;
+-	--main-color-hover		: #008172;
++	--main-color			: #2CA898;
++	--main-color-hover		: #4DBFAF;
+ 	--main-color-fixed		: #009688;
+-	--bg-color				: #2D2D31;
+-	--bg-color-secondary	: #36363B;
+-	--bg-color-alt			: #242428;
+-	--fg-color-text			: #EFEFF0;
+-	--fg-color-label		: #B2B3B5;
+-	--fg-color-disabled		: #65656A;
+-	--focus-bg-item			: #223C3C;
+-	--focus-bg-box			: #283232;
+-	--border-color			: #4A4A51;
+-	--icon-color			: #949494;
++	--bg-color				: #262624;
++	--bg-color-secondary	: #30302E;
++	--bg-color-alt			: #1C1B1A;
++	--fg-color-text			: #F5F4EF;
++	--fg-color-label		: #E5E3DC;
++	--fg-color-disabled		: #7C7A74;
++	--focus-bg-item			: #1E3A36;
++	--focus-bg-box			: #22322F;
++	--border-color			: #514F4A;
++	--icon-color			: #B4B2AA;
+ 	--button-fg-light		: #FEFEFE;
+-	--button-fg-text		: #EFEFF0;
+-	--button-fg-disabled	: #818183;
+-	--button-bg-normal		: #3E3E45;
+-	--button-bg-hover		: #4D4D54;
++	--button-fg-text		: #F5F4EF;
++	--button-fg-disabled	: #7C7A74;
++	--button-bg-normal		: #3A3A37;
++	--button-bg-hover		: #45443F;
+ 	--button-bg-disabled	: var(--button-bg-normal);
+ 	--button-bg-alert		: #E14747;
+ }
+diff --git a/resources/web/model/css/dark.css b/resources/web/model/css/dark.css
+index 8df6946..3285984 100644
+--- a/resources/web/model/css/dark.css
++++ b/resources/web/model/css/dark.css
+@@ -1,12 +1,12 @@
+ body
+ {
+-	background-color:#242428;
+-	color: #B3B3B5;
++	background-color:#262624;	/* the page tone - see StateColor.cpp */
++	color: #B4B2AA;
+ }
+ 
+ a
+ {
+-	color: #009688;
++	color: #2CA898;
+ }
+ 
+ .ZScrol::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+@@ -24,12 +24,12 @@ a
+ 
+ .Text_Title
+ {
+-	color: #EFEFF0;
++	color: #F5F4EF;
+ }
+ 
+ .Text_Value
+ {
+-	color: #B3B3B5;
++	color: #B4B2AA;
+ }
+ 
+ .Text_TitleBoard
+@@ -39,30 +39,30 @@ a
+ 
+ .LeftProcessBar
+ {
+-	border-left: 2px solid #4C4C55;
++	border-left: 2px solid #3E3E3B;
+ }
+ 
+ .ProcessBarSelected
+ {
+-	border-left-color:#009688;
++	border-left-color:#2CA898;
+ }
+ 
+ .Block_BKGA
+ {
+-	background-color:#36363C;
++	background-color:#30302E;
+ }
+ 
+ .InfoBlock
+ {
+-	background-color:#36363C;
++	background-color:#30302E;
+ }
+ 
+ .File_Board
+ {
+-	background-color:#242428;
++	background-color:#30302E;
+ }
+ 
+ .FileItem
+ {
+-	background-color:#36363C;
++	background-color:#30302E;
+ }
+diff --git a/resources/web/model/model.css b/resources/web/model/model.css
+index ca85165..fb13f9d 100644
+--- a/resources/web/model/model.css
++++ b/resources/web/model/model.css
+@@ -20,7 +20,7 @@ body
+ 	flex-direction: column;
+ 	justify-content: center;
+ 	align-items: center;
+-	background-color: #F4F4F4;	
++	background-color: #FFFEFB;	
+ 	font-size: 14px;	
+ 	color: #595959;	
+ 	line-height: 24px;
+@@ -137,7 +137,7 @@ body
+ 
+ .Block_BKGB
+ {
+-	background-color: #F4F4F4;
++	background-color: #FFFEFB;
+ }
+ 
+ /*---Swiper---*/
+@@ -283,7 +283,7 @@ body
+ 
+ .File_Board
+ {
+-	background-color: #F4F4F4;
++	background-color: #FFFEFB;
+ 	padding: 12px 15px;	
+ }
+ 
+diff --git a/resources/web/orca/css/dark.css b/resources/web/orca/css/dark.css
+index 0a0c637..491c3b6 100644
+--- a/resources/web/orca/css/dark.css
++++ b/resources/web/orca/css/dark.css
+@@ -1,5 +1,5 @@
+ body {
+-    background-color:#4c4c54;
++    background-color:#262624;  /* the page tone - see StateColor.cpp */
+     font-family: Arial, sans-serif;
+     display: flex;
+     justify-content: center;
+@@ -17,9 +17,9 @@ body {
+ }
+ 
+ h1 {
+-    color: #ffffff;
++    color: #262624;
+ }
+ 
+ p {
+-    color: #ffffff;
++    color: #262624;
+ }
+\ No newline at end of file
+diff --git a/resources/web/orca/css/home.css b/resources/web/orca/css/home.css
+index 3f4cc4e..574c52d 100644
+--- a/resources/web/orca/css/home.css
++++ b/resources/web/orca/css/home.css
+@@ -1,6 +1,6 @@
+ body
+ {
+-    background-color:#eeeeee;
++    background-color:#FAF9F5;  /* the page tone - see StateColor.cpp */
+     font-family: Arial, sans-serif;
+     display: flex;
+     justify-content: center;
+@@ -13,6 +13,6 @@ body
+     text-align: center;
+     padding: 30px;
+     border-radius: 10px;
+-    background-color: #ffffff;
++    background-color: #FAF9F5;
+     box-shadow: 0 4px 6px rgba(39, 39, 39, 0.1);
+ }
+\ No newline at end of file
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index 64b942c..d3bbd45 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -56,6 +56,8 @@
+ #include <TargetConditionals.h>
+ #endif
+ #if defined(__APPLE__) && !TARGET_OS_OSX
++// The page tone of the interface palette, for _render_background() below.
++#include "Widgets/StateColor.hpp"
+ // src/slic3r/GUI/ios_gl_compat.cpp
+ extern void orca_ios_note_default_framebuffer();
+ extern unsigned orca_ios_default_framebuffer();
+@@ -8359,7 +8361,17 @@ void GLCanvas3D::_render_background()
+     // Draws a bottom to top gradient over the complete screen.
+     glsafe(::glDisable(GL_DEPTH_TEST));
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The page tone, not a grey of the viewport's own. This is the largest
++    // single surface in the application and the one the sidebar and the
++    // floating bars sit against, so it is the page or the design has a hole in
++    // the middle of it. Read per frame: one lookup against a value already in
++    // cache, and nothing to keep in step when the appearance changes.
++    const wxColour page = StateColor::baseColorFor(m_is_dark);
++    ColorRGBA background_color(page.Red(), page.Green(), page.Blue(), (unsigned char) 255);
++#else
+     ColorRGBA background_color = m_is_dark ? DEFAULT_BG_LIGHT_COLOR_DARK : DEFAULT_BG_LIGHT_COLOR;
++#endif
+     ColorRGBA error_background_color = m_is_dark ? ERROR_BG_LIGHT_COLOR_DARK : ERROR_BG_LIGHT_COLOR;
+     const ColorRGBA bottom_color = use_error_color ? error_background_color : background_color;
+ 
+diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
+index 992ea7e..7aab498 100644
+--- a/src/slic3r/GUI/GUI_App.cpp
++++ b/src/slic3r/GUI/GUI_App.cpp
+@@ -137,6 +137,11 @@
+ #include "Notebook.hpp"
+ #include "Widgets/Label.hpp"
+ #include "Widgets/ProgressDialog.hpp"
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// orca_ios_appearance_changed() reloads the web views, which carry light or
++// dark in their user agent.
++#include "Widgets/WebView.hpp"
++#endif
+ 
+ //BBS: DailyTip and UserGuide Dialog
+ #include "WebDownPluginDlg.hpp"
+@@ -4172,6 +4177,27 @@ const wxColour GUI_App::get_label_default_clr_modified()
+ void GUI_App::init_label_colours()
+ {
+     bool is_dark_mode = dark_mode();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // These nine are the only colours in the application that do not reach
++    // StateColor - they are read straight off GUI_App - so they are the nine
++    // that would be left behind by a palette that only translated what goes
++    // through the table. Put through it here instead, by asking with the
++    // colour Orca means: SetDarkMode() first, because that is what the
++    // lookups below answer against.
++    StateColor::SetDarkMode(is_dark_mode);
++    const auto tone = [](char const *orca) { return StateColor::darkModeColorFor(wxColour(orca)); };
++
++    m_color_label_modified          = wxColour("#F1754E"); // the one colour that says "changed"
++    m_color_label_sys               = tone("#363636");
++    m_color_label_default           = tone("#262E30");
++    m_color_highlight_label_default = tone("#262E30");
++    m_color_highlight_default       = tone("#F1F1F1");
++    m_color_hovered_btn_label       = tone("#000000");
++    m_color_default_btn_label       = tone("#000000");
++    m_color_selected_btn_bg         = tone("#D4D4D4");
++    m_color_window_default          = StateColor::baseColorFor(is_dark_mode);
++    return;
++#endif
+     m_color_label_modified = is_dark_mode ? wxColour("#F1754E") : wxColour("#F1754E");
+     m_color_label_sys      = is_dark_mode ? wxColour("#B2B3B5") : wxColour("#363636");
+ 
+@@ -4824,12 +4850,60 @@ void GUI_App::force_menu_update()
+ // need to be recomputed and the windows told to repaint.
+ void orca_ios_appearance_changed()
+ {
+-    GUI_App &app = wxGetApp();
+-    app.app_config->set("dark_color_mode", app.dark_mode() ? "1" : "0");
++    GUI_App   &app  = wxGetApp();
++    const bool dark = app.dark_mode();
++
++    // Once per switch. UIKit reports trait changes for more than the
++    // appearance - size class and dynamic type come through the same
++    // callbacks - and this is reached from two of them.
++    //
++    // Seeded from the appearance the application started in rather than from
++    // nothing, because the first call arrives during launch, when the view
++    // first gets a trait collection. There is nothing to re-ask then: every
++    // window is being built and is asking already.
++    static int applied = -1;
++    if (applied < 0)
++        applied = (app.app_config != nullptr &&
++                   app.app_config->get("dark_color_mode") == "1") ? 1 : 0;
++    if (applied == (dark ? 1 : 0))
++        return;
++    applied = dark ? 1 : 0;
++
++    // Three things downstream of dark_mode() are copies rather than live
++    // reads, and a switch that does not update all three leaves the interface
++    // half in the appearance it came from:
++    //
++    //   * init_label_colours() is the only caller of StateColor::SetDarkMode(),
++    //     and the palette is what every widget Orca draws itself asks;
++    //   * Update_dark_mode_flag() sets m_is_dark_mode, the flag UpdateDarkUI()
++    //     branches on, so without it the walk below repaints every plain wx
++    //     window in the appearance we have just left;
++    //   * EVT_GLCANVAS_COLOR_MODE_CHANGED carries the change into the 3D view,
++    //     the bed, the toolpath viewer, the sliders and ImGui. Its handler
++    //     reads "dark_color_mode" from the config, which is why that is first.
++    //
++    // This is MainFrame::on_sys_color_changed()'s sequence, in its order,
++    // without the parts that need a menu bar or a Windows title bar.
++    if (app.app_config != nullptr)
++        app.app_config->set("dark_color_mode", dark ? "1" : "0");
++    app.init_label_colours();
++    app.Update_dark_mode_flag();
++
++    // Nothing below this exists until the frame does, and nothing below it is
++    // needed then either: every window built afterwards asks as it is built.
++    if (app.mainframe == nullptr)
++        return;
++
+     app.force_colors_update();
+     app.update_ui_from_settings();
+-    if (app.mainframe != nullptr)
+-        app.mainframe->Refresh();
++    if (app.plater() != nullptr) {
++        SimpleEvent evt(EVT_GLCANVAS_COLOR_MODE_CHANGED);
++        wxPostEvent(app.plater(), evt);
++    }
++    // The web pages carry light or dark in their user agent, and this is how
++    // on_sys_color_changed() puts it there again.
++    WebView::RecreateAll();
++    app.mainframe->Refresh();
+ }
+ #endif
+ 
+diff --git a/src/slic3r/GUI/Widgets/StateColor.cpp b/src/slic3r/GUI/Widgets/StateColor.cpp
+index 2a9d91f..f9ac863 100644
+--- a/src/slic3r/GUI/Widgets/StateColor.cpp
++++ b/src/slic3r/GUI/Widgets/StateColor.cpp
+@@ -5,6 +5,138 @@ static bool gDarkMode = false;
+ 
+ static bool operator<(wxColour const &l, wxColour const &r) { return l.GetRGBA() < r.GetRGBA(); }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// ===========================================================================
++// THE PALETTE OF THE INTERFACE, on this port.
++//
++// Orca's colours are written into the source as literal hex, forty-odd of
++// them, and the table below this one is how it turns each into something
++// darker when the appearance is dark. That table is a list of pairs with no
++// scale behind it: two greys a shade apart for no reason, a window background
++// unrelated to the panel on top of it, and nothing at all for light mode,
++// where every colour in the source is used exactly as written.
++//
++// This replaces it, for both appearances, with a scale: a page, surfaces that
++// sit on it, fills, borders and four weights of text - warm neutrals, the ORCA
++// turquoise as the one accent - and a mapping from each colour Orca asks for
++// onto the tone it means. Every colour the interface draws is one of these,
++// which is what makes the two appearances look like one design rather than a
++// theme and its inversion.
++//
++// Reading it:
++//   * the tones are the design. Change a tone and everything that means that
++//     tone follows, in both appearances.
++//   * the mapping says what each of Orca's colours means. The comments are
++//     Orca's own, from the table below.
++//   * status colours - the blue, the orange, the red - are not chrome and are
++//     not in the scale. They keep Orca's own values.
++//
++// The same scale is written out again in CSS for the web pages, which cannot
++// call this: resources/web/include/global.css and each page's body background.
++// ===========================================================================
++struct OrcaIosTone { char const *light; char const *dark; };
++
++// The page, and what sits on it.
++static const OrcaIosTone kPage      = {"#FAF9F5", "#262624"}; // window, 3D view, every page
++static const OrcaIosTone kSurface   = {"#FFFEFB", "#30302E"}; // cards, inputs, popups, headers
++static const OrcaIosTone kSunken    = {"#F2F0E9", "#1C1B1A"}; // side strips, top bar, deeper bands
++static const OrcaIosTone kFill      = {"#EDEAE0", "#3A3A37"}; // button faces, tracks, row highlight
++static const OrcaIosTone kFillHover = {"#E4E0D3", "#45443F"}; // and the same under the pointer
++static const OrcaIosTone kKnob      = {"#FFFDF7", "#C9C6BE"}; // the moving part of a switch
++// Lines.
++static const OrcaIosTone kBorder    = {"#E2DFD5", "#3E3E3B"}; // separators, title lines
++static const OrcaIosTone kBorderTop = {"#D2CEC1", "#514F4A"}; // input, combo and box outlines
++// Text, four weights.
++static const OrcaIosTone kText      = {"#1F1E1D", "#F5F4EF"}; // what you read
++static const OrcaIosTone kTextSoft  = {"#3F3E3A", "#E5E3DC"}; // headings and labels
++static const OrcaIosTone kTextMuted = {"#6F6E69", "#B4B2AA"}; // secondary, units, side text
++static const OrcaIosTone kTextDim   = {"#A3A099", "#7C7A74"}; // disabled
++// The accent: ORCA turquoise, and it is the only accent.
++static const OrcaIosTone kAccent     = {"#009688", "#2CA898"};
++static const OrcaIosTone kAccentHov  = {"#00897B", "#4DBFAF"};
++static const OrcaIosTone kAccentTint = {"#DCEFEC", "#1E3A36"}; // checked row behind the accent
++static const OrcaIosTone kAccentSoft = {"#EDF6F4", "#22322F"}; // focused field behind the accent
++
++// What each colour Orca writes into the source means. Comments are Orca's.
++static const struct { char const *orca; OrcaIosTone const *tone; } kOrcaIosPalette[] = {
++    {"#FFFFFF", &kPage},      // Window background
++    {"#F8F8F8", &kSurface},   // Sidebar > Titlebar > Gradient Top | monitor titlebar
++    {"#F4F4F4", &kSurface},   // panel surface
++    {"#FEFFFF", &kSurface},   // Side Tabbar bg
++    {"#F1F1F1", &kFill},      // Sidebar > Titlebar > Gradient Bottom | row highlight
++    {"#F0F0F1", &kFill},      // Disabled element background
++    {"#E8E8E8", &kFill},      // a fill
++    {"#DFDFDF", &kFill},      // Button Background color
++    {"#D9D9D9", &kFill},      // Sidebar > Toggle button track color
++    {"#D4D4D4", &kFillHover}, // Button Background color on Hover
++    {"#CECECE", &kSunken},    // Sidebar wxPanel bg
++    {"#3B4446", &kSunken},    // Top Bar / Main tab bar bg color
++    {"#FFFEFE", &kKnob},      // Sidebar > Toggle button thumb color
++    {"#EEEEEE", &kBorder},    // Separator Line | Title Line Color
++    {"#A6A9AA", &kBorder},    // Seperator color
++    {"#DBDBDB", &kBorderTop}, // Input/Combo Box Border Color
++    {"#000000", &kText},      // Mostly Text color wxBlack
++    {"#262E30", &kText},      // Button text color | Input Text Color
++    {"#2C2C2E", &kText},      // a text colour
++    {"#323A3D", &kTextSoft},  // Softer text color
++    {"#323A3C", &kTextSoft},  // Text color used on search list
++    {"#303A3C", &kTextSoft},  // Object Table > Column header | StaticBox Border Color
++    {"#363636", &kTextSoft},  // Sidebar > Parameter Label/Title | Sidebar tab text
++    {"#6B6A6A", &kTextMuted}, // Button Dimmed text
++    {"#6B6B6A", &kTextMuted}, // Input box side text
++    {"#2B3436", &kTextMuted}, // Leftover from BBS, main fill colour of icons
++    {"#6B6B6B", &kTextDim},   // Disabled Text
++    {"#ACACAC", &kTextDim},   // Disabled Text on boxes | Dimmed Elements
++    {"#9E9E9E", &kTextDim},   //
++    {"#ABABAB", &kTextDim},   //
++    {"#009688", &kAccent},    // ORCA color
++    {"#26A69A", &kAccentHov}, // Button Confirm hover | ORCA Color Hover
++    {"#BFE1DE", &kAccentTint},// Dropdown checked item background
++    {"#E5F0EE", &kAccentSoft},// Combo / Dropdown focused background
++};
++
++// Not chrome, so not in the scale: these say something (a link, a warning, an
++// error) and keep the values Orca chose, dark variants included.
++static const struct { char const *orca; char const *dark; } kOrcaIosStatus[] = {
++    {"#1F8EEA", "#2778D2"}, {"#FF6F00", "#D15B00"}, {"#D01B1B", "#BB2A3A"},
++    // Unused BBS leftovers, carried so nothing that still reaches for one of
++    // them changes behaviour.
++    {"#DBFDD5", "#3B3B40"}, {"#EDFAF2", "#283232"},
++    {"#D7E8DE", "#1F2B27"}, {"#EBF9F0", "#293F34"},
++};
++
++// One appearance's answer for every colour that can arrive here: the colours
++// Orca writes, and - because GUI_App::UpdateDarkUI() reads a window's current
++// background back and asks again - the colours this table itself produces.
++static std::map<wxColour, wxColour> buildIosPalette(bool dark)
++{
++    std::map<wxColour, wxColour> map;
++    for (auto const &tone : {&kPage, &kSurface, &kSunken, &kFill, &kFillHover, &kKnob,
++                             &kBorder, &kBorderTop, &kText, &kTextSoft, &kTextMuted,
++                             &kTextDim, &kAccent, &kAccentHov, &kAccentTint, &kAccentSoft}) {
++        const wxColour answer(dark ? tone->dark : tone->light);
++        map[wxColour(tone->light)] = answer;
++        map[wxColour(tone->dark)]  = answer;
++    }
++    for (auto const &status : kOrcaIosStatus) {
++        const wxColour answer(dark ? status.dark : status.orca);
++        map[wxColour(status.orca)] = answer;
++        map[wxColour(status.dark)] = answer;
++    }
++    // Last, so that a colour Orca writes always wins over one this table
++    // produces - #FFFFFF is Orca's window background before it is anything
++    // else, and it has to answer as the page.
++    for (auto const &entry : kOrcaIosPalette)
++        map[wxColour(entry.orca)] = wxColour(dark ? entry.tone->dark : entry.tone->light);
++    return map;
++}
++
++static const std::map<wxColour, wxColour> gIosLight = buildIosPalette(false);
++static const std::map<wxColour, wxColour> gIosDark  = buildIosPalette(true);
++
++wxColour StateColor::baseColorFor(bool dark) { return wxColour(dark ? kPage.dark : kPage.light); }
++#endif
++
+ static std::map<wxColour, wxColour> gDarkColors{
+     {"#009688", "#00675b"}, // rgb(0, 150, 136)    ORCA color
+     {"#1F8EEA", "#2778D2"}, // rgb(31, 142, 234)   ???
+@@ -189,11 +321,20 @@ void StateColor::SetDarkMode(bool dark) { gDarkMode = dark; }
+ 
+ inline wxColour darkModeColorFor2(wxColour const &color)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // Both appearances go through the palette, which is the whole point of it:
++    // light mode is a design here rather than "the colours as written".
++    auto const &palette = gDarkMode ? gIosDark : gIosLight;
++    auto        iter    = palette.find(color);
++    if (iter != palette.end()) return iter->second;
++    return color;
++#else
+     if (!gDarkMode)
+         return color;
+     auto iter = gDarkColors.find(color);
+     if (iter != gDarkColors.end()) return iter->second;
+     return color;
++#endif
+ }
+ 
+ std::map<wxColour, wxColour> revert(std::map<wxColour, wxColour> const & map)
+@@ -205,10 +346,20 @@ std::map<wxColour, wxColour> revert(std::map<wxColour, wxColour> const & map)
+ 
+ wxColour StateColor::lightModeColorFor(wxColour const &color)
+ {
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The light half of the same palette, rather than upstream's reverted
++    // table: this is the function UpdateDarkUI() puts a window's dark
++    // background through on the way back, and the palette already knows what
++    // each of its own dark colours means.
++    auto iter = gIosLight.find(color);
++    if (iter != gIosLight.end()) return iter->second;
++    return color;
++#else
+     static std::map<wxColour, wxColour> gLightColors = revert(gDarkColors);
+     auto iter = gLightColors.find(color);
+     if (iter != gLightColors.end()) return iter->second;
+     return color;
++#endif
+ }
+ 
+ wxColour StateColor::darkModeColorFor(wxColour const &color) { return darkModeColorFor2(color); }
+diff --git a/src/slic3r/GUI/Widgets/StateColor.hpp b/src/slic3r/GUI/Widgets/StateColor.hpp
+index 8aa8cb4..c007230 100644
+--- a/src/slic3r/GUI/Widgets/StateColor.hpp
++++ b/src/slic3r/GUI/Widgets/StateColor.hpp
+@@ -5,6 +5,14 @@
+ 
+ #include <map>
+ 
++#ifdef __APPLE__
++// baseColorFor() below is declared for iOS only, and the guard tests
++// TARGET_OS_OSX. Without this header the macro is undefined, an #if reads it as
++// zero, and the declaration lands in the macOS build with nothing to link
++// against - the trap 0413 and 0421 both walked into.
++#include <TargetConditionals.h>
++#endif
++
+ class StateColor
+ {
+ public:
+@@ -36,6 +44,12 @@ public:
+     static wxColour darkModeColorFor(wxColour const &color);
+     static wxColour lightModeColorFor(wxColour const &color);
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The page tone of the interface palette - the window background, and the
++    // 3D view's clear colour. StateColor.cpp holds the whole scale.
++    static wxColour baseColorFor(bool dark);
++#endif
++
+ public:
+     template<typename ...Colors>
+     StateColor(std::pair<Colors, int>... colors) {
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 6d452c8..dfa406d 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -57,6 +57,30 @@ static NSString *orca_ios_tr(const char *s)
+     return [NSString stringWithUTF8String:t.utf8_str().data()];
+ }
+ 
++// THE ACCENT, and there is only one: ORCA turquoise.
++//
++// The native chrome this file draws - the tab bar, the toolbar, the slice and
++// print pair, the numeric keypad - was taking UIKit's system blue, which is
++// nothing to do with this application and was the one colour on screen that
++// belonged to no palette. These are the same two values StateColor.cpp gives
++// the accent tone (#009688 light, #2CA898 dark).
++//
++// A dynamic colour rather than two: UIKit resolves it against whatever
++// appearance the view is drawn in, so a switch needs nothing re-set here.
++static UIColor *orca_ios_accent(void)
++{
++    static UIColor       *accent = nil;
++    static dispatch_once_t once;
++    dispatch_once(&once, ^{
++        accent = [[UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traits) {
++            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
++                       ? [UIColor colorWithRed:44 / 255.0 green:168 / 255.0 blue:152 / 255.0 alpha:1]
++                       : [UIColor colorWithRed:0 green:150 / 255.0 blue:136 / 255.0 alpha:1];
++        }] retain];
++    });
++    return accent;
++}
++
+ // A CADisplayLink, so that frames are paced by the display instead of by luck.
+ //
+ // Rendering is driven by wxIdle, and wx processes idle from a run-loop observer
+@@ -224,7 +248,7 @@ static NSArray<NSString *> *orca_ios_keypad_titles(void)
+                 forState:UIControlStateNormal];
+         // Glass is the panel, not the keys: Liquid Glass is not meant to be
+         // stacked on itself, so the keys are the content that sits on it.
+-        b.backgroundColor    = isOK ? [UIColor systemBlueColor]
++        b.backgroundColor    = isOK ? orca_ios_accent()
+                                     : [UIColor colorWithWhite:0.5 alpha:0.14];
+         b.layer.cornerRadius = 12;
+         b.layer.cornerCurve  = kCACornerCurveContinuous;
+@@ -583,7 +607,7 @@ static const CGFloat kOrcaSideMargin = 14;
+         const BOOL primary = [[item objectForKey:@"primary"] boolValue];
+         [b setTitleColor:(primary ? [UIColor whiteColor] : [UIColor labelColor])
+                 forState:UIControlStateNormal];
+-        b.backgroundColor    = primary ? [UIColor systemBlueColor]
++        b.backgroundColor    = primary ? orca_ios_accent()
+                                        : [UIColor colorWithWhite:0.5 alpha:0.14];
+         b.layer.cornerRadius = (kOrcaSideH - 12) * 0.5f;
+         b.layer.cornerCurve  = kCACornerCurveContinuous;
+@@ -1054,7 +1078,7 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+         // follows. A selected gizmo gets the tint instead, which is how the GL
+         // toolbar showed the same thing.
+         b.backgroundColor = [[item objectForKey:@"selected"] boolValue]
+-                          ? [[UIColor systemBlueColor] colorWithAlphaComponent:0.22f]
++                          ? [orca_ios_accent() colorWithAlphaComponent:0.22f]
+                           : [UIColor clearColor];
+         [b addTarget:self action:@selector(tapped:)
+             forControlEvents:UIControlEventTouchUpInside];
+@@ -1321,12 +1345,35 @@ static const CGFloat kOrcaTabBarInset = 72;
+     [super dealloc];
+ }
+ 
+-// Re-applied rather than set once: the window's bounds change on rotation, and
+-// wx sets this view's frame itself whenever the frame resizes, so the inset has
+-// to be put back afterwards.
+ // Light and dark. Orca reads the system on demand through GUI_App::dark_mode(),
+ // so nothing has to be stored here - the windows just have to be told to ask
+ // again and repaint.
++//
++// On the supported API as well as the deprecated one. traitCollectionDidChange:
++// has been deprecated since iOS 17 and is documented to stop being called in a
++// future release; this application's deployment target is 26.0, so the
++// registration below is available unconditionally and is what will still be
++// delivering the switch when that happens. Both land in the same function,
++// which applies a change once and ignores the second telling.
++//
++// Nothing of self is captured, so the block the registration copies does not
++// keep this controller alive.
++- (void)viewDidLoad
++{
++    [super viewDidLoad];
++    // The selected tab, and every other system control under this controller,
++    // in the accent rather than UIKit's blue. tintColor inherits down the view
++    // tree, so this one line covers the bar itself and anything added to it.
++    self.view.tintColor = orca_ios_accent();
++    [self registerForTraitChanges:@[ UITraitUserInterfaceStyle.class ]
++                      withHandler:^(id<UITraitEnvironment> environment,
++                                    UITraitCollection     *previous) {
++                          (void) environment;
++                          (void) previous;
++                          Slic3r::GUI::orca_ios_appearance_changed();
++                      }];
++}
++
+ - (void)traitCollectionDidChange:(UITraitCollection *)previous
+ {
+     [super traitCollectionDidChange:previous];
+@@ -1336,6 +1383,9 @@ static const CGFloat kOrcaTabBarInset = 72;
+     Slic3r::GUI::orca_ios_appearance_changed();
+ }
+ 
++// Re-applied rather than set once: the window's bounds change on rotation, and
++// wx sets this view's frame itself whenever the frame resizes, so the inset has
++// to be put back afterwards.
+ - (void)viewDidLayoutSubviews
+ {
+     [super viewDidLayoutSubviews];

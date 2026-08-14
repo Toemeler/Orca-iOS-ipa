@@ -7512,109 +7512,87 @@ a search string and fix nothing.
 | the native tab bar, toolbar, capsule | strings passed in from C++ | already translated by the first row |
 | three labels written in ObjC++ | `wxGetTranslation` | first row, via patch 0425 |
 
-### 0427 — one base colour: charcoal grey and cream white
+### 0427 — one palette, and the plist that made dark mode a no-op
 
-**Cream white `#FAF5EA` in light, charcoal grey `#3C4043` in dark.** The base
-colour only — the page every surface is painted on. Nothing else moved: the
-ORCA green, the button greys, the input borders, the separators, the disabled
-greys and every text colour are still Orca's.
+**The device's dark mode did nothing, and the reason was not in the code.**
+`Info.plist` carried `UIUserInterfaceStyle = Light`, written by the step-4
+workflow. That key does not tint anything - it tells UIKit the app has one
+appearance, so every trait collection in the process reports light, and with it
+`orca_ios_system_is_dark()`, `wxSystemAppearance::IsDark()`,
+`GUI_App::dark_mode()` and every trait-change callback. 0414 taught the
+application to read the system honestly and 0427's first version wired the
+switch through to every last copy of the flag; both were correct and neither
+could ever fire. The key is gone. It was added for a real reason - Orca's
+panels were hardcoded white while its text followed the system, so after sunset
+the "Printer", "Filament" and "Process" headers went light-on-white - and that
+reason is what the rest of this patch removes.
 
-**Orca has no "background colour" to set.** It has a white it paints the page
-with — `*wxWHITE`, 364 direct `SetBackgroundColour` calls plus everything that
-goes through `StateColor` — and one entry in `StateColor.cpp`'s table,
-`{"#FFFFFF", "#2D2D31"}`, that answers with a dark grey when the appearance is
-dark. Both ends of that one pair are what "the base colour" means here, and
-both are replaced. The table's other 40 entries are untouched, which is what
-keeps everything else Orca's.
+**Orca has no palette, and now it has one.** Its colours are literal hex in the
+source, forty-odd of them, with a table in `StateColor.cpp` mapping each to
+something darker for dark mode - pairs with no scale behind them, and nothing
+at all for light mode, where every colour is used exactly as written. In place
+of that:
 
-**Light mode had to be taught to translate at all.** `darkModeColorFor2()`
-opens with `if (!gDarkMode) return color;` — upstream's light mode is the
-identity, because upstream's light *is* the white in the source. So the light
-branch now answers exactly one colour, the base, and returns everything else
-untouched. `lightModeColorFor()` — which is what `UpdateDarkUI()` translates
-plain wx windows with on the way back from dark — answers the base ahead of its
-reverted table, because two colours map onto the dark base now and which one
-comes back out of a reverted `std::map` is insertion order rather than an
-answer.
+| tone | light | dark | what it is |
+|---|---|---|---|
+| page | `#FAF9F5` | `#262624` | the window, the 3D view, every web page |
+| surface | `#FFFEFB` | `#30302E` | cards, inputs, popups, panel headers |
+| sunken | `#F2F0E9` | `#1C1B1A` | side strips, top bar |
+| fill / hover | `#EDEAE0` / `#E4E0D3` | `#3A3A37` / `#45443F` | button faces, tracks, row highlight |
+| knob | `#FFFDF7` | `#C9C6BE` | the moving part of a switch |
+| border / strong | `#E2DFD5` / `#D2CEC1` | `#3E3E3B` / `#514F4A` | separators; input and box outlines |
+| text / soft / muted / dim | `#1F1E1D` `#3F3E3A` `#6F6E69` `#A3A099` | `#F5F4EF` `#E5E3DC` `#B4B2AA` `#7C7A74` | four weights |
+| accent (+hover, tint, soft) | `#009688` | `#2CA898` | ORCA turquoise, and it is the only accent |
 
-**Where the base is asked for:**
+Warm neutrals, because a grey scale with no temperature next to a turquoise
+reads as cold rather than neutral. Two lookup tables are built from one list of
+"this colour Orca writes means this tone", so **light mode is a design now
+rather than the absence of one** - the reason the first attempt left white
+patches everywhere was that it translated one colour and left the other
+thirty-three as Orca wrote them.
 
-| surface | asks | 
-|---|---|
-| every widget Orca draws itself | `StateColor::colorForStates` / `darkModeColorFor` |
-| plain wx windows | `GUI_App::UpdateDarkUI`, through the same two functions |
-| About, system info, the preview slider's labels, Plater's tooltip | `m_color_window_default`, set in `init_label_colours()` |
-| the 3D view — the largest single piece of base colour in the app | `GLCanvas3D::_render_background()` |
-| the web pages | their own stylesheets, below |
+**What is deliberately not in the scale:** the blue, the orange and the red.
+Those say something - a link, a warning, an error - and keep Orca's own values
+including its dark variants. Four unused BBS greens are carried the same way so
+that anything still reaching for one behaves exactly as before.
 
-`m_color_window_default` was `wxSYS_COLOUR_WINDOW` in light, which on iOS is
-`UIColor.systemBackground`: pure white in light and pure **black** in dark.
-Neither is this port's page.
+**Round trips, which is what the table has to get right.** `UpdateDarkUI()`
+reads a window's *current* background back and asks again, so every tone has to
+answer for its own colour in either appearance, not just for Orca's. Both
+tables therefore contain each tone's light and dark value as keys as well.
+Orca's own colours are inserted last and win: `#FFFFFF` is the window
+background before it is anything else, which is also why the surface tone's
+light value is `#FFFEFB` and not pure white - two meanings for one colour is
+the one thing a lookup table cannot express. `tools/…` has no test for this;
+the check that was run is generated from the source block itself and lives in
+the commit message.
 
-**The 3D view was the point of the exercise.** It was `#E7E7E7` in light and
-`#54545A` in dark — a viewport grey of its own, unrelated to the chrome around
-it, and the biggest thing on the screen. It is the base colour now, read per
-frame from the same place everything else reads it, so there is nothing to keep
-in step when the appearance changes. The plate stays clearly separate from it
-in both modes: `UNSELECT_COLOR` is `0.82` against cream, `UNSELECT_DARK_COLOR`
-`0.384` against charcoal — more contrast in dark than there was.
+**The nine colours that never reach StateColor** - `m_color_label_default`,
+`m_color_highlight_default`, `m_color_selected_btn_bg` and the rest - are read
+straight off `GUI_App`, so `init_label_colours()` now asks the palette for them
+with the colour Orca means. `SetDarkMode()` moves to the top of that function
+because it is what the lookups answer against.
 
-**Sync with the system was three-quarters missing.** 0414 made
-`GUI_App::dark_mode()` a live read of `UIUserInterfaceStyle` and asked for a
-repaint, and that is right for anything built *after* a switch — but three
-things downstream of `dark_mode()` are copies that only change when they are
-told to, and none of them was:
+**The native chrome had a colour from nowhere.** The tab bar, the toolbar, the
+slice/print pair and the numeric keypad were taking UIKit's system blue.
+They take `orca_ios_accent()` now - a dynamic `UIColor` carrying the same two
+turquoises as the accent tone, so UIKit resolves it per appearance and a switch
+needs nothing re-set. One `self.view.tintColor` on the tab bar controller
+covers the selected tab and everything added under it.
 
-* `StateColor::SetDarkMode()` is called from exactly one place,
-  `init_label_colours()`. Without it the table above keeps answering in the
-  appearance we just left, and that table is what every widget Orca draws
-  itself asks. This alone meant the switch did essentially nothing.
-* `m_is_dark_mode` is the flag `UpdateDarkUI()` branches on, and only
-  `Update_dark_mode_flag()` sets it — so the walk that repaints plain wx
-  windows was repainting them into the old mode.
-* `EVT_GLCANVAS_COLOR_MODE_CHANGED` is what carries a change into the 3D view,
-  the bed, the toolpath viewer, the sliders, the notifications and ImGui. Its
-  handler reads `dark_color_mode` out of the config, which is why that is set
-  first.
+**The web pages carry the scale as literal hex**, because a stylesheet cannot
+call C++: `global.css`'s token block for both appearances, and each page's own
+`body`. They were translated mechanically from the same table - a light
+stylesheet writes Orca's own colours, a dark one writes what Orca's dark table
+produced, so the two directions needed two mappings. Six tokens whose Orca
+value crossed two tones (`--bg-color-alt`, `--icon-color`, and the dark
+`--bg-color-secondary`) are set outright.
 
-`orca_ios_appearance_changed()` is now `MainFrame::on_sys_color_changed()`'s
-sequence in its order, minus the parts that need a menu bar or a Windows title
-bar, plus `WebView::RecreateAll()` — the web pages carry light or dark in their
-*user agent* (`BBL-Slicer/v… (dark)`), and `home.js` reads it back out of
-`navigator.userAgent` to decide whether to load `dark.css`. Re-setting the
-agent and reloading is how that function does it, and `SetUserAgent` reaches
-`m_webView.customUserAgent` on iOS because 0210 builds `src/osx/webview_webkit.mm`
-for this port.
+**Not verified on device.** The two to look at first are the sidebar in light -
+white cards on a warm page is the whole design and it is where Orca's
+hardcoded near-whites were densest - and a live appearance switch, which now
+has something to switch to for the first time.
 
-**And the callback itself is deprecated.** `traitCollectionDidChange:` has been
-deprecated since iOS 17 and is documented to stop being called in a future
-release; this app's deployment target is **26.0**, so
-`registerForTraitChanges:withHandler:` is available unconditionally and is now
-registered alongside it in `OrcaTabBarController`. Both land in the same
-function, which applies a change once — `applied` is seeded from the appearance
-the app was started in, so the call that arrives during launch, when the view
-first gets a trait collection, does nothing rather than walking a widget tree
-that is still being built.
-
-**The two values live in five places, and this is the list.** A stylesheet
-cannot ask a C++ function for a colour, so:
-
-| where | what |
-|---|---|
-| `src/slic3r/GUI/Widgets/StateColor.cpp` | `gBaseLight` / `gBaseDark` — the definition everything C++ reads |
-| `resources/web/include/global.css` | `--bg-color`, in both `:root` blocks (`prefers-color-scheme` already picks between them) |
-| `resources/web/{homepage,guide,dialog,model,orca,flush}/…` | the page-level `body` background, light and dark |
-
-Light-mode pages that painted no background at all — the home page was one —
-say it now rather than showing whatever wx paints behind the transparent web
-view, because that window is a plain `wxPanel` whose default is
-`wxSYS_COLOUR_WINDOW` again.
-
-**Not verified on device.** Nothing here has been through a device build at the
-time of writing. The two worth looking at first are the 3D view against the
-plate in light mode — cream is brighter than the `#E7E7E7` it replaces, and the
-bed texture sits on it — and the web view reload on a live switch, which is the
-one step in the sequence that throws away page state.
 ## 0428 — the dialog that had nothing left to ask, and the second tile
 
 Two reports from the device, one cause between them: *"wenn ich eine Datei

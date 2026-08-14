@@ -1,0 +1,120 @@
+--- a/src/libslic3r/Model.hpp
++++ b/src/libslic3r/Model.hpp
+@@ -1685,12 +1685,21 @@ public:
+     //BBS: add auxiliary files temp path
+     std::string   get_auxiliary_file_temp_path();
+ 
+     // BBS: backup
+     std::string   get_backup_path();
+     std::string   get_backup_path(const std::string &sub_path);
++    // The backup directory as it already is, or "" when there is none.
++    //
++    // get_backup_path() above *creates* one when the model has not needed a
++    // backup yet, which is right for a caller that is about to write into it
++    // and wrong for one that only wants to tidy up a directory that exists.
++    // The iOS autosave asks this question on a timer, and a creating accessor
++    // there would leave a fresh empty backup behind on every tick that had
++    // nothing to do.
++    const std::string &current_backup_path() const { return backup_path; }
+     void          set_backup_path(const std::string &path);
+     void          load_from(Model & model);
+     bool          is_need_backup() { return need_backup;  }
+     void          set_need_backup();
+     void          remove_backup_path_if_exist();
+ 
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -738,12 +738,76 @@ void orca_ios_retire_autosave_copy(const wxString &project_path)
+         boost::filesystem::remove(copy, ec);
+         BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: retired the copy " << copy.string()
+                                  << (ec ? " FAILED: " + ec.message() : std::string(" ok"));
+     }
+ }
+ 
++// The backup is worth keeping only while it holds something no file has.
++//
++// Orca's backup directory is what the "Previously unsaved items have been
++// detected. Do you want to restore them?" offer reads on the next launch: it
++// asks whether <backup>/.3mf is there and whether the process named in the
++// lock.txt beside it is gone. On a desktop both halves are true only after a
++// crash. On iOS the second half is true after *every* session - there is no
++// quit on this platform, the system kills the process - so once 0424 made that
++// test answerable at all, the offer came up on every launch, on top of a home
++// page whose tiles were already showing the very work it was offering to
++// rescue. 0424 was right that iOS is the platform that needs crash recovery
++// most; what it did not do was give the recovery any way to tell that the kill
++// had cost nothing.
++//
++// Taking the offer is also what put the project on the home page twice.
++// A restore reinstates the project's identity from origin.txt, and origin.txt
++// is written once - when the file was first loaded - and never again. A project
++// that has moved since (saved to Documents/X.3mf, or written to the copy under
++// Documents/Autosave while it had no file of its own) came back under the path
++// it was opened from, beside the tile for the path it actually lives at. Two
++// tiles, one name, one project.
++//
++// So the moment the autosave has put this work into a file, the backup copy of
++// the same work has nothing left to offer and it goes. This is precisely what
++// save_project() does through Slic3r::remove_backup(model, false) after an
++// explicit save - and on this port the autosave *is* the save, so it has to
++// keep the same promise. Done directly rather than through the backup manager
++// because that queues the removal onto its own thread, and the call that
++// matters most is the one from willResignActive, where there may be no next
++// moment in which that thread is scheduled.
++//
++// What this leaves is the invariant the offer needs in order to be honest:
++// <backup>/.3mf exists only while there are changes that no file has. Nothing
++// is given up by that - the backup timer writes it again as soon as the model
++// moves on, so a crash between two autosaves still has a copy at most ten
++// seconds old to come back from, which is the case the offer is actually for.
++//
++// origin.txt is rewritten rather than removed. It is the identity a restore
++// would hand back, and it is also the archive the importer falls back to for
++// anything missing from the backup, so pointing it at the file that now holds
++// this project is both the answer that stops a restore landing beside its own
++// tile and the more complete of the two files.
++static void orca_ios_backup_overtaken_by(Plater *plater, const boost::filesystem::path &saved)
++{
++    const std::string backup = plater->model().current_backup_path();
++    if (backup.empty())
++        return;
++
++    {
++        std::ofstream origin(backup + "/origin.txt",
++                             std::ios::out | std::ios::binary | std::ios::trunc);
++        origin << saved.string();
++    }
++
++    boost::system::error_code ec;
++    const boost::filesystem::path stale = boost::filesystem::path(backup) / ".3mf";
++    if (!boost::filesystem::exists(stale, ec))
++        return;
++    boost::filesystem::remove(stale, ec);
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-autosave: retired the backup " << stale.string()
++                             << (ec ? " FAILED: " + ec.message() : std::string(" ok"))
++                             << ", origin is now " << saved.string();
++}
++
+ // Write the copy if there is anything to write. `force` skips the rate limit:
+ // it is set when the application is about to lose the foreground, where the
+ // choice is not "now or in a minute" but "now or never".
+ static void orca_ios_autosave_to_documents(Plater *plater, bool force)
+ {
+     if (!s_ios_autosave_pending)
+@@ -787,12 +851,16 @@ static void orca_ios_autosave_to_documents(Plater *plater, bool force)
+                              << (force ? " (forced)" : "")
+                              << (rc == 0 ? std::string(" ok")
+                                          : " FAILED rc=" + std::to_string(rc));
+     if (rc != 0)
+         return;
+ 
++    // This work is in a file now, so the backup copy of it is spent - see
++    // above for what leaving it behind costs on the next launch.
++    orca_ios_backup_overtaken_by(plater, out);
++
+     if (wxGetApp().mainframe == nullptr)
+         return;
+ 
+     if (to_own_file) {
+         // The project's own file is current, so the "unsaved changes" the title
+         // and the Save button report are no longer true. Saying otherwise on a

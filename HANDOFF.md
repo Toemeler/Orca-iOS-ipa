@@ -7914,3 +7914,84 @@ invoking-window restore); whether the gallery installs at all, which the log
 says outright as `orca-ios-gallery: installed under …`; and whether a drag from
 the Files app is accepted on each of the five pages, which the log names as
 `orca-ios-drop: N file(s) on page P`.
+
+## 0432 — the restore offer the autosave had already answered
+
+From the device: *"Immer wenn ich die App schliesse und wieder öffne kommt 'ein
+ungespeichertes Projekt wurde entdeckt' obwohl autosave schon geregelt hat.
+Anschliessend habe ich das Projekt doppelt."*
+
+Both halves are the same directory: the one Orca backs up into.
+
+### Why the offer came up on every launch
+
+`Plater::priv`'s `EVT_RESTORE_PROJECT` handler asks `has_restore_data()` about
+`app_config`'s `last_backup_dir`, and that function asks two questions:
+
+1. is there a `<backup>/.3mf`, and
+2. is the process named in the `lock.txt` beside it gone?
+
+On a desktop the second is true only after a crash, because an ordinary exit
+runs `close_with_confirm()` → `set_backup_path("")` → the directory is removed.
+On iOS there is no ordinary exit. The system kills the process, so question 2 is
+true after **every** session — and 0424 is what made it answerable at all
+(before it, `get_process_name()` compared our own path against itself and the
+offer could never appear).
+
+That left question 1 doing all of the work, and nothing was ever answering it
+honestly. The backup 3MF is written by the ten-second timer whenever the model
+is dirty, and *nothing on this port ever removed it* — the autosave wrote the
+project's own file right beside it and left the backup sitting there looking
+exactly like unrescued work. So the offer came up on every launch, on top of a
+home page whose tiles were already showing the very project it was offering to
+bring back.
+
+`save_project()` has always removed it: `Slic3r::remove_backup(model, false)`
+deletes `<backup>/.3mf` the moment an explicit save has put the same content in
+a real file. On this port the autosave *is* the save — 0428 made it write the
+project's own file — and it was not keeping that half of the promise.
+
+### Why saying Yes gave the project twice
+
+A restore reinstates the project's identity from `origin.txt`, and `origin.txt`
+is written **once**, by the importer, when the file is first loaded, and never
+again. A project that has moved since — saved to `Documents/X.3mf` by 0367, or
+written to `Documents/Autosave/X.3mf` while it had no file of its own — comes
+back under the path it was *opened* from, so `set_project_filename()` puts that
+path on the home page beside the tile for the path the project actually lives
+at. Two tiles, one name, one project: the same shape as the duplicate 0428
+removed, reached through the restore instead of through Save.
+
+### What 0432 does
+
+One rule, in `orca_ios_backup_overtaken_by()`, called from the autosave right
+after a successful export:
+
+> `<backup>/.3mf` exists only while there are changes that no file has.
+
+- The stale backup is deleted, synchronously. Not through the backup manager:
+  that queues the removal onto its own thread, and the call that matters most is
+  the one from `willResignActive`, where there may be no next moment in which
+  that thread is scheduled.
+- `origin.txt` is rewritten to the file that was just written, rather than
+  removed. It is the identity a restore hands back — so a restore now lands in
+  the project's own tile — and it is also the archive the importer falls back to
+  for anything missing from the backup, where the complete current file is the
+  better of the two answers.
+- `Model::current_backup_path()` is new because `get_backup_path()` *creates* a
+  directory when the model has not needed one, which is right for a caller about
+  to write into it and wrong for one running on a timer with nothing to do.
+
+Nothing is given up. The backup timer writes `.3mf` again as soon as the model
+moves on, so a crash between two autosaves still has a copy at most ten seconds
+old to come back from — which is the case the offer is actually for, and the
+only case in which it now appears.
+
+### What is not verified
+
+Not run on device. Two things to watch in the log: `orca-ios-autosave: retired
+the backup …/.3mf ok` on every autosave tick that wrote a file, and the absence
+of the restore dialog on the launch after a swipe-up close. The first launch
+*after installing this build* is expected to offer the restore one last time —
+the directory the old build left behind still has its `.3mf`, and answering
+"Nein" is both correct and enough to have it removed.

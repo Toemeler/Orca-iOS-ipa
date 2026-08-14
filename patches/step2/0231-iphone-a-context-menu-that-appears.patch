@@ -1,12 +1,259 @@
 diff --git a/src/osx/iphone/menu.mm b/src/osx/iphone/menu.mm
-index 9d1a4a9..ed4e4cc 100644
+index 46c6c40..ed4e4cc 100644
 --- a/src/osx/iphone/menu.mm
 +++ b/src/osx/iphone/menu.mm
-@@ -31,6 +31,7 @@
+@@ -30,10 +30,197 @@
+ #if wxUSE_MENUS
  
  #include "wx/osx/private.h"
- #include "wx/window.h"
++#include "wx/window.h"
 +#include "wx/translation.h"
  
  // other standard headers
  // ----------------------
+ #include <string.h>
++#include <algorithm>
++
++// ---------------------------------------------------------------------------
++// Popping a menu up, which this port has never done
++// ---------------------------------------------------------------------------
++//
++// wxMenuIPhoneImpl::PopUp() below was `#if 0 // TODO wxIOS` around the Cocoa
++// implementation, so wxWindow::PopupMenu() returned true on iOS having shown
++// nothing at all. Every context menu in an application is therefore dead: the
++// caller builds its wxMenu, asks for it, is told it was shown, and the user
++// sees nothing. There is no error and no log line - which is exactly why it
++// survives so long unnoticed.
++//
++// WHY THIS IS NOT A UIMenu, even though wx already builds one.
++//
++// GetHMenu() above turns the wxMenu into a real UIMenu tree, and that is the
++// modern iOS presentation - blurred, with icons, and it is what UIKit shows
++// for a long press. UIKit has no way to *present* one programmatically. A
++// UIMenu appears only when the system's own gesture drives it: from a
++// UIButton with showsMenuAsPrimaryAction, from a UIBarButtonItem, or from a
++// UIContextMenuInteraction the user has long-pressed. wxWindow::PopupMenu()
++// is a command - "show this menu, here, now" - and no UIMenu API answers it.
++//
++// UIAlertController in its action-sheet style does answer it, is presentable
++// at an arbitrary point, and on a regular-width screen (which an iPad is) UIKit
++// draws it as a popover anchored where the finger was - the same shape, in the
++// same place, as the menu this call means. Long menus scroll, disabled items
++// are drawn disabled, and the destructive entries are red. Submenus open as a
++// second sheet, which is how iOS has always nested a list too deep for one.
++//
++// Views that want the blurred UIMenu with icons can still have it, by owning a
++// UIContextMenuInteraction of their own; this is the fallback for every menu
++// that goes through wx, and the point is that there is no longer such a thing
++// as a menu in this port that does nothing.
++
++static void wxOSXIPhonePresentMenu(wxMenu* menu, wxWindow* win, UIView* view, CGPoint pt);
++
++// The controller a modal presentation has to be made from: the deepest one
++// that is not already presenting something else. Presenting from a controller
++// that has a presented controller throws, and this port stacks dialogs of its
++// own (a wxDialog is its own UIWindow here), so the root is often not it.
++static UIViewController* wxOSXIPhonePresenter(UIView* view)
++{
++    UIWindow* window = view != nil ? view.window : nil;
++    if ( window == nil )
++        return nil;
++
++    UIViewController* vc = window.rootViewController;
++    while ( vc != nil && vc.presentedViewController != nil )
++        vc = vc.presentedViewController;
++    return vc;
++}
++
++// One row. Everything about the item that the user can see is read here and
++// not before: PopupMenu() has just run UpdateUI() over the whole tree, so
++// enabled and checked are current at this moment.
++static UIAlertAction* wxOSXIPhoneMenuAction(wxMenu* menu, wxMenuItem* item,
++                                            wxWindow* win, UIView* view, CGPoint pt)
++{
++    wxString label = item->GetItemLabelText();
++    if ( label.empty() )
++        return nil;
++
++    // A check item carries its state in the title, because UIAlertAction has
++    // no checked style and the private key that sets one is not an option.
++    if ( item->IsCheckable() && item->IsChecked() )
++        label = wxString::FromUTF8("\xE2\x9C\x93 ") + label;
++
++    wxCFStringRef cfLabel(label);
++
++    UIAlertActionStyle style = UIAlertActionStyleDefault;
++    const int itemid = item->GetId();
++    if ( itemid == wxID_DELETE || itemid == wxID_REMOVE || itemid == wxID_CLEAR )
++        style = UIAlertActionStyleDestructive;
++
++    UIAlertAction* action = nil;
++
++    if ( item->IsSubMenu() )
++    {
++        // "More…" is what a nested list looks like on this platform: the row
++        // opens the submenu as a sheet of its own, anchored at the same point.
++        wxMenu* const submenu = item->GetSubMenu();
++        action = [UIAlertAction actionWithTitle:cfLabel.AsNSString()
++                                          style:UIAlertActionStyleDefault
++                                        handler:^(UIAlertAction* a) {
++            (void) a;
++            // Next turn: this handler runs while the sheet that owns it is
++            // still being dismissed, and presenting from a controller that is
++            // in the middle of a dismissal is the "already presenting"
++            // exception.
++            dispatch_async(dispatch_get_main_queue(), ^{
++                wxOSXIPhonePresentMenu(submenu, win, view, pt);
++            });
++        }];
++    }
++    else
++    {
++        action = [UIAlertAction actionWithTitle:cfLabel.AsNSString()
++                                          style:style
++                                        handler:^(UIAlertAction* a) {
++            (void) a;
++            // THE INVOKING WINDOW HAS TO BE PUT BACK.
++            //
++            // wxWindowBase::PopupMenu() sets it for the duration of
++            // DoPopupMenu() and clears it on the way out - and on every other
++            // platform that is the duration of the menu, because DoPopupMenu()
++            // runs its own event loop and only returns once an item has been
++            // chosen. Here the sheet is presented and the call returns
++            // immediately, so by the time this handler runs the menu no longer
++            // knows which window it belongs to, and the command would be sent
++            // to nothing. Restored for the send, and only for the send.
++            wxMenuInvokingWindowSetter setInvokingWin(*menu, win);
++            int checked = -1;
++            if ( item->IsCheckable() )
++            {
++                checked = item->IsChecked() ? 0 : 1;
++                item->Check(checked != 0);
++            }
++            menu->SendEvent(itemid, checked);
++        }];
++        action.enabled = item->IsEnabled() ? YES : NO;
++    }
++
++    return action;
++}
++
++static void wxOSXIPhonePresentMenu(wxMenu* menu, wxWindow* win, UIView* view, CGPoint pt)
++{
++    UIViewController* const presenter = wxOSXIPhonePresenter(view);
++    if ( menu == nullptr || presenter == nil )
++        return;
++
++    const wxString title = wxStripMenuCodes(menu->GetTitle(), wxStrip_Menu);
++    wxCFStringRef cfTitle(title);
++
++    UIAlertController* sheet =
++        [UIAlertController alertControllerWithTitle:(title.empty() ? nil : cfTitle.AsNSString())
++                                            message:nil
++                                     preferredStyle:UIAlertControllerStyleActionSheet];
++
++    for ( wxMenuItemList::compatibility_iterator node = menu->GetMenuItems().GetFirst();
++          node;
++          node = node->GetNext() )
++    {
++        wxMenuItem* const item = node->GetData();
++        if ( item == nullptr || item->IsSeparator() )
++            continue;   // a sheet has no separators to draw them with
++
++        UIAlertAction* const action = wxOSXIPhoneMenuAction(menu, item, win, view, pt);
++        if ( action != nil )
++            [sheet addAction:action];
++    }
++
++    if ( sheet.actions.count == 0 )
++        return;         // an empty menu is not worth a sheet
++
++    // Cancel belongs on a sheet that fills the width of the screen and does
++    // not belong on a popover, which is dismissed by tapping outside it. The
++    // trait decides, because the same application is both on an iPad.
++    if ( view.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact )
++    {
++        wxCFStringRef cfCancel(wxGetTranslation(wxString("Cancel")));
++        [sheet addAction:[UIAlertAction actionWithTitle:cfCancel.AsNSString()
++                                                  style:UIAlertActionStyleCancel
++                                                handler:nil]];
++    }
++
++    // Where the menu was asked for. Clamped into the view, because a point
++    // taken from a gesture near the edge can land outside it and UIKit then
++    // puts the popover in the middle of the screen.
++    const CGRect bounds = view.bounds;
++    CGPoint anchor = pt;
++    anchor.x = std::max(CGRectGetMinX(bounds), std::min(anchor.x, CGRectGetMaxX(bounds)));
++    anchor.y = std::max(CGRectGetMinY(bounds), std::min(anchor.y, CGRectGetMaxY(bounds)));
++
++    UIPopoverPresentationController* const popover = sheet.popoverPresentationController;
++    if ( popover != nil )
++    {
++        popover.sourceView = view;
++        popover.sourceRect = CGRectMake(anchor.x, anchor.y, 1, 1);
++        popover.permittedArrowDirections = UIPopoverArrowDirectionAny;
++    }
++
++    [presenter presentViewController:sheet animated:YES completion:nil];
++}
+ 
+ class wxMenuIPhoneImpl : public wxMenuImpl
+ {
+@@ -68,44 +255,22 @@ public :
+ 
+     virtual void PopUp( wxWindow *win, int x, int y ) override
+     {
+-#if 0 //  TODO wxIOS
+-        UIView *view = win->GetPeer()->GetWXWidget();
++        if ( win == nullptr )
++            return;
+ 
+-        wxPoint screenPoint(x,y);
+-        NSPoint pointInView = wxToNSPoint(view, win->ScreenToClient( screenPoint ));
++        UIView* const view = (UIView*) win->GetHandle();
++        if ( view == nil )
++            return;
+ 
+-        // action and validation methods are not called from macos for modal dialogs
+-        // when using popUpMenuPositioningItem therefore we fall back to the older method
+-        if ( wxDialog::OSXHasModalDialogsOpen() )
+-        {
+-            // we don't want plug-ins interfering
+-            m_osxMenu.allowsContextMenuPlugIns = NO;
+-
+-            wxTopLevelWindow* tlw = static_cast<wxTopLevelWindow*>(wxGetTopLevelParent(win));
+-            NSWindow* nsWindow = tlw->GetWXWindow();
+-            NSRect nsrect = NSZeroRect;
+-            nsrect.origin = wxToNSPoint( nullptr, screenPoint );
+-            nsrect = [nsWindow convertRectFromScreen:nsrect];
+-
+-            NSEvent* rightClick = [NSEvent mouseEventWithType:NSRightMouseDown
+-                                                     location:nsrect.origin
+-                                                modifierFlags:0
+-                                                    timestamp:0
+-                                                 windowNumber:[nsWindow windowNumber]
+-                                                      context:nil
+-                                                  eventNumber:0
+-                                                   clickCount:1
+-                                                     pressure:0];
+-
+-            [UIMenu popUpContextMenu:m_osxMenu withEvent:rightClick forView:view];
+-        }
+-        else
+-        {
+-            [m_osxMenu popUpMenuPositioningItem:nil atLocation:pointInView inView:view];
+-        }
+-#endif
++        // x,y arrive in screen coordinates: wxWindowMac::DoPopupMenu converts
++        // client to screen before calling here, or substitutes the pointer
++        // position when the caller passed wxDefaultCoord.
++        const wxPoint client = win->ScreenToClient(wxPoint(x, y));
++
++        wxOSXIPhonePresentMenu(m_peer, win, view, CGPointMake(client.x, client.y));
+     }
+ 
++
+     virtual void GetMenuBarDimensions(int &x, int &y, int &width, int &height) const override
+     {
+ #if 0 //  TODO wxIOS

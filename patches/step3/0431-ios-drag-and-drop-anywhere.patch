@@ -103,7 +103,7 @@ index c706f46f..6c1d21a4 100644
  
  void MainFrame::open_recent_project(size_t file_id, wxString const & filename)
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 06c33a38..45414aac 100644
+index 018664f6..3d73015b 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -775,6 +775,180 @@ static void orca_ios_home_run(NSString *script)
@@ -287,7 +287,7 @@ index 06c33a38..45414aac 100644
  // -- the home gallery ------------------------------------------------------
  //
  // WHAT THIS REPLACES.
-@@ -3546,11 +3720,50 @@ static bool orca_ios_install_gallery(UIView *host)
+@@ -3574,11 +3748,50 @@ static bool orca_ios_install_gallery(UIView *host)
  // Called from the tab bar's sync, which runs on every page change and every
  // notebook rebuild - so this is both the install's retry and its visibility.
  // The chip is in the window, and the window is not the home page.

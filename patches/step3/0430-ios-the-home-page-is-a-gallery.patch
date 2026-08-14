@@ -244,10 +244,10 @@ index 98f1077b..0a5d5a2e 100644
      boost::property_tree::wptree data;
      wxGetApp().mainframe->get_recent_projects(data, images);
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index dfa406de..06c33a38 100644
+index dfa406de..018664f6 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -775,6 +775,798 @@ static void orca_ios_home_run(NSString *script)
+@@ -775,6 +775,826 @@ static void orca_ios_home_run(NSString *script)
      }];
  }
  
@@ -463,6 +463,7 @@ index dfa406de..06c33a38 100644
 +@property (nonatomic, assign) UIStackView                  *barRow;   // the bar holds it
 +@property (nonatomic, assign) BOOL                         selecting;
 ++ (UICollectionViewLayout *)layout;
+++ (NSCollectionLayoutSection *)sectionOfWidth:(CGFloat)width columns:(NSInteger)cols;
 +- (void)setProjects:(NSArray<OrcaProject *> *)projects;
 +- (void)toggleSelecting;
 +@end
@@ -560,27 +561,54 @@ index dfa406de..06c33a38 100644
 +        ^NSCollectionLayoutSection *(NSInteger section, id<NSCollectionLayoutEnvironment> env) {
 +            (void) section;
 +            const CGFloat width = env.container.effectiveContentSize.width;
++            // Before Auto Layout has resolved the grid's own width this runs
++            // with nothing to divide, and a negative tile width is not a
++            // smaller tile, it is a layout UIKit cannot satisfy. One column of
++            // the minimum, and the next pass has a real width to work from.
++            if (width < kOrcaTileMin)
++                return [OrcaGallery sectionOfWidth:kOrcaTileMin columns:1];
++
 +            NSInteger cols = (NSInteger) floor((width + kOrcaTileGap) / (kOrcaTileMin + kOrcaTileGap));
 +            if (cols < 2)
 +                cols = 2;
-+            const CGFloat tile   = (width - kOrcaTileGap * (cols - 1)) / cols;
-+            const CGFloat height = floor(tile * 0.72) + 46;
-+
-+            NSCollectionLayoutItem *const item = [NSCollectionLayoutItem itemWithLayoutSize:
-+                [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
-+                                              heightDimension:[NSCollectionLayoutDimension fractionalHeightDimension:1.0]]];
-+            NSCollectionLayoutGroup *const group = [NSCollectionLayoutGroup horizontalGroupWithLayoutSize:
-+                [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
-+                                              heightDimension:[NSCollectionLayoutDimension absoluteDimension:height]]
-+                                                                                        repeatingSubitem:item
-+                                                                                                   count:(int) cols];
-+            group.interItemSpacing = [NSCollectionLayoutSpacing fixedSpacing:kOrcaTileGap];
-+
-+            NSCollectionLayoutSection *const sec = [NSCollectionLayoutSection sectionWithGroup:group];
-+            sec.interGroupSpacing = kOrcaTileGap;
-+            sec.contentInsets     = NSDirectionalEdgeInsetsMake(2, 0, 28, 0);
-+            return sec;
++            return [OrcaGallery sectionOfWidth:width columns:cols];
 +        }] autorelease];
++}
++
++// THE ITEM'S WIDTH IS ABSOLUTE, AND THAT IS THE WHOLE POINT.
++//
++// It was fractionalWidthDimension:1.0, and that fraction is a fraction *of the
++// group* - so every tile was as wide as the entire row.
++// -horizontalGroupWithLayoutSize:repeatingSubitem:count: honours the size the
++// item was given rather than dividing the group by the count, so the column
++// count was computed correctly and then ignored: the first project filled the
++// screen and the second was laid out off the right hand edge of it. Reported
++// from the device as "ich sehe nur ein item und viel zu gross", which is
++// exactly what that produces.
++//
++// Dividing the width here instead, in points, puts the arithmetic that has to
++// come out right - cols tiles plus the gaps between them fitting inside the
++// row - in one place, where it cannot be reintroduced by a fraction that
++// rounds up.
+++ (NSCollectionLayoutSection *)sectionOfWidth:(CGFloat)width columns:(NSInteger)cols
++{
++    const CGFloat tile   = floor((width - kOrcaTileGap * (cols - 1)) / cols);
++    const CGFloat height = floor(tile * 0.72) + 46;
++
++    NSCollectionLayoutItem *const item = [NSCollectionLayoutItem itemWithLayoutSize:
++        [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension absoluteDimension:tile]
++                                      heightDimension:[NSCollectionLayoutDimension fractionalHeightDimension:1.0]]];
++    NSCollectionLayoutGroup *const group = [NSCollectionLayoutGroup horizontalGroupWithLayoutSize:
++        [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
++                                      heightDimension:[NSCollectionLayoutDimension absoluteDimension:height]]
++                                                                                repeatingSubitem:item
++                                                                                           count:(int) cols];
++    group.interItemSpacing = [NSCollectionLayoutSpacing fixedSpacing:kOrcaTileGap];
++
++    NSCollectionLayoutSection *const sec = [NSCollectionLayoutSection sectionWithGroup:group];
++    sec.interGroupSpacing = kOrcaTileGap;
++    sec.contentInsets     = NSDirectionalEdgeInsetsMake(2, 0, 28, 0);
++    return sec;
 +}
 +
 +- (void)setProjects:(NSArray<OrcaProject *> *)projects
@@ -1046,7 +1074,7 @@ index dfa406de..06c33a38 100644
  // -- the plater toolbar ----------------------------------------------------
  //
  // The same nanosvg GLTexture uses to build the toolbar atlas, so the buttons
-@@ -2619,6 +3411,138 @@ static bool orca_ios_install_home_plus()
+@@ -2619,6 +3439,138 @@ static bool orca_ios_install_home_plus()
      }
  }
  
@@ -1185,7 +1213,7 @@ index dfa406de..06c33a38 100644
  // Called from the tab bar's sync, which runs on every page change and every
  // notebook rebuild - so this is both the install's retry and its visibility.
  // The chip is in the window, and the window is not the home page.
-@@ -2626,6 +3550,7 @@ void orca_ios_home_plus_update(wxBookCtrlBase *book)
+@@ -2626,6 +3578,7 @@ void orca_ios_home_plus_update(wxBookCtrlBase *book)
  {
      if (!orca_ios_install_home_plus())
          return;
@@ -1193,7 +1221,7 @@ index dfa406de..06c33a38 100644
      if (book == nullptr || gs_orca_home_panel == nullptr)
          return;
  
-@@ -2636,7 +3561,57 @@ void orca_ios_home_plus_update(wxBookCtrlBase *book)
+@@ -2636,7 +3589,57 @@ void orca_ios_home_plus_update(wxBookCtrlBase *book)
          BOOST_LOG_TRIVIAL(error) << "orca-ios-home: plus " << (on_home ? "shown" : "hidden")
                                   << " for page " << sel;
      [gs_orca_home_plus setHidden:on_home ? NO : YES];

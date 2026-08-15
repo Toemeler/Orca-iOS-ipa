@@ -1052,6 +1052,43 @@ index eb47d15..c022421 100644
  }
  #endif
  
+diff --git a/src/slic3r/GUI/Plater.cpp b/src/slic3r/GUI/Plater.cpp
+index 7bacd76..c463a6f 100644
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -10708,9 +10708,29 @@ void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
+ void Plater::priv::on_change_color_mode(SimpleEvent& evt) {
+     m_is_dark = wxGetApp().app_config->get("dark_color_mode") == "1";
+     sidebar->on_change_color_mode(m_is_dark);
+-    view3D->get_canvas3d()->on_change_color_mode(m_is_dark);
+-    preview->get_canvas3d()->on_change_color_mode(m_is_dark);
+-    assemble_view->get_canvas3d()->on_change_color_mode(m_is_dark);
++    // ONLY A CANVAS THAT HAS A GL CONTEXT.
++    //
++    // GLCanvas3D::on_change_color_mode() calls _init_select_plate_toolbar()
++    // unconditionally, which loads the plate toolbar's SVGs into textures -
++    // glGenTextures and friends. Reached before the canvas has ever been
++    // current, those entry points are still the null pointers glad starts
++    // with, and the call lands on address 0: EXC_BAD_ACCESS, pc = 0, killed.
++    //
++    // on_apple_change_color_mode() below has always guarded this, for exactly
++    // this reason. This handler did not, because the only thing that posted
++    // the event was the Preferences dialog, which cannot be open before the
++    // canvas is live. Something that can is: the appearance changing.
++    //
++    // Skipping loses nothing. GLCanvas3D::init() reads "dark_color_mode" back
++    // out of the config itself, so a canvas that comes up afterwards comes up
++    // in the right appearance.
++    const auto ready = [](auto *view) {
++        return view != nullptr && view->get_canvas3d() != nullptr &&
++               view->get_canvas3d()->is_initialized();
++    };
++    if (ready(view3D))        view3D->get_canvas3d()->on_change_color_mode(m_is_dark);
++    if (ready(preview))       preview->get_canvas3d()->on_change_color_mode(m_is_dark);
++    if (ready(assemble_view)) assemble_view->get_canvas3d()->on_change_color_mode(m_is_dark);
+     if (m_send_to_sdcard_dlg) m_send_to_sdcard_dlg->on_change_color_mode();
+ 
+     apply_color_mode();
 diff --git a/src/slic3r/GUI/Widgets/StateColor.cpp b/src/slic3r/GUI/Widgets/StateColor.cpp
 index 2a9d91f..0676b99 100644
 --- a/src/slic3r/GUI/Widgets/StateColor.cpp

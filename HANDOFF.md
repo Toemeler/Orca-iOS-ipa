@@ -7645,6 +7645,36 @@ construction is only as good as the appearance was at that moment**, and on
 iOS the appearance is not knowable that early unless you ask something that
 owns a window.
 
+**And then it crashed on launch, which was this patch's doing.** `pc = 0`,
+`EXC_BAD_ACCESS`, killed three seconds after start, in
+`GLTexture::load_from_svg` under
+`GLCanvas3D::_init_select_plate_toolbar()` under
+`Plater::priv::on_change_color_mode(SimpleEvent&)` - the handler for the
+`EVT_GLCANVAS_COLOR_MODE_CHANGED` this patch posts.
+
+`_init_select_plate_toolbar()` runs *unconditionally* in
+`GLCanvas3D::on_change_color_mode()` - it is not under the `reinit` flag - and
+it loads the plate toolbar's SVGs into GL textures. Reached before the canvas
+has ever been made current, `glGenTextures` and the rest are still the null
+pointers glad starts with, and the call lands on address 0.
+
+The sibling handler `on_apple_change_color_mode()` has always guarded exactly
+this with `is_initialized()`. The one that took our event did not, because
+until now the only thing that posted it was the Preferences dialog, which
+cannot be open before the canvas is live. The appearance changing can be, and
+after the previous commit it reliably *was*: the walk that repairs stored
+colours is now guaranteed to happen once at startup, so the event went out
+early for the first time. Both halves of that were new in the same commit,
+which is why the crash arrived with it and not with the palette.
+
+The guard is on the handler, per canvas, and skipping loses nothing:
+`GLCanvas3D::init()` reads `dark_color_mode` back out of the config, so a
+canvas that comes up afterwards comes up in the right appearance anyway.
+
+Worth keeping: **posting an event from a lifecycle callback puts it in a place
+its handler has never run from.** Everything reachable from that handler now
+has to be safe at that point too, and "reachable" includes GL.
+
 **Not verified on device.** The two to look at first are the sidebar in light -
 white cards on a warm page is the whole design and it is where Orca's
 hardcoded near-whites were densest - and a live appearance switch, which now

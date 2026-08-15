@@ -1053,7 +1053,7 @@ index eb47d15..c022421 100644
  #endif
  
 diff --git a/src/slic3r/GUI/Plater.cpp b/src/slic3r/GUI/Plater.cpp
-index 7bacd76..c463a6f 100644
+index d76759d..d14f868 100644
 --- a/src/slic3r/GUI/Plater.cpp
 +++ b/src/slic3r/GUI/Plater.cpp
 @@ -10708,9 +10708,29 @@ void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
@@ -1310,7 +1310,7 @@ index 8aa8cb4..2e89db8 100644
      template<typename ...Colors>
      StateColor(std::pair<Colors, int>... colors) {
 diff --git a/src/slic3r/GUI/Widgets/StaticBox.cpp b/src/slic3r/GUI/Widgets/StaticBox.cpp
-index 6391c1a..14699f1 100644
+index 6391c1a..ca1a3fc 100644
 --- a/src/slic3r/GUI/Widgets/StaticBox.cpp
 +++ b/src/slic3r/GUI/Widgets/StaticBox.cpp
 @@ -1,5 +1,10 @@
@@ -1324,8 +1324,34 @@ index 6391c1a..14699f1 100644
  #include <wx/dcclient.h>
  #include <wx/dcgraph.h>
  
-@@ -113,9 +118,32 @@ wxColor StaticBox::GetParentBackgroundColor(wxWindow* parent)
+@@ -105,17 +110,58 @@ wxColor StaticBox::GetParentBackgroundColor(wxWindow* parent)
+         if (box->background_color.count() > 0) {
+             if (box->background_color2.count() == 0)
+                 return box->background_color.defaultColor();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++            // NO AVERAGING. Every Label stores this answer as its own
++            // background for life, and the average of two palette colours is
++            // not itself a palette colour - so nothing can ever translate it
++            // again. A label that took one while the appearance was still
++            // being worked out keeps that shade for the rest of the session,
++            // which is what the pale boxes behind the sidebar's titles were:
++            // average(#FFFEFB, #EDEAE0) = #F6F4ED, in no table, never repaired.
++            //
++            // Upstream gets away with it by luck: averaging its own two greys,
++            // #F8F8F8 and #F1F1F1, lands exactly on #F4F4F4, which happens to
++            // be a key in its dark table.
++            //
++            // The gradient's top colour is a palette colour and reads the same
++            // to the eye, since the two ends are one step apart by design.
++            return box->background_color.defaultColor();
++#else
+             auto s = box->background_color.defaultColor();
+             auto e = box->background_color2.defaultColor();
+             int r = (s.Red() + e.Red()) / 2;
+             int g = (s.Green() + e.Green()) / 2;
+             int b = (s.Blue() + e.Blue()) / 2;
              return wxColor(r, g, b);
++#endif
          }
      }
 +#if defined(__APPLE__) && !TARGET_OS_OSX
@@ -1358,7 +1384,7 @@ index 6391c1a..14699f1 100644
  
  void StaticBox::ShowBadge(bool show)
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 52f739d..1fceeee 100644
+index 52f739d..561e089 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -57,6 +57,30 @@ static NSString *orca_ios_tr(const char *s)
@@ -1479,7 +1505,7 @@ index 52f739d..1fceeee 100644
  - (void)viewDidLayoutSubviews
  {
      [super viewDidLayoutSubviews];
-@@ -3174,10 +3235,31 @@ static void orca_ios_sync_tabs_guarded()
+@@ -3174,10 +3235,41 @@ static void orca_ios_sync_tabs_guarded()
  
  // What the device is set to. Read on demand rather than cached: this is what
  // GUI_App::dark_mode() returns, and it is asked for every colour Orca draws.
@@ -1507,6 +1533,16 @@ index 52f739d..1fceeee 100644
 +        if (style != UIUserInterfaceStyleUnspecified)
 +            break;
 +    }
++    // Then the screen, which answers before there is a window at all - and
++    // that is the case that matters, because init_label_colours() sets the
++    // whole palette from here while the main frame is still being built, long
++    // before any scene is connected. This is the same source
++    // wxSystemAppearance::IsDark() uses on this port, and the proof that it
++    // answers honestly that early is that the 3D view comes up dark: its mode
++    // is read out of "dark_color_mode", which on_init_inner() writes from that
++    // very call.
++    if (style == UIUserInterfaceStyleUnspecified)
++        style = [UIScreen mainScreen].traitCollection.userInterfaceStyle;
 +    if (style == UIUserInterfaceStyleUnspecified)
 +        style = [UITraitCollection currentTraitCollection].userInterfaceStyle;
 +    return style == UIUserInterfaceStyleDark;

@@ -7675,6 +7675,40 @@ Worth keeping: **posting an event from a lifecycle callback puts it in a place
 its handler has never run from.** Everything reachable from that handler now
 has to be safe at that point too, and "reachable" includes GL.
 
+**Third attempt, and this one is arithmetic rather than theory.** The pale
+boxes survived both earlier fixes. The reason is `GetParentBackgroundColor()`
+again, but its *other* branch - the one for a `StaticBox` with a gradient:
+
+```
+average(background_color, background_color2)
+```
+
+Every `Label` stores that answer as its own background for life, and **the
+average of two palette colours is not itself a palette colour**, so nothing
+can translate it afterwards. With this palette,
+`average(#FFFEFB, #EDEAE0) = #F6F4ED` - in no table, in either direction, for
+ever. Upstream never notices because averaging *its* two greys, `#F8F8F8` and
+`#F1F1F1`, lands exactly on `#F4F4F4`, which happens to be a key in its dark
+table. It was luck, and the palette spent it.
+
+On iOS the gradient's top colour is returned instead. It is a palette colour,
+so it translates in both directions, and it reads the same to the eye because
+the two ends are one step apart by design.
+
+That also explains why the boxes were *pale* rather than dark: the average was
+taken while `gDarkMode` was still false. `orca_ios_system_is_dark()` was asking
+a `UIWindowScene`, which does not exist yet when `init_label_colours()` runs -
+the main frame is still being built, no window has been created. It now asks
+`[UIScreen mainScreen].traitCollection` in between, which is the source
+`wxSystemAppearance::IsDark()` uses on this port; the proof that it answers
+honestly that early is that the 3D view has always come up dark, and its mode
+comes from `dark_color_mode`, which `on_init_inner()` writes from exactly that
+call.
+
+Two fixes for one symptom on purpose: the screen makes the colour right when
+it is stored, and dropping the average makes it repairable if it is ever
+stored wrong again.
+
 **Not verified on device.** The two to look at first are the sidebar in light -
 white cards on a warm page is the whole design and it is where Orca's
 hardcoded near-whites were densest - and a live appearance switch, which now

@@ -1,0 +1,163 @@
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index d3bbd45f5..f6b51b0e2 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -77,6 +77,9 @@ namespace libvgcode { extern std::atomic<uint64_t> orca_ios_vg_enabled_us; }
+ #include <wx/debug.h>
+ #include <wx/utils.h>
+ #include <wx/fontutil.h>
++// wxTextEntry, to tell a focused editor from anything else before the canvas
++// takes the keyboard back (orca_ios_wake_canvas, further down).
++#include <wx/textentry.h>
+ // Print now includes tbb, and tbb includes Windows. This breaks compilation of wxWidgets if included before wx.
+ #include "libslic3r/Print.hpp"
+ #include "libslic3r/SLAPrint.hpp"
+@@ -3743,7 +3746,14 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
+ #endif /* __APPLE__ */
+             // only support redu/undo in CanvasView3D
+             if (m_canvas_type == CanvasView3D || m_canvas_type == CanvasAssembleView) {
+-                post_event(SimpleEvent(EVT_GLCANVAS_UNDO));
++                // Shift+Z is Redo. Orca only ever offered Ctrl+Y for that,
++                // which is the Windows spelling; Shift+Z is what redo is bound
++                // to on macOS and iPadOS, and it is the one a hardware
++                // keyboard attached to an iPad reaches for. Both work.
++                if ((evt.GetModifiers() & shiftMask) != 0)
++                    post_event(SimpleEvent(EVT_GLCANVAS_REDO));
++                else
++                    post_event(SimpleEvent(EVT_GLCANVAS_UNDO));
+             }
+         break;
+ 
+@@ -9441,8 +9451,24 @@ void orca_ios_wake_canvas()
+         // wxGLCanvas underneath, which is what turns this into a paint.
+         canvas->set_as_dirty();
+         canvas->request_extra_frame();
+-        if (wxGLCanvas *const wx_canvas = canvas->get_wxglcanvas())
++        if (wxGLCanvas *const wx_canvas = canvas->get_wxglcanvas()) {
+             wx_canvas->Refresh();
++
++            // And give it the keyboard. Every shortcut the 3D view has -
++            // copy, paste, delete, the camera views, the gizmo letters - is a
++            // wxEVT_CHAR handler on this canvas, so it only ever fires while
++            // the canvas holds the focus. On a desktop the pointer arrives
++            // first and GLCanvas3D::on_mouse() takes the focus on the way
++            // past; on a tablet the user can perfectly well pick Prepare from
++            // the tab bar and then reach for the keyboard without ever having
++            // touched the plate, and nothing would have happened.
++            //
++            // Not done when a text field is being typed into: switching page
++            // does not take the keyboard away from an editor the user opened.
++            wxWindow *const focus = wxWindow::FindFocus();
++            if (dynamic_cast<wxTextEntry *>(focus) == nullptr)
++                wx_canvas->SetFocus();
++        }
+     }
+ }
+ 
+diff --git a/src/slic3r/GUI/KBShortcutsDialog.cpp b/src/slic3r/GUI/KBShortcutsDialog.cpp
+index 3ee3a93e7..583b7d7a5 100644
+--- a/src/slic3r/GUI/KBShortcutsDialog.cpp
++++ b/src/slic3r/GUI/KBShortcutsDialog.cpp
+@@ -250,6 +250,7 @@ void KBShortcutsDialog::fill_shortcuts()
+             {ctrl + "D", L("Delete All")},
+             {ctrl + "Z", L("Undo")},
+             {ctrl + "Y", L("Redo")},
++            {ctrl + shift + "Z", L("Redo")},
+             { "M", L("Gizmo move") },
+             { "R", L("Gizmo rotate") },
+             { "S", L("Gizmo scale") },
+@@ -290,6 +291,7 @@ void KBShortcutsDialog::fill_shortcuts()
+             {ctrl + "K", L("Clone Selected")},
+             {ctrl + "Z", L("Undo")},
+             {ctrl + "Y", L("Redo")},
++            {ctrl + shift + "Z", L("Redo")},
+             {L("Space"), L("Select the object/part and press space to change the name")},
+             {L("Mouse click"), L("Select the object/part and mouse click to change the name")},
+         };
+diff --git a/src/slic3r/GUI/MainFrame.cpp b/src/slic3r/GUI/MainFrame.cpp
+index 34407761d..367b8d2c9 100644
+--- a/src/slic3r/GUI/MainFrame.cpp
++++ b/src/slic3r/GUI/MainFrame.cpp
+@@ -163,6 +163,9 @@ void orca_ios_gallery_commit();
+ #include <boost/algorithm/string/predicate.hpp>
+ #include <boost/filesystem.hpp>
+ #include <wx/glcanvas.h>
++// wxTextEntry, to tell a focused editor from anything else in the global
++// shortcut handler.
++#include <wx/textentry.h>
+ #include <boost/log/trivial.hpp>
+ #include <boost/property_tree/ptree.hpp>
+ 
+@@ -1417,7 +1420,25 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+ #endif
+ ;    }
+     this->Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent &evt) {
+-#ifdef __APPLE__
++#if defined(__APPLE__) && !defined(__WXOSX_IPHONE__)
++        // FOUR SHORTCUTS THAT DESCRIBE A DESKTOP, and one of them is dangerous
++        // on a tablet.
++        //
++        // Hide, Minimise and Full Screen are the three things a Mac window can
++        // do that an iPad application's window cannot: it is always full
++        // screen, it is never iconised, and hiding is the home gesture. The
++        // handlers below are a no-op or a stub there - but they consume the
++        // key, and Cmd+F is the sidebar search a little further down, which
++        // Cmd+Ctrl+F would swallow now that a lone Control counts as Command
++        // on this port.
++        //
++        // Quit is the dangerous one. wxEVT_CLOSE_WINDOW on the main frame tears
++        // the application down, and an iOS application that exits itself is
++        // indistinguishable from one that crashed - iOS offers no way back and
++        // no "the app quit" to the user. The work is on disk either way (the
++        // autosave in 0424/0428 sees to that), but there is nothing to gain and
++        // a launch to lose, so Cmd+Q is left alone: iPadOS has its own meaning
++        // for it and the application has no business answering it.
+         if (evt.CmdDown() && (evt.GetKeyCode() == 'H')) {
+             //call parent_menu hide behavior
+             return;}
+@@ -1434,6 +1455,45 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
+                 ShowFullScreen(true);
+             }
+             return;}
++#endif
++#ifdef __WXOSX_IPHONE__
++        // UNDO AND REDO, WHEREVER THE FOCUS IS.
++        //
++        // Both live in GLCanvas3D::on_char, which means they only fire while
++        // the 3D canvas holds the keyboard. On a desktop that is nearly always
++        // - the pointer passes over the plate and takes the focus with it - and
++        // on a tablet it is often not: the sidebar, the object list and the
++        // parameter fields all take the keyboard and keep it, and a user who
++        // has just changed something in the list and reaches for Cmd+Z has
++        // every reason to expect the model to step back.
++        //
++        // wxEVT_CHAR_HOOK is delivered to the focused window and propagates up
++        // to this frame, so this is the one handler that sees the key whatever
++        // holds the focus. Two things are deliberately left alone:
++        //
++        //   the canvas, which has its own handler and runs the key past ImGui
++        //     first - a gizmo with a text field open must get it, not the model;
++        //   a text editor, where undo means undo the typing, which is UIKit's
++        //     to answer and not ours.
++        //
++        // Shift+Z is redo, which is the spelling macOS and iPadOS use and the
++        // one Orca never had; Y stays what it always was on Windows.
++        if (evt.CmdDown() && (evt.GetKeyCode() == 'Z' || evt.GetKeyCode() == 'Y') && m_plater != nullptr) {
++            wxWindow *const focus = wxWindow::FindFocus();
++            GLCanvas3D *const c3d = m_plater->get_current_canvas3D();
++            wxWindow *const canvas = (c3d != nullptr) ? (wxWindow *) c3d->get_wxglcanvas() : nullptr;
++
++            if (focus != canvas && dynamic_cast<wxTextEntry *>(focus) == nullptr) {
++                if (evt.GetKeyCode() == 'Y' || evt.ShiftDown()) {
++                    if (m_plater->can_redo())
++                        m_plater->redo();
++                } else {
++                    if (m_plater->can_undo())
++                        m_plater->undo();
++                }
++                return;
++            }
++        }
+ #endif
+         if (evt.CmdDown() && evt.GetKeyCode() == 'R') { if (m_slice_enable) { wxGetApp().plater()->update(true, true); wxPostEvent(m_plater, SimpleEvent(EVT_GLTOOLBAR_SLICE_PLATE)); this->m_tabpanel->SetSelection(tpPreview); } return; }
+         if (evt.CmdDown() && evt.ShiftDown() && evt.GetKeyCode() == 'G') {

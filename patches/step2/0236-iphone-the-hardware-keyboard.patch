@@ -1,0 +1,1147 @@
+diff --git a/include/wx/osx/iphone/private.h b/include/wx/osx/iphone/private.h
+index dad885a..3976d53 100644
+--- a/include/wx/osx/iphone/private.h
++++ b/include/wx/osx/iphone/private.h
+@@ -25,6 +25,8 @@
+ 
+ #include "wx/bmpbndl.h"
+ #include "wx/gdicmn.h"
++// wxKeyboardState, for the shared modifier mapping declared below.
++#include "wx/kbdstate.h"
+ 
+ typedef CGRect WXRect;
+ 
+@@ -71,6 +73,14 @@ extern WXDLLIMPEXP_DATA_CORE(wxOSXIPhonePointerState) g_wxOSXIPhonePointer;
+ // caller already has it.
+ void WXDLLIMPEXP_CORE wxOSXIPhoneRecordPointerPosition( WXWidget view, CGPoint inView );
+ 
++#ifdef __OBJC__
++// The single mapping from UIKit's modifier flags onto wx's, shared by every
++// input path in src/osx/iphone/window.mm - touch, pointer, scroll, hover, the
++// synthesised right click and the key events. Written there, along with why a
++// lone Control counts as Command on this port.
++void WXDLLIMPEXP_CORE wxOSXIPhoneSetModifiers( wxKeyboardState& state, UIKeyModifierFlags modifiers );
++#endif
++
+ OSStatus WXDLLIMPEXP_CORE wxMacDrawCGImage(
+                                CGContextRef    inContext,
+                                const CGRect *  inBounds,
+@@ -166,6 +176,12 @@ public :
+     virtual void        DoNotifyFocusEvent(bool receivedFocus, wxWidgetImpl* otherWindow);
+     virtual void        SetupKeyEvent(wxKeyEvent &wxevent, WXEvent event, UIPress* press, NSString* charString = nullptr);
+ 
++    // One UIPress turned into the wxEVT_CHAR_HOOK / wxEVT_KEY_DOWN /
++    // wxEVT_CHAR / wxEVT_KEY_UP sequence wx applications are written against.
++    // Public because the last-resort router in window.mm delivers through it
++    // for a window that is not the one UIKit sent the press to.
++    virtual bool        DoHandleKeyEvent(UIPress* press, WXEvent event);
++
+     // thunk connected calls
+ 
+     virtual void        drawRect(CGRect* rect, WXWidget slf, void* _cmd);
+@@ -304,6 +320,31 @@ protected :
+ 
+     void WXDLLIMPEXP_CORE wxOSXIPhoneClassAddWXMethods(Class c);
+ 
++    // Key presses that reached the end of the responder chain without a wx
++    // view having been offered them. Called from wxAppDelegate, which is the
++    // last responder in the application; returns true if wx used the press.
++    bool WXDLLIMPEXP_CORE wxOSXIPhoneRouteUnhandledPresses(WX_NSSet presses, WXEvent event);
++
++    // Remember that this press has already been offered to wx, so that the
++    // router above does not deliver it a second time when the press travels on
++    // up the chain. Called for every press a wx view handles.
++    void WXDLLIMPEXP_CORE wxOSXIPhoneNotePressSeen(UIPress* press);
++
++    // The first responder, as wx tracks it: UIKit has no API that answers this
++    // and wx thunks both halves of the transition anyway.
++    void WXDLLIMPEXP_CORE wxOSXIPhoneNoteFocusedView(UIView* view);
++    void WXDLLIMPEXP_CORE wxOSXIPhoneNoteUnfocusedView(UIView* view);
++
++#if wxUSE_MENUS
++    // A menu item chosen from the menu or pressed as its key equivalent. Both
++    // look the item up rather than hold a pointer to it, because UIKit keeps
++    // menu elements alive past the wxMenuItem they were built for. Written in
++    // src/osx/iphone/menuitem.mm; the identifier is the one the element's
++    // propertyList carries.
++    void WXDLLIMPEXP_CORE wxOSXIPhoneDispatchMenuItem(wxMenuItem* item);
++    void WXDLLIMPEXP_CORE wxOSXIPhoneDispatchMenuCommand(NSString* identifier);
++#endif
++
+ #endif
+ 
+ #endif // wxUSE_GUI
+diff --git a/src/osx/iphone/menu.mm b/src/osx/iphone/menu.mm
+index a7a09c9..a21ca10 100644
+--- a/src/osx/iphone/menu.mm
++++ b/src/osx/iphone/menu.mm
+@@ -328,6 +328,21 @@ public :
+ 
+     virtual void MakeRoot() override
+     {
++        // ASK UIKIT TO BUILD THE MENU BAR AGAIN, which nothing ever did.
++        //
++        // UIKit builds the main menu once, from a block it schedules on the
++        // first turn of the run loop, and that is *before* wxApp::OnInit has
++        // installed a menu bar - patch 0213's guard against a null menubar in
++        // wxApp::OSXOnBuildMenu is a record of exactly that ordering. UIKit
++        // does not come back to ask again on its own, and this function, which
++        // is what wxMenuBar::MacInstallMenuBar() calls to say "this is the
++        // application's menu bar now", was empty.
++        //
++        // So an application that installs its menu bar in OnInit - which is
++        // every application - had an empty menu bar on iPadOS for the life of
++        // the process: no File menu, no Edit menu, nothing under a held
++        // Command key, and no key equivalent for anything in any of them.
++        [UIMenuSystem.mainSystem setNeedsRebuild];
+     }
+ 
+     virtual void Enable( bool WXUNUSED(enable) )
+diff --git a/src/osx/iphone/menuitem.mm b/src/osx/iphone/menuitem.mm
+index 650a24b..f317d03 100644
+--- a/src/osx/iphone/menuitem.mm
++++ b/src/osx/iphone/menuitem.mm
+@@ -22,6 +22,14 @@
+ 
+ #include "wx/osx/private.h"
+ 
++// wxAcceleratorEntry, and the registry of live items the key equivalents are
++// dispatched through.
++#include "wx/accel.h"
++#include "wx/menu.h"
++#include "wx/app.h"
++#include <map>
++#include <string>
++
+ // a mapping from wx ids to standard osx actions in order to support the native menu item handling
+ // if a new mapping is added, make sure the wxNonOwnedWindowController has a handler for this action as well
+ 
+@@ -182,11 +190,193 @@ void wxMacCocoaMenuItemSetAccelerator( UIMenuItem* menuItem, wxAcceleratorEntry*
+ 
+ */
+ 
++// ---------------------------------------------------------------------------
++// Which wxMenuItem a menu element belongs to
++// ---------------------------------------------------------------------------
++//
++// The element used to capture the wxMenuItem* in its handler block and call
++// straight through it. UIKit keeps the UIMenu tree it was handed - the menu
++// bar is rebuilt from it, and a UIKeyCommand is dispatched through the
++// responder chain rather than through the menu - so an element outlives the
++// wxMenuItem it was built for whenever a menu is rebuilt, which this port does
++// every time the application's mode changes. The captured pointer is dangling
++// from that moment on and nothing says so.
++//
++// Items are registered under the identifier their element carries and removed
++// again when they are destroyed, so a callback that arrives for an item that
++// no longer exists finds nothing and does nothing.
++
++static std::map<std::string, wxMenuItem*>& wxOSXIPhoneLiveMenuItems()
++{
++    static std::map<std::string, wxMenuItem*> s_items;
++    return s_items;
++}
++
++// Formatting the pointer does not dereference it, so this is safe to call for
++// an item that may already be gone - which is the whole point of the lookup.
++static std::string wxOSXIPhoneMenuItemKey( wxMenuItem* item )
++{
++    return wxString::Format( wxT("%p"), item ).ToStdString();
++}
++
++static void wxOSXIPhoneRunMenuItem( wxMenuItem* item )
++{
++    wxMenu* const menu = item->GetMenu();
++    if ( menu == nullptr )
++        return;
++
++    // What a menu does on a desktop the moment it is opened, and what nothing
++    // here does: UIKit took its copy of the menu tree when it built the bar and
++    // never asks again, so an item's enabled state as UIKit knows it is the
++    // state it had at build time. Ask the application now instead - otherwise
++    // a key equivalent runs a command that has since been disabled, which for
++    // "Export plate sliced file" means exporting a plate that has not been
++    // sliced.
++    menu->UpdateUI();
++    if ( !item->IsEnabled() )
++        return;
++
++    menu->HandleCommandProcess(item);
++}
++
++void wxOSXIPhoneDispatchMenuItem( wxMenuItem* item )
++{
++    const std::map<std::string, wxMenuItem*>& items = wxOSXIPhoneLiveMenuItems();
++    if ( items.find(wxOSXIPhoneMenuItemKey(item)) == items.end() )
++        return;
++
++    wxOSXIPhoneRunMenuItem(item);
++}
++
++void wxOSXIPhoneDispatchMenuCommand( NSString* identifier )
++{
++    if ( identifier == nil )
++        return;
++
++    const std::map<std::string, wxMenuItem*>& items = wxOSXIPhoneLiveMenuItems();
++    const std::map<std::string, wxMenuItem*>::const_iterator i =
++        items.find( wxCFStringRef::AsString(identifier).ToStdString() );
++    if ( i == items.end() )
++        return;
++
++    wxOSXIPhoneRunMenuItem(i->second);
++}
++
++// ---------------------------------------------------------------------------
++// An accelerator, as a key equivalent UIKit will actually press
++// ---------------------------------------------------------------------------
++//
++// Returns nil when the accelerator must not become one, and there are three
++// reasons for that, all of them about not taking a key away from typing:
++//
++//   * no modifier, or Shift alone. A UIKeyCommand on a bare key captures it
++//     everywhere in the application, text fields included - a menu item on
++//     plain Del would stop Del from deleting a character. Those accelerators
++//     are left to the key events the focused window gets, which is where they
++//     belong.
++//   * a key with no input string UIKit understands.
++//   * Quit. wx rewrites any "Exit" item to "Quit\tCtrl+Q" in the wxMenuItem
++//     constructor, and on iOS an application does not quit: the item would
++//     tear the process down on a keystroke the user meant for something else,
++//     with the platform treating the result as a crash.
++static NSString* wxOSXIPhoneKeyCommandInput( int key )
++{
++    switch ( key )
++    {
++        case WXK_UP:            return UIKeyInputUpArrow;
++        case WXK_DOWN:          return UIKeyInputDownArrow;
++        case WXK_LEFT:          return UIKeyInputLeftArrow;
++        case WXK_RIGHT:         return UIKeyInputRightArrow;
++        case WXK_ESCAPE:        return UIKeyInputEscape;
++        case WXK_PAGEUP:        return UIKeyInputPageUp;
++        case WXK_PAGEDOWN:      return UIKeyInputPageDown;
++        case WXK_HOME:          return UIKeyInputHome;
++        case WXK_END:           return UIKeyInputEnd;
++        case WXK_DELETE:        return UIKeyInputDelete;
++        case WXK_RETURN:        return @"\r";
++        case WXK_NUMPAD_ENTER:  return @"\r";
++        case WXK_TAB:           return @"\t";
++        case WXK_SPACE:         return @" ";
++        case WXK_BACK:          return @"\b";
++
++        case WXK_F1:            return UIKeyInputF1;
++        case WXK_F2:            return UIKeyInputF2;
++        case WXK_F3:            return UIKeyInputF3;
++        case WXK_F4:            return UIKeyInputF4;
++        case WXK_F5:            return UIKeyInputF5;
++        case WXK_F6:            return UIKeyInputF6;
++        case WXK_F7:            return UIKeyInputF7;
++        case WXK_F8:            return UIKeyInputF8;
++        case WXK_F9:            return UIKeyInputF9;
++        case WXK_F10:           return UIKeyInputF10;
++        case WXK_F11:           return UIKeyInputF11;
++        case WXK_F12:           return UIKeyInputF12;
++
++        default:
++            break;
++    }
++
++    // An ordinary printable key. Lower case, with Shift carried in the
++    // modifier flags: that is the pairing UIKit matches against, and an upper
++    // case input with the Shift flag set matches nothing.
++    if ( key > ' ' && key < 127 )
++    {
++        const char c = (char) ((key >= 'A' && key <= 'Z') ? key - 'A' + 'a' : key);
++        return [NSString stringWithFormat:@"%c", c];
++    }
++
++    return nil;
++}
++
++static UIKeyCommand* wxOSXIPhoneKeyCommandFor( wxMenuItem* peer, wxAcceleratorEntry* entry, int menuid )
++{
++    if ( entry == nullptr )
++        return nil;
++
++    if ( menuid == wxID_EXIT || menuid == wxApp::s_macExitMenuItemId )
++        return nil;
++
++    const int flags = entry->GetFlags();
++
++    UIKeyModifierFlags modifiers = 0;
++    if ( flags & wxACCEL_CTRL )
++        modifiers |= UIKeyModifierCommand;
++    if ( flags & wxACCEL_RAW_CTRL )
++        modifiers |= UIKeyModifierControl;
++    if ( flags & wxACCEL_ALT )
++        modifiers |= UIKeyModifierAlternate;
++
++    // Shift on its own is not a shortcut modifier, it is how capital letters
++    // are typed, so it only counts once one of the three above is there too.
++    if ( modifiers == 0 )
++        return nil;
++
++    if ( flags & wxACCEL_SHIFT )
++        modifiers |= UIKeyModifierShift;
++
++    NSString* const input = wxOSXIPhoneKeyCommandInput( entry->GetKeyCode() );
++    if ( input == nil )
++        return nil;
++
++    UIKeyCommand* const command =
++        [UIKeyCommand keyCommandWithInput:input
++                            modifierFlags:modifiers
++                                   action:@selector(wxOSXMenuCommand:)];
++
++    // The identifier the item is registered under, so the delegate that
++    // receives the action can find the item without holding a pointer to it.
++    wxCFStringRef cfidentifier(wxString::Format( wxT("%p"), peer ));
++    command.propertyList = cfidentifier.AsNSString();
++
++    return command;
++}
++
+ class wxMenuItemIPhoneImpl : public wxMenuItemImpl
+ {
+ public :
+     wxMenuItemIPhoneImpl( wxMenuItem* peer, UIMenuElement* item ) : wxMenuItemImpl(peer), m_osxMenuItem(wxCFRetain(item))
+     {
++        wxOSXIPhoneLiveMenuItems()[wxOSXIPhoneMenuItemKey(peer)] = peer;
+     }
+ 
+     ~wxMenuItemIPhoneImpl();
+@@ -198,9 +388,13 @@ public :
+     void Enable( bool enable ) override
+     {
+         UIMenuElement* menuElement = m_osxMenuItem.get();
+-        if ( [menuElement isKindOfClass:UIAction.class] )
++        // UICommand, not UIAction: an item that carries a key equivalent is a
++        // UIKeyCommand, which is a UICommand and is *not* a UIAction. Asking
++        // for UIAction here left every item with a shortcut permanently
++        // enabled, unchecked and visible whatever wx asked for.
++        if ( [menuElement isKindOfClass:UICommand.class] )
+         {
+-            UIAction* action = (UIAction*) menuElement;
++            UICommand* action = (UICommand*) menuElement;
+             if ( enable )
+                 action.attributes = action.attributes & ~UIMenuElementAttributesDisabled;
+             else
+@@ -211,9 +405,9 @@ public :
+     void Check( bool check ) override
+     {
+         UIMenuElement* menuElement = m_osxMenuItem.get();
+-        if ( [menuElement isKindOfClass:UIAction.class] )
++        if ( [menuElement isKindOfClass:UICommand.class] )
+         {
+-            UIAction* action = (UIAction*) menuElement;
++            UICommand* action = (UICommand*) menuElement;
+             action.state = check ? UIMenuElementStateOn : UIMenuElementStateOff;
+         }
+     }
+@@ -221,9 +415,9 @@ public :
+     void Hide( bool hide ) override
+     {
+         UIMenuElement* menuElement = m_osxMenuItem.get();
+-        if ( [menuElement isKindOfClass:UIAction.class] )
++        if ( [menuElement isKindOfClass:UICommand.class] )
+         {
+-            UIAction* action = (UIAction*) menuElement;
++            UICommand* action = (UICommand*) menuElement;
+             if ( hide )
+                 action.attributes = action.attributes | UIMenuElementAttributesHidden;
+             else
+@@ -246,6 +440,9 @@ protected :
+ 
+ wxMenuItemIPhoneImpl::~wxMenuItemIPhoneImpl()
+ {
++    // The element UIKit still holds now refers to nothing, which is exactly
++    // what the lookup on the way in has to find.
++    wxOSXIPhoneLiveMenuItems().erase(wxOSXIPhoneMenuItemKey(m_peer));
+ }
+ 
+ bool wxMenuItemIPhoneImpl::DoDefault()
+@@ -308,23 +505,26 @@ wxMenuItemImpl* wxMenuItemImpl::Create( wxMenuItem* peer, wxMenu *pParentMenu,
+         {
+             wxString identifier = wxString::Format( wxT("%p"), peer );
+             wxCFStringRef cfidentifier(identifier);
+-            // currently in the iOS 14 Beta UICommands trigger a layout violation so stick with UIActions for the time being
+-            if ( entry )
+-            {
+-                //  TODO UIKeyCommand* command = [UIKeyCommand commandWithTitle ...]
+ 
+-                UIAction* menuitem = [UIAction actionWithTitle:cfText.AsNSString() image:nil identifier:cfidentifier.AsNSString()
+-                                                   handler: ^( UIAction* action) { peer->GetMenu()->HandleCommandProcess(peer);} ];
+-                item = menuitem;
++            UIKeyCommand* const keyCommand = wxOSXIPhoneKeyCommandFor(peer, entry, menuid);
++            if ( keyCommand != nil )
++            {
++                // The item's key equivalent, which this port has never had:
++                // the "TODO UIKeyCommand" that used to stand here meant every
++                // accelerator in every menu of the application was decoration.
++                // The iPadOS menu bar prints it beside the item, holding
++                // Command lists it, and pressing it runs the item - none of
++                // which needed the first responder to be anywhere in
++                // particular, which is why this is worth having on top of the
++                // key events the window gets.
++                keyCommand.title = cfText.AsNSString();
++                keyCommand.discoverabilityTitle = cfText.AsNSString();
++                item = keyCommand;
+             }
+             else
+             {
+-                /*
+-                UICommand* command = [UICommand commandWithTitle:cfText.AsNSString() image:nil action:@selector(menuItemAction:) propertyList:nil];
+-                 */
+-
+                 UIAction* menuitem = [UIAction actionWithTitle:cfText.AsNSString() image:nil identifier:cfidentifier.AsNSString()
+-                                                   handler: ^( UIAction* action) { peer->GetMenu()->HandleCommandProcess(peer);} ];
++                                                   handler: ^( UIAction* action) { wxOSXIPhoneDispatchMenuItem(peer); } ];
+                 item = menuitem;
+             }
+         }
+diff --git a/src/osx/iphone/utils.mm b/src/osx/iphone/utils.mm
+index 23df1e6..b704b03 100644
+--- a/src/osx/iphone/utils.mm
++++ b/src/osx/iphone/utils.mm
+@@ -144,6 +144,50 @@ static void wxOSXQueueOrDeliverOpenURL(NSURL* url)
+     wxTheApp->OSXOnWillTerminate();
+ }
+ 
++// ---------------------------------------------------------------------------
++// The end of the responder chain, which is where a key press ends up when
++// nothing in the window claimed it
++// ---------------------------------------------------------------------------
++//
++// UIKit delivers a key press to the first responder, and an application spends
++// a good deal of its life with no first responder at all - every application
++// starts that way, and stays that way until the user touches something that
++// takes the keyboard. In that state -pressesBegan: is sent to the window, then
++// to UIApplication, then here; on this port that used to be the end of it, and
++// the press was dropped.
++//
++// The application delegate is a UIResponder and it is the last one there is,
++// so this is the only place that sees every press whatever has the focus.
++// wxOSXIPhoneRouteUnhandledPresses() delivers what arrives here to the window
++// wx considers focused, or - when wx considers none of them focused - to the
++// top level window UIKit is calling key, which is what makes an application's
++// global shortcuts work before anything has been touched.
++//
++// Presses a wx view was already offered are marked as such and skipped, so
++// letting an unhandled one travel up the chain does not deliver it twice.
++
++#if wxUSE_GUI
++
++- (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event
++{
++    if ( !wxOSXIPhoneRouteUnhandledPresses(presses, event) )
++        [super pressesBegan:presses withEvent:event];
++}
++
++- (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event
++{
++    if ( !wxOSXIPhoneRouteUnhandledPresses(presses, event) )
++        [super pressesEnded:presses withEvent:event];
++}
++
++- (void)pressesCancelled:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event
++{
++    if ( !wxOSXIPhoneRouteUnhandledPresses(presses, event) )
++        [super pressesCancelled:presses withEvent:event];
++}
++
++#endif // wxUSE_GUI
++
+ - (void)dealloc
+ {
+     [super dealloc];
+@@ -159,6 +203,29 @@ static void wxOSXQueueOrDeliverOpenURL(NSURL* url)
+ }
+ #endif
+ 
++#if wxUSE_MENUS
++// The action every menu item that has a key equivalent carries.
++//
++// A UIKeyCommand cannot take a handler block the way a UIAction does - it
++// names a selector, and UIKit sends it along the responder chain until it
++// finds a responder that implements it. The application delegate is the last
++// link in that chain, so putting it here means the shortcut works whatever
++// holds the focus, which is the point of a menu shortcut.
++//
++// The item is looked up from the identifier the command carries rather than
++// captured, because UIKit keeps the menu elements it was handed for longer
++// than wx keeps the items they were built from.
++- (void)wxOSXMenuCommand:(id)sender
++{
++    if ( ![sender isKindOfClass:UICommand.class] )
++        return;
++
++    id plist = ((UICommand*) sender).propertyList;
++    if ( [plist isKindOfClass:NSString.class] )
++        wxOSXIPhoneDispatchMenuCommand((NSString*) plist);
++}
++#endif
++
+ @end
+ 
+ bool wxApp::CallOnInit()
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index b0a2725..0be8f55 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -22,6 +22,11 @@
+ // wxOSXGetImageFromBundle(), for SetBitmap() below.
+ #include "wx/private/bmpbndl.h"
+ #include "wx/font.h"
++// The key router below walks the top level windows and asks wxApp for one when
++// none of them is key; neither header is guaranteed by the precompiled one.
++#include "wx/app.h"
++#include "wx/nonownedwnd.h"
++#include "wx/window.h"
+ 
+ #include <objc/runtime.h>
+ #import <CoreText/CoreText.h>
+@@ -58,28 +63,69 @@ static wxString wxDumpUIView(UIView* view)
+ // ----------------------------------------------------------------------------
+ // Focus
+ // ----------------------------------------------------------------------------
++//
++// Nothing in this port could take the keyboard focus, and that is the whole
++// reason a hardware keyboard did nothing in an application built on it.
++//
++// Three functions, all of them empty:
++//
++//   FindFocus()  had its entire body commented out and returned nil, so
++//                wxWindow::FindFocus() answered "nothing has the focus" for
++//                the life of the process.
++//   SetFocus()   was "// TODO" and a `return false`, so wxWindow::SetFocus()
++//                moved nothing. On iOS focus *is* first responder status, and
++//                nothing was ever made first responder.
++//   canBecomeFirstResponder was never implemented, and UIView's default is NO,
++//                so even a view UIKit was asked about could not have taken it.
++//
++// UIKit delivers key presses to the first responder and to nothing else. With
++// no first responder inside wx, -pressesBegan: was never called on a wx view,
++// so wxWidgetIPhoneImpl::keyEvent() - which does exist, and is correct as far
++// as it goes - has never once run on a device. Every keyboard shortcut in
++// every application built on this port is dead, and silently: there is no
++// error, no warning and no log line, because from wx's point of view no key
++// was pressed.
++//
++// WHY THE FOCUSED VIEW IS TRACKED HERE RATHER THAN ASKED FOR.
++//
++// UIKit has no public API that answers "which responder is first" - AppKit's
++// -[NSWindow firstResponder] has no counterpart, and the commented-out body
++// above was the AppKit one. wx already thunks -becomeFirstResponder and
++// -resignFirstResponder onto every class it builds, though, so the answer can
++// simply be recorded as it changes. What is recorded is validated against
++// -isFirstResponder before it is handed out, so a non-wx view taking the focus
++// (this port has several: the gallery, a UITextField in a cell) corrects the
++// record rather than leaving a stale one behind.
++
++static UIView* gs_focusedView = nil;
++
++// The focus wx asked for while the view was not yet in a window. -becomeFirst-
++// Responder is refused outright in that state, and SetFocus() is routinely
++// called from a control's own creation path, so the request is held and re-run
++// from -didMoveToWindow.
++static UIView* gs_pendingFocusView = nil;
++
++void wxOSXIPhoneNoteFocusedView(UIView* view)
++{
++    gs_focusedView = view;
++    if ( view != nil && view == gs_pendingFocusView )
++        gs_pendingFocusView = nil;
++}
++
++void wxOSXIPhoneNoteUnfocusedView(UIView* view)
++{
++    if ( gs_focusedView == view )
++        gs_focusedView = nil;
++    if ( gs_pendingFocusView == view )
++        gs_pendingFocusView = nil;
++}
+ 
+ WXWidget wxWidgetImpl::FindFocus()
+ {
+-    UIView* focusedView = nil;
+-    UIWindow* keyWindow = [[UIApplication sharedApplication] keyWindow];
+-    if ( keyWindow != nil )
+-    {
+-    /*
+-        NSResponder* responder = [keyWindow firstResponder];
+-        if ( [responder isKindOfClass:[NSTextView class]] &&
+-            [keyWindow fieldEditor:NO forObject:nil] != nil )
+-        {
+-            focusedView = [(NSTextView*)responder delegate];
+-        }
+-        else
+-        {
+-            if ( [responder isKindOfClass:[NSView class]] )
+-                focusedView = (NSView*) responder;
+-        }
+-    */
+-    }
+-    return focusedView;
++    if ( gs_focusedView != nil && ![gs_focusedView isFirstResponder] )
++        gs_focusedView = nil;
++
++    return gs_focusedView;
+ }
+ 
+ CGRect wxOSXGetFrameForControl( wxWindowMac* window , const wxPoint& pos , const wxSize &size , bool adjustForOrigin )
+@@ -210,6 +256,47 @@ void wxOSXIPhoneRecordPointerPosition( WXWidget widget, CGPoint inView )
+     g_wxOSXIPhonePointer.pos = wxPoint((int) lround(p.x), (int) lround(p.y));
+ }
+ 
++// ----------------------------------------------------------------------------
++// One mapping from UIKit's modifier flags to wx's
++// ----------------------------------------------------------------------------
++//
++// Every path in this file that reports modifiers - touch, indirect pointer,
++// scroll, hover, the synthesised right click, and the key events at the bottom
++// - had its own copy of this, and they have to agree: a shortcut that is read
++// off a key event and a modified click that is read off a mouse event are the
++// same two keys to the person holding them down.
++//
++// Command is reported as m_controlDown because that is what wxOSX means by it:
++// CmdDown(), wxMOD_CONTROL and wxACCEL_CTRL all name the shortcut modifier,
++// which is Command on this family of ports, and every wx application is
++// written that way. The physical Control key is m_rawControlDown.
++//
++// AND SO IS CONTROL, WHEN COMMAND IS NOT HELD.
++//
++// An iPad takes any USB or Bluetooth keyboard and most of them are not
++// Apple's. On those, the key in the place the user reaches for a shortcut is
++// Control, and iPadOS reports it as Control because that is the key it is.
++// Reported honestly, every shortcut in the application above would be
++// reachable only from an Apple keyboard - which on a port whose whole premise
++// is a keyboard and a pointer is not a detail.
++//
++// So a lone Control is reported as Command, and Control is reported as itself
++// only when Command is held as well, which keeps Cmd+Ctrl+<key> a distinct
++// combination. The two are deliberately not set at once for a lone Control:
++// wxAcceleratorTable::GetCommand() matches every modifier exactly, so an event
++// claiming both would stop matching Ctrl accelerators rather than start.
++void wxOSXIPhoneSetModifiers( wxKeyboardState& state, UIKeyModifierFlags modifiers )
++{
++    const bool cmd  = (modifiers & UIKeyModifierCommand) != 0;
++    const bool ctrl = (modifiers & UIKeyModifierControl) != 0;
++
++    // UIKeyModifierAlphaShift is caps lock, which is not Shift.
++    state.SetShiftDown( (modifiers & UIKeyModifierShift) != 0 );
++    state.SetAltDown( (modifiers & UIKeyModifierAlternate) != 0 );
++    state.SetControlDown( cmd || ctrl );
++    state.SetRawControlDown( cmd && ctrl );
++}
++
+ // The buttons and modifiers of the event about to be sent. Kept beside the
+ // position so that wxGetMouseState() describes one consistent moment.
+ static void wxOSXIPhoneRecordPointerState( const wxMouseEvent& wxevent )
+@@ -235,18 +322,13 @@ void SetupMouseEvent( wxMouseEvent &wxevent , NSSet* touches, UIEvent * nsEvent
+ 
+     // Real modifier state. These were hardcoded to 0, which silently disabled
+     // every modified click in the application above: shift-drag rectangle
+-    // select, cmd-click multi-select, alt-drag and so on. Same mapping the key
+-    // path further down uses, and the same one wxOSX/cocoa uses -- Command is
+-    // m_controlDown (so wxMouseEvent::CmdDown() means Command, as on macOS) and
+-    // the physical Control key is m_rawControlDown.
++    // select, cmd-click multi-select, alt-drag and so on. The mapping itself is
++    // wxOSXIPhoneSetModifiers(), which every input path in this file shares.
+     UIKeyModifierFlags modifiers = 0;
+     if ( nsEvent != nil )
+         modifiers = [nsEvent modifierFlags];
+ 
+-    wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
+-    wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
+-    wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
+-    wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++    wxOSXIPhoneSetModifiers( wxevent, modifiers );
+     wxevent.m_metaDown       = (modifiers & UIKeyModifierCommand) != 0;
+     wxevent.m_clickCount = clickCount;
+     wxevent.SetTimestamp( [touch timestamp] ) ;
+@@ -418,11 +500,19 @@ void wxOSX_touchEvent(UIView* self, SEL _cmd, NSSet* touches, UIEvent *event )
+     impl->touchEvent(touches, event, self, _cmd);
+ }
+ 
++typedef BOOL (*wxOSX_FocusHandlerPtr)(UIView* self, SEL _cmd);
++
+ BOOL wxOSX_becomeFirstResponder(UIView* self, SEL _cmd)
+ {
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+-        return NO;
++    {
++        // Not a view wx knows about (yet). Answering NO here used to refuse
++        // the focus on wx's behalf for a view wx has no opinion about - a text
++        // field could not be typed into before its peer was associated.
++        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
++        return superimpl(self, _cmd);
++    }
+ 
+     return impl->becomeFirstResponder(self, _cmd);
+ }
+@@ -431,11 +521,57 @@ BOOL wxOSX_resignFirstResponder(UIView* self, SEL _cmd)
+ {
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+-        return NO;
++    {
++        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
++        return superimpl(self, _cmd);
++    }
+ 
+     return impl->resignFirstResponder(self, _cmd);
+ }
+ 
++// Whether this view may hold the keyboard focus at all. UIView answers NO, and
++// with that answer standing no wx control could ever be typed into.
++//
++// The superclass is asked first and its YES is final: UITextField, UITextView
++// and every other control that already knows it takes the keyboard keeps
++// saying so. Only when the superclass declines does wx's own answer apply,
++// which is the same one wxWidgetCocoaImpl::acceptsFirstResponder gives -
++// whether the wx window accepts the focus.
++BOOL wxOSX_canBecomeFirstResponder(UIView* self, SEL _cmd)
++{
++    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
++    if ( superimpl(self, _cmd) )
++        return YES;
++
++    wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
++    if (impl == nullptr)
++        return NO;
++
++    wxWindowMac* const peer = impl->GetWXPeer();
++    if ( peer == nullptr )
++        return NO;
++
++    return peer->AcceptsFocus() && peer->IsEnabled() ? YES : NO;
++}
++
++// A view refuses to become first responder while it has no window, and wx
++// controls routinely ask for the focus from their own creation path - before
++// the view has been added to anything. Re-run the request the moment the view
++// arrives in a window; without this the first SetFocus() of a control's life
++// is silently dropped.
++void wxOSX_didMoveToWindow(UIView* self, SEL _cmd)
++{
++    typedef void (*wxOSX_VoidHandlerPtr)(UIView* self, SEL _cmd);
++    wxOSX_VoidHandlerPtr superimpl = (wxOSX_VoidHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
++    superimpl(self, _cmd);
++
++    if ( self == gs_pendingFocusView && self.window != nil )
++    {
++        gs_pendingFocusView = nil;
++        [self becomeFirstResponder];
++    }
++}
++
+ void wxOSX_keyEvent(UIView* self, SEL _cmd, NSSet* presses, UIEvent *event)
+ {
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+@@ -518,10 +654,7 @@ void wxOSX_scrollGesture(UIView* self, SEL _cmd, UIPanGestureRecognizer* gesture
+     UIKeyModifierFlags modifiers = 0;
+     if ( @available(iOS 13.4, *) )
+         modifiers = [gesture modifierFlags];
+-    wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
+-    wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
+-    wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
+-    wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++    wxOSXIPhoneSetModifiers( wxevent, modifiers );
+ 
+     wxevent.m_wheelAxis = horizontal ? wxMOUSE_WHEEL_HORIZONTAL : wxMOUSE_WHEEL_VERTICAL;
+     wxevent.m_wheelDelta = 120;
+@@ -565,10 +698,7 @@ void wxOSX_hoverGesture(UIView* self, SEL _cmd, UIHoverGestureRecognizer* gestur
+     UIKeyModifierFlags modifiers = 0;
+     if ( @available(iOS 13.4, *) )
+         modifiers = [gesture modifierFlags];
+-    wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
+-    wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
+-    wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
+-    wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++    wxOSXIPhoneSetModifiers( wxevent, modifiers );
+ 
+     // A hovering pointer is exactly the case wxGetMousePosition() was written
+     // for, and the only one on this platform where nothing is being touched.
+@@ -938,10 +1068,7 @@ void wxOSX_contextMenuGesture(UIView* self, SEL _cmd, UILongPressGestureRecogniz
+         wxevent.m_y = pt.y + origin.y;
+         wxevent.m_clickCount = 1;
+         wxevent.SetRightDown(types[i] == wxEVT_RIGHT_DOWN);
+-        wxevent.m_shiftDown      = (modifiers & UIKeyModifierShift) != 0;
+-        wxevent.m_rawControlDown = (modifiers & UIKeyModifierControl) != 0;
+-        wxevent.m_altDown        = (modifiers & UIKeyModifierAlternate) != 0;
+-        wxevent.m_controlDown    = (modifiers & UIKeyModifierCommand) != 0;
++        wxOSXIPhoneSetModifiers( wxevent, modifiers );
+         wxevent.m_metaDown       = (modifiers & UIKeyModifierCommand) != 0;
+         // The same clock UITouch.timestamp is on, so these events sit in the
+         // same sequence as the ones the touch path sends.
+@@ -974,11 +1101,19 @@ void wxOSXIPhoneClassAddWXMethods(Class c)
+     class_addMethod(c, @selector(touchesCancelled:withEvent:), (IMP) wxOSX_touchEvent, "v@:@@");
+     class_addMethod(c, @selector(becomeFirstResponder), (IMP) wxOSX_becomeFirstResponder, "c@:" );
+     class_addMethod(c, @selector(resignFirstResponder), (IMP) wxOSX_resignFirstResponder, "c@:" );
++    // Without this one UIView's default answer of NO stands, no wx view can be
++    // made first responder, and no key press is delivered anywhere in wx.
++    class_addMethod(c, @selector(canBecomeFirstResponder), (IMP) wxOSX_canBecomeFirstResponder, "c@:" );
++    class_addMethod(c, @selector(didMoveToWindow), (IMP) wxOSX_didMoveToWindow, "v@:" );
+ 
+     class_addMethod(c, @selector(pressesBegan:withEvent:), (IMP) wxOSX_keyEvent, "v@:@@" );
+     class_addMethod(c, @selector(pressesChanged:withEvent:), (IMP) wxOSX_keyEvent, "v@:@@" );
+     class_addMethod(c, @selector(pressesEnded:withEvent:), (IMP) wxOSX_keyEvent, "v@:@@" );
+-    class_addMethod(c, @selector(pressesCancelled:withEvent:withEvent:), (IMP) wxOSX_keyEvent, "v@:@@" );
++    // The selector below carried "withEvent:" twice, so it named a method that
++    // does not exist and registered nothing: a cancelled press - which is what
++    // arrives whenever the application is interrupted with a key held down -
++    // never reached wx, and the key stayed down in wx's model for good.
++    class_addMethod(c, @selector(pressesCancelled:withEvent:), (IMP) wxOSX_keyEvent, "v@:@@" );
+ 
+     class_addMethod(c, @selector(drawRect:), (IMP) wxOSX_drawRect, "v@:{_CGRect={_CGPoint=ff}{_CGSize=ff}}" );
+ }
+@@ -1035,6 +1170,11 @@ wxWidgetIPhoneImpl::~wxWidgetIPhoneImpl()
+ {
+     RemoveAssociations( this );
+ 
++    // A view that is destroyed does not necessarily resign the focus first, and
++    // what wx tracks as the focused view must never outlive the view itself:
++    // wxWindow::FindFocus() would answer with a freed pointer.
++    wxOSXIPhoneNoteUnfocusedView( m_osxView );
++
+     if ( !IsRootControl() )
+     {
+         UIView *sv = [m_osxView superview];
+@@ -1124,9 +1264,22 @@ bool wxWidgetIPhoneImpl::HasFocus() const
+ 
+ bool wxWidgetIPhoneImpl::SetFocus()
+ {
+-//    [m_osxView makeKeyWindow] ;
+-//  TODO
+-    return false;
++    if ( ![m_osxView canBecomeFirstResponder] )
++        return false;
++
++    if ( [m_osxView isFirstResponder] )
++        return true;
++
++    // A view that is not in a window yet cannot be made first responder, and
++    // that is not a refusal - it is "not yet". Hold the request and let
++    // -didMoveToWindow run it, or the control's first SetFocus() is lost.
++    if ( m_osxView.window == nil )
++    {
++        gs_pendingFocusView = m_osxView;
++        return false;
++    }
++
++    return [m_osxView becomeFirstResponder] == YES;
+ }
+ 
+ 
+@@ -1784,6 +1937,10 @@ bool wxWidgetIPhoneImpl::becomeFirstResponder(WXWidget slf, void *_cmd)
+     BOOL r = superimpl(slf, (SEL)_cmd);
+     if ( r )
+     {
++        // Record it before the event goes out: a wxEVT_SET_FOCUS handler that
++        // asks wxWindow::FindFocus() has to be told about this window, not
++        // about the one that just lost it.
++        wxOSXIPhoneNoteFocusedView(slf);
+         DoNotifyFocusEvent( true, otherWindow );
+     }
+     return r;
+@@ -1793,6 +1950,8 @@ bool wxWidgetIPhoneImpl::resignFirstResponder(WXWidget slf, void *_cmd)
+ {
+     wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[slf superclass] instanceMethodForSelector:(SEL)_cmd];
+     BOOL r = superimpl(slf, (SEL)_cmd);
++    if ( r )
++        wxOSXIPhoneNoteUnfocusedView(slf);
+     // get the current focus after running resignFirstResponder
+     UIView* otherView = FindFocus();
+     wxWidgetImpl* otherWindow = FindFromWXWidget(otherView);
+@@ -2083,23 +2242,57 @@ void wxWidgetIPhoneImpl::SetupKeyEvent(wxKeyEvent &wxevent , UIEvent* nsEvent, U
+     wxevent.SetTimestamp( static_cast<long>([press timestamp] * 1000) ) ;
+ 
+     long keyval = 0;
++    int aunichar = 0;
+ 
+     if ( press.key )
+     {
+         UIKeyModifierFlags modifiers = [press.key modifierFlags];
+ 
+-        wxevent.m_shiftDown = modifiers & UIKeyModifierShift; // UIKeyModifierAlphaShift for capslock
+-        wxevent.m_rawControlDown = modifiers & UIKeyModifierControl;
+-        wxevent.m_altDown = modifiers & UIKeyModifierAlternate;
+-        wxevent.m_controlDown = modifiers & UIKeyModifierCommand;
++        const bool cmd  = (modifiers & UIKeyModifierCommand) != 0;
++        const bool ctrl = (modifiers & UIKeyModifierControl) != 0;
++
++        // The shared mapping, which is where the reason Control counts as
++        // Command on this port is written down.
++        wxOSXIPhoneSetModifiers( wxevent, modifiers );
++
+         wxevent.m_rawCode = (wxUint32) ([press.key keyCode]);
+         wxevent.m_rawFlags =(wxUint32) modifiers;
+ 
++        // The character the key stands for, which nothing here used to ask
++        // for. -characters is what typing the key produces, accents and
++        // Option-glyphs included, and it is what a text field wants; with a
++        // shortcut modifier held it is a control code or empty, so
++        // -charactersIgnoringModifiers answers instead - that one keeps Shift
++        // applied, so Cmd+/ and Cmd+? stay different keys.
++        NSString* chars = charString;
++        if ( [chars length] == 0 && !cmd && !ctrl )
++            chars = [press.key characters];
++        if ( [chars length] == 0 )
++            chars = [press.key charactersIgnoringModifiers];
++
++        if ( [chars length] == 1 )
++        {
++            const unichar c = [chars characterAtIndex:0];
++
++            // UIKit spells the keys that have no character - arrows, function
++            // keys, Home - as strings in the Unicode private use area. Those
++            // are not characters and wxKeyEvent::GetUnicodeKey() must not
++            // report them; wxOSXTranslateKey() has the real key code for them.
++            if ( !(c >= 0xe000 && c < 0xf900) )
++                aunichar = c;
++        }
+     }
+ 
+     if (wxevent.GetEventType() != wxEVT_CHAR)
+     {
+         keyval = wxOSXTranslateKey(press, wxevent.GetEventType()) ;
++
++        // Key codes are upper case in every wx port, and this one handed out
++        // 'a'..'z' - so a handler written for wxEVT_KEY_DOWN and testing
++        // against 'A' (which is how they are all written) matched nothing.
++        if ( keyval >= 'a' && keyval <= 'z' )
++            keyval = wxToupper( (int) keyval );
++
+         switch (pressPhase)
+         {
+             case UIPressPhaseBegan :
+@@ -2112,6 +2305,11 @@ void wxWidgetIPhoneImpl::SetupKeyEvent(wxKeyEvent &wxevent , UIEvent* nsEvent, U
+             case UIPressPhaseEnded :
+                 wxevent.SetEventType( wxEVT_KEY_UP )  ;
+                 break;
++            case UIPressPhaseCancelled :
++                // The key is not down any more and wx has to be told, or it
++                // keeps a modifier latched for the rest of the session.
++                wxevent.SetEventType( wxEVT_KEY_UP )  ;
++                break;
+             default :
+                 break ;
+         }
+@@ -2125,6 +2323,18 @@ void wxWidgetIPhoneImpl::SetupKeyEvent(wxKeyEvent &wxevent , UIEvent* nsEvent, U
+         }
+     }
+ 
++    // Same fallback, and the same upper-casing rule, as wxWidgetCocoaImpl::
++    // SetupKeyEvent: an ordinary character key has no wx key code of its own,
++    // so the character it produced is the key code.
++    if ( !keyval && aunichar < 256 )
++    {
++        if ( wxevent.GetEventType() == wxEVT_KEY_UP || wxevent.GetEventType() == wxEVT_KEY_DOWN )
++            keyval = wxToupper( aunichar ) ;
++        else
++            keyval = aunichar;
++    }
++
++    wxevent.m_uniChar = aunichar;
+     wxevent.m_keyCode = keyval;
+ 
+     wxWindowMac* peer = GetWXPeer();
+@@ -2135,22 +2345,73 @@ void wxWidgetIPhoneImpl::SetupKeyEvent(wxKeyEvent &wxevent , UIEvent* nsEvent, U
+     }
+ }
+ 
++// One press, turned into the sequence of wx events an application expects.
++//
++// What was here sent a single event per press and nothing else, so the two
++// events every keyboard shortcut in wx is actually built on were never
++// generated at all:
++//
++//   wxEVT_CHAR_HOOK is what wxWindowMac::OSXHandleKeyEvent() runs the
++//     accelerator tables against, and it is the only key event that
++//     propagates from the focused window up to the frame - which is where
++//     applications bind their global shortcuts.
++//   wxEVT_CHAR is the event carrying the character, and it is what a canvas
++//     or a custom control handles its own keys in. Copy, paste, delete,
++//     select-all, the view keys: all of them are wxEVT_CHAR handlers.
++//
++// The order below - hook, then key down, then char if key down was skipped -
++// is wxWidgetCocoaImpl::DoHandleKeyEvent()'s, so an application behaves the
++// same here as it does on macOS.
++bool wxWidgetIPhoneImpl::DoHandleKeyEvent(UIPress* press, UIEvent* event)
++{
++    wxKeyEvent wxevent(wxEVT_KEY_DOWN);
++    SetupKeyEvent( wxevent, event, press );
++
++    if ( wxevent.GetEventType() != wxEVT_KEY_DOWN )
++        return GetWXPeer()->OSXHandleKeyEvent(wxevent);
++
++    wxKeyEvent eventHook(wxEVT_CHAR_HOOK, wxevent);
++    if ( GetWXPeer()->OSXHandleKeyEvent(eventHook) && !eventHook.IsNextEventAllowed() )
++    {
++        wxLogTrace(TRACE_KEYS, "Key down event handled by char hook");
++        return true;
++    }
++
++    if ( GetWXPeer()->OSXHandleKeyEvent(wxevent) )
++        return true;
++
++    wxKeyEvent eventChar(wxEVT_CHAR, wxevent);
++    SetupKeyEvent( eventChar, event, press );
++    return GetWXPeer()->OSXHandleKeyEvent(eventChar);
++}
++
+ void wxWidgetIPhoneImpl::keyEvent( NSSet *presses, UIEvent* event, WXWidget slf, void *_cmd)
+ {
+     wxLogTrace(TRACE_KEYS, "Got %s for %s",
+                wxDumpSelector((SEL)_cmd), wxDumpUIView(slf));
+ 
+-    if ( !m_wxPeer->IsEnabled() )
+-        return;
++    bool handled = m_wxPeer->IsEnabled();
+ 
+-    wxKeyEvent wxevent;
++    if ( handled )
++    {
++        for (UIPress *press in (NSSet<UIPress *> *) presses)
++        {
++            // A press with no key is a game controller button or a remote, and
++            // it is not this port's business.
++            if ( press.key == nil || press.phase == UIPressPhaseChanged )
++            {
++                handled = false;
++                continue;
++            }
+ 
+-    bool handled = false;
++            // Tell the last-resort router this press has already been offered
++            // to wx, so that letting it travel on up the responder chain
++            // cannot deliver it a second time.
++            wxOSXIPhoneNotePressSeen(press);
+ 
+-    for (UIPress *press in (NSSet<UIPress *> *) presses)
+-    {
+-        SetupKeyEvent(wxevent, event, press , nil);
+-        m_wxPeer->OSXHandleKeyEvent(wxevent);
++            if ( !DoHandleKeyEvent(press, event) )
++                handled = false;
++        }
+     }
+ 
+     if ( !handled )
+@@ -2159,6 +2420,115 @@ void wxWidgetIPhoneImpl::keyEvent( NSSet *presses, UIEvent* event, WXWidget slf,
+         superimpl(slf, (SEL)_cmd, presses, event);
+     }
+ }
++
++// ---------------------------------------------------------------------------
++// The last resort: a press no wx view was offered
++// ---------------------------------------------------------------------------
++//
++// UIKit sends a key press to the first responder and nowhere else, and there
++// are two ordinary states in which the first responder is not a wx view:
++//
++//   * the application has just launched and the user has not touched anything
++//     yet, so there is no first responder at all;
++//   * the focus is on a plain UIKit view the application put in the window
++//     itself, which is something this port does in several places.
++//
++// In both, an unhandled press travels up the responder chain to UIApplication
++// and then to the application delegate, which is the last responder there is.
++// wxAppDelegate hands it here (src/osx/iphone/utils.mm), and it goes to the
++// window wx believes is focused - or, when wx believes nothing is, to the top
++// level window UIKit is calling key. That last part is what makes the
++// application's global shortcuts work before the user has tapped anything.
++//
++// Presses are marked as they are offered to wx, so a press that a wx view has
++// already refused - and that therefore travelled up the chain and arrived here
++// - is not delivered a second time.
++
++static const char wxOSXIPhonePressSeenKey = 0;
++
++void wxOSXIPhoneNotePressSeen(UIPress* press)
++{
++    objc_setAssociatedObject(press, &wxOSXIPhonePressSeenKey, press,
++                             OBJC_ASSOCIATION_ASSIGN);
++}
++
++static bool wxOSXIPhonePressWasSeen(UIPress* press)
++{
++    return objc_getAssociatedObject(press, &wxOSXIPhonePressSeenKey) != nil;
++}
++
++static wxWindow* wxOSXIPhoneKeyEventTarget()
++{
++    wxWindow* const focus = wxWindow::FindFocus();
++    if ( focus != nullptr )
++        return focus;
++
++    UIWindow* keyWindow = nil;
++    for ( UIScene* scene in [UIApplication sharedApplication].connectedScenes )
++    {
++        if ( ![scene isKindOfClass:[UIWindowScene class]] )
++            continue;
++
++        for ( UIWindow* w in ((UIWindowScene*) scene).windows )
++        {
++            if ( [w isKeyWindow] )
++            {
++                keyWindow = w;
++                break;
++            }
++        }
++
++        if ( keyWindow != nil )
++            break;
++    }
++
++    if ( keyWindow != nil )
++    {
++        for ( wxWindowList::compatibility_iterator node = wxTopLevelWindows.GetFirst();
++              node;
++              node = node->GetNext() )
++        {
++            wxNonOwnedWindow* const now = dynamic_cast<wxNonOwnedWindow*>(node->GetData());
++            if ( now != nullptr && now->GetWXWindow() == keyWindow )
++                return now;
++        }
++    }
++
++    return wxTheApp != nullptr ? wxTheApp->GetTopWindow() : nullptr;
++}
++
++bool wxOSXIPhoneRouteUnhandledPresses(NSSet* presses, UIEvent* event)
++{
++    bool handled = false;
++
++    for ( UIPress* press in (NSSet<UIPress *> *) presses )
++    {
++        if ( press.key == nil || press.phase == UIPressPhaseChanged )
++            continue;
++
++        if ( wxOSXIPhonePressWasSeen(press) )
++            continue;
++
++        wxOSXIPhoneNotePressSeen(press);
++
++        wxWindow* const target = wxOSXIPhoneKeyEventTarget();
++        if ( target == nullptr )
++            continue;
++
++        wxWidgetIPhoneImpl* const impl =
++            dynamic_cast<wxWidgetIPhoneImpl*>(target->GetPeer());
++        if ( impl == nullptr )
++            continue;
++
++        wxLogTrace(TRACE_KEYS, "Routing an unclaimed press to %s",
++                   wxDumpWindow(target));
++
++        if ( impl->DoHandleKeyEvent(press, event) )
++            handled = true;
++    }
++
++    return handled;
++}
+ //
+ // Factory methods
+ //

@@ -8343,3 +8343,177 @@ follows a switch immediately in both directions; whether the progress bar's
 track is a fill rather than white; and whether pause and stop are now icons
 that can be pressed. The last of those is the one with reach beyond this
 report — every icon-only button in the application went through the same stub.
+
+## 0236, 0435 — the hardware keyboard, which had never worked at all
+
+Reported from the device: *"Cmd C oder Ctrl C sowie Cmd V oder Ctrl V
+funktionieren noch nicht"*, with the ask to go through the rest of the
+shortcuts as well. The rest of the shortcuts were in the same state, and so was
+every key this application has ever been sent: **not one keystroke has ever
+reached wx on this port.**
+
+### Why nothing worked, which is four separate holes in one path
+
+UIKit delivers a key press to the first responder and to nothing else. The
+iPhone port could not produce a first responder, could not have handled a press
+if it had one, and could not have matched a shortcut if it had handled it.
+
+**Nothing could take the focus.** Three functions in `src/osx/iphone/window.mm`,
+all of them empty:
+
+| function | what it was | what that cost |
+|---|---|---|
+| `wxWidgetImpl::FindFocus()` | body commented out, `return nil` | `wxWindow::FindFocus()` answered "nothing" for the life of the process |
+| `wxWidgetIPhoneImpl::SetFocus()` | `// TODO`, `return false` | `wxWindow::SetFocus()` moved nothing, ever |
+| `canBecomeFirstResponder` | never implemented | UIView's default is NO, so no wx view could be made first responder even on request |
+
+So `-pressesBegan:` was never called on a wx view, and
+`wxWidgetIPhoneImpl::keyEvent()` — which exists, and which reads correctly —
+has never once run on a device. There is no error and no log line for this,
+because from wx's side no key was pressed.
+
+**The events it would have sent were the wrong ones.** `keyEvent()` sent one
+event per press and nothing else. The two events every wx shortcut is actually
+built on were never generated:
+
+* **`wxEVT_CHAR_HOOK`** is what `wxWindowMac::OSXHandleKeyEvent()` runs the
+  accelerator tables against, and it is the only key event that propagates from
+  the focused window up to the frame. `MainFrame`'s whole global shortcut block
+  — Cmd+N, +O, +S, +Shift+S, +I, +G, +Shift+G, +R, +J, +F, +P/, — is one
+  `Bind(wxEVT_CHAR_HOOK, …)`, and it could not fire.
+* **`wxEVT_CHAR`** carries the character, and it is what `GLCanvas3D::on_char`
+  handles. That is where **copy, cut, paste**, select-all, delete-all, clone,
+  undo, redo, the labels toggle, the seven camera views, the arrange and orient
+  keys, the gizmo letters, the filament digits and `?` all live.
+
+The order is now the cocoa port's, in a new `DoHandleKeyEvent()`: char hook,
+then key down, then char if key down was skipped, so the application behaves
+here as it does on macOS. `SetupKeyEvent()` also learned to ask for the
+character at all (`-characters` when nothing modifies the key, so typing keeps
+its accents and its case; `-charactersIgnoringModifiers` when a shortcut
+modifier is held), and to hand out **upper case key codes** — it was handing
+out `'a'`..`'z'`, and every handler in every wx application tests against
+`'A'`.
+
+**A cancelled press was never registered.** `pressesCancelled:withEvent:` was
+spelled `pressesCancelled:withEvent:withEvent:` — a selector naming no method,
+so a key held down when the application is interrupted stayed down in wx's
+model for good.
+
+**And the menu bar was empty.** `wxMenuIPhoneImpl::MakeRoot()` was `{}`. UIKit
+builds the main menu once, from a block on the first turn of the run loop —
+before `OnInit` installs a menu bar, which is what patch 0213's null guard is a
+record of — and never asks again unless told. Nothing told it, so on iPadOS
+there was no File menu, no Edit menu and nothing under a held Command key, for
+the life of the process. `[UIMenuSystem.mainSystem setNeedsRebuild]` in
+`MakeRoot()` is the missing line. And `wxMenuItemImpl::Create` carried
+`// TODO UIKeyCommand`, so even a menu that appeared had no key equivalents:
+items with an accelerator are `UIKeyCommand`s now.
+
+### Ctrl works everywhere Cmd does
+
+`wxOSXIPhoneSetModifiers()` is one mapping shared by every input path in
+window.mm — touch, pointer, scroll, hover, the synthesised right click and the
+keys, which each had their own copy. wxOSX reports Command as `m_controlDown`,
+because `CmdDown()`, `wxMOD_CONTROL` and `wxACCEL_CTRL` all name *the shortcut
+modifier*, and on this family of ports that is Command.
+
+An iPad takes any USB or Bluetooth keyboard and most of them are not Apple's;
+on those the key under the user's hand is Control. **A lone Control is reported
+as Command**, so both drive the same shortcut. Control is reported as itself
+only when Command is held too, which keeps Cmd+Ctrl+key distinct. The two are
+deliberately never set at once for a lone Control:
+`wxAcceleratorTable::GetCommand()` matches every modifier exactly, so an event
+claiming both would stop matching Ctrl accelerators rather than start.
+
+### Who has the keyboard
+
+Focus is tracked rather than asked for — UIKit has no counterpart to
+`-[NSWindow firstResponder]`, and wx already thunks both halves of the
+transition. The record is validated against `-isFirstResponder` before it is
+handed out, so a non-wx view taking the focus (the gallery, a rename field)
+corrects it, and it is cleared in `~wxWidgetIPhoneImpl` so it can never outlive
+its view. A `SetFocus()` on a view not yet in a window is held and re-run from
+`-didMoveToWindow`, because controls routinely ask for the focus from their own
+creation path.
+
+**A press no wx view was offered** — the application has just launched and
+nothing is first responder, or a plain UIKit view holds it — travels up the
+responder chain to `wxAppDelegate`, the last responder there is, and is routed
+to the window wx believes is focused, or to the top level window UIKit calls
+key. Presses are marked as they are offered to wx, so one that a view refused
+and let travel on is not delivered twice. This is what makes the global
+shortcuts work before the user has tapped anything.
+
+### 0435 — undo, redo, and a canvas that has the keyboard
+
+**Cmd/Ctrl+Shift+Z is redo.** Orca only ever had Ctrl+Y, which is the Windows
+spelling; Shift+Z is what macOS and iPadOS bind redo to and is what a keyboard
+on an iPad reaches for. Both work, in `GLCanvas3D::on_char` and in the
+shortcuts dialog.
+
+**Undo and redo now work wherever the focus is.** They live in
+`GLCanvas3D::on_char`, so they only fire while the 3D canvas holds the
+keyboard — which on a desktop it nearly always does, because the pointer passes
+over the plate on the way, and on a tablet often does not. `MainFrame`'s char
+hook takes them when the focus is elsewhere, and leaves two cases alone: the
+canvas, which has its own handler and runs the key past ImGui first, and a text
+editor, where undo means undo the typing.
+
+**`orca_ios_wake_canvas()` gives the canvas the focus**, not just a frame. It
+already runs after every selection the native tab bar makes, which is exactly
+the moment a user picks Prepare and then reaches for the keyboard without ever
+having touched the plate. A focused text field is left alone.
+
+**Four shortcuts that describe a desktop are gated off**: Hide, Minimise and
+Full Screen do nothing on an iPad but consume their keys — and Cmd+Ctrl+F would
+swallow the sidebar search now that Control counts as Command. Cmd+Q is the
+one that mattered: `wxEVT_CLOSE_WINDOW` on the main frame tears the application
+down, and an iOS application that exits itself is indistinguishable from one
+that crashed.
+
+### What this changes that was not asked for
+
+`SetFocus()` working is a behaviour change everywhere, not only for the
+keyboard: a dialog that focuses its text field now really does, and the
+software keyboard comes up with it. That is correct, and it is also the first
+time it has happened on this port.
+
+Menu items that carry an accelerator become `UIKeyCommand`s, which fire from
+the responder chain rather than from the menu. Two guards against what that
+could otherwise cost: an accelerator with no modifier (or Shift alone) is
+**not** made into one, because a bare-key command captures that key everywhere
+including text fields — a menu item on plain Del would stop Del deleting a
+character; and Quit is skipped for the reason above. Enabled state is asked for
+again at the moment the command runs (`menu->UpdateUI()`), because UIKit took
+its copy of the menu tree when it built the bar and never comes back to ask.
+
+Orca's own Cmd+C/V/X/Z/Y menu items are *not* affected: on `__APPLE__` Orca
+writes them with `sep = " - "` rather than a tab (its own fix for macOS issue
+8152), so wx never builds an accelerator for them and they stay where they have
+always been — `GLCanvas3D::on_char`.
+
+Menu elements no longer capture the `wxMenuItem*` in their handler block. UIKit
+keeps the tree it was handed, so an element outlives the item it was built for
+every time a menu is rebuilt — the same class of bug 0234 fixed for the context
+menu sheets. Items are looked up in a registry keyed by the identifier the
+element carries and unregistered when they are destroyed.
+
+### What is not verified
+
+None of it has been run. 0236 is a step-2 patch, so the first run after it
+rebuilds the wx port. In order of what to try on device:
+
+1. Tap the plate, select an object, **Cmd+C then Cmd+V** — and the same with
+   Ctrl on a non-Apple keyboard.
+2. **Cmd+Z / Cmd+Shift+Z**, both with the plate focused and straight after
+   changing something in the object list.
+3. **Cmd+S / Cmd+N / Cmd+O** immediately after launch, before touching
+   anything — that is the app-delegate router, and it is the piece with no
+   equivalent on any other port.
+4. Hold **Command** and see whether the menu bar HUD lists anything at all;
+   that is `MakeRoot()`'s rebuild, and if it is empty nothing else about the
+   menu half works either.
+5. Type into a sidebar field and confirm the characters still arrive, that
+   Del still deletes a character, and that the key does not also reach the
+   plate.

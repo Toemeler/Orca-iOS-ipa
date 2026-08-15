@@ -1,0 +1,282 @@
+diff --git a/src/slic3r/GUI/Monitor.cpp b/src/slic3r/GUI/Monitor.cpp
+index dff8cdc..2145cde 100644
+--- a/src/slic3r/GUI/Monitor.cpp
++++ b/src/slic3r/GUI/Monitor.cpp
+@@ -1,4 +1,9 @@
+ #include "Tab.hpp"
++#ifdef __APPLE__
++// TARGET_OS_OSX is tested below; undefined reads as zero in an #if, which would
++// compile the iOS-only branch into the macOS build.
++#include <TargetConditionals.h>
++#endif
+ #include "libslic3r/Utils.hpp"
+ #include "libslic3r/Model.hpp"
+ #include "libslic3r/AppConfig.hpp"
+@@ -21,6 +26,7 @@
+ #include <wx/tglbtn.h>
+ 
+ #include "wxExtensions.hpp"
++#include "Widgets/StateColor.hpp"
+ #include "GUI_App.hpp"
+ #include "GUI_ObjectList.hpp"
+ #include "Plater.hpp"
+@@ -173,7 +179,15 @@ void MonitorPanel::init_tabpanel()
+     sizer_side_tools->Add(m_side_tools, 1, wxEXPAND, 0);
+     m_tabpanel             = new Tabbook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, sizer_side_tools, wxNB_LEFT | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
+     m_side_tools->set_table_panel(m_tabpanel);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // What shows of the book itself is the band above the page and the strip
++    // beside the tabs, and both of those are the page rather than a surface
++    // sitting on it. Tabbook re-asks for this on every paint - see the comment
++    // there - so this is only what it starts out holding.
++    m_tabpanel->SetBackgroundColour(StateColor::baseColor());
++#else
+     m_tabpanel->SetBackgroundColour(wxColour("#FEFFFF"));
++#endif
+     m_tabpanel->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
+         auto page = m_tabpanel->GetCurrentPage();
+         if (page == m_media_file_panel) {
+diff --git a/src/slic3r/GUI/Tabbook.cpp b/src/slic3r/GUI/Tabbook.cpp
+index 40ced79..62d8ab6 100644
+--- a/src/slic3r/GUI/Tabbook.cpp
++++ b/src/slic3r/GUI/Tabbook.cpp
+@@ -54,6 +54,30 @@ TabButtonsListCtrl::TabButtonsListCtrl(wxWindow *parent, wxBoxSizer *side_tools)
+     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
+     m_sizer->Add(m_buttons_sizer, 0, wxLEFT | wxTOP, m_btn_margin);
+     m_sizer->AddStretchSpacer(1);
++
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // THE STRIP ASKS FOR ITS COLOUR AT PAINT TOO.
++    //
++    // SetBackgroundColour() above is a snapshot of the appearance this control
++    // was built in. OnPaint() below would have re-asked - it opens with
++    // UpdateDarkUI(this) - but it is declared, defined and bound to nothing,
++    // upstream included, so it has never run. The strip therefore kept the
++    // colour it was born with and changed only when a walk of the window tree
++    // happened to reach it.
++    //
++    // Binding upstream's handler would also start drawing its selection
++    // marker, a filled rectangle under every button that this port does not
++    // show, so this is the background alone.
++    Bind(wxEVT_PAINT, [this](wxPaintEvent &) {
++        const wxColour bg = StateColor::darkModeColorFor(TAB_BUTTON_BG);
++        if (GetBackgroundColour() != bg)
++            SetBackgroundColour(bg);
++        wxPaintDC dc(this);
++        dc.SetPen(bg);
++        dc.SetBrush(bg);
++        dc.DrawRectangle(GetClientRect());
++    });
++#endif
+ }
+ 
+ void TabButtonsListCtrl::OnPaint(wxPaintEvent &)
+diff --git a/src/slic3r/GUI/Tabbook.hpp b/src/slic3r/GUI/Tabbook.hpp
+index 4f2bec1..6f11aeb 100644
+--- a/src/slic3r/GUI/Tabbook.hpp
++++ b/src/slic3r/GUI/Tabbook.hpp
+@@ -10,7 +10,9 @@
+ #include <TargetConditionals.h>
+ #endif
+ #include <wx/sizer.h>
++#include <wx/dcclient.h>
+ #include "wxExtensions.hpp"
++#include "Widgets/StateColor.hpp"
+ 
+ 
+ class ScalableButton;
+@@ -109,6 +111,37 @@ public:
+ 
+         this->Bind(wxEVT_NAVIGATION_KEY, &Tabbook::OnNavigationKey, this);
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++        // THE BAND ABOVE THE PAGE, AND THE STRIP DOWN ITS SIDE, ARE THIS
++        // WINDOW - AND IT ASKS FOR ITS COLOUR AT PAINT.
++        //
++        // DoSize() below hands the page a rect inset by the height of the
++        // floating tab bar, and the vertical strip of tabs takes a column at
++        // the leading edge. Everything the two of them do not cover is this
++        // book's own background: a band across the top of the Device page and
++        // a strip beside the tabs.
++        //
++        // Monitor.cpp gives that background a colour once, when the book is
++        // built, in whichever appearance the application happened to start in.
++        // Nothing re-asks. So the band and the strip arrived in the wrong
++        // appearance and stayed there until some later walk of the window tree
++        // happened to reach them - which is why they seemed to load a while
++        // after everything else, and why they did not follow the device into
++        // dark mode or back out of it.
++        //
++        // The page tone rather than a surface: the band is the top of the page
++        // it sits above, not something laid on top of it.
++        this->Bind(wxEVT_PAINT, [this](wxPaintEvent &) {
++            const wxColour page = StateColor::baseColor();
++            if (GetBackgroundColour() != page)
++                SetBackgroundColour(page);
++            wxPaintDC dc(this);
++            dc.SetPen(page);
++            dc.SetBrush(page);
++            dc.DrawRectangle(GetClientRect());
++        });
++#endif
++
+         return true;
+     }
+ 
+diff --git a/src/slic3r/GUI/Widgets/ProgressBar.cpp b/src/slic3r/GUI/Widgets/ProgressBar.cpp
+index 1bd9882..067825c 100644
+--- a/src/slic3r/GUI/Widgets/ProgressBar.cpp
++++ b/src/slic3r/GUI/Widgets/ProgressBar.cpp
+@@ -3,7 +3,30 @@
+ #include <wx/dcclient.h>
+ #include <wx/dcgraph.h>
+ #include "Label.hpp"
++#include "StateColor.hpp"
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// THE BAR ASKS FOR ITS COLOURS WHEN IT DRAWS THEM.
++//
++// The three colours this widget paints with are plain members, written once,
++// and one of them - the track, #E9E9E9 - was in no table at all. So in dark
++// mode the bar behind the progress stayed the light grey it is written as: a
++// white bar across the printing box with a dark page around it, which is not
++// something any later repair could have fixed either.
++//
++// Asking here is a live read, so the bar is right the first time it is drawn
++// and follows the device afterwards without anything having to walk the window
++// tree. The lookup is idempotent - every colour the palette can produce is
++// also a key of it - so re-asking with whatever the widget is holding always
++// gives the answer for the appearance in force now.
++static wxColour tone(wxColour const &c) { return StateColor::darkModeColorFor(c); }
++#else
++static wxColour tone(wxColour const &c) { return c; }
++#endif
+ 
+ 
+ wxDEFINE_EVENT(wxCUSTOMEVT_SET_TEMP_FINISH, wxCommandEvent);
+@@ -143,6 +166,12 @@ void ProgressBar::SetMinSize(const wxSize &size)
+ 
+ void ProgressBar::paintEvent(wxPaintEvent &evt)
+ {
++    // The corners left over by the rounded track show this window's own
++    // background, and that is white out of the constructor. Re-asked here for
++    // the same reason as the colours in doRender().
++    const wxColour bg = tone(GetBackgroundColour());
++    if (bg != GetBackgroundColour())
++        SetBackgroundColour(bg);
+ 
+     wxPaintDC dc(this);
+     render(dc);
+@@ -173,8 +202,14 @@ void ProgressBar::doRender(wxDC &dc)
+ {
+     if (m_step >= m_max) m_step = m_max;
+     wxSize size   = GetSize();
+-    dc.SetPen(wxPen(m_progress_background_colour, 1));
+-    dc.SetBrush(wxBrush(m_progress_background_colour));
++
++    const wxColour track   = tone(m_progress_background_colour);
++    const wxColour filled  = tone(m_progress_colour);
++    const wxColour stalled = tone(m_progress_colour_disable);
++    const wxColour caption = tone(wxColour(144, 144, 144));
++
++    dc.SetPen(wxPen(track, 1));
++    dc.SetBrush(wxBrush(track));
+     if (m_radius == 0) {
+         dc.DrawRectangle(0, 0, size.x, size.y);
+     } else {
+@@ -186,8 +221,8 @@ void ProgressBar::doRender(wxDC &dc)
+         m_proportion = float(size.x * float(this->m_step) / float(this->m_max));
+         if (m_proportion < m_radius * 2 && m_proportion != 0) { m_proportion = m_radius * 2; }
+ 
+-        dc.SetPen(wxPen(m_progress_colour_disable, 1));
+-        dc.SetBrush(wxBrush(m_progress_colour_disable));
++        dc.SetPen(wxPen(stalled, 1));
++        dc.SetBrush(wxBrush(stalled));
+         if (m_radius == 0) {
+             dc.DrawRectangle(0, 0, m_proportion, size.y);
+         } else {
+@@ -196,7 +231,7 @@ void ProgressBar::doRender(wxDC &dc)
+ 
+         dc.SetFont(::Label::Head_12);
+         auto textSize = dc.GetMultiLineTextExtent(m_disable_text);
+-        dc.SetTextForeground(wxColour(144, 144, 144));
++        dc.SetTextForeground(caption);
+         auto pt = wxPoint();
+         pt.x    = (size.x - textSize.x) / 2;
+         pt.y    = (size.y - textSize.y) / 2;
+@@ -206,8 +241,8 @@ void ProgressBar::doRender(wxDC &dc)
+         m_proportion = float(size.x * float(this->m_step) / float(this->m_max));
+         if (m_proportion < m_radius * 2  && m_proportion != 0) { m_proportion = m_radius * 2; }
+ 
+-        dc.SetPen(wxPen(m_progress_colour, 1));
+-        dc.SetBrush(wxBrush(m_progress_colour));
++        dc.SetPen(wxPen(filled, 1));
++        dc.SetBrush(wxBrush(filled));
+         if (m_radius == 0) {
+             dc.DrawRectangle(0, 0, m_proportion, size.y);
+         } else {
+@@ -216,7 +251,7 @@ void ProgressBar::doRender(wxDC &dc)
+ 
+         dc.SetFont(GetFont());
+         auto textSize = dc.GetMultiLineTextExtent(wxString("000%"));
+-        dc.SetTextForeground(wxColour(144, 144, 144));
++        dc.SetTextForeground(caption);
+         auto pt = wxPoint();
+         pt.x    = (size.x - textSize.x) / 2;
+         pt.y    = (size.y - textSize.y) / 2;
+diff --git a/src/slic3r/GUI/Widgets/StateColor.cpp b/src/slic3r/GUI/Widgets/StateColor.cpp
+index 0676b99..15bbf89 100644
+--- a/src/slic3r/GUI/Widgets/StateColor.cpp
++++ b/src/slic3r/GUI/Widgets/StateColor.cpp
+@@ -66,6 +66,7 @@ static const struct { char const *orca; OrcaIosTone const *tone; } kOrcaIosPalet
+     {"#F1F1F1", &kFill},      // Sidebar > Titlebar > Gradient Bottom | row highlight
+     {"#F0F0F1", &kFill},      // Disabled element background
+     {"#E8E8E8", &kFill},      // a fill
++    {"#E9E9E9", &kFill},      // Progress bar track
+     {"#DFDFDF", &kFill},      // Button Background color
+     {"#D9D9D9", &kFill},      // Sidebar > Toggle button track color
+     {"#D4D4D4", &kFillHover}, // Button Background color on Hover
+@@ -85,7 +86,9 @@ static const struct { char const *orca; OrcaIosTone const *tone; } kOrcaIosPalet
+     {"#6B6A6A", &kTextMuted}, // Button Dimmed text
+     {"#6B6B6A", &kTextMuted}, // Input box side text
+     {"#2B3436", &kTextMuted}, // Leftover from BBS, main fill colour of icons
++    {"#929292", &kTextMuted}, // Printing page secondary text and underline
+     {"#6B6B6B", &kTextDim},   // Disabled Text
++    {"#909090", &kTextDim},   // Progress bar text while the bar is stalled
+     {"#ACACAC", &kTextDim},   // Disabled Text on boxes | Dimmed Elements
+     {"#9E9E9E", &kTextDim},   //
+     {"#ABABAB", &kTextDim},   //
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index 22c902a..f57d9cb 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -2430,6 +2430,25 @@ static const CGFloat kOrcaTabBarInset = 72;
+     const CGRect r = self.view.bounds;
+     if (!CGRectEqualToRect(self.wxView.frame, r))
+         self.wxView.frame = r;
++
++    // AND THE FIRST WALK OF THE WINDOW TREE, IF IT HAS NOT HAPPENED YET.
++    //
++    // viewDidAppear: was meant to be that: whatever UIKit could answer during
++    // startup, by there it answers for real, and the walk repairs any window
++    // that stored a colour before then. But this port defers OnInit off the
++    // launch, and wx turns the run loop while the frame is being built, so
++    // viewDidAppear: can arrive while GUI_App::mainframe is still null. There
++    // is nothing to walk at that point, and orca_ios_appearance_changed()
++    // deliberately does not latch when it finds no frame - but nothing was
++    // calling it again either. The next thing to touch the colours was some
++    // unrelated later update, which is exactly the "it arrives after a while
++    // rather than straight away" the interface has been showing.
++    //
++    // Layout is the right place for the retry: it runs as soon as the frame
++    // exists and is sized, before any of it can be looked at, and it costs a
++    // trait read once the walk has happened - the function applies a change
++    // once and returns immediately when there is none.
++    Slic3r::GUI::orca_ios_appearance_changed();
+ }
+ 
+ // The tabs the bar should be showing: every notebook page except the ones held

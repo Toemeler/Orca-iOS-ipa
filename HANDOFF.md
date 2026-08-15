@@ -8251,3 +8251,95 @@ sheet appearing in the corner means 0232 did not take, no sheet at all means
 0233 did not); whether choosing an item in it reaches Orca (0231's
 invoking-window restore, now behind 0234's weak references); and whether a
 pencil raises it as a finger does.
+
+## 0235, 0434 — the colours that were snapshots, and the button with nothing in it
+
+Four reports from the same device session, and they turned out to be three
+causes, none of which was a colour being *chosen* wrongly.
+
+### The band and the strip that arrived late
+
+**The band above the Device page and the strip beside its tabs are the same
+window.** `Tabbook::DoSize` (0413) hands the page a rect inset by the height of
+the floating bar, and the vertical strip of tabs takes a column at the leading
+edge; everything neither of them covers is the book's own background. So one
+`SetBackgroundColour` in `Monitor.cpp` paints both the horizontal band across
+the top and the vertical strip down the side — which is why "the spacer should
+be the cream colour of that tab" and "the vertical strip beside the left panel
+does not switch in dark mode, and does not switch in light mode either" are one
+bug rather than two.
+
+That call happens once, when the book is built, in whichever appearance the
+application happened to start in. Nothing re-asks. It is the same class of
+defect this file has now written down four times: **a colour a widget stores at
+construction is only as good as the appearance at that moment, and has to be
+re-asked somewhere.** The band and the strip now ask on every paint, and the
+tone is the page rather than a surface — the band is the top of the page it
+sits above, not something laid on it.
+
+`TabButtonsListCtrl` — the strip of tab buttons itself — had the same snapshot,
+and something worse behind it. `TabButtonsListCtrl::OnPaint` opens with
+`UpdateDarkUI(this)`, exactly the re-ask that was needed, and it is **declared,
+defined and bound to nothing**: no event table, no `Bind`, upstream included.
+It has never run. The fix binds a handler that does the background alone rather
+than upstream's, whose selection marker — a filled rectangle under every button
+— this port does not show.
+
+### Why "after a while" was the honest description
+
+The interface got its colours right eventually, and that eventually was the
+tell. `orca_ios_appearance_changed()` is what walks the window tree and repairs
+anything built in the other appearance, and the first call was supposed to come
+from `viewDidAppear:` on the tab bar controller. But this port defers `OnInit`
+off the launch (0208), and wx turns the run loop while the frame is being built,
+so **`viewDidAppear:` can arrive while `GUI_App::mainframe` is still null.**
+The function does the right thing with that — it applies what it can and
+deliberately does not latch, so that a later call finishes the job — but nothing
+was making a later call. `traitCollectionDidChange:` and the trait registration
+only fire on an actual switch. So after a launch that raced that way, the first
+walk was whatever unrelated update happened to come along.
+
+`viewDidLayoutSubviews` now retries it. Layout runs as soon as the frame exists
+and is sized, before any of it can be looked at, and the latch makes every call
+after the first walk a single trait read.
+
+### The white bar in the printing box, and the print that could not be stopped
+
+Two complaints, two causes, both in the same box.
+
+**The white bar is the progress bar's track.** `ProgressBar` paints
+`m_progress_background_colour`, a plain member holding `#E9E9E9` — a colour in
+no table, so nothing could have translated it even in principle. On a dark page
+that is a bar of light grey. It is in the palette now, as a fill, and the three
+colours the widget paints with are asked for at paint rather than kept from the
+constructor.
+
+**And the print could not be paused or stopped because those buttons had
+nothing in them.** `wxWidgetIPhoneImpl::SetBitmap` is an **empty stub** in
+wx's iPhone port, and `wxAnyButton::DoSetBitmap` calls it for every bitmap a
+button is ever given. So on this port no `wxButton` has ever shown a bitmap.
+That is not a small gap: an icon-only button carries no label — the icon is the
+whole control — so `ScalableButton` came out as an empty rounded rect the width
+of its own padding. Pause, resume, stop and part-skip sit next to the progress
+bar; a row of blank buttons beside a bar reads as more bar, and there is nothing
+to aim at.
+
+0235 implements it. `AlwaysOriginal` on the image, because
+`UIButtonTypeRoundedRect` is the system button type on anything this port runs
+on and a system button tints its image with the tint colour — a multi-coloured
+icon would come out as one flat hue, and wx has already rendered the bitmap in
+the colours it wants. Note this is also how a bitmap *changes*, not only how
+the first one arrives: pause turning into resume, an icon going grey as its
+button is disabled, all arrive through the same call.
+
+This is a step-2 patch, so it invalidates the wxWidgets build cache — the first
+run after it rebuilds the port.
+
+### What is not verified
+
+None of it has been run on device. In order: whether the band above Kamera /
+Steuerung is the page colour from the first frame; whether the vertical strip
+follows a switch immediately in both directions; whether the progress bar's
+track is a fill rather than white; and whether pause and stop are now icons
+that can be pressed. The last of those is the one with reach beyond this
+report — every icon-only button in the application went through the same stub.

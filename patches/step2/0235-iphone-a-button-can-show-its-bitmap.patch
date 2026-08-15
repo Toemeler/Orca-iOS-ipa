@@ -1,0 +1,49 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index ab71459..b0a2725 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -19,6 +19,8 @@
+ #endif
+ 
+ #include "wx/textctrl.h"
++// wxOSXGetImageFromBundle(), for SetBitmap() below.
++#include "wx/private/bmpbndl.h"
+ #include "wx/font.h"
+ 
+ #include <objc/runtime.h>
+@@ -1211,6 +1213,35 @@ void wxWidgetIPhoneImpl::SetValue( wxInt32 v )
+ 
+ void wxWidgetIPhoneImpl::SetBitmap( const wxBitmapBundle& bitmap )
+ {
++    // A BUTTON WITH NO IMAGE IS A BUTTON WITH NOTHING IN IT.
++    //
++    // This was empty, and wxAnyButton::DoSetBitmap() calls it for every bitmap
++    // a button is ever given, so on this port no wxButton showed one. It is
++    // not a small gap: an icon-only button carries no label - the icon is the
++    // whole control - so each of them came out as an empty rounded rect the
++    // width of its own padding. In a ported application that is a row of blank
++    // buttons where the pause, resume and stop of a running print should be:
++    // a bar of nothing, with nothing to aim at.
++    //
++    // This is also how a bitmap *changes*, not only how the first one arrives.
++    // CreateBitmapButton() sets an image at construction and every later
++    // SetBitmap() comes through here - pause turning into resume, an icon
++    // going grey as its button is disabled.
++    //
++    // AlwaysOriginal, because UIButtonTypeRoundedRect is the system button
++    // type on anything this port runs on, and a system button tints its image
++    // with the tint colour: a multi-coloured icon would come out as one flat
++    // hue. wx has already rendered the bitmap in the colours it wants.
++    if ( ![m_osxView respondsToSelector:@selector(setImage:forState:)] )
++        return;
++
++    UIImage* image = nil;
++    if ( bitmap.IsOk() )
++    {
++        image = wxOSXGetImageFromBundle(bitmap);
++        image = [image imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
++    }
++    [(UIButton*) m_osxView setImage:image forState:UIControlStateNormal];
+ }
+ 
+ wxBitmap wxWidgetIPhoneImpl::GetBitmap() const

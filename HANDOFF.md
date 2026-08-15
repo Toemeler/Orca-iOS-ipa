@@ -7725,6 +7725,32 @@ Worth remembering when adding native chrome: **a UIKit system colour is never
 this application's colour.** systemBackground is the trap, because it looks
 right until you put it next to something that came from the palette.
 
+**The gradients are gone, and with them the last way to make an
+untranslatable colour.** Asked for from the device: the Printer, Filament and
+Process title bars were two tones a step apart over 30 pixels, which is a seam
+rather than a gradient at that size. `SetBackgroundColor2()` is no longer
+called for any of the three - `Plater.cpp` twice, `ParamsPanel.cpp` once - so
+`StaticBox::render()` takes its flat path and
+`GetParentBackgroundColor()` never reaches the averaging branch at all. The
+guard added earlier stays as the belt.
+
+**Black digits in the input fields.** Same family, different widget.
+`TextInput`'s `text_ctrl` is a real `wxTextCtrl`, so its foreground is a colour
+it *keeps*, and `TextInput` sets it in the constructor and then only when the
+control is enabled or disabled. A field built while the palette still answered
+"light" draws `#262E30` for the rest of the session: black on a dark input.
+
+`TextInput::render()` re-asks now, and the comparison before the set is what
+makes that safe - `SetForegroundColour()` invalidates, so an unconditional set
+from a paint handler would loop. It costs one colour comparison per repaint
+and it is self-correcting whatever the appearance was when the field was
+built.
+
+That is the third widget in this file's history to be caught by the same
+thing, so as a rule: **a colour a widget stores is a colour that has to be
+re-asked somewhere.** The paint path is the honest place, because it is the
+only one that runs whatever else went wrong.
+
 **Not verified on device.** The two to look at first are the sidebar in light -
 white cards on a warm page is the whole design and it is where Orca's
 hardcoded near-whites were densest - and a live appearance switch, which now

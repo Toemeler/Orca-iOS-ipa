@@ -1052,11 +1052,75 @@ index eb47d15..c022421 100644
  }
  #endif
  
+diff --git a/src/slic3r/GUI/ParamsPanel.cpp b/src/slic3r/GUI/ParamsPanel.cpp
+index 7d054d8..1bf542e 100644
+--- a/src/slic3r/GUI/ParamsPanel.cpp
++++ b/src/slic3r/GUI/ParamsPanel.cpp
+@@ -7,6 +7,11 @@
+ #include "libslic3r/PresetBundle.hpp"
+ #include "libslic3r/Preset.hpp"
+ #include "ParamsPanel.hpp"
++#ifdef __APPLE__
++// The guard below tests TARGET_OS_OSX; without this header the macro is
++// undefined and the iOS branch compiles into the macOS build.
++#include <TargetConditionals.h>
++#endif
+ #include "Tab.hpp"
+ #include "format.hpp"
+ #include "MainFrame.hpp"
+@@ -254,7 +259,15 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
+         // BBS: new layout
+         m_top_panel = new StaticBox(this, wxID_ANY, wxDefaultPosition);
+         m_top_panel->SetBackgroundColor(0xF8F8F8);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // FLAT, no gradient. Two tones a step apart over a 30px title bar is a
++    // seam rather than a gradient at this size, and it was the source of the
++    // averaged colour StaticBox::GetParentBackgroundColor() used to hand to
++    // every Label on it - see 0427. One colour, and there is nothing to
++    // average.
++#else
+         m_top_panel->SetBackgroundColor2(0xF1F1F1);
++#endif
+ 
+         m_process_icon = new ScalableButton(m_top_panel, wxID_ANY, "process");
+ 
 diff --git a/src/slic3r/GUI/Plater.cpp b/src/slic3r/GUI/Plater.cpp
-index d76759d..d14f868 100644
+index d76759d..56ac27e 100644
 --- a/src/slic3r/GUI/Plater.cpp
 +++ b/src/slic3r/GUI/Plater.cpp
-@@ -10708,9 +10708,29 @@ void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
+@@ -1726,7 +1726,15 @@ Sidebar::Sidebar(Plater *parent)
+         // 1.1 create title bar resources
+         p->m_panel_printer_title = new StaticBox(p->scrolled, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
+         p->m_panel_printer_title->SetBackgroundColor(title_bg);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // FLAT, no gradient. Two tones a step apart over a 30px title bar is a
++    // seam rather than a gradient at this size, and it was the source of the
++    // averaged colour StaticBox::GetParentBackgroundColor() used to hand to
++    // every Label on it - see 0427. One colour, and there is nothing to
++    // average.
++#else
+         p->m_panel_printer_title->SetBackgroundColor2(0xF1F1F1);
++#endif
+ 
+         p->m_printer_icon = new ScalableButton(p->m_panel_printer_title, wxID_ANY, "printer");
+         p->m_text_printer_settings = new Label(p->m_panel_printer_title, _L("Printer"), LB_PROPAGATE_MOUSE_EVENT | wxST_ELLIPSIZE_END);
+@@ -2149,7 +2157,15 @@ Sidebar::Sidebar(Plater *parent)
+     // add filament title
+     p->m_panel_filament_title = new StaticBox(p->scrolled, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
+     p->m_panel_filament_title->SetBackgroundColor(title_bg);
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // FLAT, no gradient. Two tones a step apart over a 30px title bar is a
++    // seam rather than a gradient at this size, and it was the source of the
++    // averaged colour StaticBox::GetParentBackgroundColor() used to hand to
++    // every Label on it - see 0427. One colour, and there is nothing to
++    // average.
++#else
+     p->m_panel_filament_title->SetBackgroundColor2(0xF1F1F1);
++#endif
+     p->m_panel_filament_title->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent &e) {
+         if (!p || !p->m_panel_filament_content || !m_scrolled_sizer || !p->m_bpButton_set_filament || !p->m_flushing_volume_btn || !p->m_bpButton_add_filament || !ams_btn)
+             return;
+@@ -10708,9 +10724,29 @@ void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
  void Plater::priv::on_change_color_mode(SimpleEvent& evt) {
      m_is_dark = wxGetApp().app_config->get("dark_color_mode") == "1";
      sidebar->on_change_color_mode(m_is_dark);
@@ -1383,8 +1447,37 @@ index 6391c1a..ca1a3fc 100644
  }
  
  void StaticBox::ShowBadge(bool show)
+diff --git a/src/slic3r/GUI/Widgets/TextInput.cpp b/src/slic3r/GUI/Widgets/TextInput.cpp
+index 5b52925..83b62ca 100644
+--- a/src/slic3r/GUI/Widgets/TextInput.cpp
++++ b/src/slic3r/GUI/Widgets/TextInput.cpp
+@@ -232,6 +232,24 @@ void TextInput::render(wxDC& dc)
+ {
+     StaticBox::render(dc);
+     int states = state_handler.states();
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // THE VALUE'S COLOUR, RE-ASKED.
++    //
++    // text_ctrl is a real wxTextCtrl, so its foreground is a colour it keeps,
++    // and TextInput sets it once in the constructor and again only when the
++    // control is enabled or disabled. A field built while the palette still
++    // answered "light" therefore draws its number in #262E30 for the rest of
++    // the session - black digits on a dark input, which is what was reported.
++    //
++    // Asked again here, where the widget is already redrawing anyway. The
++    // comparison is what makes it safe: SetForegroundColour() invalidates, so
++    // setting it unconditionally from a paint handler would loop.
++    const wxColour want = text_color.colorForStates(states);
++    if (text_ctrl != nullptr && text_ctrl->GetForegroundColour() != want) {
++        text_ctrl->SetForegroundColour(want);
++        text_ctrl->Refresh();
++    }
++#endif
+     wxSize size = GetSize();
+     bool   align_center = GetWindowStyle() & wxALIGN_CENTER_HORIZONTAL;
+     bool   align_right = GetWindowStyle() & wxALIGN_RIGHT;
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 52f739d..55ee33b 100644
+index 20d1a6d..22c902a 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
 @@ -57,6 +57,57 @@ static NSString *orca_ios_tr(const char *s)

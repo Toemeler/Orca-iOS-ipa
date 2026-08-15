@@ -337,7 +337,7 @@ index dfa406de..018664f6 100644
 +        return nil;
 +
 +    _card                  = [[UIView alloc] initWithFrame:CGRectZero];
-+    _card.backgroundColor  = [UIColor secondarySystemBackgroundColor];
++    _card.backgroundColor  = orca_ios_surface_color();
 +    _card.layer.cornerRadius  = kOrcaTileCorner;
 +    _card.layer.cornerCurve   = kCACornerCurveContinuous;
 +    _card.layer.borderWidth   = 1.0 / [UIScreen mainScreen].scale;
@@ -493,7 +493,7 @@ index dfa406de..018664f6 100644
 +    // The page behind this is a WKWebView with nothing left on it, so the
 +    // gallery paints the background it stands on rather than letting the web
 +    // page's white show through under a dark appearance.
-+    self.backgroundColor = [UIColor systemBackgroundColor];
++    self.backgroundColor = orca_ios_page_color();
 +
 +    _heading           = [[UILabel alloc] initWithFrame:CGRectZero];
 +    _heading.font      = [UIFont preferredFontForTextStyle:UIFontTextStyleTitle2];

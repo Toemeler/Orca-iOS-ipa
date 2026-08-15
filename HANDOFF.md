@@ -7709,6 +7709,22 @@ Two fixes for one symptom on purpose: the screen makes the colour right when
 it is stored, and dropping the average makes it repairable if it is ever
 stored wrong again.
 
+**The gallery was the one surface on screen that belonged to no palette.**
+Reported from the device: the home page came up pure black under a charcoal
+tab bar. Patch 0430 draws it natively and took `UIColor.systemBackground` for
+the page and `secondarySystemBackground` for the cards - which is black and
+near-black in dark, white and near-white in light. Correct UIKit, wrong
+application.
+
+`orca_ios_page_color()` and `orca_ios_surface_color()` sit beside
+`orca_ios_accent()` now, all three built on one `orca_ios_tone(light, dark)`
+helper, and the gallery uses them. The values are `kPage` and `kSurface` from
+StateColor.cpp, so the native views and the wx ones are the same two tones.
+
+Worth remembering when adding native chrome: **a UIKit system colour is never
+this application's colour.** systemBackground is the trap, because it looks
+right until you put it next to something that came from the palette.
+
 **Not verified on device.** The two to look at first are the sidebar in light -
 white cards on a warm page is the whole design and it is where Orca's
 hardcoded near-whites were densest - and a live appearance switch, which now

@@ -1384,10 +1384,10 @@ index 6391c1a..ca1a3fc 100644
  
  void StaticBox::ShowBadge(bool show)
 diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
-index 52f739d..561e089 100644
+index 52f739d..55ee33b 100644
 --- a/src/slic3r/GUI/ios_webview_support.mm
 +++ b/src/slic3r/GUI/ios_webview_support.mm
-@@ -57,6 +57,30 @@ static NSString *orca_ios_tr(const char *s)
+@@ -57,6 +57,57 @@ static NSString *orca_ios_tr(const char *s)
      return [NSString stringWithUTF8String:t.utf8_str().data()];
  }
  
@@ -1401,24 +1401,51 @@ index 52f739d..561e089 100644
 +//
 +// A dynamic colour rather than two: UIKit resolves it against whatever
 +// appearance the view is drawn in, so a switch needs nothing re-set here.
++static UIColor *orca_ios_tone(unsigned light, unsigned dark)
++{
++    const CGFloat lr = ((light >> 16) & 0xFF) / 255.0, lg = ((light >> 8) & 0xFF) / 255.0,
++                  lb = (light & 0xFF) / 255.0;
++    const CGFloat dr = ((dark >> 16) & 0xFF) / 255.0, dg = ((dark >> 8) & 0xFF) / 255.0,
++                  db = (dark & 0xFF) / 255.0;
++    return [[UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traits) {
++        return traits.userInterfaceStyle == UIUserInterfaceStyleDark
++                   ? [UIColor colorWithRed:dr green:dg blue:db alpha:1]
++                   : [UIColor colorWithRed:lr green:lg blue:lb alpha:1];
++    }] retain];
++}
++
 +static UIColor *orca_ios_accent(void)
 +{
-+    static UIColor       *accent = nil;
-+    static dispatch_once_t once;
-+    dispatch_once(&once, ^{
-+        accent = [[UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traits) {
-+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
-+                       ? [UIColor colorWithRed:44 / 255.0 green:168 / 255.0 blue:152 / 255.0 alpha:1]
-+                       : [UIColor colorWithRed:0 green:150 / 255.0 blue:136 / 255.0 alpha:1];
-+        }] retain];
-+    });
-+    return accent;
++    static UIColor *c = nil; static dispatch_once_t once;
++    dispatch_once(&once, ^{ c = orca_ios_tone(0x009688, 0x2CA898); });
++    return c;
++}
++
++// THE PAGE, AND WHAT SITS ON IT, for the views this file and the gallery draw
++// natively. Same values as StateColor.cpp's kPage and kSurface.
++//
++// Not UIColor.systemBackground, which is pure black in dark and pure white in
++// light. Neither is this application's page, and the difference is not subtle:
++// the gallery came up black under a charcoal tab bar, the one surface on
++// screen that belonged to no palette.
++static UIColor *orca_ios_page_color(void)
++{
++    static UIColor *c = nil; static dispatch_once_t once;
++    dispatch_once(&once, ^{ c = orca_ios_tone(0xFAF9F5, 0x262624); });
++    return c;
++}
++
++static UIColor *orca_ios_surface_color(void)
++{
++    static UIColor *c = nil; static dispatch_once_t once;
++    dispatch_once(&once, ^{ c = orca_ios_tone(0xFFFEFB, 0x30302E); });
++    return c;
 +}
 +
  // A CADisplayLink, so that frames are paced by the display instead of by luck.
  //
  // Rendering is driven by wxIdle, and wx processes idle from a run-loop observer
-@@ -224,7 +248,7 @@ static NSArray<NSString *> *orca_ios_keypad_titles(void)
+@@ -224,7 +275,7 @@ static NSArray<NSString *> *orca_ios_keypad_titles(void)
                  forState:UIControlStateNormal];
          // Glass is the panel, not the keys: Liquid Glass is not meant to be
          // stacked on itself, so the keys are the content that sits on it.
@@ -1427,7 +1454,7 @@ index 52f739d..561e089 100644
                                      : [UIColor colorWithWhite:0.5 alpha:0.14];
          b.layer.cornerRadius = 12;
          b.layer.cornerCurve  = kCACornerCurveContinuous;
-@@ -583,7 +607,7 @@ static const CGFloat kOrcaSideMargin = 14;
+@@ -583,7 +634,7 @@ static const CGFloat kOrcaSideMargin = 14;
          const BOOL primary = [[item objectForKey:@"primary"] boolValue];
          [b setTitleColor:(primary ? [UIColor whiteColor] : [UIColor labelColor])
                  forState:UIControlStateNormal];
@@ -1436,7 +1463,7 @@ index 52f739d..561e089 100644
                                         : [UIColor colorWithWhite:0.5 alpha:0.14];
          b.layer.cornerRadius = (kOrcaSideH - 12) * 0.5f;
          b.layer.cornerCurve  = kCACornerCurveContinuous;
-@@ -2048,7 +2072,7 @@ static UIImage *orca_ios_tool_icon(const char *icon)
+@@ -2048,7 +2099,7 @@ static UIImage *orca_ios_tool_icon(const char *icon)
          // follows. A selected gizmo gets the tint instead, which is how the GL
          // toolbar showed the same thing.
          b.backgroundColor = [[item objectForKey:@"selected"] boolValue]
@@ -1445,7 +1472,7 @@ index 52f739d..561e089 100644
                            : [UIColor clearColor];
          [b addTarget:self action:@selector(tapped:)
              forControlEvents:UIControlEventTouchUpInside];
-@@ -2315,12 +2339,46 @@ static const CGFloat kOrcaTabBarInset = 72;
+@@ -2315,12 +2366,46 @@ static const CGFloat kOrcaTabBarInset = 72;
      [super dealloc];
  }
  
@@ -1495,7 +1522,7 @@ index 52f739d..561e089 100644
  - (void)traitCollectionDidChange:(UITraitCollection *)previous
  {
      [super traitCollectionDidChange:previous];
-@@ -2330,6 +2388,9 @@ static const CGFloat kOrcaTabBarInset = 72;
+@@ -2330,6 +2415,9 @@ static const CGFloat kOrcaTabBarInset = 72;
      Slic3r::GUI::orca_ios_appearance_changed();
  }
  
@@ -1505,7 +1532,7 @@ index 52f739d..561e089 100644
  - (void)viewDidLayoutSubviews
  {
      [super viewDidLayoutSubviews];
-@@ -3174,10 +3235,41 @@ static void orca_ios_sync_tabs_guarded()
+@@ -3174,10 +3262,41 @@ static void orca_ios_sync_tabs_guarded()
  
  // What the device is set to. Read on demand rather than cached: this is what
  // GUI_App::dark_mode() returns, and it is asked for every colour Orca draws.

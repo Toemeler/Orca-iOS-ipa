@@ -1,0 +1,89 @@
+37737-      |                                    ^
+37738-54 warnings generated.
+37739-[708/1043] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menuitem.mm.o
+37740:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menuitem.mm.o 
+37741-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/jpeg -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -O3 -DNDEBUG -arch arm64 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -miphoneos-version-min=17.0 -fPIC -fvisibility-inlines-hidden -DwxDEBUG_LEVEL=0 -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menuitem.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menuitem.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/menuitem.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm
+37742-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:10:
+37743-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+37744-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+37745-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+37746-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+37747-      |             ^
+37748-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:23:
+37749-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+37750-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:101:25: warning: 'IsVisible' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+37751-  101 |     virtual bool        IsVisible() const ;
+37752-      |                         ^
+37753-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:269:25: note: overridden virtual function is here
+37754-  269 |     virtual bool        IsVisible() const = 0;
+37755-      |                         ^
+37756-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:23:
+37757-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+37758-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:102:25: warning: 'SetVisibility' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+37759-  102 |     virtual void        SetVisibility( bool visible );
+37760-      |                         ^
+37761-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:271:25: note: overridden virtual function is here
+37762-  271 |     virtual void        SetVisibility( bool visible ) = 0;
+37763-      |                         ^
+37764-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:23:
+37765-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+37766-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:104:25: warning: 'Raise' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+37767-  104 |     virtual void        Raise();
+37768-      |                         ^
+37769-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:280:25: note: overridden virtual function is here
+37770-  280 |     virtual void        Raise() = 0;
+37771-      |                         ^
+37772-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:23:
+37773-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+37774-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:106:25: warning: 'Lower' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+37775-  106 |     virtual void        Lower();
+37776-      |                         ^
+37777-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:282:25: note: overridden virtual function is here
+37778-  282 |     virtual void        Lower() = 0;
+37779-      |                         ^
+37780-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:23:
+--
+38161-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:383:25: note: overridden virtual function is here
+38162-  383 |     virtual void        InstallEventHandler( WXWidget control = nullptr ) = 0;
+38163-      |                         ^
+38164:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:369:26: error: assignment to readonly property
+38165-  369 |     command.propertyList = cfidentifier.AsNSString();
+38166-      |     ~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~~~~~~~~~
+38167-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:384:43: warning: unused parameter 'bitmap' [-Wunused-parameter]
+38168-  384 |     void SetBitmap( const wxBitmapBundle& bitmap ) override
+38169-      |                                           ^
+38170-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:428:36: warning: unused parameter 'text' [-Wunused-parameter]
+38171-  428 |     void SetLabel( const wxString& text, wxAcceleratorEntry *entry ) override
+38172-      |                                    ^
+38173-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:428:62: warning: unused parameter 'entry' [-Wunused-parameter]
+38174-  428 |     void SetLabel( const wxString& text, wxAcceleratorEntry *entry ) override
+38175-      |                                                              ^
+38176-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:451:9: warning: unused variable 'menuid' [-Wunused-variable]
+38177-  451 |     int menuid = m_peer->GetId();
+38178-      |         ^~~~~~
+38179-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:491:107: warning: unused parameter 'action' [-Wunused-parameter]
+38180-  491 |         UIAction* menuItem = [UIAction actionWithTitle:@"" image:nil identifier:nil handler: ^( UIAction* action) {} ];
+38181-      |                                                                                                           ^
+38182-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:527:74: warning: unused parameter 'action' [-Wunused-parameter]
+38183-  527 |                                                    handler: ^( UIAction* action) { wxOSXIPhoneDispatchMenuItem(peer); } ];
+38184-      |                                                                          ^
+38185-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/menuitem.mm:478:67: warning: unused parameter 'pParentMenu' [-Wunused-parameter]
+38186-  478 | wxMenuItemImpl* wxMenuItemImpl::Create( wxMenuItem* peer, wxMenu *pParentMenu,
+38187-      |                                                                   ^
+38188-60 warnings and 1 error generated.
+38189-[709/1043] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/filedlg.mm.o
+38190-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:12:
+38191-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+38192-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+38193-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+38194-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+38195-      |             ^
+38196-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:46:42: warning: unused parameter 'pos' [-Wunused-parameter]
+38197-   46 |                           const wxPoint& pos, const wxSize& size, const wxString& name)
+38198-      |                                          ^
+38199-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:46:61: warning: unused parameter 'size' [-Wunused-parameter]
+38200-   46 |                           const wxPoint& pos, const wxSize& size, const wxString& name)
+38201-      |                                                             ^
+38202-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/filedlg.mm:46:83: warning: unused parameter 'name' [-Wunused-parameter]
+38203-   46 |                           const wxPoint& pos, const wxSize& size, const wxString& name)
+38204-      |                                                                                   ^

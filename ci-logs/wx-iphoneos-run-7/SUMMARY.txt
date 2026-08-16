@@ -1,0 +1,6 @@
+=== FAILED targets ===
+menuitem.mm
+
+=== error signatures (deduped) ===
+
+total FAILED: 1

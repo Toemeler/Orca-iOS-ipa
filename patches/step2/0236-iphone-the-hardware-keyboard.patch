@@ -98,7 +98,7 @@ index a7a09c9..a21ca10 100644
  
      virtual void Enable( bool WXUNUSED(enable) )
 diff --git a/src/osx/iphone/menuitem.mm b/src/osx/iphone/menuitem.mm
-index 650a24b..f317d03 100644
+index 650a24b..33a2575 100644
 --- a/src/osx/iphone/menuitem.mm
 +++ b/src/osx/iphone/menuitem.mm
 @@ -22,6 +22,14 @@
@@ -116,7 +116,7 @@ index 650a24b..f317d03 100644
  // a mapping from wx ids to standard osx actions in order to support the native menu item handling
  // if a new mapping is added, make sure the wxNonOwnedWindowController has a handler for this action as well
  
-@@ -182,11 +190,193 @@ void wxMacCocoaMenuItemSetAccelerator( UIMenuItem* menuItem, wxAcceleratorEntry*
+@@ -182,11 +190,194 @@ void wxMacCocoaMenuItemSetAccelerator( UIMenuItem* menuItem, wxAcceleratorEntry*
  
  */
  
@@ -258,7 +258,7 @@ index 650a24b..f317d03 100644
 +    return nil;
 +}
 +
-+static UIKeyCommand* wxOSXIPhoneKeyCommandFor( wxMenuItem* peer, wxAcceleratorEntry* entry, int menuid )
++static UIKeyCommand* wxOSXIPhoneKeyCommandFor( wxMenuItem* peer, wxAcceleratorEntry* entry, int menuid, NSString* title )
 +{
 +    if ( entry == nullptr )
 +        return nil;
@@ -288,17 +288,18 @@ index 650a24b..f317d03 100644
 +    if ( input == nil )
 +        return nil;
 +
-+    UIKeyCommand* const command =
-+        [UIKeyCommand keyCommandWithInput:input
-+                            modifierFlags:modifiers
-+                                   action:@selector(wxOSXMenuCommand:)];
-+
-+    // The identifier the item is registered under, so the delegate that
-+    // receives the action can find the item without holding a pointer to it.
++    // Everything at once, because propertyList is readonly: it is the
++    // identifier the item is registered under, and it is how the delegate that
++    // receives the action finds the item again without holding a pointer to
++    // it. There is no setter to fix it up afterwards.
 +    wxCFStringRef cfidentifier(wxString::Format( wxT("%p"), peer ));
-+    command.propertyList = cfidentifier.AsNSString();
 +
-+    return command;
++    return [UIKeyCommand commandWithTitle:title
++                                    image:nil
++                                   action:@selector(wxOSXMenuCommand:)
++                                    input:input
++                            modifierFlags:modifiers
++                             propertyList:cfidentifier.AsNSString()];
 +}
 +
  class wxMenuItemIPhoneImpl : public wxMenuItemImpl
@@ -310,7 +311,7 @@ index 650a24b..f317d03 100644
      }
  
      ~wxMenuItemIPhoneImpl();
-@@ -198,9 +388,13 @@ public :
+@@ -198,9 +389,13 @@ public :
      void Enable( bool enable ) override
      {
          UIMenuElement* menuElement = m_osxMenuItem.get();
@@ -326,7 +327,7 @@ index 650a24b..f317d03 100644
              if ( enable )
                  action.attributes = action.attributes & ~UIMenuElementAttributesDisabled;
              else
-@@ -211,9 +405,9 @@ public :
+@@ -211,9 +406,9 @@ public :
      void Check( bool check ) override
      {
          UIMenuElement* menuElement = m_osxMenuItem.get();
@@ -338,7 +339,7 @@ index 650a24b..f317d03 100644
              action.state = check ? UIMenuElementStateOn : UIMenuElementStateOff;
          }
      }
-@@ -221,9 +415,9 @@ public :
+@@ -221,9 +416,9 @@ public :
      void Hide( bool hide ) override
      {
          UIMenuElement* menuElement = m_osxMenuItem.get();
@@ -350,7 +351,7 @@ index 650a24b..f317d03 100644
              if ( hide )
                  action.attributes = action.attributes | UIMenuElementAttributesHidden;
              else
-@@ -246,6 +440,9 @@ protected :
+@@ -246,6 +441,9 @@ protected :
  
  wxMenuItemIPhoneImpl::~wxMenuItemIPhoneImpl()
  {
@@ -360,7 +361,7 @@ index 650a24b..f317d03 100644
  }
  
  bool wxMenuItemIPhoneImpl::DoDefault()
-@@ -308,23 +505,26 @@ wxMenuItemImpl* wxMenuItemImpl::Create( wxMenuItem* peer, wxMenu *pParentMenu,
+@@ -308,23 +506,24 @@ wxMenuItemImpl* wxMenuItemImpl::Create( wxMenuItem* peer, wxMenu *pParentMenu,
          {
              wxString identifier = wxString::Format( wxT("%p"), peer );
              wxCFStringRef cfidentifier(identifier);
@@ -372,19 +373,17 @@ index 650a24b..f317d03 100644
 -                UIAction* menuitem = [UIAction actionWithTitle:cfText.AsNSString() image:nil identifier:cfidentifier.AsNSString()
 -                                                   handler: ^( UIAction* action) { peer->GetMenu()->HandleCommandProcess(peer);} ];
 -                item = menuitem;
-+            UIKeyCommand* const keyCommand = wxOSXIPhoneKeyCommandFor(peer, entry, menuid);
++            // The item's key equivalent, which this port has never had: the
++            // "TODO UIKeyCommand" that used to stand here meant every
++            // accelerator in every menu of the application was decoration. The
++            // iPadOS menu bar prints it beside the item, holding Command lists
++            // it, and pressing it runs the item - none of which needs the first
++            // responder to be anywhere in particular, which is why this is
++            // worth having on top of the key events the window gets.
++            UIKeyCommand* const keyCommand =
++                wxOSXIPhoneKeyCommandFor(peer, entry, menuid, cfText.AsNSString());
 +            if ( keyCommand != nil )
 +            {
-+                // The item's key equivalent, which this port has never had:
-+                // the "TODO UIKeyCommand" that used to stand here meant every
-+                // accelerator in every menu of the application was decoration.
-+                // The iPadOS menu bar prints it beside the item, holding
-+                // Command lists it, and pressing it runs the item - none of
-+                // which needed the first responder to be anywhere in
-+                // particular, which is why this is worth having on top of the
-+                // key events the window gets.
-+                keyCommand.title = cfText.AsNSString();
-+                keyCommand.discoverabilityTitle = cfText.AsNSString();
 +                item = keyCommand;
              }
              else

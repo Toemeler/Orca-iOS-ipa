@@ -8517,3 +8517,129 @@ rebuilds the wx port. In order of what to try on device:
 5. Type into a sidebar field and confirm the characters still arrive, that
    Del still deletes a character, and that the key does not also reach the
    plate.
+
+# SESSION 2026-08-17: what run 187 actually contains, and the open points in one place
+
+## The compile failure between 0236 and the IPA, which nothing above records
+
+0236 was written and committed, and it did not build. wx-only **run 7** failed
+on both slices with one error, in the one file the patch had added the most to:
+
+```
+menuitem.mm:369: error: assignment to readonly property
+  command.propertyList = cfidentifier.AsNSString();
+```
+
+`UICommand` declares `title`, `image`, `attributes` and `state` readwrite, and
+`action` and `propertyList` **readonly** — those two identify the command and
+cannot be changed after it exists. The factory that takes all of it at once is
+`+commandWithTitle:image:action:input:modifierFlags:propertyList:`, which is
+what the code wanted; the title goes in there now rather than being assigned
+afterwards. Fixed in `0a03a08`, and wx-only **run 8** is green on both slices.
+
+Nothing else in the file was flagged, so the `attributes` and `state` writes the
+Enable/Check/Hide overrides make through a `UICommand*` are fine — those two
+*are* readwrite.
+
+Worth keeping as the rule: **the wx-only workflow is the cheap way to find out.**
+Run 7 failed 6 minutes in and cost nothing else; the same error inside a step-4
+run would have been found after the deps restore and the wx build, and the run
+would have been thrown away.
+
+## Run 187 is the build to test, and it does contain the wx work
+
+`orcaslicer-ipa-run187`, built from `0a03a08` — the commit with the fix above.
+The question worth asking of any run that follows a step-2 patch is whether wx
+was actually rebuilt, because the step-4 run time does not show it: run 187 took
+**13 minutes**, against 54 for run 186, which looks like a run that skipped it.
+It did not. The job steps say so directly:
+
+```
+[5/9] Build wxWidgets iPhone port (device)   19:29:14 -> 19:33:52   (4m38s)
+```
+
+The wx prefix cache is keyed on `hashFiles(wx-overlay/**) + patches/step2/*.patch`
+(`WX_KEY=ios-wxprefix-device-v4-$WXH`), so 0235 and 0236 both missed it and the
+port was built from scratch. The 13 minutes is the *Orca* side being an 88%
+ccache hit, not the wx side being skipped. Read the job steps, not the duration.
+
+So everything through 0236/0435 — the bitmap buttons and the whole hardware
+keyboard path — is in the IPA on the device. Nothing is waiting on CI.
+
+## The open points, in one place
+
+Everything below is open as of this commit. Nothing in the last seven patch
+batches has been run on a device; that is the first block and it is the largest.
+
+### A. Never run on a device (the evening's test list)
+
+Each of these has its own "What is not verified" section above, with what to
+look at first. In the order the patches landed:
+
+| patches | what they are | section |
+|---|---|---|
+| 0424 | saving, autosave, the lifecycle hooks | "0424 — every way the work was lost" |
+| 0427 | one palette, both appearances | "0427 — one palette, and the plist" |
+| 0428 | the close dialog, the second tile | "0428 — the dialog that had nothing left to ask" |
+| 0231, 0430, 0431 | the menu, the gallery, the drop | "0231, 0430, 0431" |
+| 0432 | the restore offer | "0432 — the restore offer the autosave had already answered" |
+| 0232-0234, 0433 | the right click a finger never had | "0232, 0233, 0234, 0433" |
+| 0235, 0434 | the colours that were snapshots, the empty buttons | "0235, 0434" |
+| 0236, 0435 | the hardware keyboard | "0236, 0435" |
+
+The last one is the largest behaviour change of the eight: `SetFocus()` doing
+anything at all is new on this port, and it reaches every dialog with a text
+field, not only the keyboard.
+
+### B. Left open on purpose — decisions, not defects
+
+* **`Documents/Autosave` is never pruned.** One file per project name, kept for
+  ever. Deleting files out of a directory the user can see in the Files app is
+  not something to do unasked.
+* **pid reuse in the iOS lock check.** A collision costs one missed restore
+  offer, never a file. It is why the check is not exact.
+* **The diagnostic logging stays**, on the user's instruction. The "strip the
+  logging" item from the 08-10 list is settled, not pending.
+
+### C. Analysed, deliberately not done
+
+* **Reducing resolution while moving.** Shown above to be unreachable through
+  `contentScaleFactor` — it drags `ImGuiWrapper::set_scaling` with it, which
+  destroys the font atlas and scales the style cumulatively, twice a gesture.
+  The route that works is an offscreen FBO at reduced size, upscaled, with ImGui
+  composited on top at full resolution. It should follow a measurement that says
+  fragment and tile cost are a large share of the moving frame; nothing has
+  established that.
+* **The remaining frame time**, once the phase counters say where it goes.
+
+### D. Carried from the 2026-08-10 list, never picked up
+
+Items 1-3 of that list are closed (the viewport and canvas questions were
+answered, and the logging is kept by instruction). These three were not:
+
+* **The Device page in portrait.** The Control panel lays out to ~1370 pt
+  against 1200 available. `StatusBasePanel` is already a `wxScrolledWindow` with
+  `wxHSCROLL | wxVSCROLL` and `SetScrollRate(25,25)`, so the scaffolding exists.
+* **Bambu Studio-style error UI** — severity levels, illustrated recovery steps.
+  Feature-sized, and unblocked since the `039` tables download.
+* **A sweep for other SysV IPC.** `shmget`/`shmat`/`shmctl`/`ftok` are a class,
+  not an instance. 0356 fixed the one on a reachable path. Any other is silent
+  until reached and then raises SIGSYS, which no handler can decline.
+
+### E. One crash that has never been explained
+
+Three SIGSEGVs with identical stacks, entirely inside UIKit's scene-lifecycle
+notification delivery, no frame of ours below the signal handler:
+
+```
+objc_retainAutoreleaseReturnValue
+_CFXNotificationPost
+_UIScenePerformActionsWithLifecycleActionMask
+```
+
+0381 fixed a genuine use-after-free of the numeric keypad that is the best
+candidate for it, and said at the time it was "not proven to be the crash".
+These three reports were read at run 159, which was built with 0381 in — but
+`Documents/orca-crash.txt` **appends**, so a report in that file is not evidence
+of the build that was installed when it was read. That is the first thing to
+settle, and it is settled by deleting the file rather than by reasoning.

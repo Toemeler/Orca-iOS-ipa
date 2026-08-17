@@ -8643,3 +8643,269 @@ These three reports were read at run 159, which was built with 0381 in — but
 `Documents/orca-crash.txt` **appends**, so a report in that file is not evidence
 of the build that was installed when it was read. That is the first thing to
 settle, and it is settled by deleting the file rather than by reasoning.
+
+# SESSION 2026-08-17 (cont.): run 188, two patches, and three open points that were not open
+
+Run 188 is green and `orcaslicer-ipa-run188` is published. It carries 0436 and
+0437 below, on top of everything through 0236/0435 - so it is one IPA and it is
+the one to test.
+
+
+## 0436 — the Device page had a column that portrait could not reach
+
+Item 4 of the 08-10 list. The page is two columns and neither can give any
+width back: the monitoring column is pinned at `PAGE_MIN_WIDTH` - `FromDIP(574)`
+- by the media control, and every box in the control column (temperature, AMS,
+filament load) carries its own `SetMinSize(FromDIP(586))`. With the three
+background separators that is a little under 1200 points before `FromDIP` and
+about 1370 after it. An iPad is 1376 points wide in landscape and 1032 in
+portrait, and the page sits inside a tab strip - so the control column, which is
+every temperature, the axis controls, the AMS and "Printer Parts", was off the
+right hand edge with no way to bring it back.
+
+**The earlier note said the scaffolding was already there, and it was not.**
+`StatusBasePanel` has been a `wxScrolledWindow` with `SetScrollRate(25,25)` all
+along, which is what that note was reading. But a scrolled window only scrolls
+as far as its virtual size, and nothing here ever set one - `SetSizerAndFit()`
+sizes the window, not the scrollable area inside it. So the content was clipped
+rather than reachable, and the scroll rate was decoration.
+
+Two changes, both iOS-only:
+
+* **Below the width the two columns need, they stack.**
+  `wxBoxSizer::SetOrientation()` is a plain setter, and everything in that sizer
+  was added with flags that read the same either way round, so the separators -
+  strips of background whose minimum size names the axis they space along - are
+  all that has to turn with it.
+* **`FitInside()`**, in both arrangements, which sets the virtual size from the
+  sizer's minimum. Stacked, the page is taller than the screen and scrolls
+  vertically; side by side on a window still narrower than it needs, it scrolls
+  horizontally instead of clipping.
+
+That the result can be scrolled by a finger at all is the port's own doing and
+is worth recording, because it is what makes this a two-line fix rather than a
+feature: `wxUIView` derives from `UIScrollView`, and
+`wxWidgetIPhoneImpl::SetScrollbar()` maps wx's range onto its `contentSize`. A
+virtual size is exactly what turns a wx scrolled window into one a finger can
+drag, and 0223 kept that working everywhere except GL canvas ancestors.
+
+The re-entrancy flag is load-bearing: `Layout()` and `FitInside()` both resize
+the window, which is a size event, which is this function again. The state check
+next to it is an optimisation and would not be enough on its own.
+
+It logs the decision once per turn:
+`orca-ios-device-page: <n> wide, needs <n> -> columns stacked`.
+
+## 0437 — a crash report that says which build wrote it
+
+`orca-crash.txt` is opened `O_APPEND` so that a crash loop arrives as one
+attachment rather than several files to correlate. The cost of that, never
+written down until now, is that a report in it may have been written by any
+build the device has ever had installed, and the file survives being overwritten
+by a new one.
+
+That is not theoretical. The three scene-lifecycle SIGSEGVs read at run 159 are
+an open point precisely because nothing in the file says whether they predate
+0381, which fixed the use-after-free that is their best candidate. The question
+could only be argued from patch ordering, and the argument settled nothing.
+
+Every report now carries the build and the time. `CFBundleVersion` is the CI run
+number - the step-4 workflow writes `${GITHUB_RUN_NUMBER}` into the Info.plist -
+so a report names `188` and can be put against a commit. It is read once at
+handler-install time and kept as plain bytes, because the handler runs after the
+process is already dying and may only use `write(2)`-class calls; `time()` is on
+POSIX's async-signal-safe list, `strftime()` and `localtime()` are not, so the
+stamp is epoch seconds and the reader converts.
+
+The same identifier is now the first line of the device log
+(`orca-ios-build: CFBundleVersion 188`), which makes an ordinary log attributable
+on the same terms - the two can finally be put against each other, and against a
+commit.
+
+`CoreFoundation` rather than `NSBundle`, so this stays a `.cpp`. The include sits
+inside the iOS branch and inside the `.cpp`, so nothing else sees `MacTypes.h`,
+and `utils.cpp` uses none of the names it would collide with - which is the
+hazard 0312 recorded for `sendsysinfo`.
+
+## Two of the open points closed by reading them, not by patching
+
+### The SysV IPC sweep is clean
+
+Item 6 of the 08-10 list, and the answer is that 0356 was the whole of it. The
+sweep, run over `src/` and `deps/` of the pinned tree with every step-1 and
+step-3 patch applied:
+
+```
+grep -rnE "\b(shmget|shmat|shmdt|shmctl|ftok|semget|semop|semctl|msgget|msgsnd|msgrcv|msgctl)\s*\(" src/ deps/
+```
+
+Six hits, all of them in `MediaPlayCtrl::get_stream_url()`, all of them inside
+the `#else` arm that 0356's `#if defined(__APPLE__) && !TARGET_OS_OSX` branch
+returns before. There is no second instance anywhere in the tree. **Closed.**
+
+Worth having done the neighbouring class while the tree was open, because the
+same reasoning applies: process spawning. `boost::process` and `popen` appear in
+`Process.cpp`, `RemovableDriveManager.cpp`, `MediaPlayCtrl.cpp`,
+`PostProcessor.cpp`, `TroubleshootDialog.cpp` and `SendSystemInfoDialog.cpp`.
+That class is **not** the same hazard: a denied `exec` on iOS fails, it does not
+raise SIGSYS, and every `popen` site here checks for NULL before reading. The
+`locale -a` call in `GUI_App.cpp` is inside `#ifdef __linux__` and is not
+compiled at all. Nothing to do.
+
+### The Bambu Studio-style error UI already exists, and iOS can already reach it
+
+Item 5 of that list was written on 08-10 as feature-sized work. It was made
+obsolete two patches later by 0367 and nobody went back to strike it out.
+
+Upstream `DeviceErrorDialog` already is the Bambu-style dialog:
+
+* `parse_error_level(int error_code)` - the severity levels;
+* `update_contents(title, text, code, image_url, btns)` - the illustrated
+  recovery step, fetched with `wxWebRequest` when it is not already cached by
+  `query_image_from_local()`;
+* `m_action_json` and the button vector - the recovery actions.
+
+It is raised from `StatusPanel.cpp` for print errors and from
+`DeviceManager.cpp` for command errors. What kept it empty on iOS was HMS being
+gated on `installed_networking`, and **0367 removed that gate** - the `039`
+tables download, so the codes now have descriptions to show.
+
+The one iOS-specific doubt was `wxWebRequest`, since an error image is an HTTPS
+fetch. It is available: `wxUSE_WEBREQUEST_URLSESSION` is defined as
+`wxUSE_WEBREQUEST` under `__APPLE__`, which includes iOS, and
+`build/cmake/lib/net/CMakeLists.txt` appends `NET_OSX` - which carries
+`src/osx/webrequest_urlsession.mm` - on `elseif(APPLE)`. The proof it links is
+that the application already links: `DeviceErrorDialog.cpp` is compiled into it
+and calls `wxWebSession::GetDefault()`.
+
+So this is not a feature to build. It is **one more thing to look at on the
+device**, and it moves from the "never picked up" list to the test list: make
+the printer raise an error and see whether the dialog comes up with a severity,
+a description and a picture. If the picture is missing and the text is there,
+that is `wxWebRequest`, and it is the only part that has never run.
+
+## The test list, in one place
+
+Eight patch batches have never run on a device and their checks are spread over
+eight sections. This is all of it, in the order that gets the most out of one
+sitting: the cheap global checks first, then the things that need a printer.
+
+**Before the first launch: delete `Documents/orca-crash.txt` in the Files app.**
+The file is opened O_APPEND and outlives an install, so anything already in it
+belongs to an older build. From this build on, 0437 stamps each report, so this
+only has to be done once.
+
+| # | what | how to tell |
+|---|---|---|
+| 0 | the right build is installed | first log line `orca-ios-build: CFBundleVersion 188`. Anything else and the rest of this list is measuring the wrong binary |
+| 1 | Cmd/Ctrl+C then V on a selected object | the object is duplicated. Try Ctrl on a non-Apple keyboard too - a lone Control is reported as Command |
+| 2 | Cmd+Z, Cmd+Shift+Z | with the plate focused, and again straight after changing something in the object list - those are two different handlers |
+| 3 | Cmd+S / Cmd+N / Cmd+O immediately after launch | before touching anything. This is the app-delegate router and it has no equivalent on any other port |
+| 4 | hold Command | the menu bar HUD lists something. Empty means `MakeRoot()`'s rebuild did not take, and the whole menu half is out |
+| 5 | type in a sidebar field | characters arrive, Del deletes a character, and the key does *not* also reach the plate |
+| 6 | long press an object-list row | the sheet appears **at the finger**. In the corner means 0232 did not take; no sheet at all means 0233 did not. Then choose an item and see that it reaches Orca |
+| 7 | the same with the Pencil | |
+| 8 | rotate to portrait on the Device page | the control column (temperatures, axis controls, AMS, Printer Parts) is **below** the camera rather than off the edge, and the page scrolls to it. Log says `orca-ios-device-page: <n> wide, needs <n> -> columns stacked` |
+| 9 | switch light/dark while running | the band above the Device page and the strip beside its tabs both follow, in both directions. The sidebar in light is where Orca's hardcoded near-whites were densest |
+| 10 | a print's pause and stop buttons | they have icons in them and can be pressed. Every icon-only button in the application went through the same stub |
+| 11 | the progress bar's track | a fill from the palette, not a white bar |
+| 12 | drag a file in from the Files app | on each of the five pages. Log: `orca-ios-drop: N file(s) on page P` |
+| 13 | the home gallery | installs at all - `orca-ios-gallery: installed under …` |
+| 14 | close the app with a swipe up, reopen | **no** restore dialog. The first launch after installing this build is expected to offer it one last time; answering "Nein" is correct and removes it |
+| 15 | every autosave tick | `orca-ios-autosave: retired the backup …/.3mf ok` |
+| 16 | make the printer raise an error | the dialog comes up with a severity, a description and a picture. Text but no picture is `wxWebRequest`, the only part of that dialog that has never run |
+
+Anything that crashes: send `Documents/orca-crash.txt`. It now names the build
+and the time, so it can be put against a commit without anyone having to
+remember what was installed.
+
+## Looked at and deliberately not changed: the background save has no task assertion
+
+0424 saves from `willResignActive` and `didEnterBackground` and takes no
+`UIBackgroundTaskIdentifier` while it does. `grep` for `beginBackgroundTask`
+across the patches returns nothing. That looks like the obvious hardening, and
+it was not done, for two reasons that are worth writing down so the next person
+does not spend the round.
+
+**The failure mode is already graceful.** `_BBS_3MF_Exporter::save_model_to_file`
+writes `filename + ".tmp"` and then `boost::filesystem::rename`s it into place.
+A write that is cut short leaves a `.tmp` and the previous backup untouched, so
+a suspend in the middle of an export cannot produce the thing worth fearing - a
+truncated `.3mf` that the restore offer then reads as the project. What is lost
+is at most the seconds since the last backup tick, which is the guarantee the
+ten-second timer already makes.
+
+**And the assertion would not help where it looks like it would.** iOS does not
+suspend an application while its `didEnterBackground` handler is still running;
+what it applies there is a watchdog, and a task assertion does not extend that -
+it extends the time available *after* the handler returns. Making it useful
+means taking the assertion, dispatching the save asynchronously, returning
+immediately and ending the assertion when the save finishes. That is a real
+change to the shape of the one code path whose whole job is not to lose work,
+and it trades a save that happens now for a save that happens shortly, which is
+the wrong direction if the process is being terminated rather than suspended.
+
+So: not a defect, and not worth a speculative change to that path. If a device
+report ever shows a save that did not land on backgrounding a large model, this
+is the first place to look and the async shape above is the fix.
+
+## The one open point that is a decision, not a task
+
+`Documents/Autosave` is never pruned: one `.3mf` per project name, kept for
+ever. It has stayed open because deleting a file out of a directory the user
+can see in the Files app is not something to do unasked, and that is still the
+right reason.
+
+What is now different is that 0432 established the shape of an answer. It
+retires a *backup* once the autosave has overtaken it - a file is removed only
+when something else provably holds the same content. The same test applies
+here: an entry in `Documents/Autosave` whose project has since been saved to
+its own file is redundant by construction, and could be retired on the same
+terms, logged the same way.
+
+That is one line of policy and perhaps twenty of code. It needs a yes.
+
+Anything wider - age, count, total size - should not be built without asking,
+because those delete files that are *not* redundant, and the directory is the
+user's.
+
+## What 0436 cost, and the rule that follows from it
+
+Run 188 spent **37m31s** in `[7/9] Build + link`, against run 187's 1m23s.
+Nothing was wrong, and the ccache counters say exactly what happened:
+
+```
+before   32865 cacheable calls, 3925 misses
+after    33504 cacheable calls, 4020 misses
+         ------------------------------------
+         639 objects compiled, 95 of them missed
+```
+
+95 misses out of 639, and the reason is one header. 0436 adds four members to
+`StatusPanel.hpp`, and:
+
+```
+StatusPanel.hpp  <-  Monitor.hpp, Auxiliary.hpp  <-  MainFrame.hpp  <-  96 files
+```
+
+`MainFrame.hpp` includes both, so every translation unit that reaches it had to
+be built again - 95 of them, which is that list almost exactly. Not the whole
+GUI, but a seventh of it, and the expensive seventh: half an hour for four
+members.
+
+This is the *correct* behaviour and is what removing `system_headers` from
+`CCACHE_SLOPPINESS` bought. Before that fix the same edit would have missed
+nothing at all and shipped a binary holding two different layouts of
+`StatusBasePanel` - which is the launch crash of run 110, in a different class.
+The half hour is the price of the header being honest, and it is the cheap
+version of that bug.
+
+**The rule for next time:** iOS-only per-instance state does not have to be a
+member. A file-static side table in the `.cpp`, keyed on the window, costs one
+lookup and keeps the change inside one translation unit - one object instead of
+95. Worth it for anything that will be iterated on; not worth going back for
+here, because the cache is warm against the new header from run 188 on and
+re-doing it would pay the half hour a second time.
+
+Read this before adding a member to any header under `src/slic3r/GUI/` that
+`MainFrame.hpp` can reach. The cheap headers are the leaves.

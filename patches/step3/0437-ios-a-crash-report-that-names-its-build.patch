@@ -1,0 +1,93 @@
+diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
+index aff9930aa..3433a0bf4 100644
+--- a/src/libslic3r/utils.cpp
++++ b/src/libslic3r/utils.cpp
+@@ -18,7 +18,9 @@
+ #include <TargetConditionals.h>
+ #include <cstdlib>     // getenv, for the iOS log path in set_log_path_and_level
+ #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++#include <CoreFoundation/CoreFoundation.h>  // CFBundle, for the build identifier
+ #include <cstring>         // strlen, in the iOS crash note below
++#include <ctime>           // time, stamped into every crash report
+ #include <exception>       // std::set_terminate, std::current_exception
+ #include <execinfo.h>      // backtrace, backtrace_symbols_fd
+ #include <fcntl.h>         // open
+@@ -395,6 +397,36 @@ namespace attrs = boost::log::attributes;
+ // exact lines.
+ static char                     g_ios_crash_path[1024] = {0};
+ static volatile sig_atomic_t    g_ios_in_crash         = 0;
++// Which build wrote a report, read once while the process is healthy and kept
++// as plain bytes so the handler only has to copy them out. Without it the file
++// cannot be attributed: it is opened O_APPEND and survives being overwritten by
++// a new build, so a report in it may have been written by any version the
++// device has ever had installed - which is exactly the question a crash that
++// "is still there after the fix" turns on. CFBundleVersion is the CI run
++// number (see the step-4 workflow's Info.plist step), so this reads "187".
++static char                     g_ios_crash_build[64]  = {0};
++
++// The same string, for anything that wants to name the build outside a signal
++// handler - the first line of the log, above all, so an ordinary device log is
++// attributable on the same terms as a crash report.
++static const char* ios_build_identifier()
++{
++	return g_ios_crash_build[0] != '\0' ? g_ios_crash_build : "unknown";
++}
++
++static void ios_read_build_identifier()
++{
++	CFBundleRef const bundle = ::CFBundleGetMainBundle();
++	if (bundle == nullptr)
++		return;
++	// The Get rule: not owned here, so it must not be released.
++	CFTypeRef const value = ::CFBundleGetValueForInfoDictionaryKey(bundle, CFSTR("CFBundleVersion"));
++	if (value == nullptr || ::CFGetTypeID(value) != ::CFStringGetTypeID())
++		return;
++	if (!::CFStringGetCString((CFStringRef) value, g_ios_crash_build,
++	                          (CFIndex) sizeof(g_ios_crash_build), kCFStringEncodingUTF8))
++		g_ios_crash_build[0] = '\0';
++}
+ 
+ static void ios_crash_write(int fd, const char *s)
+ {
+@@ -435,6 +467,14 @@ static void ios_crash_write_report(const char *kind, const char *detail, unsigne
+ 		ios_crash_write(fd, " ");
+ 		ios_crash_write_num(fd, number, 10);
+ 	}
++	// build and time first, because they are what decides whether the report
++	// below is worth reading at all. time() is on POSIX's async-signal-safe
++	// list; strftime() and localtime() are not, so this is epoch seconds and
++	// the reader converts.
++	ios_crash_write(fd, "\nbuild ");
++	ios_crash_write(fd, ios_build_identifier());
++	ios_crash_write(fd, " at ");
++	ios_crash_write_num(fd, (unsigned long) ::time(nullptr), 10);
+ 	ios_crash_write(fd, "\npid ");
+ 	ios_crash_write_num(fd, (unsigned long) ::getpid(), 10);
+ 	ios_crash_write(fd, " image slide 0x");
+@@ -488,6 +528,10 @@ static void ios_crash_terminate_handler()
+ 
+ static void ios_install_crash_handler()
+ {
++	// Before the path check below, which can return: the identifier is wanted
++	// by the log line even on a device where Documents cannot be written.
++	ios_read_build_identifier();
++
+ 	const char *const ios_home = ::getenv("HOME");
+ 	if (ios_home == nullptr || *ios_home == '\0')
+ 		return;
+@@ -599,6 +643,15 @@ void set_log_path_and_level(const std::string& file, unsigned int level)
+ 
+ 	set_logging_level(level);
+ 
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++	// The first line of every device log, so a log and a crash report can be
++	// put against the same build without asking which one was installed. At
++	// `error` because everything this port wants to survive the default level
++	// is logged at error - see the diagnostics the sessions above added.
++	BOOST_LOG_TRIVIAL(error) << "orca-ios-build: CFBundleVersion " << ios_build_identifier()
++	                         << " (the CI run number)";
++#endif
++
+ 	return;
+ }
+ 

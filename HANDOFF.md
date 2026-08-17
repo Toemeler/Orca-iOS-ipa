@@ -8915,9 +8915,9 @@ re-doing it would pay the half hour a second time.
 Read this before adding a member to any header under `src/slic3r/GUI/` that
 `MainFrame.hpp` can reach. The cheap headers are the leaves.
 
-## 0237, 0438-0441 — everything that pops up
+## 0237-0238, 0438-0442 — everything that pops up
 
-Five reports, one subject: **nothing in this application that appears over
+Seven patches, one subject: **nothing in this application that appears over
 something else was native**, and the parts of it that were not merely
 desktop-shaped were broken outright.
 
@@ -9083,6 +9083,41 @@ Every one of them falls back to the window it replaced when it cannot be
 presented — no controller yet, a UIKit exception, a call from a worker thread.
 A dialog that fails to appear is worse than one that appears in the wrong
 style.
+
+### 0238, 0442 — the last two that were still windows
+
+Two dialogs were left drawing themselves after the sweep above, and both have
+an exact native counterpart.
+
+**`wxTextEntryDialog`** — wx's own generic "type something" box, which is what
+`wxGetTextFromUser` puts up. Orca reaches for it to rename an object and for
+the three JavaScript prompts the embedded web pages can raise. A
+`UIAlertController` is the one presentation on this platform that carries text
+fields, so that is what it is now: the prompt as the message, one field
+pre-filled with the current value, OK and Cancel. A **multi-line** entry keeps
+its window — the custom G-code editors ask for one, and an alert's field is a
+single line.
+
+**`wxSingleChoiceDialog`** — a wxListBox in a box. It is one row per choice
+now, with a tick on the current one, because `UIAlertAction` has no checked
+style and the key that fakes one is private. It returns an *index*, so the
+cancel answer is -1 rather than `wxID_CANCEL`: 5101 would be a valid row number
+in a list that long, and "could not be presented" is a third answer again (-2),
+because reporting that as a cancel the user never gave is how a caller ends up
+acting on nothing.
+
+**`SingleChoiceDialog`** — Orca's own, and the reason it needed a second look:
+it is a window holding one read-only `ComboBox`, and since 0441 that ComboBox
+already opens a native list. That left two taps and a window in the way of one
+choice. Now the list *is* the dialog. It waits in a nested modal loop, because
+`GetSingleChoiceIndex()` is synchronous and every caller reads it straight
+after.
+
+Which is why the picker gained a watchdog with it. Three of the four ways a
+list can end tell the caller themselves — a row, Done, a tap outside. The
+fourth is the presenting controller being torn down underneath it, and nothing
+reports that; a caller asleep in a modal loop would then wait for ever.
+Exactly one of the two callbacks now runs, always.
 
 ### What is not verified
 

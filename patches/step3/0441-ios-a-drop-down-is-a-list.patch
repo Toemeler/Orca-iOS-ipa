@@ -156,10 +156,10 @@ index 09041e3dc..f7a1d0f81 100644
  
 diff --git a/src/slic3r/GUI/ios_native_picker.mm b/src/slic3r/GUI/ios_native_picker.mm
 new file mode 100644
-index 000000000..52bc3bf5e
+index 000000000..909557649
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_picker.mm
-@@ -0,0 +1,435 @@
+@@ -0,0 +1,488 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -245,7 +245,13 @@ index 000000000..52bc3bf5e
 +@property (nonatomic, copy)   void (^onPick)(NSInteger);
 +@property (nonatomic, copy)   void (^onDismiss)(void);
 +@property (nonatomic, assign) BOOL                         picked;
++// EXACTLY ONE of onPick/onDismiss runs, ever. A caller is entitled to wait on
++// this list - SingleChoiceDialog runs a nested modal loop around it - and a
++// list that went away having called neither would be a hang.
++@property (nonatomic, assign) BOOL                         notified;
 +- (void)rebuildSections:(NSString *)filter;
++- (void)notifyPicked:(NSInteger)index;
++- (void)notifyDismissed;
 +@end
 +
 +@implementation OrcaPickerController
@@ -391,15 +397,13 @@ index 000000000..52bc3bf5e
 +
 +    self.picked = YES;
 +    const NSInteger chosen = row.index;
-+    void (^pick)(NSInteger) = self.onPick;
 +
 +    // The row is delivered after the dismissal, for the reason every other
 +    // presentation in this port defers its handler: choosing a preset can put
 +    // a dialog up ("keep the modified settings?"), and presenting one from a
 +    // controller in mid-dismissal is the "already presenting" exception.
 +    [self dismissViewControllerAnimated:YES completion:^{
-+        if (pick != nil)
-+            pick(chosen);
++        [self notifyPicked:chosen];
 +    }];
 +}
 +
@@ -420,26 +424,40 @@ index 000000000..52bc3bf5e
 +    return UIModalPresentationNone;
 +}
 +
++- (void)notifyPicked:(NSInteger)index
++{
++    if (self.notified)
++        return;
++    self.notified = YES;
++    if (self.onPick != nil)
++        self.onPick(index);
++}
++
++- (void)notifyDismissed
++{
++    if (self.notified)
++        return;
++    self.notified = YES;
++    if (self.onDismiss != nil)
++        self.onDismiss();
++}
++
 +- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
 +{
 +    (void) presentationController;
-+    // Dismissed by tapping outside it or by the Done button: nothing was
-+    // chosen, and the DropDown still has to be told, because the ComboBox
-+    // closes its own state on EVT_DISMISS.
++    // Dismissed by tapping outside it: nothing was chosen, and the caller
++    // still has to be told - the ComboBox closes its own state on EVT_DISMISS,
++    // and SingleChoiceDialog is asleep in a modal loop waiting for this.
 +    if (self.picked)
 +        return;
-+    if (self.onDismiss != nil)
-+        self.onDismiss();
++    [self notifyDismissed];
 +}
 +
 +- (void)doneTapped:(id)sender
 +{
 +    (void) sender;
-+    void (^dismissed)(void) = self.onDismiss;
-+    const BOOL was_picked = self.picked;
 +    [self dismissViewControllerAnimated:YES completion:^{
-+        if (!was_picked && dismissed != nil)
-+            dismissed();
++        [self notifyDismissed];
 +    }];
 +}
 +
@@ -453,6 +471,29 @@ index 000000000..52bc3bf5e
 +// to a question that has one.
 +static UIViewController *gs_picker       = nil;   // retained
 +static wxWindow         *gs_picker_owner = nullptr;
++
++// Defined below; the watchdog calls it when the list has gone without saying so.
++void orca_ios_picker_dismiss(wxWindow *owner);
++
++// The watchdog. See where it is armed, at the end of the presenter, for why.
++static void orca_ios_picker_watch(UIViewController *nav, OrcaPickerController *picker,
++                                  int misses)
++{
++    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (0.75 * NSEC_PER_SEC)),
++                   dispatch_get_main_queue(), ^{
++        if (picker.notified)
++            return;
++        const bool gone = nav.presentingViewController == nil;
++        if (gone && misses >= 1) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: gone with no row chosen; "
++                                        "reporting it as a dismissal";
++            orca_ios_picker_dismiss(nullptr);
++            [picker notifyDismissed];
++            return;
++        }
++        orca_ios_picker_watch(nav, picker, gone ? misses + 1 : 0);
++    });
++}
 +
 +// Long enough to need a search field. Twelve is about a screen of rows on the
 +// shortest window this application runs in, so anything longer is a list the
@@ -586,6 +627,18 @@ index 000000000..52bc3bf5e
 +    // one orca_ios_picker_dismiss() spends.
 +    gs_picker       = [nav retain];
 +    gs_picker_owner = owner;
++
++    // THE WATCHDOG, and the reason a list needs one.
++    //
++    // Three of the four ways this can end tell the caller themselves: a row,
++    // the Done button, a tap outside. The fourth is the presenting controller
++    // being torn down underneath it - the window changing, the application
++    // being taken down - and nothing reports that. A caller waiting in a
++    // nested modal loop would then wait for ever, which is the whole
++    // application stopped. Two consecutive misses, so that the gap between
++    // -present… and the presentation taking effect is not read as one.
++    orca_ios_picker_watch(nav, picker, 0);
++
 +    [picker release];
 +
 +    BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: " << items.size() << " row(s), "

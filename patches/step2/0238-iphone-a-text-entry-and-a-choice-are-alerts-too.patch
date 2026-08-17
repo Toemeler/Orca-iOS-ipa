@@ -1,0 +1,500 @@
+diff --git a/include/wx/generic/choicdgg.h b/include/wx/generic/choicdgg.h
+index 7c7cf62..0cf4c46 100644
+--- a/include/wx/generic/choicdgg.h
++++ b/include/wx/generic/choicdgg.h
+@@ -145,9 +145,22 @@ public:
+     void OnOK(wxCommandEvent& event);
+     void OnListBoxDClick(wxCommandEvent& event);
+ 
++#ifdef __WXOSX_IPHONE__
++    // One row per choice in a UIAlertController, with a tick on the current
++    // one. A list of things to pick from is a list of rows on this platform,
++    // not a wxListBox in a box. Falls back to the window when it cannot be
++    // presented.
++    virtual int ShowModal() override;
++#endif
++
+ protected:
+     int         m_selection;
+     wxString    m_stringSelection;
++#ifdef __WXOSX_IPHONE__
++    // The prompt above the list. Create() turns it into a wxStaticText and
++    // keeps no copy of its own.
++    wxString    m_iosMessage;
++#endif
+ 
+     void DoChoice();
+ 
+diff --git a/include/wx/generic/textdlgg.h b/include/wx/generic/textdlgg.h
+index 5cc9479..cbf7649 100644
+--- a/include/wx/generic/textdlgg.h
++++ b/include/wx/generic/textdlgg.h
+@@ -78,6 +78,14 @@ public:
+     virtual bool TransferDataToWindow() override;
+     virtual bool TransferDataFromWindow() override;
+ 
++#ifdef __WXOSX_IPHONE__
++    // A UIAlertController with a text field in it, which is the one
++    // presentation on this platform that can carry one - and is what an
++    // application asking for a single line of text looks like here. Falls back
++    // to the window when it cannot be presented.
++    virtual int ShowModal() override;
++#endif
++
+     // implementation only
+     void OnOK(wxCommandEvent& event);
+ 
+@@ -85,6 +93,11 @@ protected:
+     wxTextCtrl *m_textctrl;
+     wxString    m_value;
+     long        m_dialogStyle;
++#ifdef __WXOSX_IPHONE__
++    // The prompt. Create() below turns it into a wxStaticText and keeps no
++    // copy, and the alert wants the words rather than the control.
++    wxString    m_iosMessage;
++#endif
+ 
+ private:
+     wxDECLARE_EVENT_TABLE();
+diff --git a/src/generic/choicdgg.cpp b/src/generic/choicdgg.cpp
+index b5dba69..19e8ed2 100644
+--- a/src/generic/choicdgg.cpp
++++ b/src/generic/choicdgg.cpp
+@@ -39,6 +39,11 @@
+ #include "wx/settings.h"
+ #include "wx/generic/choicdgg.h"
+ 
++#ifdef __WXOSX_IPHONE__
++    // WX_HOOK_MODAL_DIALOG(), for the ShowModal() override below.
++    #include "wx/modalhook.h"
++#endif
++
+ // ----------------------------------------------------------------------------
+ // constants
+ // ----------------------------------------------------------------------------
+@@ -385,6 +390,10 @@ bool wxSingleChoiceDialog::Create( wxWindow *parent,
+ 
+     m_selection = n > 0 ? 0 : -1;
+ 
++#ifdef __WXOSX_IPHONE__
++    m_iosMessage = message;
++#endif
++
+     if (clientData)
+     {
+         for (int i = 0; i < n; i++)
+@@ -407,6 +416,49 @@ bool wxSingleChoiceDialog::Create( wxWindow *parent,
+                    clientData, style, pos );
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++
++// src/osx/iphone/msgdlg.mm. Returns the index, -1 for cancelled, -2 for "could
++// not be presented" - which is not the same answer and must not be reported as
++// one.
++extern int wxOSXIPhoneChoiceAlert(const wxString& title,
++                                  const wxString& message,
++                                  const wxArrayString& choices,
++                                  int selected);
++
++int wxSingleChoiceDialog::ShowModal()
++{
++    WX_HOOK_MODAL_DIALOG();
++
++    if ( m_listbox == nullptr )
++        return wxDialog::ShowModal();
++
++    wxArrayString choices;
++    const unsigned count = m_listbox->GetCount();
++    choices.Alloc(count);
++    for ( unsigned i = 0; i < count; ++i )
++        choices.Add(m_listbox->GetString(i));
++
++    const int chosen = wxOSXIPhoneChoiceAlert(GetTitle(), m_iosMessage, choices, m_selection);
++    if ( chosen == -2 )
++        return wxDialog::ShowModal();       // nothing was shown; show the window
++    if ( chosen < 0 || (unsigned) chosen >= count )
++    {
++        SetReturnCode(wxID_CANCEL);
++        return wxID_CANCEL;
++    }
++
++    // SetSelection() moves the listbox as well as m_selection, and DoChoice()
++    // is what reads the string and the client data back out of it - the same
++    // two steps the OK button takes, so a caller asking for GetStringSelection()
++    // or GetSelectionData() afterwards gets what it always did.
++    SetSelection(chosen);
++    DoChoice();
++    return wxID_OK;
++}
++
++#endif // __WXOSX_IPHONE__
++
+ // Set the selection
+ void wxSingleChoiceDialog::SetSelection(int sel)
+ {
+diff --git a/src/generic/textdlgg.cpp b/src/generic/textdlgg.cpp
+index 779ce3f..3d7097a 100644
+--- a/src/generic/textdlgg.cpp
++++ b/src/generic/textdlgg.cpp
+@@ -36,6 +36,11 @@
+     #include "wx/statline.h"
+ #endif
+ 
++#ifdef __WXOSX_IPHONE__
++    // WX_HOOK_MODAL_DIALOG(), for the ShowModal() override below.
++    #include "wx/modalhook.h"
++#endif
++
+ const char wxGetTextFromUserPromptStr[] = "Input Text";
+ const char wxGetPasswordFromUserPromptStr[] = "Enter Password";
+ 
+@@ -85,6 +90,9 @@ bool wxTextEntryDialog::Create(wxWindow *parent,
+ 
+     m_dialogStyle = style;
+     m_value = value;
++#ifdef __WXOSX_IPHONE__
++    m_iosMessage = message;
++#endif
+ 
+     wxBoxSizer *topsizer = new wxBoxSizer( wxVERTICAL );
+ #if wxUSE_STATTEXT
+@@ -133,6 +141,47 @@ bool wxTextEntryDialog::Create(wxWindow *parent,
+     return true;
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++
++// src/osx/iphone/msgdlg.mm
++extern bool wxOSXIPhoneTextEntryAlert(const wxString& title,
++                                      const wxString& message,
++                                      wxString* value,
++                                      bool password);
++
++int wxTextEntryDialog::ShowModal()
++{
++    WX_HOOK_MODAL_DIALOG();
++
++    // A multi-line entry is not a job for an alert's single-line field - the
++    // custom G-code editors ask for one - so that keeps the window it has.
++    if ( (m_dialogStyle & wxTE_MULTILINE) != 0 )
++        return wxDialog::ShowModal();
++
++    wxString value = m_value;
++    const bool password = (m_dialogStyle & wxTE_PASSWORD) != 0;
++
++    if ( !wxOSXIPhoneTextEntryAlert(GetTitle(), m_iosMessage, &value, password) )
++    {
++        // Cancelled, or never presented. The two are told apart by the value:
++        // the helper leaves it alone unless the user confirmed, so there is
++        // nothing to undo either way, and a cancel is the safe reading.
++        SetReturnCode(wxID_CANCEL);
++        return wxID_CANCEL;
++    }
++
++    // Straight into both, because the caller reads GetValue() and the control
++    // is what TransferDataFromWindow() would have read it out of.
++    m_value = value;
++    if ( m_textctrl != nullptr )
++        m_textctrl->SetValue(value);
++
++    SetReturnCode(wxID_OK);
++    return wxID_OK;
++}
++
++#endif // __WXOSX_IPHONE__
++
+ bool wxTextEntryDialog::TransferDataToWindow()
+ {
+     if ( m_textctrl )
+diff --git a/src/osx/iphone/msgdlg.mm b/src/osx/iphone/msgdlg.mm
+index 35dc976..ba2ae23 100644
+--- a/src/osx/iphone/msgdlg.mm
++++ b/src/osx/iphone/msgdlg.mm
+@@ -102,6 +102,10 @@ static UIViewController* wxOSXIPhoneAlertPresenter()
+ @public
+     wxEventLoopBase* loop;      // not owned; valid only while Run() is on the stack
+     int              code;
++    // What the watchdog answers with when the alert has gone and nobody chose
++    // anything. wxID_CANCEL for a dialog; the choice list below sets it to -1,
++    // because its result IS an index and wxID_CANCEL is 5101.
++    int              cancelCode;
+     BOOL             chosen;    // a row's handler has run
+     BOOL             finished;  // the loop has been told
+ }
+@@ -137,8 +141,8 @@ static void wxOSXAlertWatch(UIAlertController* ac, wxOSXAlertBox* box, int misse
+         const bool gone = ac.presentingViewController == nil;
+         if ( gone && misses >= 1 )
+         {
+-            wxLogDebug("wx-ios: message dialog went away with no button chosen");
+-            wxOSXAlertFinish(box, wxID_CANCEL);
++            wxLogDebug("wx-ios: alert went away with no button chosen");
++            wxOSXAlertFinish(box, box->cancelCode);
+             return;
+         }
+         wxOSXAlertWatch(ac, box, gone ? misses + 1 : 0);
+@@ -146,6 +150,52 @@ static void wxOSXAlertWatch(UIAlertController* ac, wxOSXAlertBox* box, int misse
+ }
+ 
+ 
++// Present it, watch it, and wait for it - the three steps every alert in this
++// file takes, and the reason the text entry and the choice list below are a
++// dozen lines each rather than a copy of this one.
++//
++// THE PRESENTER'S WINDOW AND NOT THE DIALOG'S. wxMessageDialog never calls
++// wxDialog::Create() - wxMessageDialogBase only stores the message, the
++// caption and the style - so it has no native window at all and the wxWindow*
++// overload of wxModalEventLoop would be handed a null one. The loop uses the
++// window for nothing but its log line; it is the CFRunLoop underneath that
++// matters, and that is the same one either way.
++static int wxOSXIPhoneRunAlert(UIAlertController* alert, wxOSXAlertBox* box,
++                               UIViewController* presenter)
++{
++    @try
++    {
++        [presenter presentViewController:alert animated:YES completion:nil];
++    }
++    @catch ( NSException* e )
++    {
++        wxLogDebug("wx-ios: alert presentation threw %s",
++                   wxString([[e reason] UTF8String], wxConvUTF8));
++        return wxID_CANCEL;
++    }
++
++    wxOSXAlertWatch(alert, box, 0);
++
++    wxModalEventLoop modalLoop((WXWindow) presenter.view.window);
++    box->loop = &modalLoop;
++    modalLoop.Run();
++    box->loop = nullptr;
++
++    return box->code;
++}
++
++// A box in the state every caller wants it in.
++static wxOSXAlertBox* wxOSXIPhoneNewAlertBox()
++{
++    wxOSXAlertBox* const box = [[[wxOSXAlertBox alloc] init] autorelease];
++    box->loop       = nullptr;
++    box->code       = wxID_CANCEL;
++    box->cancelCode = wxID_CANCEL;
++    box->chosen     = NO;
++    box->finished   = NO;
++    return box;
++}
++
+ wxMessageDialog::wxMessageDialog(wxWindow *parent,
+                                  const wxString& message,
+                                  const wxString& caption,
+@@ -209,11 +259,7 @@ int wxMessageDialog::ShowModal()
+     if ( alert == nil )
+         return wxID_CANCEL;
+ 
+-    wxOSXAlertBox* const box = [[[wxOSXAlertBox alloc] init] autorelease];
+-    box->loop     = nullptr;
+-    box->code     = wxID_CANCEL;
+-    box->chosen   = NO;
+-    box->finished = NO;
++    wxOSXAlertBox* const box = wxOSXIPhoneNewAlertBox();
+ 
+     // Adding a row. The handler marks the choice synchronously - the watchdog
+     // reads that flag - and ends the loop a turn of the run loop later, once
+@@ -266,35 +312,173 @@ int wxMessageDialog::ShowModal()
+                   (style & wxCANCEL_DEFAULT) != 0);
+     }
+ 
+-    @try
+-    {
+-        [presenter presentViewController:alert animated:YES completion:nil];
+-    }
+-    @catch ( NSException* e )
++    const int result = wxOSXIPhoneRunAlert(alert, box, presenter);
++    SetReturnCode(result);
++
++    return result;
++}
++
++
++// ---------------------------------------------------------------------------
++// The two generic dialogs that are also just an alert here
++// ---------------------------------------------------------------------------
++//
++// wxTextEntryDialog and wxSingleChoiceDialog are wx's own generic dialogs -
++// a wxTextCtrl in a box, and a wxListBox in a box - and on this port they
++// arrive as desktop windows. Both have an exact native counterpart:
++// UIAlertController carries text fields, which is the one presentation on iOS
++// that does, and a list of choices is a list of rows.
++//
++// Implemented HERE, in the message dialog's file, rather than in the generic
++// ones: those are plain C++ and cannot see UIKit, and giving each of them a
++// .mm of its own would mean two more files in build/cmake/files.cmake for
++// twenty lines apiece. The generic dialogs call in through these two
++// functions, which is the whole of the coupling.
++
++// Returns true if the user confirmed, with *value updated; false if cancelled
++// or if the alert could not be presented (the caller then shows its window).
++bool wxOSXIPhoneTextEntryAlert(const wxString& title,
++                               const wxString& message,
++                               wxString* value,
++                               bool password)
++{
++    if ( !wxThread::IsMain() || value == nullptr )
++        return false;
++
++    UIViewController* const presenter = wxOSXIPhoneAlertPresenter();
++    if ( presenter == nil || presenter.view.window == nil )
++        return false;
++
++    wxCFStringRef cfTitle( title );
++    wxCFStringRef cfText( message );
++
++    UIAlertController* const alert =
++        [UIAlertController alertControllerWithTitle:(title.IsEmpty() ? nil : cfTitle.AsNSString())
++                                            message:(message.IsEmpty() ? nil : cfText.AsNSString())
++                                     preferredStyle:UIAlertControllerStyleAlert];
++    if ( alert == nil )
++        return false;
++
++    wxCFStringRef cfValue( *value );
++    const BOOL secure = password ? YES : NO;
++    [alert addTextFieldWithConfigurationHandler:^(UITextField* tf) {
++        tf.text                   = cfValue.AsNSString();
++        tf.secureTextEntry        = secure;
++        tf.clearButtonMode        = UITextFieldViewModeWhileEditing;
++        tf.autocorrectionType     = UITextAutocorrectionTypeNo;
++        tf.autocapitalizationType = UITextAutocapitalizationTypeNone;
++        // The keyboard's return key confirms, which is what Enter does in the
++        // window this replaces.
++        tf.returnKeyType          = UIReturnKeyDone;
++    }];
++
++    wxOSXAlertBox* const box = wxOSXIPhoneNewAlertBox();
++
++    UIAlertAction* const cancel =
++        [UIAlertAction actionWithTitle:wxCFStringRef(wxGetTranslation("Cancel")).AsNSString()
++                                 style:UIAlertActionStyleCancel
++                               handler:^(UIAlertAction* a) {
++            (void) a;
++            box->chosen = YES;
++            dispatch_async(dispatch_get_main_queue(), ^{
++                wxOSXAlertFinish(box, wxID_CANCEL);
++            });
++        }];
++    [alert addAction:cancel];
++
++    UIAlertAction* const ok =
++        [UIAlertAction actionWithTitle:wxCFStringRef(wxGetTranslation("OK")).AsNSString()
++                                 style:UIAlertActionStyleDefault
++                               handler:^(UIAlertAction* a) {
++            (void) a;
++            box->chosen = YES;
++            dispatch_async(dispatch_get_main_queue(), ^{
++                wxOSXAlertFinish(box, wxID_OK);
++            });
++        }];
++    [alert addAction:ok];
++    alert.preferredAction = ok;
++
++    const int result = wxOSXIPhoneRunAlert(alert, box, presenter);
++
++    // Read the field back BEFORE reporting, and only on OK: a cancelled entry
++    // must leave the caller's value exactly as it was.
++    if ( result == wxID_OK )
+     {
+-        wxLogDebug("wx-ios: message dialog presentation threw %s",
+-                   wxString([[e reason] UTF8String], wxConvUTF8));
+-        return wxID_CANCEL;
++        NSString* const text = alert.textFields.firstObject.text;
++        *value = wxString(text != nil ? [text UTF8String] : "", wxConvUTF8);
++        return true;
+     }
+ 
+-    wxOSXAlertWatch(alert, box, 0);
++    return false;
++}
+ 
+-    // And wait, exactly as wxDialog::ShowModal() does.
+-    //
+-    // THE PRESENTER'S WINDOW AND NOT THIS DIALOG'S. wxMessageDialog never
+-    // calls wxDialog::Create() - wxMessageDialogBase only stores the message,
+-    // the caption and the style - so this object has no native window at all
+-    // and the wxWindow* overload of wxModalEventLoop would be handed a null
+-    // one. The loop does not use the window for anything but its log line; it
+-    // is the CFRunLoop underneath that matters, and it is the same one either
+-    // way.
+-    wxModalEventLoop modalLoop((WXWindow) presenter.view.window);
+-    box->loop = &modalLoop;
+-    modalLoop.Run();
+-    box->loop = nullptr;
++// Returns the chosen index, -1 for cancelled, and -2 for "could not be
++// presented" so that the caller can tell that case apart and fall back to its
++// own window rather than reporting a cancel the user never gave.
++int wxOSXIPhoneChoiceAlert(const wxString& title,
++                           const wxString& message,
++                           const wxArrayString& choices,
++                           int selected)
++{
++    if ( !wxThread::IsMain() || choices.IsEmpty() )
++        return -2;
+ 
+-    const int result = box->code;
+-    SetReturnCode(result);
++    UIViewController* const presenter = wxOSXIPhoneAlertPresenter();
++    if ( presenter == nil || presenter.view.window == nil )
++        return -2;
+ 
+-    return result;
++    wxCFStringRef cfTitle( title );
++    wxCFStringRef cfText( message );
++
++    UIAlertController* const alert =
++        [UIAlertController alertControllerWithTitle:(title.IsEmpty() ? nil : cfTitle.AsNSString())
++                                            message:(message.IsEmpty() ? nil : cfText.AsNSString())
++                                     preferredStyle:UIAlertControllerStyleAlert];
++    if ( alert == nil )
++        return -2;
++
++    wxOSXAlertBox* const box = wxOSXIPhoneNewAlertBox();
++
++    for ( size_t i = 0; i < choices.GetCount(); ++i )
++    {
++        // The current one carries a tick in its title: UIAlertAction has no
++        // checked style, and the key that fakes one is private.
++        wxString label = choices[i];
++        if ( (int) i == selected )
++            label = wxString::FromUTF8("\xE2\x9C\x93 ") + label;
++
++        wxCFStringRef cfLabel( label );
++        const int index = (int) i;
++        UIAlertAction* const action =
++            [UIAlertAction actionWithTitle:cfLabel.AsNSString()
++                                     style:UIAlertActionStyleDefault
++                                   handler:^(UIAlertAction* a) {
++                (void) a;
++                box->chosen = YES;
++                dispatch_async(dispatch_get_main_queue(), ^{
++                    wxOSXAlertFinish(box, index);
++                });
++            }];
++        [alert addAction:action];
++    }
++
++    // wxID_CANCEL is 5101 and would collide with an index if a list ever grew
++    // to five thousand rows; -1 cannot, and it is what the callers already use
++    // for "nothing was chosen".
++    UIAlertAction* const cancel =
++        [UIAlertAction actionWithTitle:wxCFStringRef(wxGetTranslation("Cancel")).AsNSString()
++                                 style:UIAlertActionStyleCancel
++                               handler:^(UIAlertAction* a) {
++            (void) a;
++            box->chosen = YES;
++            dispatch_async(dispatch_get_main_queue(), ^{
++                wxOSXAlertFinish(box, -1);
++            });
++        }];
++    [alert addAction:cancel];
++
++    box->code       = -1;
++    box->cancelCode = -1;   // what the watchdog answers with, if it ever has to
++    return wxOSXIPhoneRunAlert(alert, box, presenter);
+ }

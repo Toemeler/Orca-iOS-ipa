@@ -1,0 +1,110 @@
+diff --git a/src/slic3r/GUI/SingleChoiceDialog.cpp b/src/slic3r/GUI/SingleChoiceDialog.cpp
+index ec8010234..a026422d1 100644
+--- a/src/slic3r/GUI/SingleChoiceDialog.cpp
++++ b/src/slic3r/GUI/SingleChoiceDialog.cpp
+@@ -4,6 +4,13 @@
+ #include "MainFrame.hpp"
+ 
+ #include "Widgets/DialogButtons.hpp"
++// The list this dialog is presented as on iPadOS. Compiled to nothing anywhere
++// else - the header is guarded on __WXOSX_IPHONE__.
++#include "ios_native_ui.hpp"
++
++#include <wx/evtloop.h>
++
++#include <vector>
+ 
+ namespace Slic3r { namespace GUI {
+ 
+@@ -40,6 +47,69 @@ SingleChoiceDialog::SingleChoiceDialog(const wxString &message, const wxString &
+     wxGetApp().UpdateDlgDarkUI(this);
+ }
+ SingleChoiceDialog::~SingleChoiceDialog() {}
++
++#ifdef __WXOSX_IPHONE__
++int SingleChoiceDialog::ShowModal()
++{
++    if (type_comboBox == nullptr)
++        return DPIDialog::ShowModal();
++
++    std::vector<IOSPickerItem> rows;
++    const unsigned count = type_comboBox->GetCount();
++    rows.reserve(count);
++    for (unsigned i = 0; i < count; ++i) {
++        IOSPickerItem row;
++        row.text  = type_comboBox->GetString(i);
++        row.index = int(i);
++        rows.push_back(row);
++    }
++    if (rows.empty())
++        return DPIDialog::ShowModal();
++
++    // The picker is asynchronous and this function is not: every caller reads
++    // GetSingleChoiceIndex() straight after, so the wait is a nested modal
++    // loop of the same kind the alerts run - one that ends when a row is
++    // chosen or the sheet is dismissed.
++    int      chosen = -1;
++    bool     done   = false;
++    wxWindow *const anchor = type_comboBox;
++
++    wxModalEventLoop loop(this);
++    const bool presented = orca_ios_picker_present(
++        this, anchor, GetTitle(), rows, type_comboBox->GetSelection(),
++        [&chosen, &done, &loop](int index) {
++            chosen = index;
++            done   = true;
++            if (loop.IsRunning())
++                loop.Exit(wxID_OK);
++        },
++        [&done, &loop]() {
++            done = true;
++            if (loop.IsRunning())
++                loop.Exit(wxID_CANCEL);
++        });
++
++    if (!presented)
++        return DPIDialog::ShowModal();
++
++    const int rc = loop.Run();
++
++    // Neither callback ran - the picker went away without saying so - and the
++    // safe reading of that is the same as pressing Cancel.
++    if (!done || chosen < 0) {
++        SetReturnCode(wxID_CANCEL);
++        return wxID_CANCEL;
++    }
++
++    // Into the combo box as well as into the result: GetSingleChoiceIndex()
++    // reads the selection back off the control, and so does every caller that
++    // reaches for GetTypeComboBox().
++    type_comboBox->SetSelection(chosen);
++    SetReturnCode(wxID_OK);
++    (void) rc;
++    return wxID_OK;
++}
++#endif // __WXOSX_IPHONE__
+ int SingleChoiceDialog::GetSingleChoiceIndex() { return this->ShowModal() == wxID_OK ? GetTypeComboBox()->GetSelection() : -1; }
+ 
+ void SingleChoiceDialog::on_dpi_changed(const wxRect &suggested_rect) {}
+diff --git a/src/slic3r/GUI/SingleChoiceDialog.hpp b/src/slic3r/GUI/SingleChoiceDialog.hpp
+index ac43ef080..4041e9f82 100644
+--- a/src/slic3r/GUI/SingleChoiceDialog.hpp
++++ b/src/slic3r/GUI/SingleChoiceDialog.hpp
+@@ -16,6 +16,17 @@ public:
+     int       GetSingleChoiceIndex();
+     ComboBox *GetTypeComboBox() { return type_comboBox; };
+ 
++#ifdef __WXOSX_IPHONE__
++    // THE DIALOG IS THE LIST, so there is no dialog.
++    //
++    // This is a window holding one read-only ComboBox and an OK/Cancel pair -
++    // and since 0441 the ComboBox already opens a native list of its own. That
++    // left two taps and a window in the way of one choice. Here the list is
++    // the whole interaction: it opens as a sheet, a row is a choice, and Done
++    // is the cancel.
++    int ShowModal() override;
++#endif
++
+     void on_dpi_changed(const wxRect &suggested_rect) override;
+ 
+ protected:

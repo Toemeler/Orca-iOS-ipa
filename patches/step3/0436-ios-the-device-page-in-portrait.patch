@@ -1,0 +1,165 @@
+diff --git a/src/slic3r/GUI/StatusPanel.cpp b/src/slic3r/GUI/StatusPanel.cpp
+index 0e172502e..8e62e7d29 100644
+--- a/src/slic3r/GUI/StatusPanel.cpp
++++ b/src/slic3r/GUI/StatusPanel.cpp
+@@ -1319,6 +1319,9 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint
+     auto m_panel_separotor_left = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+     m_panel_separotor_left->SetBackgroundColour(STATUS_PANEL_BG);
+     m_panel_separotor_left->SetMinSize(wxSize(PAGE_SPACING, -1));
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    m_ios_separator_left = m_panel_separotor_left;
++#endif
+ 
+     bSizer_status_below->Add(m_panel_separotor_left, 0, wxEXPAND | wxALL, 0);
+ 
+@@ -1347,6 +1350,9 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint
+     auto m_panel_separator_middle = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL);
+     m_panel_separator_middle->SetBackgroundColour(STATUS_PANEL_BG);
+     m_panel_separator_middle->SetMinSize(wxSize(PAGE_SPACING, -1));
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    m_ios_separator_middle = m_panel_separator_middle;
++#endif
+ 
+     bSizer_status_below->Add(m_panel_separator_middle, 0, wxEXPAND | wxALL, 0);
+ 
+@@ -1373,8 +1379,104 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint
+     bSizer_status->Add(m_panel_separotor_bottom, 0, wxEXPAND | wxALL, 0);
+     this->SetSizerAndFit(bSizer_status);
+     this->Layout();
++
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    m_ios_columns = bSizer_status_below;
++    // Skip()ped, because wxScrolledWindow's own size handler is what keeps the
++    // scrollbars honest and a dynamic Bind runs ahead of it.
++    this->Bind(wxEVT_SIZE, [this](wxSizeEvent &e) {
++        this->ios_fit_columns_to_width();
++        e.Skip();
++    });
++    ios_fit_columns_to_width();
++#endif
+ }
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++// THE DEVICE PAGE IN PORTRAIT.
++//
++// The page is two columns side by side, and neither of them can give any width
++// back: the monitoring column is pinned at PAGE_MIN_WIDTH (574) by the media
++// control, and the control column's boxes - temperature, AMS, filament load -
++// are each SetMinSize(586). With the three separators that is a little under
++// 1200 points before FromDIP, and about 1370 after it on this device.
++//
++// An iPad is 1376 points wide in landscape and 1032 in portrait. So the page
++// fits, barely, one way round and cannot fit the other: the control column -
++// every temperature, the axis controls, the AMS, "Printer Parts" - was simply
++// off the right hand edge, and nothing could bring it back. StatusBasePanel is
++// a wxScrolledWindow, but a scrolled window only scrolls as far as its virtual
++// size, and nothing here ever set one; SetSizerAndFit() sizes the window, not
++// the scrollable area inside it.
++//
++// So: below the width the two columns need, they stack. The sizer holding them
++// is the one thing that has to change - wxBoxSizer::SetOrientation() is a plain
++// setter, and everything in it was added with flags that read the same either
++// way round. The separators are strips of background whose minimum size names
++// the axis they space along, so they are turned with it.
++//
++// FitInside() is what makes the result reachable in both arrangements: it sets
++// the virtual size from the sizer's minimum, which is the scrolled window's
++// whole purpose and is what was missing. Stacked, the page is taller than the
++// screen and scrolls vertically; side by side on a window still narrower than
++// 1370 it scrolls horizontally rather than clipping.
++void StatusBasePanel::ios_fit_columns_to_width()
++{
++    if (m_ios_columns == nullptr || m_machine_ctrl_panel == nullptr)
++        return;
++
++    // Layout() and FitInside() below both resize this window, which is a size
++    // event, which is this function again. The flag is the only thing between
++    // that and an unbounded recursion; the state check further down is an
++    // optimisation and would not be enough on its own.
++    if (m_ios_columns_busy)
++        return;
++
++    const int available = GetClientSize().GetWidth();
++    if (available <= 0)
++        return;   // not laid out yet; the size event that follows will do it
++
++    const int needed = PAGE_SPACING                                     // left
++                     + PAGE_MIN_WIDTH                                   // monitoring
++                     + PAGE_SPACING                                     // middle
++                     + m_machine_ctrl_panel->GetBestSize().GetWidth()   // control
++                     + PAGE_SPACING;                                    // right
++    const int wanted = available < needed ? wxVERTICAL : wxHORIZONTAL;
++    const bool turn  = m_ios_columns->GetOrientation() != wanted;
++
++    // The first pass always runs even when the orientation is already right,
++    // because the virtual size is what is actually missing and a page that
++    // opens wide enough would otherwise never get one.
++    if (!turn && m_ios_columns_fitted)
++        return;
++
++    m_ios_columns_busy = true;
++
++    if (turn) {
++        m_ios_columns->SetOrientation(wanted);
++
++        const wxSize spacer = wanted == wxVERTICAL ? wxSize(-1, PAGE_SPACING)
++                                                   : wxSize(PAGE_SPACING, -1);
++        if (m_ios_separator_left != nullptr)
++            m_ios_separator_left->SetMinSize(spacer);
++        if (m_ios_separator_middle != nullptr)
++            m_ios_separator_middle->SetMinSize(spacer);
++        if (m_panel_separator_right != nullptr)
++            m_panel_separator_right->SetMinSize(spacer);
++
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-device-page: " << available << " wide, needs "
++                                 << needed << " -> columns "
++                                 << (wanted == wxVERTICAL ? "stacked" : "side by side");
++    }
++
++    Layout();
++    FitInside();
++
++    m_ios_columns_fitted = true;
++    m_ios_columns_busy   = false;
++}
++#endif
++
+ StatusBasePanel::~StatusBasePanel()
+ {
+     delete m_media_play_ctrl;
+diff --git a/src/slic3r/GUI/StatusPanel.hpp b/src/slic3r/GUI/StatusPanel.hpp
+index 8065f198e..121f9fe13 100644
+--- a/src/slic3r/GUI/StatusPanel.hpp
++++ b/src/slic3r/GUI/StatusPanel.hpp
+@@ -2,6 +2,11 @@
+ #define slic3r_StatusPanel_hpp_
+ 
+ #include "libslic3r/ProjectTask.hpp"
++#ifdef __APPLE__
++// TARGET_OS_OSX is tested below; undefined reads as zero in an #if, which would
++// compile the iOS-only branch into the macOS build.
++#include <TargetConditionals.h>
++#endif
+ #include "DeviceManager.hpp"
+ #include "MonitorPage.hpp"
+ #include "SliceInfoPanel.hpp"
+@@ -552,6 +557,19 @@ protected:
+     Button *m_button_retry {nullptr};
+     StaticBox* m_filament_load_box;
+ 
++#if defined(__APPLE__) && !TARGET_OS_OSX
++    // The two columns of this page have fixed minimum widths that add up to
++    // more than an iPad is wide in portrait, so on a narrow window they stack
++    // instead. See ios_fit_columns_to_width() in StatusPanel.cpp.
++    wxBoxSizer* m_ios_columns {nullptr};
++    wxPanel*    m_ios_separator_left {nullptr};
++    wxPanel*    m_ios_separator_middle {nullptr};
++    bool        m_ios_columns_fitted {false};
++    bool        m_ios_columns_busy {false};
++
++    void ios_fit_columns_to_width();
++#endif
++
+     // Virtual event handlers, override them in your derived class
+     virtual void on_subtask_partskip(wxCommandEvent &event) { event.Skip(); }
+     virtual void on_subtask_pause_resume(wxCommandEvent &event) { event.Skip(); }

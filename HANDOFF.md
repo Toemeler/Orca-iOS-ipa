@@ -8548,6 +8548,11 @@ would have been thrown away.
 
 ## Run 187 is the build to test, and it does contain the wx work
 
+> **Superseded within the same day: the build to test is run 188**, which
+> carries everything below plus 0436 and 0437. The rest of this section is why
+> a run that follows a step-2 patch has to be read from its job steps and not
+> from its duration, which is still the point worth keeping.
+
 `orcaslicer-ipa-run187`, built from `0a03a08` — the commit with the fix above.
 The question worth asking of any run that follows a step-2 patch is whether wx
 was actually rebuilt, because the step-4 run time does not show it: run 187 took

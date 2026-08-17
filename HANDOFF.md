@@ -8914,3 +8914,184 @@ re-doing it would pay the half hour a second time.
 
 Read this before adding a member to any header under `src/slic3r/GUI/` that
 `MainFrame.hpp` can reach. The cheap headers are the leaves.
+
+## 0237, 0438-0441 — everything that pops up
+
+Five reports, one subject: **nothing in this application that appears over
+something else was native**, and the parts of it that were not merely
+desktop-shaped were broken outright.
+
+Orca has four kinds of thing that pop up and this port had four kinds of
+problem with them.
+
+| what it is | how Orca does it | what it was here |
+|---|---|---|
+| an alert | `MsgDialog` (MsgDialog.hpp) — a wxDialog with a bitmap, an HTML window and a row of `Button` widgets | a 360 pt desktop box; from step2/0230 with a glass title bar around it |
+| a message box | `wxMessageBox` → `wxMessageDialog` | **a `UIAlertView`, deprecated since iOS 8** — it appeared nowhere, and `ShowModal()` returned `wxID_CANCEL` without waiting |
+| a notification | `NotificationManager`, drawn as ImGui windows inside the GL canvas | invisible on three of the five tabs, and frozen on them |
+| progress | `Widgets/ProgressDialog` — a wxGauge in a wxDialog | a desktop window in the middle of the screen |
+| a drop-down | `Widgets/DropDown` — a `wxPopupTransientWindow` painting its own rows | a hover-driven list on a device with no hover |
+
+### 0237 — wxMessageBox answered every question itself
+
+`src/osx/iphone/msgdlg.mm` built a **`UIAlertView`**, called `-show` on it, and
+returned `wxID_CANCEL` immediately. Three separate faults, any one of them
+fatal: the class has been deprecated since iOS 8 and draws nothing; the call
+did not wait, so the caller read the answer before the user could give one; and
+the answer was `wxID_CANCEL` whatever the buttons were.
+
+`wxMessageBox` is what wx itself uses for `wxLogError` and `wxLogMessage`, so
+every one of those on this port was silently answered "cancel" by a dialog
+nobody ever saw.
+
+It is now a `UIAlertController` with a nested `wxModalEventLoop` under it, so
+`ShowModal()` keeps the contract its callers are written against. Styles,
+custom labels, `wxNO_DEFAULT`/`wxCANCEL_DEFAULT`, the extended message and the
+Help button all map across; the cancel row gets the cancel *style*, which is
+the one iOS draws apart and a hardware Escape chooses.
+
+### 0438 — the alert is a presentation of the dialog, not a replacement for it
+
+Every alert in Orca derives from `MsgDialog`: `MessageDialog` alone has 322
+call sites, plus `ErrorDialog`, `WarningDialog`, `InfoDialog`,
+`RichMessageDialog`, `DownloadDialog` and the update prompts. One
+`ShowModal()` override turns all of them into `UIAlertController`s.
+
+**The rows are the dialog's own buttons.** The obvious implementation — read
+the message, show an alert, return the id of the row — is wrong here, because a
+`MsgDialog` button is not always "end with this code": several dialogs bind a
+handler that writes a config key, starts a download or sends a job. So the
+dialog is built exactly as before, its buttons are read out of it, and choosing
+a row sends `wxEVT_BUTTON` to the actual button. The dialog's own handler then
+runs, unchanged and unaware. The window is simply never shown.
+
+That settles the return value too: if the handler ended the dialog itself its
+code is what the caller gets, told apart from "the handler left it to us" by a
+sentinel return code rather than by guessing.
+
+**What it will not present, it does not.** `orca_ios_is_plain()` walks the
+dialog's children and compares them against what `MsgDialog` itself put there —
+the logo, the message window, the buttons, the "don't show again" pair. A
+subclass that added a hyperlink or a control of its own makes it false and the
+dialog is shown as the window it always was. Losing a control to a prettier
+presentation is not a trade worth making, and the log says which class did it.
+
+**Three things an iOS alert cannot hold, and where they went.** A checkbox
+becomes a row ("Don't show again", which ticks the box and then presses the
+affirmative button); a hyperlink inside running text becomes a row; markup in
+the message is stripped to text, tolerantly — `<br>` and `</tr>` become line
+breaks, `&amp;` becomes `&`, and "layer height < 0.4" stays a sentence because
+a `<` that is not followed by a letter is not a tag.
+
+`DeleteConfirmDialog` and `SecondaryCheckDialog` come with it.
+`SecondaryCheckDialog` is not a wxDialog at all — it is a modeless `DPIFrame`
+that posts an event and is hidden by whoever was listening — so it gets a
+modeless alert whose rows post the same events, and which is taken down in
+`on_hide()` and in the destructor, because a row pressed after the frame is
+gone would reach freed memory.
+
+### 0439 — a notification that only existed while the canvas was drawing
+
+`render_notifications()` draws every notification as an ImGui window inside the
+3D canvas' GL context. Three consequences on this port, and all three are bad:
+
+1. **They only exist while a 3D view is on screen.** Leave Prepare for the
+   Device page and the notification is still in the deque, still counting down,
+   and nowhere to be seen. A slicing error raised while the user is looking at
+   the printer was never seen at all.
+2. **They are sized in ImGui's idea of a pixel** — 14 px text, a 56 px window,
+   a close cross built for a mouse. No Dynamic Type, no VoiceOver.
+3. **They cost a frame.** A notification that never fades keeps the canvas
+   re-rendering for as long as it is up.
+
+They are now `UIView` banners in the window, above everything wx draws, stacked
+up from the bottom trailing corner: Liquid Glass, an SF Symbol for the level,
+the text at whatever size the reader has asked the system for, a
+`UIProgressView` when the notification carries progress, and buttons for the
+hypertext and for closing it.
+
+**Bottom trailing and not the top**, which is where a system notification goes:
+the floating tab bar (0397) is centred at the top of this window and the
+sidebar's tools are up there too. The bottom trailing corner is empty on all
+five pages and is where Orca has always drawn these.
+
+**There are two countdowns now, deliberately.** Orca's is inside
+`update_notifications()`, which only runs while the canvas draws; a banner in
+the window would otherwise sit in the corner of the Device page for as long as
+the user stayed there. So `NotificationManager` runs a 250 ms timer of its own —
+it does nothing at all while there is nothing to show — and each banner also
+counts itself down. Both are paused while an alert is up, because a banner that
+timed out behind a modal alert was never read.
+
+**Closing a slice that is running is cancelling it.** The ImGui version draws a
+separate cancel button; a banner has one close control and the meaning of
+pressing it during a slice is not in doubt.
+
+Nothing is held across a render pass: a banner carries the notification's
+*address* and every callback looks it up again, because a notification that
+faded out in between has been erased from the deque and freed.
+
+### 0440 — progress is a sheet
+
+`ProgressDialog` is put up for the long jobs — loading a project, repairing a
+mesh, uploading to the printer, downloading a plug-in — and arrived as the same
+320 pt window it is on Windows. It is now a glass card presented over the whole
+screen with a dimmed backdrop that takes every touch, which is exactly what the
+dialog means: Orca disables every other window for as long as one is up.
+
+The dialog itself is untouched. Its state machine, its `wxGauge`, the labels
+`Update()` writes are all still there, because the callers read them back —
+`GetValue()`, `GetMessage()`, `WasCancelled()` — and a presentation that took
+the controls away would have taken the answers with them.
+
+A job without `wxPD_AUTO_HIDE` ends by waiting on an OK button; that becomes an
+alert, blocking in the same way, because `orca_ios_alert_run()` runs the same
+nested loop `ShowModal()` would have.
+
+### 0441 — a drop-down is a list, and now it is searchable
+
+Every preset selector in the sidebar is a `DropDown`, as is every choice field
+in the parameter pages, the filament pickers and the printer list. The hover
+highlight is the only feedback the control has, which on a touch screen is
+none; its rows are 22 px against a 44 pt minimum target; and a filament list is
+two hundred rows long with no way to search it.
+
+It is now a `UITableView` in a popover anchored to the control that opened it,
+with the current value check-marked and scrolled to, groups as sections, and a
+`UISearchController` as soon as the list reaches twelve rows. On a narrow
+window UIKit adapts the popover into a sheet by itself.
+
+**Every item, in one list.** The wx control shows only the first item of each
+group and opens a *second* window for the rest; a grouped table has sections
+and needs no second level, so the whole list is offered at once. The chosen row
+comes back as exactly the `wxEVT_COMBOBOX` the wx path would have sent — the
+index into `items` and its text — so `ComboBox`, and everything bound to
+`ComboBox`, is untouched.
+
+### The one rule the whole set follows
+
+**Present into the topmost window, by window level.** A wxDialog is its own
+`UIWindow` on this port at `UIWindowLevelAlert + 1`, and the frame is at
+`UIWindowLevelNormal`. An alert presented from the frame draws *inside* the
+frame's window — underneath every dialog on screen — and a modal loop would
+then be waiting on a button nobody can reach. That is a hang, not a cosmetic
+fault, which is why every presenter here is chosen by level and why each one
+has a watchdog: if an alert leaves the screen without a row being chosen, the
+loop is ended as a cancel and the reason is logged.
+
+Every one of them falls back to the window it replaced when it cannot be
+presented — no controller yet, a UIKit exception, a call from a worker thread.
+A dialog that fails to appear is worse than one that appears in the wrong
+style.
+
+### What is not verified
+
+None of this has been run. The three to look at first on device are: whether an
+ordinary `MessageDialog` comes up as an alert at all (the log says
+`orca-ios-alert: [title] message (N rows)` when it does, and
+`orca-ios-alert: [title] keeps its window - it holds a <class>` when the
+plainness test refused); whether a slice shows a banner that counts down and
+goes away on the Device page as well as on Prepare (`orca-ios-notices: host
+installed under …` says the stack got its window); and whether a preset
+drop-down opens as a popover anchored under the control rather than as a sheet
+(`orca-ios-picker: N row(s), popover`).

@@ -1,0 +1,1037 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -731,6 +731,7 @@
+             # it are added by the patches that introduce them.
+             GUI/ios_native_ui.hpp
+             GUI/ios_native_ui.mm
++            GUI/ios_native_notifications.mm
+         )
+ endif ()
+ 
+diff --git a/src/slic3r/GUI/NotificationManager.cpp b/src/slic3r/GUI/NotificationManager.cpp
+index 2e8d22ebe..59baae499 100644
+--- a/src/slic3r/GUI/NotificationManager.cpp
++++ b/src/slic3r/GUI/NotificationManager.cpp
+@@ -1854,8 +1854,236 @@ void NotificationManager::ProgressIndicatorNotification::render_close_button(ImG
+ NotificationManager::NotificationManager(wxEvtHandler* evt_handler) :
+ 	m_evt_handler(evt_handler)
+ {
++#ifdef __WXOSX_IPHONE__
++	// The heartbeat. See the member's declaration for why a notification
++	// system on this port needs one at all; the short version is that
++	// everything upstream uses to move a notification along hangs off the 3D
++	// canvas' render loop, and the banners are not in the canvas any more.
++	//
++	// Four times a second: fast enough that a progress bar looks live, slow
++	// enough to be free. It does nothing whatsoever while there is nothing to
++	// show, which is almost all of the time.
++	m_ios_timer = new wxTimer();
++	m_ios_timer->Bind(wxEVT_TIMER, [this](wxTimerEvent &) { this->orca_ios_tick(); });
++	m_ios_timer->Start(250);
++#endif
++}
++
++#ifdef __WXOSX_IPHONE__
++
++NotificationManager::~NotificationManager()
++{
++	if (m_ios_timer != nullptr) {
++		m_ios_timer->Stop();
++		delete m_ios_timer;
++		m_ios_timer = nullptr;
++	}
++	// The banners live in the window and would otherwise outlive the
++	// notifications they are showing.
++	orca_ios_notices_clear();
++}
++
++// One tick: run the state machine, then hand the result over.
++//
++// update_notifications() is upstream's, and it is called here as well as from
++// the canvas rather than instead of it: it is time-based and idempotent - a
++// second call in the same millisecond changes nothing - and calling it from
++// both places is what makes a notification behave the same way whether or not
++// a 3D view happens to be on screen.
++void NotificationManager::orca_ios_tick()
++{
++	if (!m_initialized)
++		return;
++
++	// Cheap exit for the case that is almost always the case.
++	if (m_pop_notifications.empty() && m_waiting_notifications.empty()) {
++		if (m_ios_last_count != 0) {
++			m_ios_last_count = 0;
++			orca_ios_notices_clear();
++		}
++		return;
++	}
++
++	Plater *const plater = wxGetApp().plater();
++	if (plater == nullptr)
++		return;
++	if (GLCanvas3D *const canvas = plater->get_current_canvas3D())
++		update_notifications(*canvas);
++
++	orca_ios_sync_native();
++}
++
++void NotificationManager::orca_ios_sync_native()
++{
++	std::vector<IOSNotice> notices;
++	notices.reserve(m_pop_notifications.size());
++
++	for (const std::unique_ptr<PopNotification> &notification : m_pop_notifications) {
++		const PopNotification::EState state = notification->get_state();
++		// Hidden is a notification that exists and is deliberately not being
++		// shown - the slicing progress bar between slices lives there - and
++		// the other two are on their way out. Unknown is NOT skipped: it is a
++		// notification that has been pushed and not yet initialised, and
++		// dropping it would mean a banner that only appears on the next tick.
++		if (state == PopNotification::EState::Hidden ||
++		    state == PopNotification::EState::Finished ||
++		    state == PopNotification::EState::ClosePending)
++			continue;
++
++		const NotificationData &data = notification->get_data();
++
++		IOSNotice notice;
++		notice.key = reinterpret_cast<uintptr_t>(notification.get());
++
++		// m_text1 rather than data.text1: append() and update() rewrite the
++		// first and leave the second alone, so a warning that has had a second
++		// object's name appended to it reads correctly only from m_text1.
++		const std::string text = notification->get_text1();
++		notice.text = wxString::FromUTF8(text.empty() ? data.text1 : text);
++
++		switch (data.level) {
++		case NotificationLevel::ErrorNotificationLevel:
++		case NotificationLevel::SeriousWarningNotificationLevel:
++			notice.kind = IOSNoticeKind::Error;
++			break;
++		case NotificationLevel::WarningNotificationLevel:
++			notice.kind = IOSNoticeKind::Warning;
++			break;
++		case NotificationLevel::ProgressBarNotificationLevel:
++			notice.kind = IOSNoticeKind::Progress;
++			break;
++		default:
++			notice.kind = IOSNoticeKind::Info;
++			break;
++		}
++
++		// An export that finished is not "information", it is the one piece of
++		// good news this application has to deliver, and the platform has a
++		// green tick for exactly that.
++		if (data.type == NotificationType::ExportFinished ||
++		    data.type == NotificationType::PresetUpdateFinished)
++			notice.kind = IOSNoticeKind::Success;
++
++		notice.action_label = wxString::FromUTF8(notification->orca_ios_hypertext());
++		notice.duration     = notification->orca_ios_duration();
++
++		// An error or a warning does not go away on its own upstream either
++		// (get_duration() returns 0 for them), and it must not here: a slicing
++		// error that faded out unread is the whole reason this port logs every
++		// dialog it shows.
++		if (notice.kind == IOSNoticeKind::Error)
++			notice.duration = 0;
++
++		// Progress, and the two ways a notification carries it.
++		if (SlicingProgressNotification *const slicing =
++		        dynamic_cast<SlicingProgressNotification *>(notification.get())) {
++			if (slicing->orca_ios_in_progress()) {
++				notice.progress = slicing->orca_ios_percentage();
++				notice.kind     = IOSNoticeKind::Progress;
++			} else if (slicing->orca_ios_completed()) {
++				notice.kind = IOSNoticeKind::Success;
++			}
++			// CLOSING A SLICE IN PROGRESS IS CANCELLING IT. The ImGui version
++			// draws a separate cancel button; a banner has one close control
++			// and the meaning of pressing it while a slice is running is not
++			// in doubt.
++			notice.closable = slicing->orca_ios_can_cancel() || !slicing->orca_ios_in_progress();
++		} else if (ProgressBarNotification *const bar =
++		               dynamic_cast<ProgressBarNotification *>(notification.get())) {
++			notice.progress = bar->get_percentage();
++			notice.kind     = IOSNoticeKind::Progress;
++		}
++
++		const uintptr_t key = notice.key;
++		if (!notice.action_label.IsEmpty()) {
++			notice.on_action = [key]() {
++				if (Plater *const p = wxGetApp().plater())
++					if (NotificationManager *const nm = p->get_notification_manager())
++						nm->orca_ios_notice_action(key);
++			};
++		}
++		notice.on_close = [key]() {
++			if (Plater *const p = wxGetApp().plater())
++				if (NotificationManager *const nm = p->get_notification_manager())
++					nm->orca_ios_notice_close(key);
++		};
++
++		notices.push_back(std::move(notice));
++	}
++
++	m_ios_last_count = notices.size();
++	orca_ios_notices_sync(notices);
++}
++
++// The three callbacks, and the one rule they all follow: LOOK THE
++// NOTIFICATION UP, DO NOT HOLD IT.
++//
++// A banner outlives the render pass that made it, and a notification that
++// faded out in between has been erased from the deque and freed. The key is
++// the address it had, which is enough to find it again and is never
++// dereferenced when it is not found.
++//
++// A member and not a free function because PopNotification is a private nested
++// class: outside NotificationManager the type cannot even be named.
++NotificationManager::PopNotification *NotificationManager::orca_ios_find_notice(uintptr_t key)
++{
++	for (const std::unique_ptr<PopNotification> &n : m_pop_notifications) {
++		if (reinterpret_cast<uintptr_t>(n.get()) == key)
++			return n.get();
++	}
++	return nullptr;
++}
++
++void NotificationManager::orca_ios_notice_action(uintptr_t key)
++{
++	PopNotification *const notification = orca_ios_find_notice(key);
++	if (notification == nullptr)
++		return;
++
++	// on_text_click() is what the ImGui hypertext runs, overridden by half a
++	// dozen notifications - ExportFinished opens the folder, the shared-profile
++	// one opens a browser, the rest post an event - and it says whether the
++	// notification should close afterwards.
++	if (notification->orca_ios_text_click())
++		notification->close();
++
++	orca_ios_sync_native();
+ }
+ 
++void NotificationManager::orca_ios_notice_close(uintptr_t key)
++{
++	PopNotification *const notification = orca_ios_find_notice(key);
++	if (notification == nullptr)
++		return;
++
++	// A slice that is running is cancelled rather than closed - see the
++	// comment on `closable` above.
++	if (SlicingProgressNotification *const slicing =
++	        dynamic_cast<SlicingProgressNotification *>(notification)) {
++		if (slicing->orca_ios_can_cancel()) {
++			slicing->orca_ios_cancel();
++			orca_ios_sync_native();
++			return;
++		}
++	}
++
++	notification->close();
++	orca_ios_sync_native();
++}
++
++void NotificationManager::orca_ios_notice_cancel(uintptr_t key)
++{
++	PopNotification *const notification = orca_ios_find_notice(key);
++	if (notification == nullptr)
++		return;
++	if (SlicingProgressNotification *const slicing =
++	        dynamic_cast<SlicingProgressNotification *>(notification))
++		slicing->orca_ios_cancel();
++	orca_ios_sync_native();
++}
++
++#endif // __WXOSX_IPHONE__
++
+ void NotificationManager::on_change_color_mode(bool is_dark) {
+ 	m_is_dark = is_dark;
+ 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications){
+@@ -3029,6 +3257,21 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
+ {
+ 	sort_notifications();
+ 
++#ifdef __WXOSX_IPHONE__
++	// NOTHING IS DRAWN INTO THE CANVAS ON THIS PORT.
++	//
++	// The notifications are UIKit banners in the window instead
++	// (ios_native_notifications.mm), so the ImGui pass below is compiled out
++	// whole. The sort above still matters - it is the order the banners stack
++	// in - and everything after the loop still has to happen, which is why the
++	// guard is around the loop and not around the function.
++	(void) canvas;
++	(void) overlay_width;
++	(void) bottom_margin;
++	(void) right_margin;
++	orca_ios_sync_native();
++#else
++
+ 	float bottom_up_last_y = bottom_margin; // ORCA dont scale margins
+ 
+ 	int i = 0;
+@@ -3052,6 +3295,7 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
+ 			;// assert(i <= 1);
+ 		}
+ 	}
++#endif // __WXOSX_IPHONE__
+     if (m_to_delete_after_finish_render) {
+         close_and_delete_self(m_to_delete_after_finish_render);
+         m_to_delete_after_finish_render = nullptr;
+diff --git a/src/slic3r/GUI/NotificationManager.hpp b/src/slic3r/GUI/NotificationManager.hpp
+index 19192c907..f0dd188b5 100644
+--- a/src/slic3r/GUI/NotificationManager.hpp
++++ b/src/slic3r/GUI/NotificationManager.hpp
+@@ -12,7 +12,14 @@
+ #include <libslic3r/ObjectID.hpp>
+ #include <libslic3r/Technologies.hpp>
+ 
++// The banners these notifications are drawn as on iPadOS. Compiled to nothing
++// anywhere else - the header is guarded on __WXOSX_IPHONE__.
++#include "ios_native_ui.hpp"
++
+ #include <wx/time.h>
++#ifdef __WXOSX_IPHONE__
++#include <wx/timer.h>
++#endif
+ 
+ #include <string>
+ #include <functional>
+@@ -198,7 +205,13 @@ public:
+ 	};
+ 
+ 	NotificationManager(wxEvtHandler* evt_handler);
++#ifdef __WXOSX_IPHONE__
++	// Not inline any more: the heartbeat that drives the banners is owned here
++	// and has to be stopped before the notifications it reads are gone.
++	~NotificationManager();
++#else
+ 	~NotificationManager(){}
++#endif
+ 
+ 	void on_change_color_mode(bool is_dark);
+ 	// init is called after canvas3d is created. Notifications added before init are not showed or updated
+@@ -337,6 +350,20 @@ public:
+ 	void set_move_from_overlay(bool move) { m_move_from_overlay = move; }
+ 	// perform update_state on each notification and ask for more frames if needed, return true for render needed
+ 	bool update_notifications(GLCanvas3D& canvas);
++
++#ifdef __WXOSX_IPHONE__
++	// THE WHOLE OF THE NATIVE SIDE OF THE NOTIFICATIONS.
++	//
++	// orca_ios_sync_native() hands the deque over to the banner stack as a
++	// snapshot by value, and the three below are what a banner calls back into
++	// when it is tapped. Every one of them looks the notification up by its
++	// address rather than holding a pointer: a banner outlives a render pass,
++	// and a notification that faded out in between must not be dereferenced.
++	void orca_ios_sync_native();
++	void orca_ios_notice_action(uintptr_t key);
++	void orca_ios_notice_close(uintptr_t key);
++	void orca_ios_notice_cancel(uintptr_t key);
++#endif
+ 	// returns number of all notifications shown
+ 	size_t get_notification_count() const;
+ 
+@@ -483,6 +510,19 @@ private:
+         typedef std::function<void(PopNotification*)> DeleteCallback;
+         void set_delete_callback(DeleteCallback);
+         bool is_valid_delete_callback();
++#ifdef __WXOSX_IPHONE__
++		// The two things a banner needs that are only reachable from inside:
++		// what the hypertext does, and how long the notification asked to be
++		// up for. Both are virtual and both are overridden by half a dozen
++		// subclasses, which is exactly why they are called rather than copied.
++		bool orca_ios_text_click() { return on_text_click(); }
++		int  orca_ios_duration()   { return get_duration(); }
++		// The run of clickable text - "Export G-code", "More info", "Undo".
++		// Read off m_hypertext rather than off m_data, because several
++		// notifications rewrite it as their state changes and the one the user
++		// is looking at is the one that has to be offered.
++		const std::string &orca_ios_hypertext() const { return m_hypertext; }
++#endif
+ 	protected:
+ 		// Call after every size change
+ 		virtual void init();
+@@ -999,6 +1039,27 @@ private:
+ 	bool                         m_move_from_overlay { false };
+ 	// Timestamp of last rendering
+ 	int64_t						 m_last_render { 0LL };
++#ifdef __WXOSX_IPHONE__
++	// THE HEARTBEAT, and why a notification system needs one here.
++	//
++	// Everything that moves a notification along - the fade-out countdown, the
++	// erase of a finished one, the frame that would have drawn it - hangs off
++	// GLCanvas3D::render(), which runs only while a 3D view is on screen. On a
++	// desktop that is the whole application. Here it is two tabs out of five,
++	// and the banners are in the window rather than in the canvas, so a
++	// notification raised on the Device page has to appear, count down and go
++	// away with no canvas drawing anything at all. This timer is what makes
++	// that true; it does nothing at all while there is nothing to show.
++	wxTimer                     *m_ios_timer { nullptr };
++	// The last snapshot handed to the banner stack, so that an unchanged deque
++	// costs one comparison per tick rather than a rebuild of every banner.
++	size_t                       m_ios_last_count { 0 };
++	void                         orca_ios_tick();
++	// By address, because that is all a banner can carry across a render pass.
++	// Returns null for a notification that has since been erased, which is the
++	// ordinary case rather than an error.
++	PopNotification             *orca_ios_find_notice(uintptr_t key);
++#endif
+ 	// Notification types that can be shown multiple types at once (compared by text)
+ 	const std::vector<NotificationType> m_multiple_types = {
+ 		NotificationType::CustomNotification,
+diff --git a/src/slic3r/GUI/SlicingProgressNotification.hpp b/src/slic3r/GUI/SlicingProgressNotification.hpp
+index 44f2bbd32..af2cb510f 100644
+--- a/src/slic3r/GUI/SlicingProgressNotification.hpp
++++ b/src/slic3r/GUI/SlicingProgressNotification.hpp
+@@ -49,6 +49,22 @@ public:
+     void				set_fff(bool b) { m_is_fff = b; }
+     void                set_export_possible(bool b) { m_export_possible = b; }
+     void                on_change_color_mode(bool is_dark) override;
++
++#ifdef __WXOSX_IPHONE__
++    // What the banner needs and cannot otherwise reach: the percentage (there
++    // is a setter but no getter), the state, and the cancel button - which is
++    // a control of its own in the ImGui version and is the banner's close
++    // button here, because closing a slice that is running means cancelling it.
++    float orca_ios_percentage() const { return m_percentage; }
++    bool  orca_ios_in_progress() const { return m_sp_state == SlicingProgressState::SP_PROGRESS; }
++    bool  orca_ios_completed()   const { return m_sp_state == SlicingProgressState::SP_COMPLETED; }
++    bool  orca_ios_can_cancel()  const
++    {
++        return m_cancel_callback != nullptr && m_sp_state == SlicingProgressState::SP_PROGRESS;
++    }
++    void  orca_ios_cancel() { on_cancel_button(); }
++#endif
++
+ protected:
+     void        init() override;
+     void        render(GLCanvas3D& canvas, float initial_y, bool move_from_overlay, float overlay_width, float right_margin) override;
+diff --git a/src/slic3r/GUI/ios_native_notifications.mm b/src/slic3r/GUI/ios_native_notifications.mm
+new file mode 100644
+index 000000000..b9ecdede9
+--- /dev/null
++++ b/src/slic3r/GUI/ios_native_notifications.mm
+@@ -0,0 +1,620 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// Orca's notifications, as banners the platform's own materials draw.
++//
++// WHAT A NOTIFICATION IS IN ORCA.
++//
++// NotificationManager holds a deque of PopNotification objects - slicing
++// progress, slicing errors and warnings, "object outside the print area",
++// export finished, the update prompts, the "did you know" hints - and
++// render_notifications() draws every one of them as a Dear ImGui window inside
++// the 3D canvas' GL context. That has three consequences on this port and all
++// three are bad:
++//
++//  1. THEY ONLY EXIST WHILE THE CANVAS IS DRAWING. Leave Prepare for the
++//     Device page and the notification is still in the deque, still counting
++//     down, and nowhere on screen. A slicing error raised while the user is
++//     looking at the printer is simply never seen.
++//  2. THEY ARE DRAWN AT ImGui's IDEA OF A POINT. Everything about them - the
++//     14 px text, the 56 px height, the close cross - is sized for a mouse on
++//     a desktop monitor. There is no Dynamic Type, no VoiceOver, no way to
++//     reach the close button reliably with a finger.
++//  3. THEY COST A FRAME. A notification that never fades - an error, a
++//     progress bar - keeps the canvas re-rendering for as long as it is up.
++//
++// WHAT THEY ARE HERE.
++//
++// A UIView per notification, in the main window above everything wx draws,
++// stacked from the bottom trailing corner upwards: the Liquid Glass material,
++// an SF Symbol for the level, the text at whatever size the user reads at, a
++// UIProgressView when the notification carries progress, and buttons for the
++// action Orca calls hypertext and for closing it. They stay up across a tab
++// change because they belong to the window rather than to the canvas, and
++// their timers run off the main run loop rather than off the render loop.
++//
++// The notification manager is still the owner and still the state machine.
++// This file draws what it has and reports taps back; it decides nothing.
++
++#import <UIKit/UIKit.h>
++
++#include "libslic3r/libslic3r.h"
++
++#include <wx/osx/core/cfstring.h>
++
++#include <boost/log/trivial.hpp>
++
++#include <vector>
++
++#include "ios_native_ui.hpp"
++
++namespace Slic3r {
++namespace GUI {
++
++// The window Orca's own frame is in: the one at UIWindowLevelNormal. Banners
++// belong there and not in the topmost window, which is a dialog whenever there
++// is one - a banner inside a dialog's window would go away with the dialog.
++static UIWindow *orca_ios_main_window()
++{
++    UIWindow *best = nil;
++
++    for (UIScene *scene in [[UIApplication sharedApplication] connectedScenes]) {
++        if (![scene isKindOfClass:[UIWindowScene class]])
++            continue;
++        for (UIWindow *w in ((UIWindowScene *) scene).windows) {
++            if (w.hidden || w.rootViewController == nil)
++                continue;
++            if (w.windowLevel > UIWindowLevelNormal)
++                continue;
++            if (best == nil || w.bounds.size.width * w.bounds.size.height >
++                               best.bounds.size.width * best.bounds.size.height)
++                best = w;       // the application's frame is the largest of them
++        }
++    }
++
++    return best;
++}
++
++} // namespace GUI
++} // namespace Slic3r
++
++// ---------------------------------------------------------------------------
++// One banner
++// ---------------------------------------------------------------------------
++
++// Sizes, in points, and every one of them chosen against the 44 pt minimum
++// target rather than against Orca's 56 px window.
++static const CGFloat kOrcaNoticeWidth      = 380;
++static const CGFloat kOrcaNoticeMinHeight  = 60;
++static const CGFloat kOrcaNoticePad        = 14;
++static const CGFloat kOrcaNoticeGap        = 10;
++static const CGFloat kOrcaNoticeIcon       = 26;
++static const CGFloat kOrcaNoticeButton     = 34;
++static const CGFloat kOrcaNoticeMargin     = 18;
++
++@interface OrcaNoticeView : UIView
++@property (nonatomic, assign) uintptr_t key;
++@property (nonatomic, copy)   void (^onAction)(void);
++@property (nonatomic, copy)   void (^onClose)(void);
++// Seconds left before this banner takes itself down; <= 0 means it stays until
++// Orca says otherwise, which is what an error and a progress bar want.
++@property (nonatomic, assign) double  remaining;
++- (void)applyKind:(int)kind
++             text:(NSString *)text
++      actionTitle:(NSString *)actionTitle
++         progress:(float)progress
++         closable:(BOOL)closable;
++- (CGFloat)heightForWidth:(CGFloat)width;
++@end
++
++@implementation OrcaNoticeView {
++    UIVisualEffectView *_glass;
++    UIImageView        *_icon;
++    UILabel            *_label;
++    UIProgressView     *_bar;
++    UIButton           *_action;
++    UIButton           *_close;
++    BOOL                _hasBar;
++    BOOL                _hasAction;
++}
++
++- (instancetype)initWithFrame:(CGRect)frame
++{
++    self = [super initWithFrame:frame];
++    if (self == nil)
++        return nil;
++
++    self.backgroundColor = [UIColor clearColor];
++
++    // Liquid Glass where there is Liquid Glass to have. Compiled out rather
++    // than only @available-guarded, for the same reason step2/0230 gives:
++    // UIGlassEffect is a class, and on an SDK that has never heard of it the
++    // name does not resolve and the build fails. This one is always built
++    // against the iOS 26 SDK (the step-3 and step-4 workflows select it), so
++    // the guard is belt and braces.
++    UIVisualEffect *material = nil;
++#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
++    if (@available(iOS 26.0, *))
++        material = [[[UIGlassEffect alloc] init] autorelease];
++#endif
++    if (material == nil)
++        material = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThickMaterial];
++
++    _glass                     = [[UIVisualEffectView alloc] initWithEffect:material];
++    _glass.layer.cornerRadius  = 22;
++    _glass.layer.cornerCurve   = kCACornerCurveContinuous;
++    _glass.clipsToBounds       = YES;
++    [self addSubview:_glass];
++
++    // The shadow is on the banner and not on the glass, because the glass
++    // clips - and a shadow inside a clipping view is not drawn at all.
++    self.layer.shadowColor   = [UIColor blackColor].CGColor;
++    self.layer.shadowOpacity = 0.18f;
++    self.layer.shadowRadius  = 14;
++    self.layer.shadowOffset  = CGSizeMake(0, 6);
++
++    _icon                    = [[UIImageView alloc] initWithFrame:CGRectZero];
++    _icon.contentMode        = UIViewContentModeScaleAspectFit;
++    [_glass.contentView addSubview:_icon];
++
++    _label                   = [[UILabel alloc] initWithFrame:CGRectZero];
++    _label.numberOfLines     = 4;
++    _label.lineBreakMode     = NSLineBreakByTruncatingTail;
++    _label.textColor         = [UIColor labelColor];
++    // Dynamic Type, which the ImGui version could not have had: the text is
++    // whatever size the reader has asked the system for.
++    _label.font              = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
++    _label.adjustsFontForContentSizeCategory = YES;
++    [_glass.contentView addSubview:_label];
++
++    _bar                     = [[UIProgressView alloc]
++                                   initWithProgressViewStyle:UIProgressViewStyleDefault];
++    _bar.hidden              = YES;
++    [_glass.contentView addSubview:_bar];
++
++    _action                  = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
++    _action.hidden           = YES;
++    _action.titleLabel.font  = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
++    _action.titleLabel.adjustsFontForContentSizeCategory = YES;
++    _action.pointerInteractionEnabled = YES;
++    [_action addTarget:self action:@selector(actionTapped:)
++      forControlEvents:UIControlEventTouchUpInside];
++    [_glass.contentView addSubview:_action];
++
++    _close                   = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
++    [_close setImage:[UIImage systemImageNamed:@"xmark"] forState:UIControlStateNormal];
++    _close.tintColor         = [UIColor secondaryLabelColor];
++    _close.accessibilityLabel = @"Close";
++    _close.pointerInteractionEnabled = YES;
++    [_close addTarget:self action:@selector(closeTapped:)
++     forControlEvents:UIControlEventTouchUpInside];
++    [_glass.contentView addSubview:_close];
++
++    // The whole banner is the action when it has one, which is how a
++    // notification behaves everywhere else on this platform.
++    UITapGestureRecognizer *const tap =
++        [[[UITapGestureRecognizer alloc] initWithTarget:self
++                                                 action:@selector(bodyTapped:)] autorelease];
++    [self addGestureRecognizer:tap];
++
++    self.isAccessibilityElement = NO;
++    _label.accessibilityTraits  = UIAccessibilityTraitStaticText;
++
++    return self;
++}
++
++- (void)dealloc
++{
++    [_close release];
++    [_action release];
++    [_bar release];
++    [_label release];
++    [_icon release];
++    [_glass release];
++    [_onAction release];
++    [_onClose release];
++    [super dealloc];
++}
++
++// The symbol and the tint for a level. SF Symbols rather than Orca's own PNGs:
++// they are the shapes iOS uses for exactly these five meanings, they follow the
++// text's weight, and they are already localised for right-to-left.
++- (void)applyKind:(int)kind
++             text:(NSString *)text
++      actionTitle:(NSString *)actionTitle
++         progress:(float)progress
++         closable:(BOOL)closable
++{
++    NSString *symbol = @"info.circle.fill";
++    UIColor  *tint   = [UIColor systemBlueColor];
++
++    switch (kind) {
++    case 1: symbol = @"checkmark.circle.fill";      tint = [UIColor systemGreenColor];  break;
++    case 2: symbol = @"exclamationmark.triangle.fill"; tint = [UIColor systemOrangeColor]; break;
++    case 3: symbol = @"xmark.octagon.fill";         tint = [UIColor systemRedColor];    break;
++    case 4: symbol = @"gearshape.2.fill";           tint = [UIColor systemBlueColor];   break;
++    default: break;
++    }
++
++    _icon.image     = [UIImage systemImageNamed:symbol];
++    _icon.tintColor = tint;
++
++    _label.text = text;
++
++    _hasAction     = actionTitle.length > 0;
++    _action.hidden = !_hasAction;
++    if (_hasAction)
++        [_action setTitle:actionTitle forState:UIControlStateNormal];
++
++    _hasBar     = progress >= 0.0f;
++    _bar.hidden = !_hasBar;
++    if (_hasBar)
++        [_bar setProgress:progress animated:YES];
++
++    _close.hidden = !closable;
++
++    // What VoiceOver reads out, in one go rather than as four separate
++    // elements: it is one notification.
++    self.accessibilityElements = nil;
++    _label.accessibilityLabel  = text;
++
++    [self setNeedsLayout];
++}
++
++- (CGFloat)heightForWidth:(CGFloat)width
++{
++    const CGFloat text_width = width - 2 * kOrcaNoticePad - kOrcaNoticeIcon - kOrcaNoticeGap -
++                               (_close.hidden ? 0 : kOrcaNoticeButton + kOrcaNoticeGap);
++    CGSize fits = [_label sizeThatFits:CGSizeMake(MAX(40.0, text_width), CGFLOAT_MAX)];
++
++    CGFloat h = kOrcaNoticePad + fits.height + kOrcaNoticePad;
++    if (_hasBar)
++        h += 6 + 4;
++    if (_hasAction)
++        h += kOrcaNoticeGap + kOrcaNoticeButton;
++
++    return MAX(kOrcaNoticeMinHeight, h);
++}
++
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++
++    const CGRect b = self.bounds;
++    _glass.frame   = b;
++    self.layer.shadowPath =
++        [UIBezierPath bezierPathWithRoundedRect:b cornerRadius:22].CGPath;
++
++    _icon.frame = CGRectMake(kOrcaNoticePad, kOrcaNoticePad, kOrcaNoticeIcon, kOrcaNoticeIcon);
++
++    const CGFloat close_w = _close.hidden ? 0 : kOrcaNoticeButton;
++    _close.frame = CGRectMake(b.size.width - kOrcaNoticePad - kOrcaNoticeButton,
++                              kOrcaNoticePad - 4, kOrcaNoticeButton, kOrcaNoticeButton);
++
++    const CGFloat text_x = kOrcaNoticePad + kOrcaNoticeIcon + kOrcaNoticeGap;
++    const CGFloat text_w = b.size.width - text_x - kOrcaNoticePad -
++                           (close_w > 0 ? close_w + kOrcaNoticeGap : 0);
++    const CGSize  fits   = [_label sizeThatFits:CGSizeMake(MAX(40.0, text_w), CGFLOAT_MAX)];
++    _label.frame = CGRectMake(text_x, kOrcaNoticePad, MAX(40.0, text_w), fits.height);
++
++    CGFloat y = CGRectGetMaxY(_label.frame);
++
++    if (_hasBar) {
++        y += 8;
++        _bar.frame = CGRectMake(text_x, y, MAX(40.0, text_w), 4);
++        y = CGRectGetMaxY(_bar.frame);
++    }
++
++    if (_hasAction) {
++        y += kOrcaNoticeGap;
++        _action.frame = CGRectMake(text_x - 8, y, MAX(80.0, text_w), kOrcaNoticeButton);
++        _action.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
++    }
++}
++
++- (void)actionTapped:(id)sender
++{
++    (void) sender;
++    if (self.onAction != nil)
++        self.onAction();
++}
++
++- (void)closeTapped:(id)sender
++{
++    (void) sender;
++    if (self.onClose != nil)
++        self.onClose();
++}
++
++- (void)bodyTapped:(UITapGestureRecognizer *)g
++{
++    (void) g;
++    // Only when there is somewhere to go: a tap that does nothing is worse
++    // than a banner that is not tappable, because it reads as a broken one.
++    if (_hasAction && self.onAction != nil)
++        self.onAction();
++}
++
++@end
++
++// ---------------------------------------------------------------------------
++// The stack
++// ---------------------------------------------------------------------------
++
++@interface OrcaNoticeHost : UIView
++@end
++
++// The host takes no touches of its own: it spans the whole window, and
++// anything that is not one of the banners has to fall through to Orca.
++@implementation OrcaNoticeHost
++
++- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
++{
++    UIView *const hit = [super hitTest:point withEvent:event];
++    return hit == self ? nil : hit;
++}
++
++// Bottom trailing, stacked upwards, newest nearest the corner.
++//
++// NOT THE TOP, WHICH IS WHERE A SYSTEM NOTIFICATION GOES: the floating tab bar
++// (0397) is centred at the top of this window, and the sidebar's tools are up
++// there too. The bottom trailing corner is empty on all five pages, it is
++// where Orca has always drawn these, and it is out of the way of the plate.
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++
++    const UIEdgeInsets safe = self.safeAreaInsets;
++    const CGFloat width = MIN(kOrcaNoticeWidth,
++                              self.bounds.size.width - safe.left - safe.right -
++                                  2 * kOrcaNoticeMargin);
++    CGFloat y = self.bounds.size.height - safe.bottom - kOrcaNoticeMargin;
++
++    // Reverse order: the last subview is the newest, and the newest sits at
++    // the bottom of the stack where the eye is.
++    for (UIView *v in [[self subviews] reverseObjectEnumerator]) {
++        if (![v isKindOfClass:[OrcaNoticeView class]])
++            continue;
++        OrcaNoticeView *const banner = (OrcaNoticeView *) v;
++        const CGFloat h = [banner heightForWidth:width];
++        y -= h;
++        const CGRect target = CGRectMake(self.bounds.size.width - safe.right -
++                                             kOrcaNoticeMargin - width,
++                                         y, width, h);
++        if (!CGRectEqualToRect(banner.frame, target))
++            banner.frame = target;
++        y -= kOrcaNoticeGap;
++    }
++}
++
++@end
++
++namespace Slic3r {
++namespace GUI {
++
++// Everything the stack owns, which is deliberately not much: the manager on
++// the C++ side is the model, and this is the view.
++static OrcaNoticeHost                                  *gs_host    = nil;
++static NSMutableDictionary<NSNumber *, OrcaNoticeView *> *gs_banners = nil;
++static NSTimer                                         *gs_ticker  = nil;
++
++static void orca_ios_notice_tick(void);
++
++// Installed into the main window's root view, once, and re-parented if that
++// view is ever replaced - which it is, exactly once, when the native tab bar
++// takes the window (0397).
++static OrcaNoticeHost *orca_ios_notice_host()
++{
++    UIWindow *const window = orca_ios_main_window();
++    if (window == nil || window.rootViewController == nil)
++        return nil;
++    UIView *const root = window.rootViewController.view;
++    if (root == nil)
++        return nil;
++
++    if (gs_host != nil && gs_host.superview == root)
++        return gs_host;
++
++    if (gs_host == nil) {
++        gs_host = [[OrcaNoticeHost alloc] initWithFrame:root.bounds];
++        gs_host.backgroundColor        = [UIColor clearColor];
++        gs_host.autoresizingMask       = UIViewAutoresizingFlexibleWidth |
++                                         UIViewAutoresizingFlexibleHeight;
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-notices: host installed under "
++                                 << [NSStringFromClass([window.rootViewController class]) UTF8String];
++    }
++
++    [gs_host removeFromSuperview];
++    gs_host.frame = root.bounds;
++    [root addSubview:gs_host];
++    [root bringSubviewToFront:gs_host];
++
++    return gs_host;
++}
++
++// A quarter-second heartbeat, and the reason there is one at all:
++//
++// Orca counts a notification's life down inside update_notifications(), which
++// only runs while the 3D canvas is drawing frames. Leave Prepare and the
++// countdown stops. That was invisible when the notification was drawn in the
++// canvas - it stopped being on screen at the same moment - and it is very
++// visible now that the banner is in the window: a "slicing finished" banner
++// would sit in the corner of the Device page for as long as the user stayed
++// there. So each banner also counts itself down here, and takes itself away
++// when its time is up, telling Orca as it goes.
++static void orca_ios_notice_ticker_update()
++{
++    const bool want = gs_banners != nil && [gs_banners count] > 0;
++
++    if (want && gs_ticker == nil) {
++        // Built unscheduled and added in the common modes, not scheduled in the
++        // default one: a scroll of the home page's gallery puts the run loop in
++        // tracking mode, and a timer that only runs in the default mode stops
++        // every banner on screen for as long as the finger is down.
++        gs_ticker = [[NSTimer timerWithTimeInterval:0.25
++                                            repeats:YES
++                                              block:^(NSTimer *t) {
++            (void) t;
++            orca_ios_notice_tick();
++        }] retain];
++        [[NSRunLoop mainRunLoop] addTimer:gs_ticker forMode:NSRunLoopCommonModes];
++    } else if (!want && gs_ticker != nil) {
++        [gs_ticker invalidate];
++        [gs_ticker release];
++        gs_ticker = nil;
++    }
++}
++
++static void orca_ios_notice_remove(uintptr_t key, bool tell_orca)
++{
++    if (gs_banners == nil)
++        return;
++    NSNumber *const k = [NSNumber numberWithUnsignedLongLong:(unsigned long long) key];
++    OrcaNoticeView *const banner = [gs_banners objectForKey:k];
++    if (banner == nil)
++        return;
++
++    void (^closer)(void) = tell_orca ? banner.onClose : nil;
++
++    [gs_banners removeObjectForKey:k];
++    [UIView animateWithDuration:0.22
++                     animations:^{
++                         banner.alpha     = 0.0f;
++                         banner.transform = CGAffineTransformMakeTranslation(
++                             banner.bounds.size.width * 0.35f, 0);
++                     }
++                     completion:^(BOOL finished) {
++                         (void) finished;
++                         [banner removeFromSuperview];
++                         [gs_host setNeedsLayout];
++                     }];
++
++    [gs_host setNeedsLayout];
++    orca_ios_notice_ticker_update();
++
++    if (closer != nil)
++        closer();
++}
++
++static void orca_ios_notice_tick(void)
++{
++    if (gs_banners == nil || [gs_banners count] == 0)
++        return;
++
++    // Paused while an alert is up. A banner that timed out behind a modal
++    // alert was never read, and the whole point of moving these out of the
++    // canvas was that they stop disappearing unseen.
++    if (orca_ios_alert_is_up())
++        return;
++
++    NSArray<NSNumber *> *const keys = [gs_banners allKeys];
++    for (NSNumber *const k in keys) {
++        OrcaNoticeView *const banner = [gs_banners objectForKey:k];
++        if (banner == nil || banner.remaining <= 0.0)
++            continue;                  // no fade-out asked for: it stays
++        banner.remaining -= 0.25;
++        if (banner.remaining <= 0.0)
++            orca_ios_notice_remove((uintptr_t) [k unsignedLongLongValue], true);
++    }
++}
++
++void orca_ios_notices_sync(const std::vector<IOSNotice> &notices)
++{
++    OrcaNoticeHost *const host = orca_ios_notice_host();
++    if (host == nil)
++        return;
++
++    if (gs_banners == nil)
++        gs_banners = [[NSMutableDictionary alloc] init];
++
++    // What should be gone.
++    NSMutableSet<NSNumber *> *const wanted = [NSMutableSet set];
++    for (const IOSNotice &n : notices)
++        [wanted addObject:[NSNumber numberWithUnsignedLongLong:(unsigned long long) n.key]];
++
++    for (NSNumber *const k in [gs_banners allKeys]) {
++        if (![wanted containsObject:k])
++            orca_ios_notice_remove((uintptr_t) [k unsignedLongLongValue], false);
++    }
++
++    // What should be there.
++    for (const IOSNotice &n : notices) {
++        NSNumber *const k = [NSNumber numberWithUnsignedLongLong:(unsigned long long) n.key];
++        OrcaNoticeView *banner = [gs_banners objectForKey:k];
++        const bool         fresh  = banner == nil;
++
++        if (fresh) {
++            banner     = [[[OrcaNoticeView alloc] initWithFrame:CGRectZero] autorelease];
++            banner.key = n.key;
++            [host addSubview:banner];
++            [gs_banners setObject:banner forKey:k];
++        }
++
++        // The blocks are replaced on every sync: the notification's callback
++        // is looked up by key on the C++ side, but the closure that does the
++        // looking up is built fresh each time and the old one must not be the
++        // one that runs.
++        const uintptr_t key = n.key;
++        std::function<void()> on_action = n.on_action;
++        std::function<void()> on_close  = n.on_close;
++
++        // Assigned in two statements rather than through a ternary: a block
++        // literal and nil have no common type for the compiler to deduce.
++        banner.onAction = nil;
++        if (on_action)
++            banner.onAction = ^{ on_action(); };
++        banner.onClose  = ^{
++            // Off the screen first and told to Orca second, so that a close
++            // that Orca answers with "and here is another one" cannot race the
++            // removal of the banner it replaces.
++            orca_ios_notice_remove(key, false);
++            if (on_close)
++                on_close();
++        };
++
++        [banner applyKind:(int) n.kind
++                     text:wxCFStringRef(n.text).AsNSString()
++              actionTitle:n.action_label.IsEmpty() ? nil
++                                                   : wxCFStringRef(n.action_label).AsNSString()
++                 progress:n.progress
++                 closable:n.closable ? YES : NO];
++
++        // The countdown is only ever (re)started for a banner that is new or
++        // whose text changed: an update that says the same thing must not keep
++        // a banner alive for ever.
++        if (fresh)
++            banner.remaining = n.duration > 0 ? (double) n.duration : 0.0;
++
++        if (fresh) {
++            banner.alpha     = 0.0f;
++            banner.transform = CGAffineTransformMakeTranslation(kOrcaNoticeWidth * 0.35f, 0);
++            [host layoutIfNeeded];
++            [UIView animateWithDuration:0.32
++                                  delay:0
++                 usingSpringWithDamping:0.86
++                  initialSpringVelocity:0.4
++                                options:UIViewAnimationOptionAllowUserInteraction
++                             animations:^{
++                                 banner.alpha     = 1.0f;
++                                 banner.transform = CGAffineTransformIdentity;
++                             }
++                             completion:nil];
++        }
++    }
++
++    [host setNeedsLayout];
++    orca_ios_notice_ticker_update();
++}
++
++void orca_ios_notices_clear()
++{
++    if (gs_banners == nil)
++        return;
++    for (NSNumber *const k in [gs_banners allKeys])
++        orca_ios_notice_remove((uintptr_t) [k unsignedLongLongValue], false);
++    orca_ios_notice_ticker_update();
++}
++
++} // namespace GUI
++} // namespace Slic3r

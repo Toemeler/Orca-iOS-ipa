@@ -1,0 +1,538 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -732,6 +732,7 @@
+             GUI/ios_native_ui.hpp
+             GUI/ios_native_ui.mm
+             GUI/ios_native_notifications.mm
++            GUI/ios_native_progress.mm
+         )
+ endif ()
+ 
+diff --git a/src/slic3r/GUI/Widgets/ProgressDialog.cpp b/src/slic3r/GUI/Widgets/ProgressDialog.cpp
+index 0ace737d8..3c01cdf3c 100644
+--- a/src/slic3r/GUI/Widgets/ProgressDialog.cpp
++++ b/src/slic3r/GUI/Widgets/ProgressDialog.cpp
+@@ -22,6 +22,8 @@
+ #include "wx/evtloop.h"
+ #include "Label.hpp"
+ 
++#include <vector>
++
+ // ----------------------------------------------------------------------------
+ // constants
+ // ----------------------------------------------------------------------------
+@@ -524,6 +526,12 @@ bool ProgressDialog::Update(int value, const wxString &newmsg, bool *skip)
+ 
+     UpdateMessage(newmsg);
+ 
++#ifdef __WXOSX_IPHONE__
++    if (m_ios_token != 0)
++        orca_ios_progress_update(m_ios_token, GetMessage(),
++                                 m_maximum > 0 ? float(value) / float(m_maximum) : -1.0f);
++#endif
++
+     if ((m_elapsed || m_remaining || m_estimated) && (value != 0)) {
+         unsigned long elapsed;
+         unsigned long display_remaining;
+@@ -567,7 +575,33 @@ bool ProgressDialog::Update(int value, const wxString &newmsg, bool *skip)
+             // NOTE: this call results in a new event loop being created
+             //       and to a call to ProcessPendingEvents() (which may generate
+             //       unwanted re-entrancies).
++#ifdef __WXOSX_IPHONE__
++            // A dialog without wxPD_AUTO_HIDE stays up with an OK button once
++            // the job is done, and waits. Here the sheet goes and an alert
++            // takes its place: the same "it finished, acknowledge it", in the
++            // shape this platform makes it, and blocking in the same way -
++            // orca_ios_alert_run() runs the nested modal loop ShowModal()
++            // would have.
++            if (m_ios_token != 0) {
++                orca_ios_progress_close(m_ios_token);
++                m_ios_token = 0;
++            }
++            {
++                std::vector<Slic3r::GUI::IOSAlertButton> rows;
++                Slic3r::GUI::IOSAlertButton ok;
++                ok.label     = wxGetTranslation("OK");
++                ok.id        = wxID_OK;
++                ok.preferred = true;
++                ok.cancel    = true;
++                rows.push_back(ok);
++
++                int done = wxID_OK;
++                Slic3r::GUI::orca_ios_alert_run(this, GetTitle(), GetMessage(), rows, nullptr,
++                                                &done);
++            }
++#else
+             (void) ShowModal();
++#endif
+         } else // auto hide
+         {
+             // reenable other windows before hiding this one because otherwise
+@@ -599,6 +633,13 @@ bool ProgressDialog::Pulse(const wxString &newmsg, bool *skip)
+ 
+     UpdateMessage(newmsg);
+ 
++#ifdef __WXOSX_IPHONE__
++    // -1 is the spinner: a pulse has no percentage to show and a bar sweeping
++    // back and forth is a Windows idiom this platform does not have.
++    if (m_ios_token != 0)
++        orca_ios_progress_update(m_ios_token, GetMessage(), -1.0f);
++#endif
++
+     if (m_elapsed || m_remaining || m_estimated) {
+         unsigned long elapsed = wxGetCurrentTime() - m_timeStart;
+ 
+@@ -659,9 +700,48 @@ bool ProgressDialog::Show(bool show)
+     // Windows wouldn't give the focus back to the window which had
+     // been previously focused because it would still be disabled
+     if (!show) ReenableOtherWindows();
++
++#ifdef __WXOSX_IPHONE__
++    // THE WINDOW IS NEVER SHOWN ON THIS PORT. The sheet is
++    // (ios_native_progress.mm), and everything else about this dialog is left
++    // exactly as it was: the state machine, the wxGauge it keeps, the labels
++    // Update() writes into. That matters, because the callers read those back
++    // - GetValue(), GetMessage(), WasCancelled() - and a presentation that
++    // took the controls away would have taken the answers with them.
++    if (show) {
++        if (m_ios_token == 0)
++            m_ios_token = orca_ios_progress_open(
++                GetTitle(), m_msg != nullptr ? m_msg->GetLabel() : wxString(),
++                HasPDFlag(wxPD_CAN_ABORT), [this]() { this->orca_ios_cancel(); });
++    } else if (m_ios_token != 0) {
++        orca_ios_progress_close(m_ios_token);
++        m_ios_token = 0;
++    }
++    return wxDialog::Show(false);
++#else
+     return wxDialog::Show(show);
++#endif
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++void ProgressDialog::orca_ios_cancel()
++{
++    // Deliberately the body of OnCancel(wxCommandEvent&) and not a call to it:
++    // that overload takes an event it would have to invent, and its Finished
++    // branch skips the event on to the default handler, which is the one thing
++    // a sheet's button has no way to do.
++    if (m_state == Finished)
++        return;
++
++    m_state = Canceled;
++    DisableAbort();
++    DisableSkip();
++    OnCancel();
++
++    m_timeStop = wxGetCurrentTime();
++}
++#endif
++
+ int ProgressDialog::GetValue() const
+ {
+     wxCHECK_MSG(m_gauge, -1, "dialog should be fully created");
+@@ -786,6 +866,16 @@ ProgressDialog::~ProgressDialog()
+     // normally this should have been already done, but just in case
+     ReenableOtherWindows();
+ 
++#ifdef __WXOSX_IPHONE__
++    // The sheet is a UIViewController presented over the whole screen; if the
++    // dialog goes without closing it the application is left behind a dimmed
++    // backdrop it can never dismiss.
++    if (m_ios_token != 0) {
++        orca_ios_progress_close(m_ios_token);
++        m_ios_token = 0;
++    }
++#endif
++
+     if (m_tempEventLoop) {
+         // If another event loop has been installed as active during the life
+         // time of this object, we shouldn't deactivate it, but we also can't
+diff --git a/src/slic3r/GUI/Widgets/ProgressDialog.hpp b/src/slic3r/GUI/Widgets/ProgressDialog.hpp
+index 597ec7f80..4a39e43d0 100644
+--- a/src/slic3r/GUI/Widgets/ProgressDialog.hpp
++++ b/src/slic3r/GUI/Widgets/ProgressDialog.hpp
+@@ -7,6 +7,9 @@
+ #include "wx/simplebook.h"
+ #include "Button.hpp"
+ #include "../wxExtensions.hpp"
++// The sheet this dialog is presented as on iPadOS. Compiled to nothing
++// anywhere else - the header is guarded on __WXOSX_IPHONE__.
++#include "../ios_native_ui.hpp"
+ 
+ class WXDLLIMPEXP_FWD_CORE wxButton;
+ class WXDLLIMPEXP_FWD_CORE wxEventLoop;
+@@ -183,6 +186,17 @@ private:
+     void DisableSkip() { EnableSkip(false); }
+     void DisableAbort() { EnableAbort(false); }
+ 
++#ifdef __WXOSX_IPHONE__
++    // The sheet standing in for this window, 0 when there is none. Its life is
++    // exactly Show(true) … Show(false)/destruction, so the dialog remains the
++    // owner of the whole interaction and nothing here has to be told twice.
++    uintptr_t m_ios_token { 0 };
++    // What the sheet's Cancel button does, which is precisely what the wx
++    // Cancel button's handler does - the state, the buttons, the stop time and
++    // the virtual OnCancel() a subclass may have overridden.
++    void orca_ios_cancel();
++#endif
++
+     // the widget displaying current status (may be NULL)
+     wxGauge *m_gauge;
+     // the message displayed
+diff --git a/src/slic3r/GUI/ios_native_progress.mm b/src/slic3r/GUI/ios_native_progress.mm
+new file mode 100644
+index 000000000..9b1e43c14
+--- /dev/null
++++ b/src/slic3r/GUI/ios_native_progress.mm
+@@ -0,0 +1,349 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// The progress window, as the sheet this platform puts one in.
++//
++// Orca's ProgressDialog (Widgets/ProgressDialog.cpp) is a 320 pt wxDialog with
++// a wxGauge, a wxSimplebook that swaps between a one-line and a two-line
++// layout, elapsed/estimated/remaining labels and a Cancel button, and it is put
++// up for the long jobs: loading a project, repairing a mesh, uploading to the
++// printer, downloading a plug-in, exporting. On this port it arrives as a
++// desktop window in the middle of the screen - it is the same shape it has on
++// Windows, down to the 24 pt buttons.
++//
++// Here it is a card: the Liquid Glass material, a headline, the message, a
++// UIProgressView or a spinner, and one Cancel button when the job can be
++// cancelled at all. It is presented over the whole screen with the dimmed
++// backdrop UIKit draws for a modal, because a progress dialog IS modal - Orca
++// disables every other window for the length of one - and it blocks touches
++// for the same reason.
++//
++// WHAT IT DELIBERATELY DOES NOT DO: it does not run an event loop of its own.
++// ProgressDialog is driven by the job that owns it calling Update() from the
++// GUI thread between chunks of work, exactly as it always was; this only draws
++// what those calls say and reports the Cancel button back through
++// orca_ios_progress_cancelled(), which is the same question WasCancelled()
++// already asks.
++
++#import <UIKit/UIKit.h>
++
++#include "libslic3r/libslic3r.h"
++
++#include <wx/osx/core/cfstring.h>
++#include <wx/thread.h>
++#include <wx/translation.h>
++
++#include <boost/log/trivial.hpp>
++
++#include <map>
++
++#include "ios_native_ui.hpp"
++
++namespace Slic3r {
++namespace GUI {
++// ios_native_ui.mm
++UIViewController *orca_ios_top_presenter();
++} // namespace GUI
++} // namespace Slic3r
++
++// The card, and every measurement in it in points.
++static const CGFloat kOrcaProgressWidth  = 380;
++static const CGFloat kOrcaProgressPad    = 24;
++static const CGFloat kOrcaProgressGap    = 14;
++
++@interface OrcaProgressController : UIViewController
++@property (nonatomic, assign) BOOL      cancelled;
++@property (nonatomic, assign) BOOL      cancellable;
++@property (nonatomic, copy)   void (^onCancel)(void);
++- (void)setHeadline:(NSString *)headline
++            message:(NSString *)message
++           fraction:(float)fraction;
++@end
++
++@implementation OrcaProgressController {
++    UIView                    *_dim;
++    UIVisualEffectView        *_card;
++    UILabel                   *_headline;
++    UILabel                   *_message;
++    UIProgressView            *_bar;
++    UIActivityIndicatorView   *_spinner;
++    UIButton                  *_cancel;
++    BOOL                       _determinate;
++}
++
++- (void)loadView
++{
++    UIView *const root  = [[[UIView alloc] initWithFrame:CGRectZero] autorelease];
++    root.backgroundColor = [UIColor clearColor];
++    self.view            = root;
++
++    // The dim. UIModalPresentationOverFullScreen draws none of its own, and a
++    // progress sheet without one reads as a floating box rather than as
++    // something the application is waiting on.
++    _dim                 = [[UIView alloc] initWithFrame:CGRectZero];
++    _dim.backgroundColor = [UIColor colorWithWhite:0 alpha:0.32];
++    // Takes every touch and does nothing with it, which is the whole point:
++    // ProgressDialog disables every other window on the desktop for exactly
++    // as long as it is up.
++    _dim.userInteractionEnabled = YES;
++    [root addSubview:_dim];
++
++    UIVisualEffect *material = nil;
++#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
++    if (@available(iOS 26.0, *))
++        material = [[[UIGlassEffect alloc] init] autorelease];
++#endif
++    if (material == nil)
++        material = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThickMaterial];
++
++    _card                    = [[UIVisualEffectView alloc] initWithEffect:material];
++    _card.layer.cornerRadius = 26;
++    _card.layer.cornerCurve  = kCACornerCurveContinuous;
++    _card.clipsToBounds      = YES;
++    [root addSubview:_card];
++
++    _headline                = [[UILabel alloc] initWithFrame:CGRectZero];
++    _headline.font           = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
++    _headline.adjustsFontForContentSizeCategory = YES;
++    _headline.textColor      = [UIColor labelColor];
++    _headline.textAlignment  = NSTextAlignmentCenter;
++    _headline.numberOfLines  = 2;
++    [_card.contentView addSubview:_headline];
++
++    _message                 = [[UILabel alloc] initWithFrame:CGRectZero];
++    _message.font            = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
++    _message.adjustsFontForContentSizeCategory = YES;
++    _message.textColor       = [UIColor secondaryLabelColor];
++    _message.textAlignment   = NSTextAlignmentCenter;
++    _message.numberOfLines   = 3;
++    [_card.contentView addSubview:_message];
++
++    _bar = [[UIProgressView alloc] initWithProgressViewStyle:UIProgressViewStyleDefault];
++    [_card.contentView addSubview:_bar];
++
++    _spinner = [[UIActivityIndicatorView alloc]
++                   initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
++    _spinner.hidesWhenStopped = YES;
++    [_card.contentView addSubview:_spinner];
++
++    _cancel = [[UIButton buttonWithType:UIButtonTypeSystem] retain];
++    [_cancel setTitle:wxCFStringRef(wxGetTranslation("Cancel")).AsNSString()
++             forState:UIControlStateNormal];
++    _cancel.titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
++    _cancel.titleLabel.adjustsFontForContentSizeCategory = YES;
++    _cancel.pointerInteractionEnabled = YES;
++    [_cancel addTarget:self action:@selector(cancelTapped:)
++      forControlEvents:UIControlEventTouchUpInside];
++    [_card.contentView addSubview:_cancel];
++}
++
++- (void)dealloc
++{
++    [_cancel release];
++    [_spinner release];
++    [_bar release];
++    [_message release];
++    [_headline release];
++    [_card release];
++    [_dim release];
++    [_onCancel release];
++    [super dealloc];
++}
++
++- (void)setHeadline:(NSString *)headline
++            message:(NSString *)message
++           fraction:(float)fraction
++{
++    if (headline != nil)
++        _headline.text = headline;
++    if (message != nil)
++        _message.text = message;
++
++    _determinate = fraction >= 0.0f;
++    if (_determinate) {
++        _bar.hidden = NO;
++        [_bar setProgress:fraction animated:YES];
++        [_spinner stopAnimating];
++    } else {
++        _bar.hidden = YES;
++        [_spinner startAnimating];
++    }
++
++    _cancel.hidden = !self.cancellable || self.cancelled;
++    [self.view setNeedsLayout];
++}
++
++- (void)viewDidLayoutSubviews
++{
++    [super viewDidLayoutSubviews];
++
++    const CGRect b = self.view.bounds;
++    _dim.frame     = b;
++
++    const CGFloat width = MIN(kOrcaProgressWidth, b.size.width - 2 * kOrcaProgressPad);
++    const CGFloat inner = width - 2 * kOrcaProgressPad;
++
++    CGFloat y = kOrcaProgressPad;
++
++    const CGSize head_fits = [_headline sizeThatFits:CGSizeMake(inner, CGFLOAT_MAX)];
++    _headline.frame = CGRectMake(kOrcaProgressPad, y, inner,
++                                 _headline.text.length > 0 ? head_fits.height : 0);
++    if (_headline.text.length > 0)
++        y += head_fits.height + 6;
++
++    const CGSize msg_fits = [_message sizeThatFits:CGSizeMake(inner, CGFLOAT_MAX)];
++    _message.frame = CGRectMake(kOrcaProgressPad, y, inner,
++                                _message.text.length > 0 ? msg_fits.height : 0);
++    if (_message.text.length > 0)
++        y += msg_fits.height;
++
++    y += kOrcaProgressGap;
++
++    if (_determinate) {
++        _bar.frame = CGRectMake(kOrcaProgressPad, y, inner, 4);
++        y += 4;
++    } else {
++        _spinner.frame = CGRectMake((width - 30) / 2, y, 30, 30);
++        y += 30;
++    }
++
++    if (!_cancel.hidden) {
++        y += kOrcaProgressGap;
++        _cancel.frame = CGRectMake(kOrcaProgressPad, y, inner, 40);
++        y += 40;
++    }
++
++    y += kOrcaProgressPad;
++
++    _card.frame = CGRectMake((b.size.width - width) / 2, (b.size.height - y) / 2, width, y);
++}
++
++- (void)cancelTapped:(id)sender
++{
++    (void) sender;
++    // Once, and the button goes as soon as it has been pressed: the job checks
++    // for the cancel between chunks of work, so there is a visible gap between
++    // asking and stopping, and a button that still looks pressable in that gap
++    // reads as one that did nothing.
++    if (self.cancelled)
++        return;
++    self.cancelled = YES;
++    _cancel.hidden = YES;
++    // "Canceling" and not "Cancelling": the first is the msgid Orca's own
++    // catalogue carries (it is what the print-host upload uses), and a string
++    // this file invents would come back untranslated.
++    _message.text  = wxCFStringRef(wxGetTranslation("Canceling")).AsNSString();
++    [self.view setNeedsLayout];
++
++    if (self.onCancel != nil)
++        self.onCancel();
++}
++
++@end
++
++namespace Slic3r {
++namespace GUI {
++
++namespace {
++struct OrcaProgressSheet
++{
++    OrcaProgressController *controller = nil;   // retained
++    bool                    closing    = false;
++};
++} // namespace
++
++static std::map<uintptr_t, OrcaProgressSheet> gs_progress;
++static uintptr_t                              gs_progress_next = 1;
++
++uintptr_t orca_ios_progress_open(const wxString &title, const wxString &message,
++                                 bool cancellable, std::function<void()> on_cancel)
++{
++    if (!wxThread::IsMain())
++        return 0;
++
++    UIViewController *const presenter = orca_ios_top_presenter();
++    if (presenter == nil || presenter.view.window == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-progress: no controller to present from";
++        return 0;
++    }
++
++    OrcaProgressController *const vc = [[OrcaProgressController alloc] init];
++    vc.modalPresentationStyle = UIModalPresentationOverFullScreen;
++    // No swipe-to-dismiss and no "tap outside": a job is either cancellable
++    // through its own button or it is not cancellable at all, and a sheet that
++    // could be swiped away while the work carried on would be a lie.
++    vc.modalInPresentation = YES;
++    vc.cancellable         = cancellable ? YES : NO;
++
++    std::function<void()> cancel_cb = on_cancel;
++    if (cancellable && cancel_cb) {
++        vc.onCancel = ^{
++            cancel_cb();
++        };
++    }
++
++    [vc setHeadline:wxCFStringRef(title).AsNSString()
++            message:wxCFStringRef(message).AsNSString()
++           fraction:-1.0f];
++
++    @try {
++        // Not animated: a progress sheet that fades in over a third of a second
++        // is a third of a second in which the application looks stopped and
++        // nothing says why.
++        [presenter presentViewController:vc animated:NO completion:nil];
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-progress: presentation THREW "
++                                 << [[e name] UTF8String] << ": " << [[e reason] UTF8String];
++        [vc release];
++        return 0;
++    }
++
++    const uintptr_t token = gs_progress_next++;
++    OrcaProgressSheet sheet;
++    sheet.controller  = vc;                 // the +1 from -alloc is this reference
++    gs_progress[token] = sheet;
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-progress: [" << title.utf8_string() << "] open";
++    return token;
++}
++
++void orca_ios_progress_update(uintptr_t token, const wxString &message, float fraction)
++{
++    const auto it = gs_progress.find(token);
++    if (it == gs_progress.end() || it->second.controller == nil)
++        return;
++
++    [it->second.controller setHeadline:nil
++                               message:message.IsEmpty() ? nil
++                                                         : wxCFStringRef(message).AsNSString()
++                              fraction:fraction];
++}
++
++void orca_ios_progress_close(uintptr_t token)
++{
++    const auto it = gs_progress.find(token);
++    if (it == gs_progress.end())
++        return;
++
++    OrcaProgressController *const vc = it->second.controller;
++    gs_progress.erase(it);
++    if (vc == nil)
++        return;
++
++    if (vc.presentingViewController != nil)
++        [vc dismissViewControllerAnimated:NO completion:nil];
++    [vc release];
++}
++
++bool orca_ios_progress_cancelled(uintptr_t token)
++{
++    const auto it = gs_progress.find(token);
++    if (it == gs_progress.end() || it->second.controller == nil)
++        return false;
++    return it->second.controller.cancelled != NO;
++}
++
++} // namespace GUI
++} // namespace Slic3r

@@ -1,0 +1,597 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -733,6 +733,7 @@
+             GUI/ios_native_ui.mm
+             GUI/ios_native_notifications.mm
+             GUI/ios_native_progress.mm
++            GUI/ios_native_picker.mm
+         )
+ endif ()
+ 
+diff --git a/src/slic3r/GUI/Widgets/DropDown.cpp b/src/slic3r/GUI/Widgets/DropDown.cpp
+index 973113d0a..7f760903f 100644
+--- a/src/slic3r/GUI/Widgets/DropDown.cpp
++++ b/src/slic3r/GUI/Widgets/DropDown.cpp
+@@ -1,4 +1,7 @@
+ #include "DropDown.hpp"
++// The UITableView this list is presented as on iPadOS. Compiled to nothing
++// anywhere else - the header is guarded on __WXOSX_IPHONE__.
++#include "../ios_native_ui.hpp"
+ #include "Label.hpp"
+ 
+ #include <cstdio>
+@@ -167,8 +170,89 @@ bool DropDown::HasDismissLongTime()
+         (now - dismissTime).total_milliseconds() >= 20;
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++
++bool DropDown::orca_ios_popup()
++{
++    // EVERY ITEM, IN SECTIONS. The wx list shows only the first item of each
++    // group and opens a second window for the rest (see hoverIndex()); a
++    // grouped table has sections and needs no second level, so the whole list
++    // is offered at once and a group becomes a header.
++    std::vector<Slic3r::GUI::IOSPickerItem> rows;
++    rows.reserve(items.size());
++
++    for (size_t i = 0; i < items.size(); ++i) {
++        const Item &item = items[i];
++        // A separator has no value to choose; it is a heading in the wx list
++        // and it is a section header here, so it is not offered as a row.
++        if (item.style & DD_ITEM_STYLE_SPLIT_ITEM)
++            continue;
++        Slic3r::GUI::IOSPickerItem row;
++        row.text    = item.text;
++        row.group   = item.group_label.IsEmpty() ? item.group_key : item.group_label;
++        row.index   = int(i);
++        row.enabled = (item.style & DD_ITEM_STYLE_DISABLED) == 0;
++        rows.push_back(row);
++    }
++
++    if (rows.empty())
++        return false;
++
++    // The control the list belongs to, which is the ComboBox or the TextInput
++    // this drop-down was created against - never the drop-down itself, which
++    // is a window of its own and is not on screen.
++    wxWindow *const anchor = GetParent();
++
++    DropDown *const self = this;
++    return Slic3r::GUI::orca_ios_picker_present(
++        this, anchor, wxString(), rows, selection,
++        [self](int index) { self->orca_ios_choose(index); },
++        [self]() { self->orca_ios_dismissed(); });
++}
++
++void DropDown::orca_ios_choose(int index)
++{
++    if (index < 0 || size_t(index) >= items.size())
++        return;
++    if (items[index].style & DD_ITEM_STYLE_DISABLED)
++        return;
++
++    // The same event sendDropDownEvent() sends, with the same payload: the
++    // index into `items` and its text. ComboBox reads GetInt() straight back
++    // as the selection, so nothing above this has to know where it came from.
++    wxCommandEvent event(wxEVT_COMBOBOX, GetId());
++    event.SetEventObject(this);
++    event.SetInt(index);
++    event.SetString(items[index].text);
++    GetEventHandler()->ProcessEvent(event);
++
++    orca_ios_dismissed();
++}
++
++void DropDown::orca_ios_dismissed()
++{
++    // What OnDismiss() does for a wx popup that has closed. The timestamp
++    // matters: ComboBox asks HasDismissLongTime() before opening the list, so
++    // that the tap which closed one does not immediately open it again.
++    dismissTime = boost::posix_time::microsec_clock::universal_time();
++    hover_item  = -1;
++    wxCommandEvent e(EVT_DISMISS);
++    GetEventHandler()->ProcessEvent(e);
++}
++
++#endif // __WXOSX_IPHONE__
++
+ void DropDown::Popup(wxWindow *focus)
+ {
++#ifdef __WXOSX_IPHONE__
++    // The sub-drop-down never opens on this port: the native list carries
++    // every group inline, so there is no second level to open, and letting one
++    // through would put a second picker over the first.
++    if (mainDropDown != nullptr)
++        return;
++    if (orca_ios_popup())
++        return;
++#endif
+ #ifdef __WXGTK__
+     if (!mainDropDown && m_widget) {
+         // Data-view cell editors can receive focus before wxGTK infers a
+@@ -812,6 +896,12 @@ void DropDown::sendDropDownEvent()
+ 
+ void DropDown::Dismiss()
+ {
++#ifdef __WXOSX_IPHONE__
++    // The native list, if this drop-down is showing one. Matched on the owner,
++    // so a drop-down closing itself cannot take down a list that something
++    // else has since opened.
++    Slic3r::GUI::orca_ios_picker_dismiss(this);
++#endif
+     if (subDropDown && subDropDown->IsShown())
+         return;
+     PopupWindow::Dismiss();
+diff --git a/src/slic3r/GUI/Widgets/DropDown.hpp b/src/slic3r/GUI/Widgets/DropDown.hpp
+index 09041e3dc..f7a1d0f81 100644
+--- a/src/slic3r/GUI/Widgets/DropDown.hpp
++++ b/src/slic3r/GUI/Widgets/DropDown.hpp
+@@ -107,6 +107,25 @@ public:
+ 
+     void Popup(wxWindow *focus = nullptr) override;
+ 
++#ifdef __WXOSX_IPHONE__
++    // THE LIST, AS A UITableView IN A POPOVER (ios_native_picker.mm).
++    //
++    // Everything this class paints itself - the rows, the hover highlight, the
++    // check mark, the scroll - is desktop furniture, and the hover state is the
++    // only feedback the control has, which on a touch screen is none. The wx
++    // window is never shown on this port; the native list is presented instead
++    // and reports the chosen row back through orca_ios_choose(), which sends
++    // exactly the wxEVT_COMBOBOX the wx path would have sent.
++    //
++    // Returns false if the list could not be presented, and Popup() then falls
++    // back to the wx window it always was.
++    bool orca_ios_popup();
++    // The row the native list settled on, by index into `items`.
++    void orca_ios_choose(int index);
++    // Nothing was chosen: tell whoever is listening that the list has closed.
++    void orca_ios_dismissed();
++#endif
++
+ protected:
+     void Dismiss() override;
+ 
+diff --git a/src/slic3r/GUI/ios_native_picker.mm b/src/slic3r/GUI/ios_native_picker.mm
+new file mode 100644
+index 000000000..52bc3bf5e
+--- /dev/null
++++ b/src/slic3r/GUI/ios_native_picker.mm
+@@ -0,0 +1,435 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// Every drop-down in this application, as the list this platform draws.
++//
++// WHAT A DROP-DOWN IS IN ORCA.
++//
++// Widgets/DropDown.cpp is a wxPopupTransientWindow that paints its own rows
++// with a wxDC: a bitmap, a label, a check mark on the selected one, a hover
++// highlight, and a hand-rolled scroll. Every preset selector in the sidebar is
++// one, as is every choice field in the parameter pages, the filament pickers,
++// the printer list and the machine settings. It is a good desktop control and
++// none of it survives contact with a tablet:
++//
++//  * THE HOVER STATE IS THE ONLY FEEDBACK IT HAS. A finger has no hover, so
++//    rows highlighted nothing and the list read as inert.
++//  * IT IS A TRANSIENT POPUP. wxPopupTransientWindow dismisses itself when it
++//    loses "focus", a notion iOS does not have, and its rows are 22 px high
++//    against a 44 pt minimum target.
++//  * A FILAMENT LIST IS TWO HUNDRED ROWS LONG and there is no way to search it.
++//
++// WHAT IT IS HERE.
++//
++// A UITableView in a popover, anchored to the control that opened it - which
++// is what a picker looks like on iPadOS - with the groups as sections, the
++// current value check-marked, and a search field as soon as the list is long
++// enough to need one. On a narrow window UIKit adapts the popover into a sheet
++// by itself, and the whole thing is one presentation either way.
++//
++// The DropDown remains the model. This file shows what it has, and reports the
++// chosen row back as exactly the wxEVT_COMBOBOX the wx path would have sent -
++// so ComboBox, and everything bound to ComboBox, is untouched.
++
++#import <UIKit/UIKit.h>
++
++#include "libslic3r/libslic3r.h"
++
++#include <wx/osx/core/cfstring.h>
++#include <wx/thread.h>
++#include <wx/translation.h>
++#include <wx/window.h>
++
++#include <boost/log/trivial.hpp>
++
++#include <vector>
++
++#include "ios_native_ui.hpp"
++
++namespace Slic3r {
++namespace GUI {
++// ios_native_ui.mm
++UIViewController *orca_ios_top_presenter();
++} // namespace GUI
++} // namespace Slic3r
++
++// One row as UIKit sees it: the label, whether it can be chosen, and the index
++// in the DropDown's own vector - which is what the wx event carries and is not
++// the row number, because the sections reorder nothing but the search filters.
++@interface OrcaPickerRow : NSObject
++@property (nonatomic, copy)   NSString *text;
++@property (nonatomic, copy)   NSString *group;
++@property (nonatomic, assign) NSInteger index;
++@property (nonatomic, assign) BOOL      enabled;
++@end
++
++@implementation OrcaPickerRow
++- (void)dealloc
++{
++    [_text release];
++    [_group release];
++    [super dealloc];
++}
++@end
++
++@interface OrcaPickerController : UITableViewController <UISearchResultsUpdating,
++                                                         UIPopoverPresentationControllerDelegate,
++                                                         UIAdaptivePresentationControllerDelegate>
++@property (nonatomic, retain) NSArray<OrcaPickerRow *>    *rows;       // everything
++@property (nonatomic, retain) NSArray<NSString *>         *sections;   // titles, in order
++@property (nonatomic, retain) NSArray<NSArray<OrcaPickerRow *> *> *visible;  // after filtering
++@property (nonatomic, assign) NSInteger                    selectedIndex;
++@property (nonatomic, copy)   void (^onPick)(NSInteger);
++@property (nonatomic, copy)   void (^onDismiss)(void);
++@property (nonatomic, assign) BOOL                         picked;
++- (void)rebuildSections:(NSString *)filter;
++@end
++
++@implementation OrcaPickerController
++
++- (instancetype)init
++{
++    // Inset grouped is the modern list, and it is what a picker anchored in a
++    // popover looks like everywhere else on the system.
++    self = [super initWithStyle:UITableViewStyleInsetGrouped];
++    return self;
++}
++
++- (void)dealloc
++{
++    [_rows release];
++    [_sections release];
++    [_visible release];
++    [_onPick release];
++    [_onDismiss release];
++    [super dealloc];
++}
++
++- (void)viewDidLoad
++{
++    [super viewDidLoad];
++    self.tableView.rowHeight = UITableViewAutomaticDimension;
++    self.tableView.estimatedRowHeight = 46;
++    self.tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
++}
++
++- (void)viewDidAppear:(BOOL)animated
++{
++    [super viewDidAppear:animated];
++
++    // Straight to the current value. A two hundred row filament list that opens
++    // at the top is a list the user has to find their own filament in.
++    for (NSUInteger s = 0; s < self.visible.count; ++s) {
++        NSArray<OrcaPickerRow *> *const section = [self.visible objectAtIndex:s];
++        for (NSUInteger r = 0; r < section.count; ++r) {
++            if ([section objectAtIndex:r].index != self.selectedIndex)
++                continue;
++            [self.tableView
++                scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:(NSInteger) r
++                                                          inSection:(NSInteger) s]
++                      atScrollPosition:UITableViewScrollPositionMiddle
++                              animated:NO];
++            return;
++        }
++    }
++}
++
++// The sections, filtered. Groups keep the order the DropDown had them in -
++// they are meaningful (vendor, then material) and sorting them would be this
++// file deciding something it has no business deciding.
++- (void)rebuildSections:(NSString *)filter
++{
++    // Untyped on purpose: the property is NSArray<NSArray<…> *> and these are
++    // mutable, and clang's lightweight generics treat NSMutableArray<X> and
++    // NSArray<X> as unrelated parameters rather than as one being the other's
++    // subclass.
++    NSMutableArray *const titles = [NSMutableArray array];
++    NSMutableArray *const groups = [NSMutableArray array];
++
++    for (OrcaPickerRow *const row in self.rows) {
++        if (filter.length > 0 &&
++            [row.text rangeOfString:filter
++                            options:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch]
++                    .location == NSNotFound)
++            continue;
++
++        NSString *const title = row.group != nil ? row.group : @"";
++        NSUInteger at = [titles indexOfObject:title];
++        if (at == NSNotFound) {
++            [titles addObject:title];
++            [groups addObject:[NSMutableArray array]];
++            at = titles.count - 1;
++        }
++        NSMutableArray *const bucket = [groups objectAtIndex:at];
++        [bucket addObject:row];
++    }
++
++    self.sections = titles;
++    self.visible  = groups;
++    [self.tableView reloadData];
++}
++
++- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
++{
++    (void) tableView;
++    return (NSInteger) self.visible.count;
++}
++
++- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
++{
++    (void) tableView;
++    return (NSInteger) [self.visible objectAtIndex:(NSUInteger) section].count;
++}
++
++- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
++{
++    (void) tableView;
++    NSString *const title = [self.sections objectAtIndex:(NSUInteger) section];
++    return title.length > 0 ? title : nil;
++}
++
++- (UITableViewCell *)tableView:(UITableView *)tableView
++         cellForRowAtIndexPath:(NSIndexPath *)indexPath
++{
++    static NSString *const kReuse = @"orca.picker.row";
++    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:kReuse];
++    if (cell == nil)
++        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
++                                       reuseIdentifier:kReuse] autorelease];
++
++    OrcaPickerRow *const row =
++        [[self.visible objectAtIndex:(NSUInteger) indexPath.section]
++            objectAtIndex:(NSUInteger) indexPath.row];
++
++    UIListContentConfiguration *content = [cell defaultContentConfiguration];
++    content.text = row.text;
++    content.textProperties.numberOfLines = 2;
++    content.textProperties.color = row.enabled ? [UIColor labelColor]
++                                               : [UIColor tertiaryLabelColor];
++    cell.contentConfiguration = content;
++
++    cell.accessoryType = row.index == self.selectedIndex ? UITableViewCellAccessoryCheckmark
++                                                         : UITableViewCellAccessoryNone;
++    cell.selectionStyle = row.enabled ? UITableViewCellSelectionStyleDefault
++                                      : UITableViewCellSelectionStyleNone;
++    cell.userInteractionEnabled = row.enabled;
++    return cell;
++}
++
++- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
++{
++    [tableView deselectRowAtIndexPath:indexPath animated:YES];
++
++    OrcaPickerRow *const row =
++        [[self.visible objectAtIndex:(NSUInteger) indexPath.section]
++            objectAtIndex:(NSUInteger) indexPath.row];
++    if (!row.enabled || self.picked)
++        return;
++
++    self.picked = YES;
++    const NSInteger chosen = row.index;
++    void (^pick)(NSInteger) = self.onPick;
++
++    // The row is delivered after the dismissal, for the reason every other
++    // presentation in this port defers its handler: choosing a preset can put
++    // a dialog up ("keep the modified settings?"), and presenting one from a
++    // controller in mid-dismissal is the "already presenting" exception.
++    [self dismissViewControllerAnimated:YES completion:^{
++        if (pick != nil)
++            pick(chosen);
++    }];
++}
++
++- (void)updateSearchResultsForSearchController:(UISearchController *)searchController
++{
++    [self rebuildSections:searchController.searchBar.text];
++}
++
++// A popover that adapts to a sheet on a narrow window is still this picker;
++// without this UIKit would take it full screen with no way back.
++- (UIModalPresentationStyle)adaptivePresentationStyleForPresentationController:
++    (UIPresentationController *)controller
++                                                              traitCollection:
++    (UITraitCollection *)traitCollection
++{
++    (void) controller;
++    (void) traitCollection;
++    return UIModalPresentationNone;
++}
++
++- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
++{
++    (void) presentationController;
++    // Dismissed by tapping outside it or by the Done button: nothing was
++    // chosen, and the DropDown still has to be told, because the ComboBox
++    // closes its own state on EVT_DISMISS.
++    if (self.picked)
++        return;
++    if (self.onDismiss != nil)
++        self.onDismiss();
++}
++
++- (void)doneTapped:(id)sender
++{
++    (void) sender;
++    void (^dismissed)(void) = self.onDismiss;
++    const BOOL was_picked = self.picked;
++    [self dismissViewControllerAnimated:YES completion:^{
++        if (!was_picked && dismissed != nil)
++            dismissed();
++    }];
++}
++
++@end
++
++namespace Slic3r {
++namespace GUI {
++
++// The picker that is up, and the control it belongs to. One at a time: a
++// drop-down is a modal choice, and two of them on screen would be two answers
++// to a question that has one.
++static UIViewController *gs_picker       = nil;   // retained
++static wxWindow         *gs_picker_owner = nullptr;
++
++// Long enough to need a search field. Twelve is about a screen of rows on the
++// shortest window this application runs in, so anything longer is a list the
++// user would otherwise have to scroll blind.
++static const size_t kOrcaPickerSearchFrom = 12;
++
++void orca_ios_picker_dismiss(wxWindow *owner)
++{
++    if (!wxThread::IsMain())
++        return;
++    if (gs_picker == nil)
++        return;
++    if (owner != nullptr && gs_picker_owner != owner)
++        return;
++
++    UIViewController *const vc = gs_picker;
++    gs_picker       = nil;
++    gs_picker_owner = nullptr;
++
++    if (vc.presentingViewController != nil)
++        [vc dismissViewControllerAnimated:YES completion:nil];
++    [vc release];
++}
++
++bool orca_ios_picker_present(wxWindow                         *owner,
++                             wxWindow                         *anchor,
++                             const wxString                   &title,
++                             const std::vector<IOSPickerItem> &items,
++                             int                               selected,
++                             std::function<void(int)>          on_pick,
++                             std::function<void()>             on_dismiss)
++{
++    if (!wxThread::IsMain() || items.empty())
++        return false;
++
++    UIViewController *const presenter = orca_ios_top_presenter();
++    if (presenter == nil || presenter.view.window == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: no controller to present from";
++        return false;
++    }
++
++    UIView *anchor_view = anchor != nullptr ? (UIView *) anchor->GetHandle() : nil;
++    // An anchor in another window is not an anchor: UIKit wants the source
++    // view to be inside the presenting hierarchy, and a wx control that has
++    // not been realised has no view at all.
++    if (anchor_view != nil && anchor_view.window != presenter.view.window)
++        anchor_view = nil;
++
++    // Anything already up belongs to a question that has been abandoned.
++    orca_ios_picker_dismiss(nullptr);
++
++    OrcaPickerController *const picker = [[OrcaPickerController alloc] init];
++
++    NSMutableArray<OrcaPickerRow *> *const rows =
++        [NSMutableArray arrayWithCapacity:items.size()];
++    for (size_t i = 0; i < items.size(); ++i) {
++        const IOSPickerItem &item = items[i];
++        OrcaPickerRow *const row  = [[[OrcaPickerRow alloc] init] autorelease];
++        row.text    = wxCFStringRef(item.text).AsNSString();
++        row.group   = item.group.IsEmpty() ? nil : wxCFStringRef(item.group).AsNSString();
++        row.index   = (NSInteger) item.index;
++        row.enabled = item.enabled ? YES : NO;
++        [rows addObject:row];
++    }
++
++    picker.rows          = rows;
++    picker.selectedIndex = selected;
++    picker.title         = title.IsEmpty() ? nil : wxCFStringRef(title).AsNSString();
++
++    std::function<void(int)> pick_cb    = on_pick;
++    std::function<void()>    dismiss_cb = on_dismiss;
++
++    picker.onPick = ^(NSInteger index) {
++        // The picker is off screen by the time this runs; drop the reference
++        // before the callback, which is entitled to open another one.
++        orca_ios_picker_dismiss(nullptr);
++        if (pick_cb)
++            pick_cb((int) index);
++    };
++    picker.onDismiss = ^{
++        orca_ios_picker_dismiss(nullptr);
++        if (dismiss_cb)
++            dismiss_cb();
++    };
++
++    [picker rebuildSections:nil];
++
++    UINavigationController *const nav =
++        [[[UINavigationController alloc] initWithRootViewController:picker] autorelease];
++    picker.navigationItem.rightBarButtonItem =
++        [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
++                                                       target:picker
++                                                       action:@selector(doneTapped:)] autorelease];
++
++    if (items.size() >= kOrcaPickerSearchFrom) {
++        UISearchController *const search =
++            [[[UISearchController alloc] initWithSearchResultsController:nil] autorelease];
++        search.searchResultsUpdater             = picker;
++        search.obscuresBackgroundDuringPresentation = NO;
++        search.searchBar.placeholder            = wxCFStringRef(wxGetTranslation("Search")).AsNSString();
++        picker.navigationItem.searchController  = search;
++        picker.navigationItem.hidesSearchBarWhenScrolling = NO;
++        picker.definesPresentationContext       = YES;
++    }
++
++    // Tall enough to be worth scrolling, short enough to stay a popover.
++    const CGFloat rows_high = MIN((CGFloat) items.size(), 9.0) * 46 + 56;
++    nav.preferredContentSize = CGSizeMake(360, MAX(200.0, rows_high));
++
++    nav.modalPresentationStyle = anchor_view != nil ? UIModalPresentationPopover
++                                                    : UIModalPresentationFormSheet;
++    nav.presentationController.delegate = picker;
++    if (UIPopoverPresentationController *const pop = nav.popoverPresentationController) {
++        pop.sourceView             = anchor_view;
++        pop.sourceRect             = anchor_view.bounds;
++        pop.permittedArrowDirections = UIPopoverArrowDirectionAny;
++        pop.delegate               = picker;
++    }
++
++    @try {
++        [presenter presentViewController:nav animated:YES completion:nil];
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: presentation THREW "
++                                 << [[e name] UTF8String] << ": " << [[e reason] UTF8String];
++        [picker release];
++        return false;
++    }
++
++    // The navigation controller owns the picker now; this reference is the
++    // one orca_ios_picker_dismiss() spends.
++    gs_picker       = [nav retain];
++    gs_picker_owner = owner;
++    [picker release];
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: " << items.size() << " row(s), "
++                             << (anchor_view != nil ? "popover" : "sheet");
++    return true;
++}
++
++} // namespace GUI
++} // namespace Slic3r

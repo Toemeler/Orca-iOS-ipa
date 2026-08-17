@@ -1,0 +1,338 @@
+diff --git a/src/osx/iphone/msgdlg.mm b/src/osx/iphone/msgdlg.mm
+index cbc4f46..35dc976 100644
+--- a/src/osx/iphone/msgdlg.mm
++++ b/src/osx/iphone/msgdlg.mm
+@@ -16,6 +16,8 @@
+     #include "wx/app.h"
+ #endif
+ 
++#include "wx/evtloop.h"
++#include "wx/log.h"
+ #include "wx/thread.h"
+ #include "wx/osx/private.h"
+ #include "wx/modalhook.h"
+@@ -24,6 +26,126 @@
+ wxIMPLEMENT_CLASS(wxMessageDialog, wxDialog);
+ 
+ 
++// ---------------------------------------------------------------------------
++// What was here, and why none of it worked
++// ---------------------------------------------------------------------------
++//
++// The previous implementation built a UIAlertView, called -show on it, and
++// then - without waiting for anything at all - returned wxID_CANCEL. Three
++// things were wrong with that, and any one of them is fatal:
++//
++//  1. UIAlertView has been deprecated since iOS 8 and does nothing on a modern
++//     system. Nothing appeared.
++//  2. Even if it had appeared, ShowModal() returned immediately, so the caller
++//     read its answer before the user could give one.
++//  3. The answer it read was always wxID_CANCEL, whatever the user would have
++//     said, and whatever buttons the dialog had been given.
++//
++// wxMessageBox() is what wx itself uses for wxLogError and wxLogMessage, and
++// it is what an application reaches for when it has a yes/no question. On this
++// port every one of those was silently answered "cancel" by a dialog nobody
++// ever saw.
++//
++// It is now a UIAlertController - the presentation that replaced UIAlertView,
++// and the one iOS actually draws - with a nested wxModalEventLoop underneath
++// it so that ShowModal() keeps the contract every caller is written against:
++// it does not return until the user has pressed something. The loop is the
++// same one wxDialog::ShowModal() runs (src/osx/dialog_osx.cpp), made real on
++// this port by the iphone wxModalEventLoop::OSXDoRun() implementation.
++
++// The controller a modal presentation has to be made from: the deepest one
++// that is not already presenting something, in the topmost window.
++//
++// BY WINDOW LEVEL. A wxDialog is its own UIWindow on this port and sits at
++// UIWindowLevelAlert + 1, above the application's frame at
++// UIWindowLevelNormal. An alert presented from the frame would be drawn inside
++// the frame's window - underneath every dialog on screen - and the loop below
++// would then be waiting on a button nobody can reach.
++static UIViewController* wxOSXIPhoneAlertPresenter()
++{
++    UIWindow* best = nil;
++
++    for ( UIScene* scene in [[UIApplication sharedApplication] connectedScenes] )
++    {
++        if ( ![scene isKindOfClass:[UIWindowScene class]] )
++            continue;
++        for ( UIWindow* w in ((UIWindowScene*) scene).windows )
++        {
++            if ( w.hidden || w.alpha <= 0.01 || w.rootViewController == nil )
++                continue;
++            if ( !w.userInteractionEnabled )
++                continue;           // the dim backdrop behind a dialog
++            if ( best == nil || w.windowLevel >= best.windowLevel )
++                best = w;
++        }
++    }
++
++    UIViewController* vc = best.rootViewController;
++    while ( vc != nil && vc.presentedViewController != nil &&
++            !vc.presentedViewController.isBeingDismissed )
++        vc = vc.presentedViewController;
++
++    return vc;
++}
++
++// One presentation's state, shared between the rows' handlers, the watchdog
++// and the loop.
++//
++// AN OBJECTIVE-C OBJECT AND NOT A C++ ONE, for a reason that decides whether
++// this leaks: UIAlertAction copies its handler block, and copying a block
++// retains every Objective-C object it captured. So the state lives exactly as
++// long as the actions and the alert do, and is freed with them - including the
++// actions belonging to buttons that were never pressed, which is precisely the
++// case a hand-rolled reference count gets wrong.
++@interface wxOSXAlertBox : NSObject
++{
++@public
++    wxEventLoopBase* loop;      // not owned; valid only while Run() is on the stack
++    int              code;
++    BOOL             chosen;    // a row's handler has run
++    BOOL             finished;  // the loop has been told
++}
++@end
++
++@implementation wxOSXAlertBox
++@end
++
++static void wxOSXAlertFinish(wxOSXAlertBox* box, int code)
++{
++    if ( box->finished )
++        return;
++    box->finished = YES;
++    box->code     = code;
++    if ( box->loop != nullptr && box->loop->IsRunning() )
++        box->loop->Exit(code);
++}
++
++// The watchdog. An alert that leaves the screen without a row being chosen
++// would strand the loop below with nothing left to end it - the application
++// stopped, waiting on a button that is not there. An alert-style
++// UIAlertController cannot be dismissed by tapping outside it, so this should
++// be unreachable; a presenting controller can still be torn down underneath
++// one, and a hang is not an acceptable outcome for a case that cannot happen.
++static void wxOSXAlertWatch(UIAlertController* ac, wxOSXAlertBox* box, int misses)
++{
++    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (0.75 * NSEC_PER_SEC)),
++                   dispatch_get_main_queue(), ^{
++        if ( box->finished || box->chosen )
++            return;
++        // Two consecutive misses, so that the gap between -present… being
++        // called and the presentation taking effect is not read as one.
++        const bool gone = ac.presentingViewController == nil;
++        if ( gone && misses >= 1 )
++        {
++            wxLogDebug("wx-ios: message dialog went away with no button chosen");
++            wxOSXAlertFinish(box, wxID_CANCEL);
++            return;
++        }
++        wxOSXAlertWatch(ac, box, gone ? misses + 1 : 0);
++    });
++}
++
++
+ wxMessageDialog::wxMessageDialog(wxWindow *parent,
+                                  const wxString& message,
+                                  const wxString& caption,
+@@ -37,8 +159,6 @@ int wxMessageDialog::ShowModal()
+ {
+     WX_HOOK_MODAL_DIALOG();
+ 
+-    int resultbutton = wxID_CANCEL;
+-
+     const long style = GetMessageDialogStyle();
+ 
+     // work out what to display
+@@ -47,8 +167,8 @@ int wxMessageDialog::ShowModal()
+     // but if the extended message is not empty then we use the message as the title
+     // and the extended message as the text because that makes more sense
+ 
+-    wxString msgtitle,msgtext;
+-    if(m_extendedMessage.IsEmpty())
++    wxString msgtitle, msgtext;
++    if ( m_extendedMessage.IsEmpty() )
+     {
+         msgtitle = m_caption;
+         msgtext  = m_message;
+@@ -59,81 +179,122 @@ int wxMessageDialog::ShowModal()
+         msgtext  = m_extendedMessage;
+     }
+ 
+-    wxCFStringRef cfNoString( GetNoLabel() );
+-    wxCFStringRef cfYesString( GetYesLabel() );
+-    wxCFStringRef cfOKString( GetOKLabel() );
+-    wxCFStringRef cfCancelString( GetCancelLabel() );
++    // Not from a worker thread: UIKit is main-thread only, and a message box
++    // put up from a background thread would take the process down rather than
++    // ask a question. Refused loudly, and answered the way a dialog nobody can
++    // press is answered.
++    if ( !wxThread::IsMain() )
++    {
++        wxLogDebug("wx-ios: wxMessageDialog::ShowModal() off the main thread: %s",
++                   msgtext);
++        return wxID_CANCEL;
++    }
++
++    UIViewController* const presenter = wxOSXIPhoneAlertPresenter();
++    if ( presenter == nil || presenter.view.window == nil )
++    {
++        wxLogDebug("wx-ios: no controller to present a message dialog from: %s", msgtext);
++        return wxID_CANCEL;
++    }
+ 
+     wxCFStringRef cfTitle( msgtitle );
+     wxCFStringRef cfText( msgtext );
+ 
+-    UIAlertView* alert = [[UIAlertView alloc] initWithTitle:cfTitle.AsNSString() message:cfText.AsNSString() delegate:nil cancelButtonTitle:nil otherButtonTitles:nil];
++    UIAlertController* const alert =
++        [UIAlertController alertControllerWithTitle:(msgtitle.IsEmpty() ? nil
++                                                                       : cfTitle.AsNSString())
++                                            message:(msgtext.IsEmpty() ? nil
++                                                                       : cfText.AsNSString())
++                                     preferredStyle:UIAlertControllerStyleAlert];
++    if ( alert == nil )
++        return wxID_CANCEL;
+ 
+-    int buttonId[3] = { 0, 0, 0 };
+-    int buttonCount = 0;
++    wxOSXAlertBox* const box = [[[wxOSXAlertBox alloc] init] autorelease];
++    box->loop     = nullptr;
++    box->code     = wxID_CANCEL;
++    box->chosen   = NO;
++    box->finished = NO;
+ 
+-    if (style & wxYES_NO)
++    // Adding a row. The handler marks the choice synchronously - the watchdog
++    // reads that flag - and ends the loop a turn of the run loop later, once
++    // the alert has finished dismissing, so that a handler which puts up
++    // another dialog is not presenting from a controller in mid-dismissal.
++    void (^addButton)(const wxString&, int, UIAlertActionStyle, BOOL) =
++        ^(const wxString& label, int id, UIAlertActionStyle actionStyle, BOOL preferred)
+     {
+-        if ( style & wxNO_DEFAULT )
+-        {
+-            [alert addButtonWithTitle:cfNoString.AsNSString()];
+-            buttonId[ buttonCount++ ] = wxID_NO;
+-            [alert addButtonWithTitle:cfYesString.AsNSString()];
+-            buttonId[ buttonCount++ ] = wxID_YES;
+-        }
+-        else
+-        {
+-            [alert addButtonWithTitle:cfYesString.AsNSString()];
+-            buttonId[ buttonCount++ ] = wxID_YES;
+-            [alert addButtonWithTitle:cfNoString.AsNSString()];
+-            buttonId[ buttonCount++ ] = wxID_NO;
+-        }
++        wxCFStringRef cfLabel( label );
++        UIAlertAction* const action =
++            [UIAlertAction actionWithTitle:cfLabel.AsNSString()
++                                     style:actionStyle
++                                   handler:^(UIAlertAction* a) {
++                (void) a;
++                box->chosen = YES;
++                dispatch_async(dispatch_get_main_queue(), ^{
++                    wxOSXAlertFinish(box, id);
++                });
++            }];
++        [alert addAction:action];
++        if ( preferred )
++            alert.preferredAction = action;
++    };
+ 
+-        if (style & wxCANCEL)
+-        {
+-            [alert addButtonWithTitle:cfCancelString.AsNSString()];
+-            buttonId[ buttonCount++ ] = wxID_CANCEL;
+-        }
++    if ( style & wxYES_NO )
++    {
++        const BOOL yesDefault = (style & wxNO_DEFAULT) == 0 && (style & wxCANCEL_DEFAULT) == 0;
++        addButton(GetYesLabel(), wxID_YES, UIAlertActionStyleDefault, yesDefault);
++        addButton(GetNoLabel(), wxID_NO, UIAlertActionStyleDefault,
++                  (style & wxNO_DEFAULT) != 0);
+     }
+-    // the MSW implementation even shows an OK button if it is not specified, we'll do the same
+     else
+     {
+-        [alert addButtonWithTitle:cfOKString.AsNSString()];
+-        buttonId[ buttonCount++ ] = wxID_OK;
+-        if (style & wxCANCEL)
+-        {
+-            [alert addButtonWithTitle:cfCancelString.AsNSString()];
+-            buttonId[ buttonCount++ ] = wxID_CANCEL;
+-        }
++        // the MSW implementation even shows an OK button if it is not
++        // specified, we'll do the same
++        addButton(GetOKLabel(), wxID_OK, UIAlertActionStyleDefault,
++                  (style & wxCANCEL_DEFAULT) == 0);
+     }
+ 
++    if ( style & wxHELP )
++        addButton(GetHelpLabel(), wxID_HELP, UIAlertActionStyleDefault, NO);
+ 
+-    wxNonOwnedWindow* parentWindow = nullptr;
+-    int button = -1;
+-
+-    if (GetParent())
++    if ( style & wxCANCEL )
+     {
+-        parentWindow = dynamic_cast<wxNonOwnedWindow*>(wxGetTopLevelParent(GetParent()));
++        // The cancel STYLE, not merely a row labelled Cancel: it is the one
++        // iOS draws apart from the others and the one an Escape from a
++        // hardware keyboard chooses. There can only ever be one of them, and
++        // this branch is the only place that adds one.
++        addButton(GetCancelLabel(), wxID_CANCEL, UIAlertActionStyleCancel,
++                  (style & wxCANCEL_DEFAULT) != 0);
+     }
+ 
+-/*
+-    if (parentWindow)
++    @try
+     {
+-        NSWindow* nativeParent = parentWindow->GetWXWindow();
+-        ModalDialogDelegate* sheetDelegate = [[ModalDialogDelegate alloc] init];
+-        [alert beginSheetModalForWindow: nativeParent modalDelegate: sheetDelegate
+-            didEndSelector: @selector(sheetDidEnd:returnCode:contextInfo:)
+-            contextInfo: nil];
+-        [sheetDelegate waitForSheetToFinish];
+-        button = [sheetDelegate code];
+-        [sheetDelegate release];
++        [presenter presentViewController:alert animated:YES completion:nil];
+     }
+-    else
+-*/
++    @catch ( NSException* e )
+     {
+-        [alert show];
++        wxLogDebug("wx-ios: message dialog presentation threw %s",
++                   wxString([[e reason] UTF8String], wxConvUTF8));
++        return wxID_CANCEL;
+     }
+-    // [alert release];
+ 
+-    return wxID_CANCEL;
++    wxOSXAlertWatch(alert, box, 0);
++
++    // And wait, exactly as wxDialog::ShowModal() does.
++    //
++    // THE PRESENTER'S WINDOW AND NOT THIS DIALOG'S. wxMessageDialog never
++    // calls wxDialog::Create() - wxMessageDialogBase only stores the message,
++    // the caption and the style - so this object has no native window at all
++    // and the wxWindow* overload of wxModalEventLoop would be handed a null
++    // one. The loop does not use the window for anything but its log line; it
++    // is the CFRunLoop underneath that matters, and it is the same one either
++    // way.
++    wxModalEventLoop modalLoop((WXWindow) presenter.view.window);
++    box->loop = &modalLoop;
++    modalLoop.Run();
++    box->loop = nullptr;
++
++    const int result = box->code;
++    SetReturnCode(result);
++
++    return result;
+ }

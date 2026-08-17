@@ -1,0 +1,1437 @@
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -726,6 +726,11 @@
+             GUI/ios_gl_compat.cpp
+             GUI/ios_webview_support.mm
+             GUI/ios_camera_view.cpp
++            # Everything that pops up, as the platform draws it. The header is
++            # the whole of the interface Orca's C++ sees; the .mm files behind
++            # it are added by the patches that introduce them.
++            GUI/ios_native_ui.hpp
++            GUI/ios_native_ui.mm
+         )
+ endif ()
+ 
+diff --git a/src/slic3r/GUI/MsgDialog.cpp b/src/slic3r/GUI/MsgDialog.cpp
+index 4da4b83e0..ca413d30a 100644
+--- a/src/slic3r/GUI/MsgDialog.cpp
++++ b/src/slic3r/GUI/MsgDialog.cpp
+@@ -13,6 +13,8 @@
+ 
+ #include <boost/algorithm/string/replace.hpp>
+ 
++#include <algorithm>
++
+ #include "libslic3r/libslic3r.h"
+ #include "libslic3r/Utils.hpp"
+ #include "libslic3r/Color.hpp"
+@@ -22,6 +24,9 @@
+ #include "wxExtensions.hpp"
+ #include "slic3r/GUI/MainFrame.hpp"
+ #include "GUI_App.hpp"
++// The UIAlertController these dialogs are presented as on iPadOS. Compiled to
++// nothing anywhere else - the header is guarded on __WXOSX_IPHONE__.
++#include "ios_native_ui.hpp"
+ #define MSG_DLG_MAX_SIZE wxSize(-1, FromDIP(464))//notice:ban setting the maximum width value
+ namespace Slic3r {
+ namespace GUI {
+@@ -41,6 +46,14 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
+ 	// user was shown is the single most useful line in the file.
+ 	BOOST_LOG_TRIVIAL(error) << "orca-ios-dialog: [" << title.utf8_string() << "] " << headline.utf8_string();
+ 
++#ifdef __WXOSX_IPHONE__
++	// Kept because the alert wants it and nothing else does: the headline is
++	// dropped on the floor by the constructor below - the wxStaticText that
++	// used to show it is commented out upstream - so by the time ShowModal()
++	// runs there is no control anywhere in the dialog holding this string.
++	m_ios_headline = headline;
++#endif
++
+ 	boldfont.SetWeight(wxFONTWEIGHT_BOLD);
+     SetBackgroundColour(0xFFFFFF);
+     SetFont(wxGetApp().normal_font());
+@@ -104,6 +117,16 @@ void MsgDialog::show_dsa_button(wxString const &title)
+     m_text_dsa->Bind(wxEVT_LEFT_DOWN,   [on_toggle](wxMouseEvent& e) {if(!e.LeftDClick()) on_toggle();});
+     m_text_dsa->Bind(wxEVT_LEFT_DCLICK, [on_toggle](wxMouseEvent& e) {on_toggle();});
+ 
++#ifdef __WXOSX_IPHONE__
++    // A UIAlertController holds text fields and rows, and nothing else - there
++    // is no checkbox in an iOS alert and the private key that fakes one is not
++    // an option. So the checkbox becomes a row of its own, carrying this label,
++    // and choosing it ticks the box and then presses the dialog's affirmative
++    // button. "Don't show again" reads on iOS as exactly what it does here.
++    m_ios_dsa_title = title.IsEmpty() ? _L("Don't show again") : title;
++    m_ios_dsa_label = m_text_dsa;
++#endif
++
+     m_dsa_sizer->Add(m_text_dsa, 0, wxALL | wxALIGN_CENTER, FromDIP(2));
+     m_dsa_sizer->AddSpacer(FromDIP(10)); // spacing after checkbox
+     m_text_dsa->SetFont(::Label::Body_13);
+@@ -339,6 +362,10 @@ static void add_msg_content(wxWindow   *parent,
+             scrolledWindow->SetMaxSize(wxSize(info_width, info_height));
+             scrolledWindow->FitInside();
+             content_sizer->Add(scrolledWindow, 1, wxEXPAND | wxRIGHT, 8);
++#ifdef __WXOSX_IPHONE__
++            if (MsgDialog *const dlg = dynamic_cast<MsgDialog *>(parent))
++                dlg->orca_ios_note_content(scrolledWindow, msg);
++#endif
+             return;
+         }
+     }
+@@ -363,8 +390,326 @@ static void add_msg_content(wxWindow   *parent,
+         if (link_callback)
+             link_callback(event.GetLinkInfo().GetHref());
+     });
++
++#ifdef __WXOSX_IPHONE__
++    // `msg` and not `msg_escaped`: what went into the page is markup, and the
++    // alert wants the sentence. The link is carried across as well - it becomes
++    // a row, because an alert has no running text to underline part of.
++    if (MsgDialog *const dlg = dynamic_cast<MsgDialog *>(parent))
++        dlg->orca_ios_note_content(html, msg, link_text, link_callback);
++#endif
++}
++
++#ifdef __WXOSX_IPHONE__
++
++void MsgDialog::orca_ios_note_content(wxWindow *window, const wxString &text,
++                                      const wxString &link_text,
++                                      std::function<void(const wxString &)> link_callback)
++{
++    if (window != nullptr)
++        m_ios_content.push_back(window);
++
++    // Appended rather than assigned: DownloadDialog::SetExtendedMessage() adds
++    // a second block of content to a dialog that already has one, and both
++    // belong in the alert.
++    if (!text.IsEmpty()) {
++        if (!m_ios_text.IsEmpty())
++            m_ios_text += "\n\n";
++        m_ios_text += text;
++    }
++
++    if (!link_text.IsEmpty() && link_callback) {
++        m_ios_link_text     = link_text;
++        m_ios_link_callback = link_callback;
++    }
++}
++
++bool MsgDialog::orca_ios_is_plain() const
++{
++    // Everything MsgDialog itself puts in the dialog is known by name. Anything
++    // else is a subclass's, and an alert has nowhere to put it.
++    for (wxWindow *const child : GetChildren()) {
++        if (child == nullptr)
++            continue;
++        if (child == logo || child == m_checkbox_dsa || child == m_ios_dsa_label)
++            continue;
++        if (std::find(m_ios_content.begin(), m_ios_content.end(), child) != m_ios_content.end())
++            continue;
++
++        bool is_button = false;
++        for (auto &entry : m_buttons) {
++            if (entry.second != nullptr && entry.second->buttondata != nullptr &&
++                entry.second->buttondata->button == child) {
++                is_button = true;
++                break;
++            }
++        }
++        if (is_button)
++            continue;
++
++        // wxString and not the wxChar* straight out of GetClassName(): that is
++        // wchar_t* in a Unicode build, and streaming one into a narrow
++        // std::ostream is a deleted overload rather than a conversion.
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: [" << GetTitle().utf8_string()
++                                 << "] keeps its window - it holds a "
++                                 << wxString(child->GetClassInfo()->GetClassName()).utf8_string();
++        return false;
++    }
++
++    return true;
++}
++
++// The buttons, in the order they were added.
++//
++// m_buttons is a hash and hands them back in no order at all, but the key each
++// one was stored under is its index as a decimal string (add_button below), so
++// the order is recoverable and it is the order the dialog itself lays them out
++// in. That matters: the first row of an iOS alert is the one the eye lands on,
++// and apply_style() adds the affirmative button first.
++static std::vector<Button *> orca_ios_buttons_in_order(const MsgButtonsHash &buttons)
++{
++    std::vector<Button *> out;
++    for (size_t i = 0; i < buttons.size(); ++i) {
++        const auto it = buttons.find(wxString::Format("%d", (int) i));
++        if (it == buttons.end() || it->second == nullptr || it->second->buttondata == nullptr)
++            continue;
++        if (Button *const btn = it->second->buttondata->button)
++            out.push_back(btn);
++    }
++    return out;
++}
++
++// The message, without the markup some of the callers put in it.
++//
++// Orca hands add_msg_content() plain text most of the time, but not always:
++// the Device page's error strings arrive with <br> in them, several dialogs
++// build a small table, and is_marked_msg messages carry <Error> spans. A
++// UIAlertController message is a plain string, so a tag reaches the user as a
++// tag. Only strings that actually look like markup are touched - a tolerance
++// that matters, because "layer height < 0.4" is a sentence, not an element.
++static wxString orca_ios_plain_text(const wxString &in)
++{
++    // Both, because an entity does not need a tag to go with it: a message
++    // that is otherwise plain but says "A &amp; B" would come out of an
++    // early return with the entity still in it.
++    if (in.find('<') == wxString::npos && in.find('&') == wxString::npos)
++        return in;
++
++    wxString out;
++    out.reserve(in.length());
++
++    for (size_t i = 0; i < in.length();) {
++        if (in[i] == '<') {
++            // A tag is '<', optionally '/', then a letter. Anything else is a
++            // less-than sign in a sentence and stays where it is.
++            size_t j = i + 1;
++            if (j < in.length() && in[j] == '/')
++                ++j;
++            // Deliberately not wxIsalpha(): that takes a wxUniChar through a
++            // locale, and "is this a tag" is an ASCII question.
++            const bool letter = j < in.length() &&
++                                ((in[j] >= 'a' && in[j] <= 'z') || (in[j] >= 'A' && in[j] <= 'Z'));
++            if (!letter) {
++                out += in[i++];
++                continue;
++            }
++            const size_t close = in.find('>', i);
++            if (close == wxString::npos) {
++                out += in[i++];
++                continue;
++            }
++            const wxString tag = in.Mid(i + 1, close - i - 1).Lower();
++            // The tags that are a line break in disguise. Everything else -
++            // <b>, <font>, <span>, <a>, <code> - is styling the alert applies
++            // for itself, so it simply goes away.
++            if (tag.StartsWith("br") || tag.StartsWith("/p") || tag.StartsWith("/tr") ||
++                tag.StartsWith("/div") || tag.StartsWith("/li"))
++                out += "\n";
++            else if (tag.StartsWith("li"))
++                out += wxString::FromUTF8("\n\xE2\x80\xA2 ");   // a bullet
++            i = close + 1;
++            continue;
++        }
++
++        if (in[i] == '&') {
++            const size_t semi = in.find(';', i);
++            if (semi != wxString::npos && semi - i <= 6) {
++                const wxString entity = in.Mid(i + 1, semi - i - 1).Lower();
++                if      (entity == "amp")  { out += "&";  i = semi + 1; continue; }
++                else if (entity == "lt")   { out += "<";  i = semi + 1; continue; }
++                else if (entity == "gt")   { out += ">";  i = semi + 1; continue; }
++                else if (entity == "quot") { out += "\""; i = semi + 1; continue; }
++                else if (entity == "nbsp") { out += " ";  i = semi + 1; continue; }
++            }
++        }
++
++        out += in[i++];
++    }
++
++    // Three blank lines where a table used to be is not a paragraph break.
++    while (out.Replace("\n\n\n", "\n\n") > 0)
++        ;
++    out.Trim(true);
++    out.Trim(false);
++    return out;
+ }
+ 
++int MsgDialog::ShowModal()
++{
++    if (!orca_ios_is_plain())
++        return DPIDialog::ShowModal();
++
++    // WHICH STRING IS THE TITLE.
++    //
++    // MsgDialog carries two of them and which one is the sentence depends on
++    // the subclass. ErrorDialog's window title is "OrcaSlicer error" and its
++    // headline is "OrcaSlicer has encountered an error", with the actual error
++    // in the content; InfoDialog puts the real heading in the headline;
++    // MessageDialog has no headline at all and its caption is the title. An
++    // iOS alert has exactly one bold line, so the rule is: the most specific
++    // string available becomes it, and the other one is dropped rather than
++    // stacked - "OrcaSlicer information" above "OrcaSlicer information" is
++    // what stacking them gives.
++    wxString title = m_ios_headline;
++    wxString text  = orca_ios_plain_text(m_ios_text);
++    if (title.IsEmpty()) {
++        title = GetTitle();
++    } else if (text.IsEmpty()) {
++        text  = title;
++        title = GetTitle();
++    }
++
++    std::vector<IOSAlertButton> rows;
++    IOSAlertButton             *affirmative = nullptr;
++
++    for (Button *const btn : orca_ios_buttons_in_order(m_buttons)) {
++        if (!btn->IsShown())
++            continue;
++
++        IOSAlertButton row;
++        row.label   = btn->GetLabel();
++        row.id      = btn->GetId();
++        row.widget  = btn;
++        row.enabled = btn->IsEnabled();
++        // apply_style() gives every dialog in this family its buttons from the
++        // same six ids, so the roles are read off the id rather than guessed
++        // at from the label - which is translated, and which several callers
++        // replace outright through SetButtonLabel().
++        row.preferred   = row.id == wxID_OK || row.id == wxID_YES || row.id == wxFORWARD;
++        row.cancel      = row.id == wxID_CANCEL || row.id == wxID_NO;
++        row.destructive = row.id == wxID_DELETE || row.id == wxID_REMOVE;
++        rows.push_back(row);
++    }
++
++    if (rows.empty())
++        return DPIDialog::ShowModal();
++
++    for (IOSAlertButton &row : rows) {
++        if (row.preferred) {
++            affirmative = &row;
++            break;
++        }
++    }
++    if (affirmative == nullptr)
++        affirmative = &rows.front();
++
++    // The link, as a row. add_msg_content() puts it inside the running text as
++    // an <a href>, which an alert has no way to draw; the callers that use one
++    // - the network error notice, the update prompts - are all "here is more
++    // about this", so a row that opens it and closes the alert is the same
++    // offer in the shape this platform makes it.
++    if (!m_ios_link_text.IsEmpty() && m_ios_link_callback) {
++        IOSAlertButton row;
++        row.label  = m_ios_link_text;
++        row.id     = affirmative->id;
++        row.widget = affirmative->widget;
++        auto cb    = m_ios_link_callback;
++        row.before = [cb]() { cb(wxString("#")); };
++        rows.insert(rows.begin(), row);
++        affirmative = nullptr;   // the vector has moved; nothing reads it again
++    }
++
++    // And the "don't show again" checkbox, as the row it has to be.
++    if (m_checkbox_dsa != nullptr && !m_ios_dsa_title.IsEmpty()) {
++        // Recomputed rather than kept: the insert above can have moved it.
++        IOSAlertButton *target = nullptr;
++        for (IOSAlertButton &row : rows) {
++            if (row.preferred) {
++                target = &row;
++                break;
++            }
++        }
++        if (target == nullptr)
++            target = &rows.front();
++
++        IOSAlertButton row;
++        row.label  = m_ios_dsa_title;
++        row.id     = target->id;
++        row.widget = target->widget;
++        CheckBox *const box = m_checkbox_dsa;
++        row.before = [box]() {
++            // Exactly what a tick does, event and all: show_dsa_button() binds
++            // wxEVT_TOGGLEBUTTON and several callers listen for the change
++            // rather than reading get_checkbox_state() at the end.
++            box->SetValue(true);
++            wxCommandEvent ev(wxEVT_TOGGLEBUTTON, box->GetId());
++            ev.SetEventObject(box);
++            ev.SetInt(1);
++            box->GetEventHandler()->ProcessEvent(ev);
++        };
++        // After the affirmative row and before the cancel one: it is a way of
++        // saying yes, not a third answer.
++        size_t at = rows.size();
++        for (size_t i = 0; i < rows.size(); ++i) {
++            if (rows[i].cancel) {
++                at = i;
++                break;
++            }
++        }
++        rows.insert(rows.begin() + at, row);
++    }
++
++    int result = wxID_CANCEL;
++    if (!orca_ios_alert_run(this, title, text, rows, nullptr, &result))
++        return DPIDialog::ShowModal();
++
++    return result;
++}
++
++int DeleteConfirmDialog::ShowModal()
++{
++    if (m_del_btn == nullptr || m_cancel_btn == nullptr)
++        return DPIDialog::ShowModal();
++
++    std::vector<IOSAlertButton> rows;
++
++    IOSAlertButton del;
++    del.label       = m_del_btn->GetLabel();
++    del.id          = wxID_OK;
++    del.widget      = m_del_btn;
++    del.destructive = true;
++    rows.push_back(del);
++
++    IOSAlertButton cancel;
++    cancel.label  = m_cancel_btn->GetLabel();
++    cancel.id     = wxID_CANCEL;
++    cancel.widget = m_cancel_btn;
++    cancel.cancel = true;
++    rows.push_back(cancel);
++
++    int result = wxID_CANCEL;
++    // Off the label and not off `msg`: the constructor's parameter shadows the
++    // member of the same name and the member is never assigned, so the member
++    // is empty in every DeleteConfirmDialog ever built.
++    const wxString text = m_msg_text != nullptr ? m_msg_text->GetLabel() : wxString();
++    if (!orca_ios_alert_run(this, GetTitle(), orca_ios_plain_text(text), rows, nullptr, &result))
++        return DPIDialog::ShowModal();
++
++    return result;
++}
++
++#endif // __WXOSX_IPHONE__
++
+ // ErrorDialog
+ 
+ ErrorDialog::ErrorDialog(wxWindow *parent, const wxString &temp_msg, bool monospaced_font)
+diff --git a/src/slic3r/GUI/MsgDialog.hpp b/src/slic3r/GUI/MsgDialog.hpp
+index a385fbaa1..f638c3601 100644
+--- a/src/slic3r/GUI/MsgDialog.hpp
++++ b/src/slic3r/GUI/MsgDialog.hpp
+@@ -1,8 +1,10 @@
+ #ifndef slic3r_MsgDialog_hpp_
+ #define slic3r_MsgDialog_hpp_
+ 
++#include <functional>
+ #include <string>
+ #include <unordered_map>
++#include <vector>
+ #include "GUI_Utils.hpp"
+ #include <wx/dialog.h>
+ #include <wx/font.h>
+@@ -68,6 +70,27 @@ struct MsgDialog : DPIDialog
+ 	virtual void on_dpi_changed(const wxRect& suggested_rect);
+ 	void SetButtonLabel(wxWindowID btn_id, const wxString& label, bool set_focus = false);
+ 
++#ifdef __WXOSX_IPHONE__
++	// EVERY ALERT IN THIS APPLICATION COMES THROUGH HERE.
++	//
++	// MessageDialog, ErrorDialog, WarningDialog, InfoDialog, RichMessageDialog
++	// and DownloadDialog all derive from this class and none of them overrides
++	// ShowModal() except RichMessageDialog, which chains to it - so this one
++	// override turns the whole family into UIAlertControllers. What it cannot
++	// present it does not try to: orca_ios_is_plain() says whether the dialog
++	// holds anything a subclass added, and a dialog that does falls through to
++	// the wx window it has always been.
++	int ShowModal() override;
++
++	// Called by add_msg_content() with the message as plain text, before it is
++	// escaped into HTML - there is no way back out of the wxHtmlWindow, and the
++	// alert wants the text, not the markup. The window is recorded alongside it
++	// so that orca_ios_is_plain() knows which child it is.
++	void orca_ios_note_content(wxWindow *window, const wxString &text,
++	                           const wxString &link_text = wxString(),
++	                           std::function<void(const wxString &)> link_callback = nullptr);
++#endif
++
+ protected:
+ 	enum {
+ 		BORDER = 20,
+@@ -95,6 +118,26 @@ protected:
+     MsgButtonsHash  m_buttons;
+ 	CheckBox* m_checkbox_dsa{nullptr};
+     wxString  m_forward_str;
++
++#ifdef __WXOSX_IPHONE__
++	// True when this dialog holds nothing but what MsgDialog itself put in it:
++	// the logo, the message, the row of buttons and the "don't show again"
++	// pair. A subclass that adds a hyperlink, a second checkbox or a control of
++	// its own makes it false, and the dialog is then shown as a window - losing
++	// a control to a prettier presentation is not a trade worth making.
++	bool orca_ios_is_plain() const;
++
++	// What ShowModal() shows, gathered as the dialog is built rather than read
++	// back off the controls afterwards: a wxHtmlWindow cannot hand back the
++	// text it was given, and Label wraps the text it holds.
++	wxString                m_ios_headline;      // the ctor's `headline`
++	wxString                m_ios_text;          // add_msg_content()'s `msg`
++	wxString                m_ios_dsa_title;     // "Don't show again", or better
++	wxString                m_ios_link_text;
++	std::function<void(const wxString &)> m_ios_link_callback;
++	std::vector<wxWindow *> m_ios_content;       // the message windows
++	wxWindow               *m_ios_dsa_label{nullptr};
++#endif
+ };
+ 
+ 
+@@ -387,6 +430,12 @@ public:
+     ~DeleteConfirmDialog();
+     virtual void on_dpi_changed(const wxRect &suggested_rect);
+ 
++#ifdef __WXOSX_IPHONE__
++    // Not a MsgDialog - it builds its own two buttons - but it is the same
++    // question, and "delete this, or do not" is the alert iOS draws in red.
++    int ShowModal() override;
++#endif
++
+ private:
+     wxString      msg;
+     Button *      m_del_btn    = nullptr;
+diff --git a/src/slic3r/GUI/ReleaseNote.cpp b/src/slic3r/GUI/ReleaseNote.cpp
+index a61748c4b..f30d554bf 100644
+--- a/src/slic3r/GUI/ReleaseNote.cpp
++++ b/src/slic3r/GUI/ReleaseNote.cpp
+@@ -15,6 +15,11 @@
+ #include "Widgets/WebView.hpp"
+ #include "Jobs/BoostThreadWorker.hpp"
+ #include "Jobs/PlaterWorker.hpp"
++// The alert SecondaryCheckDialog is presented as on iPadOS. Compiled to
++// nothing anywhere else - the header is guarded on __WXOSX_IPHONE__.
++#include "ios_native_ui.hpp"
++
++#include <vector>
+ 
+ #include <wx/regex.h>
+ #include <wx/progdlg.h>
+@@ -693,8 +698,88 @@ void SecondaryCheckDialog::update_text(wxString text)
+     Fit();
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++bool SecondaryCheckDialog::orca_ios_show_native()
++{
++    // The buttons in the order the window lays them out, which is the order
++    // the sizer was filled in: Resume, Retry, Done, Confirm, Cancel. Only the
++    // shown ones - update_title_style() hides the rest, and which are shown is
++    // the whole of what VisibleButtons means.
++    Button *const ordered[] = { m_button_ok, m_button_resume, m_button_retry,
++                                m_button_fn, m_button_cancel };
++
++    std::vector<Slic3r::GUI::IOSAlertButton> rows;
++    Slic3r::GUI::IOSAlertButton *affirmative = nullptr;
++
++    for (Button *const btn : ordered) {
++        if (btn == nullptr || !btn->IsShown())
++            continue;
++        Slic3r::GUI::IOSAlertButton row;
++        row.label     = btn->GetLabel();
++        row.widget    = btn;
++        row.enabled   = btn->IsEnabled();
++        row.preferred = btn == m_button_ok;
++        row.cancel    = btn == m_button_cancel;
++        rows.push_back(row);
++    }
++
++    if (rows.empty())
++        return false;
++
++    for (Slic3r::GUI::IOSAlertButton &row : rows) {
++        if (row.preferred) {
++            affirmative = &row;
++            break;
++        }
++    }
++    if (affirmative == nullptr)
++        affirmative = &rows.front();
++
++    // "Don't show again", which is a wxCheckBox in the window and has to be a
++    // row here for the same reason MsgDialog's is: an iOS alert holds text
++    // fields and rows and nothing else.
++    if (m_show_again_checkbox != nullptr && m_show_again_checkbox->IsShown()) {
++        Slic3r::GUI::IOSAlertButton row;
++        row.label  = m_show_again_checkbox->GetLabel();
++        row.widget = affirmative->widget;
++        wxCheckBox *const box = m_show_again_checkbox;
++        row.before = [this, box]() {
++            box->SetValue(true);
++            this->not_show_again = true;
++        };
++        size_t at = rows.size();
++        for (size_t i = 0; i < rows.size(); ++i) {
++            if (rows[i].cancel) {
++                at = i;
++                break;
++            }
++        }
++        rows.insert(rows.begin() + at, row);
++    }
++
++    // GetLabelText() and not GetLabel(): update_text() writes it with
++    // SetLabelText(), which escapes any ampersand into a mnemonic, and the
++    // alert wants the sentence back the way it went in.
++    const wxString text = m_staticText_release_note != nullptr
++                              ? m_staticText_release_note->GetLabelText()
++                              : wxString();
++
++    if (!Slic3r::GUI::orca_ios_alert_post(this, GetTitle(), text, rows))
++        return false;
++
++    // The window is not shown, but everything else on_hide() does still has to
++    // happen when it is hidden, so nothing here bypasses it: the rows post the
++    // same events, and whoever handles them calls on_hide() as before.
++    return true;
++}
++#endif
++
+ void SecondaryCheckDialog::on_show()
+ {
++#ifdef __WXOSX_IPHONE__
++    if (orca_ios_show_native())
++        return;
++#endif
+ #ifdef __APPLE__
+     if (wxGetApp().mainframe && wxGetApp().mainframe->get_mac_full_screen()) {
+         SetWindowStyleFlag(GetWindowStyleFlag() | wxSTAY_ON_TOP);
+@@ -716,6 +801,13 @@ void SecondaryCheckDialog::on_hide()
+     if (m_show_again_checkbox != nullptr && not_show_again && show_again_config_text != "")
+         wxGetApp().app_config->set(show_again_config_text, "1");
+ 
++#ifdef __WXOSX_IPHONE__
++    // The alert standing in for this window goes at the same moment the window
++    // would have. Nothing is hidden here that was not shown, and dismissing an
++    // alert that is not up is a no-op.
++    Slic3r::GUI::orca_ios_alert_dismiss(this);
++#endif
++
+     this->Hide();
+     if (wxGetApp().mainframe != nullptr) {
+         wxGetApp().mainframe->Show();
+@@ -783,7 +875,14 @@ void SecondaryCheckDialog::update_btn_label(wxString ok_btn_text, wxString cance
+ 
+ SecondaryCheckDialog::~SecondaryCheckDialog()
+ {
+-
++#ifdef __WXOSX_IPHONE__
++    // The rows of a posted alert send wxEVT_BUTTON to this window's buttons,
++    // which are about to be destroyed with it. on_hide() takes the alert down
++    // on every ordinary path; this is the one that is left when the window is
++    // deleted outright - the Device page tears these down when the printer
++    // goes away - and a row pressed afterwards would reach freed memory.
++    Slic3r::GUI::orca_ios_alert_dismiss(this);
++#endif
+ }
+ 
+ void SecondaryCheckDialog::on_dpi_changed(const wxRect& suggested_rect)
+diff --git a/src/slic3r/GUI/ReleaseNote.hpp b/src/slic3r/GUI/ReleaseNote.hpp
+index 0c11dc2f5..2035036cc 100644
+--- a/src/slic3r/GUI/ReleaseNote.hpp
++++ b/src/slic3r/GUI/ReleaseNote.hpp
+@@ -139,6 +139,22 @@ public:
+     void on_hide();
+     void update_btn_label(wxString ok_btn_text, wxString cancel_btn_text);
+     void update_title_style(wxString title, SecondaryCheckDialog::VisibleButtons style, wxWindow* parent = nullptr); // ORCA VisibleButtons instead ButtonStyle 
++#ifdef __WXOSX_IPHONE__
++    // THE DEVICE PAGE'S QUESTIONS, AS ALERTS.
++    //
++    // This is not a wxDialog and never was - it is a modeless DPIFrame that
++    // posts an event when a button is pressed and is hidden again by whoever
++    // was listening - which is why it does not go through MsgDialog's native
++    // path. It is also 44 call sites' worth of "the printer says X, do you want
++    // to Y": every confirmation on the Device page, every calibration prompt,
++    // every firmware notice. Presented as a modeless UIAlertController whose
++    // rows send the same wxEVT_BUTTON to the same buttons, so everything
++    // listening for those events is untouched.
++    //
++    // Returns false when it could not be presented, and on_show() then shows
++    // the window exactly as it did before.
++    bool orca_ios_show_native();
++#endif
+     void post_event(wxCommandEvent&& event);
+     void rescale();
+     ~SecondaryCheckDialog();
+diff --git a/src/slic3r/GUI/ios_native_ui.hpp b/src/slic3r/GUI/ios_native_ui.hpp
+new file mode 100644
+index 000000000..ff5cb4761
+--- /dev/null
++++ b/src/slic3r/GUI/ios_native_ui.hpp
+@@ -0,0 +1,246 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// The native side of everything in this application that pops up.
++//
++// Orca draws its own alerts, its own notifications and its own progress
++// windows, and on a desktop that is the right answer: they are wxDialogs and
++// ImGui windows over a wxFrame, and they look like the rest of the window they
++// came out of. On iPadOS none of it is: an alert is a UIAlertController, a
++// notification is a banner the system draws, and progress is a sheet - and an
++// application that draws its own is immediately recognisable as one that was
++// not written for the platform.
++//
++// This header is the whole of the interface between Orca's C++ and the UIKit
++// that stands in for it. Everything behind it is in
++//
++//   ios_native_ui.mm             - the presenter, and the alert bridge
++//   ios_native_notifications.mm  - the banner stack
++//   ios_native_progress.mm       - the progress sheet
++//
++// and nothing in Orca includes UIKit to reach any of it.
++//
++// EVERY DECLARATION HERE IS COMPILED OUT OFF iOS. The header is included by
++// files that build on all five platforms (MsgDialog.cpp, NotificationManager.
++// cpp), so the guard is what keeps those builds from seeing a single new
++// symbol. <wx/defs.h> comes first because __WXOSX_IPHONE__ is wx's, and wx
++// only defines it once its own platform header has run.
++
++#ifndef slic3r_GUI_ios_native_ui_hpp_
++#define slic3r_GUI_ios_native_ui_hpp_
++
++#include <wx/defs.h>
++
++#ifdef __WXOSX_IPHONE__
++
++#include <functional>
++#include <string>
++#include <vector>
++
++#include <wx/string.h>
++
++class wxDialog;
++class wxWindow;
++
++namespace Slic3r {
++namespace GUI {
++
++// ---------------------------------------------------------------------------
++// Alerts
++// ---------------------------------------------------------------------------
++
++// One row of a native alert, and the wx button it stands for.
++//
++// `widget` is what makes this a presentation of the dialog rather than a
++// replacement for it: choosing the row sends wxEVT_BUTTON to that button, so
++// whatever the dialog bound to it runs exactly as it would have on a desktop -
++// including the handlers that do more than EndModal(), which several dialogs
++// in this application have.
++struct IOSAlertButton
++{
++    wxString  label;
++    int       id          = 0;        // wxID_OK, wxID_CANCEL, a custom id, …
++    wxWindow *widget      = nullptr;  // the wx button, or null for a plain row
++    bool      preferred   = false;    // drawn bold; Return chooses it
++    bool      cancel      = false;    // the row iOS puts last and Escape chooses
++    bool      destructive = false;    // drawn red
++    bool      enabled     = true;
++    // Run on the GUI thread just before `widget` is clicked, for the rows that
++    // are not a button of the dialog's at all: the "don't show again" tick,
++    // which has to be set before the affirmative button acts on it, and the
++    // hyperlink, which has no button to click afterwards but does have a page
++    // to open. Empty for an ordinary row.
++    std::function<void()> before;
++};
++
++// A text field inside the alert. UIAlertController is the one presentation on
++// this platform that can carry them, which is why the rename/new-name prompts
++// do not need a sheet of their own.
++struct IOSAlertField
++{
++    wxString    placeholder;
++    wxString    value;
++    bool        secure   = false;
++    bool        numeric  = false;
++    // Filled in with what the field held when a row was chosen.
++    wxString   *out      = nullptr;
++};
++
++// Presents `buttons` as a UIAlertController over whatever is frontmost, runs a
++// nested wx modal event loop, and returns once a row has been chosen - which
++// is the contract wxDialog::ShowModal() has, so a caller cannot tell the two
++// apart.
++//
++// Returns false, having shown nothing and run no loop, when there is no
++// controller to present from or UIKit refuses the presentation. The caller
++// must then fall back to the wx dialog: a dialog that fails to appear is worse
++// than one that appears in the wrong style.
++//
++// `dlg` is the dialog the alert stands in for. It is never shown, but it is
++// still the object the buttons belong to and the object whose return code the
++// caller reads afterwards, so it is kept alive and its return code is set.
++bool orca_ios_alert_run(wxDialog                          *dlg,
++                        const wxString                    &title,
++                        const wxString                    &message,
++                        const std::vector<IOSAlertButton> &buttons,
++                        std::vector<IOSAlertField>        *fields,
++                        int                               *result);
++
++// The same alert, presented and returned from immediately, for the windows in
++// this application that are modeless: SecondaryCheckDialog is a wxFrame that
++// posts an event when a button is pressed and never waits for one. The row's
++// wxEVT_BUTTON is sent when it is chosen, a turn of the run loop later.
++bool orca_ios_alert_post(wxWindow                          *owner,
++                         const wxString                    &title,
++                         const wxString                    &message,
++                         const std::vector<IOSAlertButton> &buttons);
++
++// Takes down an alert posted by orca_ios_alert_post() for this owner, if one
++// is still up. A modeless window is entitled to be hidden by something other
++// than its own buttons - SecondaryCheckDialog is hidden by the printer going
++// away, by the job finishing, by the page being left - and the alert standing
++// in for it has to go at the same moment.
++void orca_ios_alert_dismiss(wxWindow *owner);
++
++// True while an alert put up by either of the two above is on screen. The
++// notification banners read it: a banner sliding in over an alert is the one
++// place UIKit will happily draw two things that both want to be frontmost.
++bool orca_ios_alert_is_up();
++
++// ---------------------------------------------------------------------------
++// Pickers
++// ---------------------------------------------------------------------------
++
++// One row of a drop-down list.
++struct IOSPickerItem
++{
++    wxString text;
++    // The section this row belongs in, empty for the unlabelled first one.
++    // Orca's groups are meaningful (vendor, then material) and the order they
++    // arrive in is theirs, so nothing here sorts them.
++    wxString group;
++    // The index into the DropDown's own vector, which is what the wxEVT_COMBOBOX
++    // it sends afterwards carries - and which is NOT the row number, because a
++    // search filters rows out.
++    int      index   = 0;
++    bool     enabled = true;
++};
++
++// Presents `items` as a UITableView in a popover anchored at `anchor`, or as a
++// sheet when there is nothing to anchor to. Exactly one picker is up at a
++// time; presenting a second takes the first down.
++//
++// `owner` is what orca_ios_picker_dismiss() matches on - the control the list
++// belongs to - so that a drop-down closing itself cannot take down a list that
++// has since been opened by something else.
++bool orca_ios_picker_present(wxWindow                         *owner,
++                             wxWindow                         *anchor,
++                             const wxString                   &title,
++                             const std::vector<IOSPickerItem> &items,
++                             int                               selected,
++                             std::function<void(int)>          on_pick,
++                             std::function<void()>             on_dismiss);
++
++// Takes the picker down. A null owner means "whichever one is up".
++void orca_ios_picker_dismiss(wxWindow *owner);
++
++// ---------------------------------------------------------------------------
++// Notifications
++// ---------------------------------------------------------------------------
++
++// How a notification is drawn, which on this platform is entirely a matter of
++// which symbol and which tint the banner gets.
++enum class IOSNoticeKind
++{
++    Info,
++    Success,
++    Warning,
++    Error,
++    Progress,
++};
++
++// A single banner, as the notification manager has it this frame. Everything
++// is by value: the manager owns its notifications, this crosses to UIKit, and
++// the two must not share a pointer that the next update can free.
++struct IOSNotice
++{
++    // Stable for the life of one notification, so an update moves a banner
++    // rather than replacing it. The notification's own address is what Orca
++    // has to identify one with, and it is stable: PopNotification objects are
++    // held by pointer in a deque and never move.
++    uintptr_t       key = 0;
++    IOSNoticeKind   kind = IOSNoticeKind::Info;
++    wxString        text;
++    // The clickable run of text Orca calls hypertext - "Export G-code",
++    // "Undo", "More info". A button on the banner here.
++    wxString        action_label;
++    // -1 when this notification is not a progress bar, 0…1 when it is.
++    float           progress = -1.0f;
++    bool            closable = true;
++    // Seconds before the banner takes itself down, 0 meaning "never, until
++    // Orca closes it" - which is what an error and a progress bar want.
++    //
++    // A SECOND COUNTDOWN, DELIBERATELY. Orca's own is inside
++    // update_notifications(), which only runs while the 3D canvas is drawing;
++    // leave Prepare and it stops. That was invisible when the notification was
++    // drawn in the canvas, because it left the screen at the same moment, and
++    // it is very visible now that the banner is in the window.
++    int             duration = 0;
++    // Run on the GUI thread when the banner's action button is pressed, and
++    // when its close button is. Copied into the banner and released with it.
++    std::function<void()> on_action;
++    std::function<void()> on_close;
++};
++
++// The whole set of banners that should be on screen, in the order Orca stacks
++// them. Called on every notification render pass; banners that are no longer
++// in the set slide out, ones that are new slide in, and ones that are both
++// keep their place and take the new text.
++void orca_ios_notices_sync(const std::vector<IOSNotice> &notices);
++
++// Everything goes away. Used when the canvas the notifications belonged to is
++// destroyed - the banners live in the window, not in the canvas, so nothing
++// else would take them down.
++void orca_ios_notices_clear();
++
++// ---------------------------------------------------------------------------
++// Progress
++// ---------------------------------------------------------------------------
++
++// A determinate or indeterminate progress sheet, which is what a
++// wxProgressDialog is on this platform. `range` of 0 means indeterminate.
++//
++// The token identifies one sheet across its life; pass the same one to update
++// and to close it. Zero is never a valid token.
++uintptr_t orca_ios_progress_open(const wxString &title, const wxString &message,
++                                 bool cancellable, std::function<void()> on_cancel);
++void      orca_ios_progress_update(uintptr_t token, const wxString &message, float fraction);
++void      orca_ios_progress_close(uintptr_t token);
++bool      orca_ios_progress_cancelled(uintptr_t token);
++
++} // namespace GUI
++} // namespace Slic3r
++
++#endif // __WXOSX_IPHONE__
++#endif // slic3r_GUI_ios_native_ui_hpp_
+diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
+new file mode 100644
+index 000000000..15825d27c
+--- /dev/null
++++ b/src/slic3r/GUI/ios_native_ui.mm
+@@ -0,0 +1,526 @@
++///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
++///|/
++///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
++///|/
++// Every alert in this application, as a UIAlertController.
++//
++// WHAT WAS THERE BEFORE.
++//
++// Orca has one alert class - MsgDialog, in MsgDialog.hpp - and nearly
++// everything the application asks the user derives from it: MessageDialog (322
++// call sites), ErrorDialog, WarningDialog, InfoDialog, RichMessageDialog,
++// DownloadDialog, the three MsgUpdate* dialogs. It is a wxDialog holding a
++// bitmap, an HTML window and a row of Orca's own Button widgets, and on this
++// port patch step2/0230 gives it a glass title bar, rounded corners and a
++// dimmed backdrop so that it at least reads as a window standing in front of
++// something. It is still a desktop dialog: a 360 pt box of custom-painted
++// controls with hit targets built for a mouse, no Dynamic Type, no VoiceOver
++// order, no keyboard dismissal, and none of what the platform's own alerts
++// have.
++//
++// WHY THE ALERT IS A PRESENTATION OF THE DIALOG AND NOT A REPLACEMENT FOR IT.
++//
++// The obvious implementation - read the message, show an alert, return the id
++// of the row that was chosen - is wrong for this application, because a
++// MsgDialog button is not always a plain "end with this code". Several dialogs
++// bind their own handler to a button and do real work in it: writing a config
++// key, starting a download, marking a preset, sending a job. So the dialog is
++// built exactly as it always was, its buttons are read out of it, and choosing
++// a row sends wxEVT_BUTTON to the actual wx button - after which the dialog's
++// own handler runs, unchanged and unaware. The window itself is simply never
++// shown.
++//
++// That also settles what ShowModal() returns. If the handler ended the dialog
++// itself, its code is what the caller gets; if it did not, the row's id is.
++//
++// THE NESTED EVENT LOOP IS THE POINT.
++//
++// wxDialog::ShowModal() does not return until the dialog is dismissed, and 596
++// call sites in Orca are written against that. UIKit presentation is
++// asynchronous and returns at once. wxModalEventLoop is what bridges the two:
++// it is the same loop wxDialog::ShowModal() runs (src/osx/dialog_osx.cpp), it
++// pumps CFRunLoop so UIKit keeps delivering touches to the alert, and it comes
++// back when Exit() is called from the row's handler. Patch step2/0216 is what
++// made that loop real on this port; without it none of this would return
++// anything.
++
++#import <UIKit/UIKit.h>
++
++#include "libslic3r/libslic3r.h"
++
++#include <wx/dialog.h>
++#include <wx/evtloop.h>
++#include <wx/thread.h>
++#include <wx/window.h>
++#include <wx/osx/core/cfstring.h>
++
++#include <boost/log/trivial.hpp>
++
++#include <functional>
++#include <map>
++#include <memory>
++#include <vector>
++
++#include "ios_native_ui.hpp"
++
++namespace Slic3r {
++namespace GUI {
++
++// ---------------------------------------------------------------------------
++// Where a modal presentation goes
++// ---------------------------------------------------------------------------
++//
++// THE TOPMOST WINDOW, NOT THE KEY WINDOW AND NOT THE APPLICATION'S.
++//
++// A wxDialog is its own UIWindow on this port, at UIWindowLevelAlert + 1
++// (step2/0230), and the main frame is at UIWindowLevelNormal. A controller
++// presented from the main window draws inside that window - which is
++// underneath every dialog on screen. An alert raised by a dialog would then
++// appear behind the dialog that raised it, which is indistinguishable from an
++// alert that never appeared, and the modal loop below would be waiting on a
++// row nobody can reach: a hang, not a cosmetic fault.
++//
++// So the window is chosen by level, and the presenter is the deepest
++// controller in it that is not already presenting something. The dim backdrop
++// 0230 puts behind a dialog is skipped by the interaction test - it is a
++// window with a root controller like any other, and presenting into a window
++// that takes no touches would be the same hang.
++UIWindow *orca_ios_topmost_window()
++{
++    UIWindow *best = nil;
++
++    for (UIScene *scene in [[UIApplication sharedApplication] connectedScenes]) {
++        if (![scene isKindOfClass:[UIWindowScene class]])
++            continue;
++        for (UIWindow *w in ((UIWindowScene *) scene).windows) {
++            if (w.hidden || w.alpha <= 0.01f)
++                continue;
++            if (w.rootViewController == nil)
++                continue;
++            if (!w.userInteractionEnabled)
++                continue;               // the dim backdrop behind a dialog
++            if (best == nil || w.windowLevel >= best.windowLevel)
++                best = w;
++        }
++    }
++
++    return best;
++}
++
++UIViewController *orca_ios_top_presenter()
++{
++    UIWindow *const window = orca_ios_topmost_window();
++    UIViewController *vc = window.rootViewController;
++
++    // Presenting from a controller that already has a presented controller
++    // throws NSInternalInconsistencyException, so walk to the end of the
++    // chain. A controller that is on its way out is not a destination either -
++    // presenting from it throws just the same.
++    while (vc != nil && vc.presentedViewController != nil &&
++           !vc.presentedViewController.isBeingDismissed)
++        vc = vc.presentedViewController;
++
++    return vc;
++}
++
++// ---------------------------------------------------------------------------
++// The alert itself
++// ---------------------------------------------------------------------------
++
++// A return code no dialog in this application uses, so that "the handler ended
++// the dialog itself" can be told from "the handler left it to us". wxID_ values
++// are in the low thousands and Orca's custom ids sit alongside them; this is
++// INT_MIN, which is not a wxWindowID anybody hands out.
++static const int kOrcaAlertNoReturn = (-2147483647 - 1);
++
++// How many alerts are up. Read by the banner stack, which has to know whether
++// something is already frontmost.
++static int gs_orca_alerts_up = 0;
++
++bool orca_ios_alert_is_up()
++{
++    return gs_orca_alerts_up > 0;
++}
++
++// What one presentation needs to survive from the tap to the row's handler,
++// held by shared_ptr because a block outlives the stack frame that made it and
++// three of them - each row's, and the watchdog's - share it.
++namespace {
++struct OrcaAlertState
++{
++    wxEventLoopBase *loop        = nullptr;   // null once Run() has returned
++    wxDialog        *dlg         = nullptr;   // null for a modeless presentation
++    bool             finished    = false;
++    bool             pending     = false;     // a row was chosen; delivery queued
++    int              code        = wxID_CANCEL;
++    int              cancel_code = wxID_CANCEL;
++    std::vector<IOSAlertField> *fields = nullptr;
++    UIAlertController          *alert  = nil; // retained; released on delivery
++};
++} // namespace
++
++// Reads the text fields back and runs the row.
++//
++// ON THE MAIN THREAD AND A TURN AFTER THE TAP. A UIAlertAction handler runs
++// while the alert it belongs to is still being dismissed, and a wx handler is
++// entitled to open another dialog - which would be a presentation from a
++// controller in the middle of a dismissal, the "already presenting" exception.
++// One dispatch_async puts the whole thing after the dismissal instead.
++static void orca_ios_alert_deliver(std::shared_ptr<OrcaAlertState> state,
++                                   wxWindow *widget, int id,
++                                   std::function<void()> before)
++{
++    if (state->finished)
++        return;
++    state->finished = true;
++    state->code     = id;
++
++    // Exactly once per presentation, and here rather than after the loop below
++    // returns, because a modeless alert has no loop to come back to. The early
++    // return above is what makes it once.
++    if (gs_orca_alerts_up > 0)
++        --gs_orca_alerts_up;
++
++    // The fields first: the row's handler is entitled to read them.
++    if (state->fields != nullptr && state->alert != nil) {
++        NSArray<UITextField *> *const tfs = state->alert.textFields;
++        for (size_t i = 0; i < state->fields->size() && i < (size_t) tfs.count; ++i) {
++            IOSAlertField &f  = (*state->fields)[i];
++            NSString *const s = [tfs objectAtIndex:i].text;
++            f.value = wxString::FromUTF8(s != nil ? [s UTF8String] : "");
++            if (f.out != nullptr)
++                *f.out = f.value;
++        }
++    }
++
++    if (state->alert != nil) {
++        [state->alert release];
++        state->alert = nil;
++    }
++
++    // The row's own work, if it has any: ticking the "don't show again" box,
++    // or opening the page a hyperlink row stands for. Before the button, so
++    // that a handler reading the box sees the state the user just chose.
++    if (before)
++        before();
++
++    if (widget != nullptr) {
++        // The sentinel is how "the handler ended the dialog" is told from "the
++        // handler left it to us" without asking the dialog a question it has
++        // no way to answer.
++        if (state->dlg != nullptr)
++            state->dlg->SetReturnCode(kOrcaAlertNoReturn);
++
++        wxCommandEvent evt(wxEVT_BUTTON, widget->GetId());
++        evt.SetEventObject(widget);
++        widget->GetEventHandler()->ProcessEvent(evt);
++
++        if (state->dlg != nullptr) {
++            if (state->dlg->GetReturnCode() == kOrcaAlertNoReturn)
++                state->dlg->SetReturnCode(id);
++            else
++                state->code = state->dlg->GetReturnCode();
++        }
++    } else if (state->dlg != nullptr) {
++        state->dlg->SetReturnCode(id);
++    }
++
++    // And out of the loop, if there is one and it is still running. EndModal()
++    // inside the handler above cannot have ended it - this loop is deliberately
++    // not installed as the dialog's own m_eventLoop, because the dialog was
++    // never shown and must not be handed a loop it would then end twice.
++    if (state->loop != nullptr && state->loop->IsRunning())
++        state->loop->Exit(state->code);
++}
++
++// The watchdog.
++//
++// An alert that goes away without a row being chosen would leave the modal loop
++// below running with nothing on screen left to end it: the whole application
++// stopped, waiting for a button that is not there. It should not be reachable -
++// an alert-style UIAlertController cannot be dismissed by tapping outside it,
++// which is exactly why this is an alert and not an action sheet - but a
++// presenting controller can be torn down underneath it, and a hang is not an
++// acceptable outcome for a case that "should not happen".
++//
++// A poll rather than a lifecycle callback because UIAlertController is
++// documented as not supporting subclassing, so there is no -viewDidDisappear:
++// of ours to put this in, and a presentation delegate is only consulted for
++// the interactive dismissals this style does not have. The block retains the
++// controller, so the thing being watched cannot be freed while it is watched.
++static void orca_ios_alert_watch(UIAlertController *ac,
++                                 std::shared_ptr<OrcaAlertState> state, int misses)
++{
++    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (0.75 * NSEC_PER_SEC)),
++                   dispatch_get_main_queue(), ^{
++        if (state->finished || state->pending)
++            return;                       // done, or a row is on its way
++        // Two consecutive misses, so that the window between -present… being
++        // called and the presentation taking effect is not read as a
++        // disappearance.
++        const bool gone = ac.presentingViewController == nil;
++        if (gone && misses >= 1) {
++            BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: gone with no row chosen; "
++                                        "ending it as cancel";
++            orca_ios_alert_deliver(state, nullptr, state->cancel_code, nullptr);
++            return;
++        }
++        orca_ios_alert_watch(ac, state, gone ? misses + 1 : 0);
++    });
++}
++
++// Builds the controller. Returns nil when the caller gave it no usable rows -
++// an alert with no way out is the one thing worse than a desktop-shaped dialog.
++static UIAlertController *orca_ios_alert_build(const wxString                    &title,
++                                               const wxString                    &message,
++                                               const std::vector<IOSAlertButton> &buttons,
++                                               std::vector<IOSAlertField>        *fields,
++                                               std::shared_ptr<OrcaAlertState>    state)
++{
++    if (buttons.empty())
++        return nil;
++
++    // An empty title is passed as nil rather than as "": UIAlertController
++    // gives the bold first line to the message when there is no title, which
++    // reads better than a blank line above the text.
++    NSString *const ns_title   = title.IsEmpty()   ? nil : wxCFStringRef(title).AsNSString();
++    NSString *const ns_message = message.IsEmpty() ? nil : wxCFStringRef(message).AsNSString();
++
++    UIAlertController *const ac =
++        [UIAlertController alertControllerWithTitle:ns_title
++                                            message:ns_message
++                                     preferredStyle:UIAlertControllerStyleAlert];
++    if (ac == nil)
++        return nil;
++
++    if (fields != nullptr) {
++        for (const IOSAlertField &f : *fields) {
++            const wxString placeholder = f.placeholder;
++            const wxString value       = f.value;
++            const bool     secure      = f.secure;
++            const bool     numeric     = f.numeric;
++            [ac addTextFieldWithConfigurationHandler:^(UITextField *tf) {
++                tf.placeholder            = wxCFStringRef(placeholder).AsNSString();
++                tf.text                   = wxCFStringRef(value).AsNSString();
++                tf.secureTextEntry        = secure ? YES : NO;
++                tf.keyboardType           = numeric ? UIKeyboardTypeDecimalPad
++                                                    : UIKeyboardTypeDefault;
++                tf.clearButtonMode        = UITextFieldViewModeWhileEditing;
++                tf.autocorrectionType     = UITextAutocorrectionTypeNo;
++                tf.autocapitalizationType = UITextAutocapitalizationTypeNone;
++            }];
++        }
++    }
++
++    UIAlertAction *preferred   = nil;
++    bool           have_cancel = false;
++
++    for (const IOSAlertButton &b : buttons) {
++        if (b.label.IsEmpty())
++            continue;
++
++        // ONE cancel row at most: UIKit throws on the second one.
++        const bool as_cancel = b.cancel && !have_cancel && !b.destructive;
++
++        UIAlertActionStyle style = UIAlertActionStyleDefault;
++        if (b.destructive)
++            style = UIAlertActionStyleDestructive;
++        else if (as_cancel)
++            style = UIAlertActionStyleCancel;
++
++        wxWindow *const             widget = b.widget;
++        const int                   id     = b.id;
++        const std::function<void()> before = b.before;
++
++        UIAlertAction *const action =
++            [UIAlertAction actionWithTitle:wxCFStringRef(b.label).AsNSString()
++                                     style:style
++                                   handler:^(UIAlertAction *a) {
++                (void) a;
++                // Marked chosen NOW, synchronously, so the watchdog can tell
++                // that a row won even though the row is delivered a turn later.
++                state->pending = true;
++                dispatch_async(dispatch_get_main_queue(), ^{
++                    orca_ios_alert_deliver(state, widget, id, before);
++                });
++            }];
++        action.enabled = b.enabled ? YES : NO;
++        [ac addAction:action];
++
++        if (as_cancel) {
++            have_cancel        = true;
++            state->cancel_code = id;
++        }
++        if (b.preferred && preferred == nil)
++            preferred = action;
++    }
++
++    if (ac.actions.count == 0)
++        return nil;
++    if (preferred != nil)
++        ac.preferredAction = preferred;
++    // Nothing was marked as the way out, so the first row is it. The watchdog
++    // and every "the alert went away by itself" path answer with this code.
++    if (!have_cancel && !buttons.empty())
++        state->cancel_code = buttons.front().id;
++
++    return ac;
++}
++
++// Presents it, and says whether it went up. @try because presentation is the
++// call that throws when the controller chain has moved under us between
++// choosing a presenter and using it; the caller then falls back to the wx
++// dialog, which is ugly and works.
++static bool orca_ios_alert_present(UIAlertController *ac)
++{
++    UIViewController *const presenter = orca_ios_top_presenter();
++    if (presenter == nil || presenter.view.window == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: no controller to present from";
++        return false;
++    }
++
++    @try {
++        [presenter presentViewController:ac animated:YES completion:nil];
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: presentation THREW "
++                                 << [[e name] UTF8String] << ": " << [[e reason] UTF8String];
++        return false;
++    }
++
++    return true;
++}
++
++bool orca_ios_alert_run(wxDialog                          *dlg,
++                        const wxString                    &title,
++                        const wxString                    &message,
++                        const std::vector<IOSAlertButton> &buttons,
++                        std::vector<IOSAlertField>        *fields,
++                        int                               *result)
++{
++    if (dlg == nullptr || result == nullptr)
++        return false;
++
++    // Not from a worker thread. Orca does put dialogs up from jobs, but always
++    // by hopping to the GUI thread first; if one ever does not, refusing here
++    // sends it back to the wx path rather than into UIKit off the main thread.
++    if (!wxThread::IsMain())
++        return false;
++
++    std::shared_ptr<OrcaAlertState> state = std::make_shared<OrcaAlertState>();
++    state->dlg    = dlg;
++    state->fields = fields;
++
++    UIAlertController *const ac = orca_ios_alert_build(title, message, buttons, fields, state);
++    if (ac == nil)
++        return false;
++    // Held until the row is delivered: the text fields are read out of it then,
++    // long after UIKit has let go of the dismissed controller.
++    state->alert = [ac retain];
++
++    if (!orca_ios_alert_present(ac)) {
++        [state->alert release];
++        state->alert = nil;
++        return false;
++    }
++
++    ++gs_orca_alerts_up;
++    orca_ios_alert_watch(ac, state, 0);
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: [" << title.utf8_string() << "] "
++                             << message.utf8_string() << " (" << buttons.size() << " rows)";
++
++    // The loop. Deliberately not installed as the dialog's own m_eventLoop:
++    // the dialog is not showing, EndModal() from a row's handler must not try
++    // to end a loop this function owns, and the delivery above ends it
++    // explicitly with the code the handler settled on.
++    wxModalEventLoop loop(dlg);
++    state->loop = &loop;
++    const int rc = loop.Run();
++    state->loop  = nullptr;
++
++    // Gone by now in every ordinary path. Dismissing an already-dismissed
++    // controller is a no-op, so this is unconditional rather than guessed at.
++    if (ac.presentingViewController != nil)
++        [ac dismissViewControllerAnimated:YES completion:nil];
++
++    *result = state->finished ? state->code : rc;
++    return true;
++}
++
++// The modeless alerts that are up, by the window they stand in for. Only ever
++// touched from the main thread, which is where both of the functions below
++// refuse to run otherwise.
++static std::map<wxWindow *, std::shared_ptr<OrcaAlertState>> gs_posted;
++
++void orca_ios_alert_dismiss(wxWindow *owner)
++{
++    if (!wxThread::IsMain())
++        return;
++
++    const auto it = gs_posted.find(owner);
++    if (it == gs_posted.end())
++        return;
++
++    std::shared_ptr<OrcaAlertState> state = it->second;
++    gs_posted.erase(it);
++
++    if (state->finished)
++        return;
++    // Marked finished before the dismissal so that the watchdog does not read
++    // the disappearance as a row nobody chose and deliver a cancel for it.
++    state->finished = true;
++    if (gs_orca_alerts_up > 0)
++        --gs_orca_alerts_up;
++
++    UIAlertController *const ac = state->alert;
++    state->alert = nil;
++    if (ac != nil) {
++        if (ac.presentingViewController != nil)
++            [ac dismissViewControllerAnimated:YES completion:nil];
++        [ac release];
++    }
++}
++
++bool orca_ios_alert_post(wxWindow                          *owner,
++                         const wxString                    &title,
++                         const wxString                    &message,
++                         const std::vector<IOSAlertButton> &buttons)
++{
++    if (!wxThread::IsMain())
++        return false;
++
++    // No dialog and no loop: nothing here waits, and nothing here has a return
++    // code to set. The row's wxEVT_BUTTON is the whole of the result, which is
++    // exactly what a modeless window's buttons already do.
++    std::shared_ptr<OrcaAlertState> state = std::make_shared<OrcaAlertState>();
++
++    UIAlertController *const ac = orca_ios_alert_build(title, message, buttons, nullptr, state);
++    if (ac == nil)
++        return false;
++    state->alert = [ac retain];
++
++    if (!orca_ios_alert_present(ac)) {
++        [state->alert release];
++        state->alert = nil;
++        return false;
++    }
++
++    ++gs_orca_alerts_up;
++    orca_ios_alert_watch(ac, state, 0);
++    // One at a time per window: a second on_show() for the same frame replaces
++    // the first, exactly as showing the window twice would.
++    if (owner != nullptr) {
++        const auto previous = gs_posted.find(owner);
++        if (previous != gs_posted.end())
++            gs_posted.erase(previous);
++        gs_posted[owner] = state;
++    }
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: (modeless) [" << title.utf8_string() << "] "
++                             << message.utf8_string();
++    return true;
++}
++
++} // namespace GUI
++} // namespace Slic3r

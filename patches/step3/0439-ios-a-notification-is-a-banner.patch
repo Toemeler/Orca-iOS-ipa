@@ -10,10 +10,10 @@ diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
  endif ()
  
 diff --git a/src/slic3r/GUI/NotificationManager.cpp b/src/slic3r/GUI/NotificationManager.cpp
-index 2e8d22ebe..59baae499 100644
+index 2e8d22ebe..9ad0ff87a 100644
 --- a/src/slic3r/GUI/NotificationManager.cpp
 +++ b/src/slic3r/GUI/NotificationManager.cpp
-@@ -1854,8 +1854,236 @@ void NotificationManager::ProgressIndicatorNotification::render_close_button(ImG
+@@ -1854,8 +1854,242 @@ void NotificationManager::ProgressIndicatorNotification::render_close_button(ImG
  NotificationManager::NotificationManager(wxEvtHandler* evt_handler) :
  	m_evt_handler(evt_handler)
  {
@@ -30,8 +30,8 @@ index 2e8d22ebe..59baae499 100644
 +	m_ios_timer->Bind(wxEVT_TIMER, [this](wxTimerEvent &) { this->orca_ios_tick(); });
 +	m_ios_timer->Start(250);
 +#endif
-+}
-+
+ }
+ 
 +#ifdef __WXOSX_IPHONE__
 +
 +NotificationManager::~NotificationManager()
@@ -67,6 +67,12 @@ index 2e8d22ebe..59baae499 100644
 +		return;
 +	}
 +
++	// The frame as well as the plater: this runs off a timer rather than off
++	// the render loop, so it can fire during teardown, and
++	// update_notifications() walks up the parent chain to the top level window
++	// and dereferences what it finds there without checking.
++	if (wxGetApp().mainframe == nullptr)
++		return;
 +	Plater *const plater = wxGetApp().plater();
 +	if (plater == nullptr)
 +		return;
@@ -211,8 +217,8 @@ index 2e8d22ebe..59baae499 100644
 +		notification->close();
 +
 +	orca_ios_sync_native();
- }
- 
++}
++
 +void NotificationManager::orca_ios_notice_close(uintptr_t key)
 +{
 +	PopNotification *const notification = orca_ios_find_notice(key);
@@ -250,7 +256,7 @@ index 2e8d22ebe..59baae499 100644
  void NotificationManager::on_change_color_mode(bool is_dark) {
  	m_is_dark = is_dark;
  	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications){
-@@ -3029,6 +3257,21 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
+@@ -3029,6 +3263,21 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
  {
  	sort_notifications();
  
@@ -272,7 +278,7 @@ index 2e8d22ebe..59baae499 100644
  	float bottom_up_last_y = bottom_margin; // ORCA dont scale margins
  
  	int i = 0;
-@@ -3052,6 +3295,7 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
+@@ -3052,6 +3301,7 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
  			;// assert(i <= 1);
  		}
  	}
@@ -411,10 +417,10 @@ index 44f2bbd32..af2cb510f 100644
      void        render(GLCanvas3D& canvas, float initial_y, bool move_from_overlay, float overlay_width, float right_margin) override;
 diff --git a/src/slic3r/GUI/ios_native_notifications.mm b/src/slic3r/GUI/ios_native_notifications.mm
 new file mode 100644
-index 000000000..b9ecdede9
+index 000000000..8d6d537eb
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_notifications.mm
-@@ -0,0 +1,620 @@
+@@ -0,0 +1,645 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -523,6 +529,9 @@ index 000000000..b9ecdede9
 +         progress:(float)progress
 +         closable:(BOOL)closable;
 +- (CGFloat)heightForWidth:(CGFloat)width;
++// What it is saying right now, so that an update which repeats itself can be
++// told from one that has something new to say.
++- (NSString *)currentText;
 +@end
 +
 +@implementation OrcaNoticeView {
@@ -677,6 +686,11 @@ index 000000000..b9ecdede9
 +    _label.accessibilityLabel  = text;
 +
 +    [self setNeedsLayout];
++}
++
++- (NSString *)currentText
++{
++    return _label.text != nil ? _label.text : @"";
 +}
 +
 +- (CGFloat)heightForWidth:(CGFloat)width
@@ -892,7 +906,11 @@ index 000000000..b9ecdede9
 +    if (banner == nil)
 +        return;
 +
-+    void (^closer)(void) = tell_orca ? banner.onClose : nil;
++    // Taken now, because the block is about to be released with the banner and
++    // is still wanted after the animation is set going.
++    void (^closer)(void) = nil;
++    if (tell_orca)
++        closer = banner.onClose;
 +
 +    [gs_banners removeObjectForKey:k];
 +    [UIView animateWithDuration:0.22
@@ -976,6 +994,18 @@ index 000000000..b9ecdede9
 +        std::function<void()> on_action = n.on_action;
 +        std::function<void()> on_close  = n.on_close;
 +
++        // A notification that has changed what it says gets its time back. A
++        // warning that gains a second object's name, or a progress line that
++        // moves on, is news; one that repeats itself is not, and must not keep
++        // a banner alive indefinitely by being re-sent every quarter second.
++        // NAMED, so that it outlives the statement: wxCFStringRef owns the
++        // string and releases it when it goes out of scope, and AsNSString()
++        // is a cast, not a retain. This one is used twice and must survive
++        // both uses, so the owner has to be a local rather than a temporary.
++        const wxCFStringRef cf_text(n.text);
++        NSString *const next_text = cf_text.AsNSString();
++        const bool changed = !fresh && ![[banner currentText] isEqualToString:next_text];
++
 +        // Assigned in two statements rather than through a ternary: a block
 +        // literal and nil have no common type for the compiler to deduce.
 +        banner.onAction = nil;
@@ -991,22 +1021,23 @@ index 000000000..b9ecdede9
 +        };
 +
 +        [banner applyKind:(int) n.kind
-+                     text:wxCFStringRef(n.text).AsNSString()
++                     text:next_text
 +              actionTitle:n.action_label.IsEmpty() ? nil
 +                                                   : wxCFStringRef(n.action_label).AsNSString()
 +                 progress:n.progress
 +                 closable:n.closable ? YES : NO];
 +
-+        // The countdown is only ever (re)started for a banner that is new or
-+        // whose text changed: an update that says the same thing must not keep
-+        // a banner alive for ever.
-+        if (fresh)
++        if (fresh || changed)
 +            banner.remaining = n.duration > 0 ? (double) n.duration : 0.0;
 +
 +        if (fresh) {
++            // Laid out first, so that the slide starts from where the banner
++            // is going to be rather than from the corner of the window: a view
++            // added this turn has no frame until the host lays out.
++            [host setNeedsLayout];
++            [host layoutIfNeeded];
 +            banner.alpha     = 0.0f;
 +            banner.transform = CGAffineTransformMakeTranslation(kOrcaNoticeWidth * 0.35f, 0);
-+            [host layoutIfNeeded];
 +            [UIView animateWithDuration:0.32
 +                                  delay:0
 +                 usingSpringWithDamping:0.86

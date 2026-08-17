@@ -905,10 +905,10 @@ index 000000000..ff5cb4761
 +#endif // slic3r_GUI_ios_native_ui_hpp_
 diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
 new file mode 100644
-index 000000000..15825d27c
+index 000000000..71f0412c3
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_ui.mm
-@@ -0,0 +1,526 @@
+@@ -0,0 +1,539 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -1191,15 +1191,28 @@ index 000000000..15825d27c
 +    if (buttons.empty())
 +        return nil;
 +
++    // NAMED, AND NOT A TEMPORARY IN THE ARGUMENT.
++    //
++    // wxCFStringRef owns the CFString it makes and releases it when it goes out
++    // of scope, and AsNSString() is a cast rather than a retain - so
++    //
++    //     NSString *s = wxCFStringRef(title).AsNSString();
++    //
++    // leaves `s` pointing at a string that was deallocated at the end of that
++    // statement. Passing the temporary straight into a message send is safe
++    // (it lives to the end of the full expression, by which time UIKit has
++    // copied it); holding the result in a variable first is not.
++    const wxCFStringRef cf_title(title);
++    const wxCFStringRef cf_message(message);
++
 +    // An empty title is passed as nil rather than as "": UIAlertController
 +    // gives the bold first line to the message when there is no title, which
 +    // reads better than a blank line above the text.
-+    NSString *const ns_title   = title.IsEmpty()   ? nil : wxCFStringRef(title).AsNSString();
-+    NSString *const ns_message = message.IsEmpty() ? nil : wxCFStringRef(message).AsNSString();
-+
 +    UIAlertController *const ac =
-+        [UIAlertController alertControllerWithTitle:ns_title
-+                                            message:ns_message
++        [UIAlertController alertControllerWithTitle:(title.IsEmpty() ? nil
++                                                                    : cf_title.AsNSString())
++                                            message:(message.IsEmpty() ? nil
++                                                                       : cf_message.AsNSString())
 +                                     preferredStyle:UIAlertControllerStyleAlert];
 +    if (ac == nil)
 +        return nil;

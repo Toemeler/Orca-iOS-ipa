@@ -1,0 +1,7 @@
+=== FAILED targets ===
+GUI/ios_native_notifications.mm
+
+=== undefined symbols (linker) ===
+
+total FAILED: 1
+undefined symbol count: 0

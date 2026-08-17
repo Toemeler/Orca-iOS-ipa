@@ -1,0 +1,118 @@
++ grep -oE 'Result: .*' /Users/runner/ccache-step4.log
++ sort
++ uniq -c
++ sort -rn
++ head -20
+ 993 Result: local_storage_read_hit
+ 560 Result: local_storage_write
+ 361 Result: local_storage_hit
+ 361 Result: direct_cache_hit
+ 291 Result: local_storage_read_miss
+ 281 Result: preprocessed_cache_miss
+ 281 Result: direct_cache_miss
+ 280 Result: local_storage_miss
+ 280 Result: cache_miss
+   1 Result: compile_failed
++ echo '--- sample miss context ---'
+--- sample miss context ---
++ grep -B60 -m1 'Result: cache_miss' /Users/runner/ccache-step4.log
++ tail -60
+[2026-08-17T17:46:21.455426 25264] Mismatch for ../src/slic3r/GUI/IMSlider.hpp: size 9763 != 9568
+[2026-08-17T17:46:21.455433 25264] Considering result entry 2 (d8732bfb1bc2e76528e1f78caed4e72604d239ae)
+[2026-08-17T17:46:21.455441 25264] Mismatch for ../deps_src/admesh/../../src/libvgcode/include/Viewer.hpp: size 16633 != 16369
+[2026-08-17T17:46:21.455448 25264] Considering result entry 1 (ca23802dfd70bdd97162d6fc3bcb576ea0523eca)
+[2026-08-17T17:46:21.455457 25264] Mismatch for ../deps_src/admesh/../../src/libvgcode/include/Viewer.hpp: size 16633 != 16327
+[2026-08-17T17:46:21.455202 25278] Mismatch for ../src/libslic3r/Model.hpp: size 87033 != 86470
+[2026-08-17T17:46:21.455462 25264] Considering result entry 0 (820a726687e9647df20c91d6a1f376f0beed4756)
+[2026-08-17T17:46:21.455516 25264] Mismatch for ../deps_src/admesh/../../src/libvgcode/include/Viewer.hpp: size 16633 != 15011
+[2026-08-17T17:46:21.455499 25278] Considering result entry 2 (9bbb24cb11a1fca6e85e06117cb3067d3213d6fc)
+[2026-08-17T17:46:21.455596 25278] Mismatch for ../src/libslic3r/Model.hpp: size 87033 != 86470
+[2026-08-17T17:46:21.455612 25278] Considering result entry 1 (5fb3b2b278d3c678991b3daf25b08a009e375cb4)
+[2026-08-17T17:46:21.455631 25264] Did not find result key in manifest
+[2026-08-17T17:46:21.455660 25278] Mismatch for ../src/libslic3r/Model.hpp: size 87033 != 86470
+[2026-08-17T17:46:21.455682 25278] Considering result entry 0 (8861703b8e88d1393aaad0ac170d8750457ef16e)
+[2026-08-17T17:46:21.455728 25278] Mismatch for ../src/libslic3r/Model.hpp: size 87033 != 86470
+[2026-08-17T17:46:21.455828 25264] Running preprocessor
+[2026-08-17T17:46:21.455906 25278] Did not find result key in manifest
+[2026-08-17T17:46:21.455973 25264] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I../src/slic3r/Utils -Isrc/slic3r -Isrc/libslic3r -I../src/libvgcode/glad/include -I../src/glad/include -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../../ios-prefix/usr/local/include/opencascade -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../deps_src/libigl -isystem ../deps_src/libnest2d/include -isystem ../../ios-prefix/usr/local/include -isystem ../deps_src/miniz -isystem ../../ios-prefix/usr/local/include/opencv4 -isystem ../deps_src/imgui -isystem ../deps_src/imguizmo -isystem ../deps_src/minilzo -isystem ../deps_src/hidapi/include -isystem ../deps_src/mdns -isystem ../../wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem ../../wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -arch arm64 -E -o /Users/runner/.ccache-step4/tmp/cpp_stdout.tmp.e0qKXf.ii ../src/slic3r/Config/Snapshot.cpp
+[2026-08-17T17:46:21.456378 25278] Running preprocessor
+[2026-08-17T17:46:21.456602 25278] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I../src/slic3r/Utils -Isrc/slic3r -Isrc/libslic3r -I../src/libvgcode/glad/include -I../src/glad/include -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../../ios-prefix/usr/local/include/opencascade -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../deps_src/libigl -isystem ../deps_src/libnest2d/include -isystem ../../ios-prefix/usr/local/include -isystem ../deps_src/miniz -isystem ../../ios-prefix/usr/local/include/opencv4 -isystem ../deps_src/imgui -isystem ../deps_src/imguizmo -isystem ../deps_src/minilzo -isystem ../deps_src/hidapi/include -isystem ../deps_src/mdns -isystem ../../wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem ../../wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -arch arm64 -E -o /Users/runner/.ccache-step4/tmp/cpp_stdout.tmp.KwSHJl.ii ../src/slic3r/GUI/3DBed.cpp
+[2026-08-17T17:46:22.211513 25250] Got result key from preprocessor with -arch arm64
+[2026-08-17T17:46:22.211543 25250] Result key: 471cb48374285590d18df8430fc21804fa2e33c6
+[2026-08-17T17:46:22.211708 25250] No 471cb48374285590d18df8430fc21804fa2e33c6 in local storage
+[2026-08-17T17:46:22.211728 25250] Running real compiler
+[2026-08-17T17:46:22.211911 25250] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I../src/slic3r/Utils -Isrc/slic3r -Isrc/libslic3r -I../src/libvgcode/glad/include -I../src/glad/include -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../../ios-prefix/usr/local/include/opencascade -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../deps_src/libigl -isystem ../deps_src/libnest2d/include -isystem ../../ios-prefix/usr/local/include -isystem ../deps_src/miniz -isystem ../../ios-prefix/usr/local/include/opencv4 -isystem ../deps_src/imgui -isystem ../deps_src/imguizmo -isystem ../deps_src/minilzo -isystem ../deps_src/hidapi/include -isystem ../deps_src/mdns -isystem ../../wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem ../../wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o ../src/slic3r/GUI/Widgets/AnimaController.cpp
+[2026-08-17T17:46:22.753591 25279] Got result key from preprocessor with -arch arm64
+[2026-08-17T17:46:22.753620 25279] Result key: ff4c948070a146f68e3b54c64af9dd0f1a8910c0
+[2026-08-17T17:46:22.753901 25279] No ff4c948070a146f68e3b54c64af9dd0f1a8910c0 in local storage
+[2026-08-17T17:46:22.753942 25279] Running real compiler
+[2026-08-17T17:46:22.754331 25279] Executing /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I../src/slic3r/Utils -Isrc/slic3r -Isrc/libslic3r -I../src/libvgcode/glad/include -I../src/glad/include -isystem ../src -isystem src/dev-utils/platform -isystem ../src/libigl -isystem ../../ios-prefix/usr/local/include/opencascade -isystem ../../ios-prefix/usr/local/include/eigen3 -isystem ../deps_src/admesh -isystem ../deps_src -isystem ../deps_src/libigl -isystem ../deps_src/libnest2d/include -isystem ../../ios-prefix/usr/local/include -isystem ../deps_src/miniz -isystem ../../ios-prefix/usr/local/include/opencv4 -isystem ../deps_src/imgui -isystem ../deps_src/imguizmo -isystem ../deps_src/minilzo -isystem ../deps_src/hidapi/include -isystem ../deps_src/mdns -isystem ../../wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem ../../wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/StaticGroup.cpp.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/StaticGroup.cpp.o.d -arch arm64 -fcolor-diagnostics -c -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/StaticGroup.cpp.o ../src/slic3r/GUI/Widgets/StaticGroup.cpp
+[2026-08-17T17:46:25.708096 25250] No paths in dependency file src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o.d made relative
+[2026-08-17T17:46:25.710519 25250] Using Zstandard with default compression level 1
+[2026-08-17T17:46:25.710663 25250] Storing embedded entry #0 <stderr> (672 bytes)
+[2026-08-17T17:46:25.710703 25250] Storing embedded entry #1 .o (57896 bytes) from src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o
+[2026-08-17T17:46:25.710921 25250] Storing embedded entry #2 .d (136635 bytes) from src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/Widgets/AnimaController.cpp.o.d
+[2026-08-17T17:46:25.716483 25250] Acquiring /Users/runner/.ccache-step4/lock/subdir_47.lock
+[2026-08-17T17:46:25.717287 25250] Acquired /Users/runner/.ccache-step4/lock/subdir_47.lock
+[2026-08-17T17:46:25.717315 25250] Creating /Users/runner/.ccache-step4/lock/subdir_47.alive
+[2026-08-17T17:46:25.717521 25250] Stored 471cb48374285590d18df8430fc21804fa2e33c6 in local storage (/Users/runner/.ccache-step4/4/7/1cb48374285590d18df8430fc21804fa2e33c6)
+[2026-08-17T17:46:25.717627 25250] Acquiring /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.717934 25250] Acquired /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.717952 25250] Creating /Users/runner/.ccache-step4/4/stats.alive
+[2026-08-17T17:46:25.719937 25250] Releasing /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.720037 25250] Released /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.720045 25250] Releasing /Users/runner/.ccache-step4/lock/subdir_47.lock
+[2026-08-17T17:46:25.720102 25250] Released /Users/runner/.ccache-step4/lock/subdir_47.lock
+[2026-08-17T17:46:25.730126 25250] Added result key to manifest 42d55fbc093a1b0f915c8f5b68b2a3f860d2345c
+[2026-08-17T17:46:25.730164 25250] Using Zstandard with default compression level 1
+[2026-08-17T17:46:25.730971 25250] Acquiring /Users/runner/.ccache-step4/lock/subdir_42.lock
+[2026-08-17T17:46:25.731034 25250] Acquired /Users/runner/.ccache-step4/lock/subdir_42.lock
+[2026-08-17T17:46:25.731041 25250] Creating /Users/runner/.ccache-step4/lock/subdir_42.alive
+[2026-08-17T17:46:25.731701 25250] Stored 42d55fbc093a1b0f915c8f5b68b2a3f860d2345c in local storage (/Users/runner/.ccache-step4/4/2/d55fbc093a1b0f915c8f5b68b2a3f860d2345c)
+[2026-08-17T17:46:25.731739 25250] Acquiring /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.731803 25250] Acquired /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.731810 25250] Creating /Users/runner/.ccache-step4/4/stats.alive
+[2026-08-17T17:46:25.732380 25250] Releasing /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.732461 25250] Released /Users/runner/.ccache-step4/4/stats.lock
+[2026-08-17T17:46:25.732472 25250] Releasing /Users/runner/.ccache-step4/lock/subdir_42.lock
+[2026-08-17T17:46:25.732519 25250] Released /Users/runner/.ccache-step4/lock/subdir_42.lock
+[2026-08-17T17:46:25.732567 25250] Result: cache_miss
++ echo '--- reasons, ranked ---'
+--- reasons, ranked ---
++ grep -oE '(Include file .* has changed|.*not found in manifest.*|No object file hash in manifest|Failed to .*|Disabling direct mode.*|.*pch.*)' /Users/runner/ccache-step4.log
++ sed -E 's#/Users/runner[^ ]*/##'
++ sort
++ uniq -c
++ sort -rn
++ head -25
+   1 [2026-08-17T19:10:35.480922 64986] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:35.480922 64986] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:35.343928 64985] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:35.343928 64985] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:35.221842 64982] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:35.221842 64982] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:35.101729 64981] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:35.101729 64981] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:34.915421 64978] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:34.915421 64978] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:34.704778 64973] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:34.704778 64973] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:33.379488 64965] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:33.379488 64965] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:32.658268 64957] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:32.658268 64957] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:26.521493 64811] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:26.521493 64811] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:25.224343 64798] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:25.224343 64798] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:24.806726 64797] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:24.806726 64797] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:23.930289 64791] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+   1 [2026-08-17T19:10:23.930289 64791] Config: (default) pch_external_checksum = false
+   1 [2026-08-17T19:10:23.787830 64790] Config: (environment) sloppiness = include_file_ctime, include_file_mtime, locale, pch_defines, time_macros
+sort: Broken pipe
++ echo '--- first compile command line (diff this against the previous run) ---'
+--- first compile command line (diff this against the previous run) ---
++ grep -m1 -A1 'Command line:' /Users/runner/ccache-step4.log
+[2026-08-17T17:46:12.402557 24581] Command line: ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_ASIO_DISABLE_KQUEUE -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DNDEBUG -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DUNICODE -DWXINTL_NO_GETTEXT_MACRO -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT deps_src/admesh/CMakeFiles/admesh.dir/shared.cpp.o -MF deps_src/admesh/CMakeFiles/admesh.dir/shared.cpp.o.d -o deps_src/admesh/CMakeFiles/admesh.dir/shared.cpp.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/shared.cpp
+[2026-08-17T17:46:12.402557 24581] Hostname: sjc20-cw713-17f8ec23-4751-4083-b1e9-e8e0426204dc-1E5932042B19.local

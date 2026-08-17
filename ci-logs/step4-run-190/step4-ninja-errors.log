@@ -1,0 +1,179 @@
+11366-In file included from ../src/libslic3r/SLAPrint.cpp:1:
+11367-In file included from ../src/libslic3r/SLAPrint.hpp:5:
+11368-In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/mutex:512:
+11369:In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/system_error:152:
+11370-In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__system_error/error_category.h:15:
+11371-In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/string:611:
+11372-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:81: warning: destructor called on non-final 'Slic3r::Polyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+11373-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+11374-      |                                                                                 ^
+11375-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator_traits.h:324:9: note: in instantiation of member function 'std::allocator<Slic3r::Polyline>::destroy' requested here
+11376-  324 |     __a.destroy(__p);
+11377-      |         ^
+11378-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:309:21: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::Polyline>>::destroy<Slic3r::Polyline, 0>' requested here
+11379-  309 |     __alloc_traits::destroy(__alloc_, std::__to_address(--__end_));
+11380-      |                     ^
+11381-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:173:5: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::__destruct_at_end' requested here
+11382-  173 |     __destruct_at_end(__new_last, false_type());
+11383-      |     ^
+11384-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:115:80: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::__destruct_at_end' requested here
+11385-  115 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI void clear() _NOEXCEPT { __destruct_at_end(__begin_); }
+11386-      |                                                                                ^
+11387-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:335:3: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::clear' requested here
+11388-  335 |   clear();
+11389-      |   ^
+11390-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:1086:49: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::~__split_buffer' requested here
+11391- 1086 |     __split_buffer<value_type, allocator_type&> __v(__n, size(), this->__alloc_);
+11392-      |                                                 ^
+11393-../src/libslic3r/Polyline.hpp:199:9: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::reserve' requested here
+11394-  199 |     out.reserve(paths.size());
+11395-      |         ^
+11396-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:87: note: qualify call to silence this warning
+11397-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+11398-      |                                                                                       ^
+11399-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:81: warning: destructor called on non-final 'Slic3r::ThickPolyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+11400-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+11401-      |                                                                                 ^
+11402-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator_traits.h:324:9: note: in instantiation of member function 'std::allocator<Slic3r::ThickPolyline>::destroy' requested here
+11403-  324 |     __a.destroy(__p);
+11404-      |         ^
+11405-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:749:23: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::ThickPolyline>>::destroy<Slic3r::ThickPolyline, 0>' requested here
+11406-  749 |       __alloc_traits::destroy(this->__alloc_, std::__to_address(--__soon_to_be_end));
+11407-      |                       ^
+11408-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:531:5: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__base_destruct_at_end' requested here
+11409-  531 |     __base_destruct_at_end(this->__begin_);
+11410-      |     ^
+11411-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:248:16: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::clear' requested here
+11412-  248 |         __vec_.clear();
+11413-      |                ^
+11414-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:259:67: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__destroy_vector::operator()' requested here
+11415-  259 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+11416-      |                                                                   ^
+11417-../src/libslic3r/Polyline.hpp:281:20: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::~vector' requested here
+11418-  281 |     ThickPolylines out;
+11419-      |                    ^
+11420-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:87: note: qualify call to silence this warning
+11421-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+11422-      |                                                                                       ^
+11423-In file included from ../src/libslic3r/SLAPrint.cpp:1:
+11424-In file included from ../src/libslic3r/SLAPrint.hpp:6:
+11425-In file included from ../src/libslic3r/PrintBase.hpp:13:
+11426-In file included from ../src/libslic3r/Model.hpp:6:
+11427-In file included from ../src/libslic3r/Geometry.hpp:5:
+11428-In file included from ../src/libslic3r/BoundingBox.hpp:6:
+11429-In file included from ../src/libslic3r/Point.hpp:12:
+--
+12015-In file included from ../src/libslic3r/Support/TreeModelVolumes.cpp:9:
+12016-In file included from ../src/libslic3r/Support/TreeModelVolumes.hpp:12:
+12017-In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/mutex:512:
+12018:In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/system_error:152:
+12019-In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__system_error/error_category.h:15:
+12020-In file included from /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/string:611:
+12021-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:81: warning: destructor called on non-final 'Slic3r::Polyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+12022-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+12023-      |                                                                                 ^
+12024-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator_traits.h:324:9: note: in instantiation of member function 'std::allocator<Slic3r::Polyline>::destroy' requested here
+12025-  324 |     __a.destroy(__p);
+12026-      |         ^
+12027-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:309:21: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::Polyline>>::destroy<Slic3r::Polyline, 0>' requested here
+12028-  309 |     __alloc_traits::destroy(__alloc_, std::__to_address(--__end_));
+12029-      |                     ^
+12030-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:173:5: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::__destruct_at_end' requested here
+12031-  173 |     __destruct_at_end(__new_last, false_type());
+12032-      |     ^
+12033-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:115:80: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::__destruct_at_end' requested here
+12034-  115 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI void clear() _NOEXCEPT { __destruct_at_end(__begin_); }
+12035-      |                                                                                ^
+12036-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__split_buffer:335:3: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::clear' requested here
+12037-  335 |   clear();
+12038-      |   ^
+12039-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:1086:49: note: in instantiation of member function 'std::__split_buffer<Slic3r::Polyline, std::allocator<Slic3r::Polyline> &>::~__split_buffer' requested here
+12040- 1086 |     __split_buffer<value_type, allocator_type&> __v(__n, size(), this->__alloc_);
+12041-      |                                                 ^
+12042-../src/libslic3r/Support/../Polyline.hpp:199:9: note: in instantiation of member function 'std::vector<Slic3r::Polyline>::reserve' requested here
+12043-  199 |     out.reserve(paths.size());
+12044-      |         ^
+12045-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:87: note: qualify call to silence this warning
+12046-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+12047-      |                                                                                       ^
+12048-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:81: warning: destructor called on non-final 'Slic3r::ThickPolyline' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+12049-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+12050-      |                                                                                 ^
+12051-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator_traits.h:324:9: note: in instantiation of member function 'std::allocator<Slic3r::ThickPolyline>::destroy' requested here
+12052-  324 |     __a.destroy(__p);
+12053-      |         ^
+12054-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:749:23: note: in instantiation of function template specialization 'std::allocator_traits<std::allocator<Slic3r::ThickPolyline>>::destroy<Slic3r::ThickPolyline, 0>' requested here
+12055-  749 |       __alloc_traits::destroy(this->__alloc_, std::__to_address(--__soon_to_be_end));
+12056-      |                       ^
+12057-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:531:5: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__base_destruct_at_end' requested here
+12058-  531 |     __base_destruct_at_end(this->__begin_);
+12059-      |     ^
+12060-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:248:16: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::clear' requested here
+12061-  248 |         __vec_.clear();
+12062-      |                ^
+12063-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__vector/vector.h:259:67: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::__destroy_vector::operator()' requested here
+12064-  259 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+12065-      |                                                                   ^
+12066-../src/libslic3r/Support/../Polyline.hpp:281:20: note: in instantiation of member function 'std::vector<Slic3r::ThickPolyline>::~vector' requested here
+12067-  281 |     ThickPolylines out;
+12068-      |                    ^
+12069-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/usr/include/c++/v1/__memory/allocator.h:156:87: note: qualify call to silence this warning
+12070-  156 |   _LIBCPP_DEPRECATED_IN_CXX17 _LIBCPP_HIDE_FROM_ABI void destroy(pointer __p) { __p->~_Tp(); }
+12071-      |                                                                                       ^
+12072-In file included from ../src/libslic3r/Support/TreeModelVolumes.cpp:9:
+12073-In file included from ../src/libslic3r/Support/TreeModelVolumes.hpp:17:
+12074-In file included from ../src/libslic3r/Support/TreeSupportCommon.hpp:13:
+12075-In file included from ../src/libslic3r/Support/../Polygon.hpp:7:
+12076-In file included from ../src/libslic3r/Support/../Line.hpp:5:
+12077-In file included from ../src/libslic3r/Support/../Point.hpp:12:
+12078-../../ios-prefix/usr/local/include/oneapi/tbb/scalable_allocator.h:254:31: warning: destructor called on non-final 'Slic3r::Polygon' that has virtual functions but non-virtual destructor [-Wdelete-non-abstract-non-virtual-dtor]
+--
+33123-      |  ^
+33124-2 warnings generated.
+33125-[651/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_notifications.mm.o
+33126:FAILED: [code=1] src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_notifications.mm.o 
+33127-ccache /usr/bin/c++ -DBBL_RELEASE_TO_PUBLIC=1 -DBOOST_NO_CXX98_FUNCTION_BASE -DGIT_COMMIT_HASH=\"395e070a0e\" -DLIBNEST2D_GEOMETRIES_libslic3r -DLIBNEST2D_OPTIMIZER_nlopt -DLIBNEST2D_STATIC -DLIBNEST2D_THREADING_tbb -DNDEBUG -DORCA_BAMBU_LAN_AGENT -DSLIC3R_CURRENTLY_COMPILING_GUI_MODULE -DSLIC3R_DESKTOP_INTEGRATION -DSLIC3R_GUI -DSLIC3R_OPENGL_ES=1 -DTBB_USE_CAPTURED_EXCEPTION=0 -DUNICODE -DUSE_TBB -DWXINTL_NO_GETTEXT_MACRO -D_FILE_OFFSET_BITS=64 -D_HAS_AUTO_PTR_ETC=0 -D_UNICODE -D__WXOSX_IPHONE__ -DwxDEBUG_LEVEL=0 -DwxNO_UNSAFE_WXSTRING_CONV -DwxUSE_UNICODE -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/Utils -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/slic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/libslic3r -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libvgcode/glad/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/glad/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/build/src/dev-utils/platform -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencascade -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/eigen3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/admesh/.. -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libigl -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/libnest2d/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/miniz -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include/opencv4 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imgui -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/imguizmo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/minilzo -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/hidapi/include -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/deps_src/mdns -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/lib/wx/include/osx_iphone-unicode-static-3.3 -isystem /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx-prefix/include/wx-3.3 -Wall -Wno-reorder -Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fsigned-char -Werror=return-type -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-local-typedefs -Wno-sign-compare -Wno-misleading-indentation -Wno-switch -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-error=enum-constexpr-conversion -MD -MT src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_notifications.mm.o -MF src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_notifications.mm.o.d -o src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_notifications.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/orca/src/slic3r/GUI/ios_native_notifications.mm
+33128:../src/slic3r/GUI/ios_native_notifications.mm:478:38: error: non-pointer operand type 'void (^)()' incompatible with nullptr
+33129-  478 |     void (^closer)(void) = tell_orca ? banner.onClose : nil;
+33130-      |                                      ^ ~~~~~~~~~~~~~~
+33131-1 error generated.
+33132-[652/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_ui.mm.o
+33133-[653/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanMqtt.cpp.o
+33134-[654/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanFtps.cpp.o
+33135-[655/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanDiscovery.cpp.o
+33136-[656/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrintCommand.cpp.o
+33137-[657/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanCamera.cpp.o
+33138-[658/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/Utils/BambuLanPrinterAgent.cpp.o
+33139-[659/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_progress.mm.o
+33140-[660/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/ios_native_picker.mm.o
+33141-[661/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceCore/DevManager.cpp.o
+33142-../src/slic3r/GUI/DeviceCore/DevManager.cpp:777:86: warning: loop variable 'pair' of type 'const std::pair<std::string, std::vector<std::string>> &' (aka 'const pair<basic_string<char>, vector<basic_string<char>>> &') binds to a temporary constructed from type 'reference' (aka 'pair<const std::string, std::vector<std::string, std::allocator<std::string>>> &') [-Wrange-loop-construct]
+33143-  777 |                         for (const std::pair<std::string, std::vector<std::string>> &pair : device_subseries) {
+33144-      |                                                                                      ^
+33145-../src/slic3r/GUI/DeviceCore/DevManager.cpp:777:30: note: use non-reference type 'std::pair<std::string, std::vector<std::string>>' (aka 'pair<basic_string<char>, vector<basic_string<char>>>') to make construction explicit or type 'const value_type &' (aka 'const pair<const std::string, std::vector<std::string, std::allocator<std::string>>> &') to prevent copying
+33146-  777 |                         for (const std::pair<std::string, std::vector<std::string>> &pair : device_subseries) {
+33147-      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+33148-1 warning generated.
+33149-[662/663] Building CXX object src/slic3r/CMakeFiles/libslic3r_gui.dir/GUI/DeviceTab/uiAmsHumidityPopup.cpp.o
+33150-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:6:2: warning: '/*' within block comment [-Wcomment]
+33151-    6 | //**********************************************************/
+33152-      |  ^
+33153-In file included from ../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+33154-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:6:2: warning: '/*' within block comment [-Wcomment]
+33155-    6 | //**********************************************************/
+33156-      |  ^
+33157-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:41:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+33158-   41 |     void Update(uiAmsHumidityInfo *info) { m_ams_id = info->ams_id; Update(info->humidity_display_idx, info->humidity_percent, info->left_dry_time, info->current_temperature); };
+33159-      |          ^
+33160-../../wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 1)
+33161-   74 |     virtual void Update() override;
+33162-      |                  ^
+33163-In file included from ../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.cpp:8:
+33164-../src/slic3r/GUI/DeviceTab/uiAmsHumidityPopup.h:48:10: warning: 'Slic3r::GUI::uiAmsPercentHumidityDryPopup::Update' hides overloaded virtual function [-Woverloaded-virtual]
+33165-   48 |     void Update(int humidiy_level, int humidity_percent, int left_dry_time, float current_temperature);
+33166-      |          ^
+33167-../../wx-prefix/include/wx-3.3/wx/osx/nonownedwnd.h:74:18: note: hidden overloaded virtual function 'wxNonOwnedWindow::Update' declared here: different number of parameters (0 vs 4)
+33168-   74 |     virtual void Update() override;
+33169-      |                  ^
+33170-4 warnings generated.
+33171-ninja: build stopped: cannot make progress due to previous errors.

@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/SingleChoiceDialog.cpp b/src/slic3r/GUI/SingleChoiceDialog.cpp
-index ec8010234..a026422d1 100644
+index ec8010234..02403bf66 100644
 --- a/src/slic3r/GUI/SingleChoiceDialog.cpp
 +++ b/src/slic3r/GUI/SingleChoiceDialog.cpp
 @@ -4,6 +4,13 @@
@@ -16,7 +16,7 @@ index ec8010234..a026422d1 100644
  
  namespace Slic3r { namespace GUI {
  
-@@ -40,6 +47,69 @@ SingleChoiceDialog::SingleChoiceDialog(const wxString &message, const wxString &
+@@ -40,6 +47,73 @@ SingleChoiceDialog::SingleChoiceDialog(const wxString &message, const wxString &
      wxGetApp().UpdateDlgDarkUI(this);
  }
  SingleChoiceDialog::~SingleChoiceDialog() {}
@@ -65,7 +65,11 @@ index ec8010234..a026422d1 100644
 +    if (!presented)
 +        return DPIDialog::ShowModal();
 +
-+    const int rc = loop.Run();
++    // Only if there is still something to wait for. Presentation is
++    // asynchronous, so a row cannot have been chosen yet - but a callback that
++    // fired before Run() started would leave the loop with nothing left to end
++    // it, and that is the whole application stopped.
++    const int rc = done ? wxID_OK : loop.Run();
 +
 +    // Neither callback ran - the picker went away without saying so - and the
 +    // safe reading of that is the same as pressing Cancel.

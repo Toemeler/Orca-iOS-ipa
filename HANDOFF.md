@@ -9436,12 +9436,23 @@ back off the dialog", which one walk of the static-text children does.
 `SendToPrinter.cpp` puts up when a job fails to send, which on this port is the
 core flow.
 
-Two neighbours were looked at and deliberately left as windows.
-`NetworkPluginRestartDialog` has no call site outside its own file. And
-`EditDevNameDialog` - renaming a printer - validates as you type: an invalid
-name sets a label and *keeps the dialog open*, which an alert cannot do without
-re-presenting itself in a loop. It is a text field with a validator, not a
-question, and it should stay a window until somebody wants to write that loop.
+**The rest of the short list, and why each stays a window.** The search was a
+script over every `DPIDialog`/`wxDialog` subclass in `src/slic3r/GUI`, ranking
+constructors by how few widgets they build; five came out, and four of them are
+not conversions:
+
+- `DeleteConfirmDialog` was already done in 0438.
+- `NetworkPluginRestartDialog` has no call site outside its own file.
+- `PartSkipConfirmDialog` likewise - `PartSkipDialog` drives it internally.
+- `EditDevNameDialog` (renaming a printer) and `ConnectPrinterDialog` ("Please
+  input the printer access code") both **validate and stay open**: an illegal
+  character sets a label, or raises an error, and the dialog waits for a better
+  answer. An alert closes on any row, so converting either would need it to
+  re-present itself in a loop. `ConnectPrinterDialog` also carries a diagram
+  showing where the access code is printed on the machine, which an alert has
+  nowhere to put. They are forms with validators, not questions.
+
+That is the whole of it: everything else in that list builds a page.
 
 ### Where the line is drawn, and why it is there
 

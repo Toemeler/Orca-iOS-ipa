@@ -72,7 +72,7 @@ index 2b318ee..bb856b0 100644
  // this application that are modeless: SecondaryCheckDialog is a wxFrame that
  // posts an event when a button is pressed and never waits for one. The row's
 diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
-index 24b70d1..47c209e 100644
+index 24b70d1..89aa2d5 100644
 --- a/src/slic3r/GUI/ios_native_ui.mm
 +++ b/src/slic3r/GUI/ios_native_ui.mm
 @@ -52,6 +52,9 @@
@@ -85,7 +85,19 @@ index 24b70d1..47c209e 100644
  #include <wx/thread.h>
  #include <wx/window.h>
  #include <wx/osx/core/cfstring.h>
-@@ -545,6 +548,79 @@ void orca_ios_alert_dismiss(wxWindow *owner)
+@@ -64,6 +67,11 @@
+ #include <vector>
+ 
+ #include "ios_native_ui.hpp"
++// orca_ios_alert_from_buttons() collects the dialog's Button children, and
++// Orca's Button is a StaticBox rather than anything wx knows about, so the
++// type has to come from here. It is the only Orca widget header this file
++// needs, and only that function needs it.
++#include "Widgets/Button.hpp"
+ 
+ namespace Slic3r {
+ namespace GUI {
+@@ -545,6 +553,79 @@ void orca_ios_alert_dismiss(wxWindow *owner)
      }
  }
  

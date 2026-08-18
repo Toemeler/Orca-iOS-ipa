@@ -156,10 +156,10 @@ index 09041e3dc..f7a1d0f81 100644
  
 diff --git a/src/slic3r/GUI/ios_native_picker.mm b/src/slic3r/GUI/ios_native_picker.mm
 new file mode 100644
-index 000000000..909557649
+index 000000000..091d8c8cd
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_picker.mm
-@@ -0,0 +1,488 @@
+@@ -0,0 +1,526 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -424,13 +424,25 @@ index 000000000..909557649
 +    return UIModalPresentationNone;
 +}
 +
++// THE BLOCKS ARE DROPPED HERE, AND THIS IS THE ONLY PLACE THEY ARE.
++//
++// Both of them name the navigation controller, which owns this controller as
++// its root - so a copied block held in a property of this object is a retain
++// cycle, and one drop-down's worth of controllers would be leaked every time a
++// list was opened. Clearing them once the list has ended breaks it, and
++// `notified` is what makes that happen exactly once however the list ended.
 +- (void)notifyPicked:(NSInteger)index
 +{
 +    if (self.notified)
 +        return;
 +    self.notified = YES;
-+    if (self.onPick != nil)
-+        self.onPick(index);
++
++    void (^pick)(NSInteger) = [[self.onPick copy] autorelease];
++    self.onPick    = nil;
++    self.onDismiss = nil;
++
++    if (pick != nil)
++        pick(index);
 +}
 +
 +- (void)notifyDismissed
@@ -438,8 +450,13 @@ index 000000000..909557649
 +    if (self.notified)
 +        return;
 +    self.notified = YES;
-+    if (self.onDismiss != nil)
-+        self.onDismiss();
++
++    void (^dismissed)(void) = [[self.onDismiss copy] autorelease];
++    self.onPick    = nil;
++    self.onDismiss = nil;
++
++    if (dismissed != nil)
++        dismissed();
 +}
 +
 +- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
@@ -473,7 +490,7 @@ index 000000000..909557649
 +static wxWindow         *gs_picker_owner = nullptr;
 +
 +// Defined below; the watchdog calls it when the list has gone without saying so.
-+void orca_ios_picker_dismiss(wxWindow *owner);
++static void orca_ios_picker_drop(UIViewController *nav);
 +
 +// The watchdog. See where it is armed, at the end of the presenter, for why.
 +static void orca_ios_picker_watch(UIViewController *nav, OrcaPickerController *picker,
@@ -487,7 +504,7 @@ index 000000000..909557649
 +        if (gone && misses >= 1) {
 +            BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: gone with no row chosen; "
 +                                        "reporting it as a dismissal";
-+            orca_ios_picker_dismiss(nullptr);
++            orca_ios_picker_drop(nav);
 +            [picker notifyDismissed];
 +            return;
 +        }
@@ -500,13 +517,15 @@ index 000000000..909557649
 +// user would otherwise have to scroll blind.
 +static const size_t kOrcaPickerSearchFrom = 12;
 +
-+void orca_ios_picker_dismiss(wxWindow *owner)
++// The one that is up, if it is this one. Everything that ends a list goes
++// through here, and the identity check is what stops a list ending late - a
++// watchdog for one the user has already left, a callback dispatched a turn ago
++// - from taking down the list that has since replaced it.
++static void orca_ios_picker_drop(UIViewController *nav)
 +{
-+    if (!wxThread::IsMain())
-+        return;
 +    if (gs_picker == nil)
 +        return;
-+    if (owner != nullptr && gs_picker_owner != owner)
++    if (nav != nil && gs_picker != nav)
 +        return;
 +
 +    UIViewController *const vc = gs_picker;
@@ -516,6 +535,20 @@ index 000000000..909557649
 +    if (vc.presentingViewController != nil)
 +        [vc dismissViewControllerAnimated:YES completion:nil];
 +    [vc release];
++}
++
++void orca_ios_picker_dismiss(wxWindow *owner)
++{
++    if (!wxThread::IsMain())
++        return;
++    if (gs_picker == nil)
++        return;
++    // A named owner only takes down its own list; a null one takes down
++    // whatever is up, which is what a new presentation wants.
++    if (owner != nullptr && gs_picker_owner != owner)
++        return;
++
++    orca_ios_picker_drop(nil);
 +}
 +
 +bool orca_ios_picker_present(wxWindow                         *owner,
@@ -563,26 +596,31 @@ index 000000000..909557649
 +    picker.selectedIndex = selected;
 +    picker.title         = title.IsEmpty() ? nil : wxCFStringRef(title).AsNSString();
 +
-+    std::function<void(int)> pick_cb    = on_pick;
-+    std::function<void()>    dismiss_cb = on_dismiss;
-+
-+    picker.onPick = ^(NSInteger index) {
-+        // The picker is off screen by the time this runs; drop the reference
-+        // before the callback, which is entitled to open another one.
-+        orca_ios_picker_dismiss(nullptr);
-+        if (pick_cb)
-+            pick_cb((int) index);
-+    };
-+    picker.onDismiss = ^{
-+        orca_ios_picker_dismiss(nullptr);
-+        if (dismiss_cb)
-+            dismiss_cb();
-+    };
-+
 +    [picker rebuildSections:nil];
 +
 +    UINavigationController *const nav =
 +        [[[UINavigationController alloc] initWithRootViewController:picker] autorelease];
++
++    // THE CALLBACKS ARE SET AFTER THE NAVIGATION CONTROLLER EXISTS, because
++    // they name it: each one takes the list down only if the list still up is
++    // this one. A callback dispatched a turn ago, or a watchdog for a list the
++    // user has already left, must not dismiss whatever has since replaced it.
++    std::function<void(int)> pick_cb    = on_pick;
++    std::function<void()>    dismiss_cb = on_dismiss;
++
++    picker.onPick = ^(NSInteger index) {
++        // The list is off screen by the time this runs; drop the reference
++        // before the callback, which is entitled to open another one.
++        orca_ios_picker_drop(nav);
++        if (pick_cb)
++            pick_cb((int) index);
++    };
++    picker.onDismiss = ^{
++        orca_ios_picker_drop(nav);
++        if (dismiss_cb)
++            dismiss_cb();
++    };
++
 +    picker.navigationItem.rightBarButtonItem =
 +        [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
 +                                                       target:picker

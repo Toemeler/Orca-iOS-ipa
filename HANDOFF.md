@@ -9542,6 +9542,20 @@ the last one and the answer is identical; where they did not, there is now an
 answer at all. `drawRect`'s old guard gave up and drew nothing rather than
 recursing - it now finds the real one and calls it.
 
+**Run 200 is green and is the build to test.** wx really rebuilt in it - 376
+seconds, so the prefix cache missed as it should when a step2 patch changes -
+and the IPA is published. Whether this was *the* crash is answered by the
+application reaching its first window; the fix removes the recursion at all
+nine sites either way.
+
+Worth being straight about one thing: the exact pair of classes that triggered
+it was never pinned down. Every wx class that registers is a direct child of a
+UIKit class, so none of them is an ancestor of another, and the trigger is
+something further out - a subclass made at runtime, or a class registered in an
+order that leaves a parent and a child both carrying the method. The fix does
+not depend on knowing which: it makes the lookup unable to answer with itself,
+whatever the class graph turns out to be.
+
 **What this says about the last ten builds.** Green means compiled and linked;
 it never meant launched. Build 188 is the last one anybody had actually run, and
 every check in the list below had been written against builds that could not

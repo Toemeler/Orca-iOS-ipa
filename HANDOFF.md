@@ -8988,7 +8988,11 @@ a `<` that is not followed by a letter is not a tag.
 that posts an event and is hidden by whoever was listening — so it gets a
 modeless alert whose rows post the same events, and which is taken down in
 `on_hide()` and in the destructor, because a row pressed after the frame is
-gone would reach freed memory.
+gone would reach freed memory. It is also *reused*: `update_title_style()`
+followed by `on_show()` is how the Device page asks its next question through
+the same frame without hiding it in between, so posting takes down whatever
+that window already had up — otherwise the second question would be presented
+on top of the first and both would be on screen.
 
 ### 0439 — a notification that only existed while the canvas was drawing
 

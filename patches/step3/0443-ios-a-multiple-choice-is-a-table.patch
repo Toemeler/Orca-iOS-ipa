@@ -1,0 +1,129 @@
+diff --git a/src/slic3r/GUI/MultiChoiceDialog.cpp b/src/slic3r/GUI/MultiChoiceDialog.cpp
+index 6bd541273..7ef59cc2f 100644
+--- a/src/slic3r/GUI/MultiChoiceDialog.cpp
++++ b/src/slic3r/GUI/MultiChoiceDialog.cpp
+@@ -2,6 +2,13 @@
+ 
+ #include "GUI_App.hpp"
+ #include "MainFrame.hpp"
++// The table this dialog is presented as on iPadOS. Compiled to nothing
++// anywhere else - the header is guarded on __WXOSX_IPHONE__.
++#include "ios_native_ui.hpp"
++
++#include <wx/evtloop.h>
++
++#include <vector>
+ 
+ namespace Slic3r { namespace GUI {
+ 
+@@ -25,6 +32,9 @@ MultiChoiceDialog::MultiChoiceDialog(
+     }
+ 
+     m_check_list = new CheckList(this, choices);
++#ifdef __WXOSX_IPHONE__
++    m_ios_choices = choices;
++#endif
+ 
+     w_sizer->Add(m_check_list, 1, wxRIGHT | wxLEFT | wxTOP | wxEXPAND, FromDIP(10));
+ 
+@@ -51,6 +61,72 @@ void MultiChoiceDialog::SetSelections(wxArrayInt sel_array)
+     m_check_list->SetSelections(sel_array);
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++int MultiChoiceDialog::ShowModal()
++{
++    if (m_check_list == nullptr || m_ios_choices.IsEmpty())
++        return DPIDialog::ShowModal();
++
++    std::vector<IOSPickerItem> rows;
++    rows.reserve(m_ios_choices.GetCount());
++    for (size_t i = 0; i < m_ios_choices.GetCount(); ++i) {
++        IOSPickerItem row;
++        row.text  = m_ios_choices[i];
++        row.index = int(i);
++        rows.push_back(row);
++    }
++
++    std::vector<int> ticked;
++    const wxArrayInt current = m_check_list->GetSelections();
++    ticked.reserve(current.GetCount());
++    for (size_t i = 0; i < current.GetCount(); ++i)
++        ticked.push_back(current[i]);
++
++    // The wait, for the same reason SingleChoiceDialog has one: every caller
++    // reads GetSelections() on the line after ShowModal().
++    std::vector<int> chosen;
++    bool             confirmed = false;
++    bool             done      = false;
++
++    wxModalEventLoop loop(this);
++    const bool presented = orca_ios_multi_picker_present(
++        this, GetTitle(), rows, ticked,
++        [&chosen, &confirmed, &done, &loop](const std::vector<int> &picked) {
++            chosen    = picked;
++            confirmed = true;
++            done      = true;
++            if (loop.IsRunning())
++                loop.Exit(wxID_OK);
++        },
++        [&done, &loop]() {
++            done = true;
++            if (loop.IsRunning())
++                loop.Exit(wxID_CANCEL);
++        });
++
++    if (!presented)
++        return DPIDialog::ShowModal();
++
++    if (!done)
++        loop.Run();
++
++    if (!confirmed) {
++        SetReturnCode(wxID_CANCEL);
++        return wxID_CANCEL;
++    }
++
++    // Back into the CheckList, because that is what GetSelections() reads and
++    // what every caller asks after this returns.
++    wxArrayInt selections;
++    for (const int index : chosen)
++        selections.Add(index);
++    m_check_list->SetSelections(selections);
++
++    SetReturnCode(wxID_OK);
++    return wxID_OK;
++}
++#endif // __WXOSX_IPHONE__
++
+ MultiChoiceDialog::~MultiChoiceDialog() {}
+ 
+ void MultiChoiceDialog::on_dpi_changed(const wxRect &suggested_rect) {}
+diff --git a/src/slic3r/GUI/MultiChoiceDialog.hpp b/src/slic3r/GUI/MultiChoiceDialog.hpp
+index f636bebd3..fcf9217b1 100644
+--- a/src/slic3r/GUI/MultiChoiceDialog.hpp
++++ b/src/slic3r/GUI/MultiChoiceDialog.hpp
+@@ -26,9 +26,23 @@ public:
+ 
+     void SetSelections(wxArrayInt sel_array);
+ 
++#ifdef __WXOSX_IPHONE__
++    // A multiple choice is a table with a checkmark per row on this platform,
++    // not a scrolled column of wxCheckBoxes in a window - and the CheckList's
++    // own filter box is the search field the table already has. The chosen set
++    // is written back into the CheckList before this returns, so
++    // GetSelections() answers exactly as it always did.
++    int ShowModal() override;
++#endif
++
+ protected:
+     CheckList*    m_check_list;
+     wxArrayInt    m_selected_indices;
++#ifdef __WXOSX_IPHONE__
++    // CheckList keeps no list of what it was built from - it has the boxes and
++    // nothing else - and the table needs the strings.
++    wxArrayString m_ios_choices;
++#endif
+     void on_dpi_changed(const wxRect &suggested_rect) override;
+ };
+ 

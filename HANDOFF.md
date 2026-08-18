@@ -8915,9 +8915,9 @@ re-doing it would pay the half hour a second time.
 Read this before adding a member to any header under `src/slic3r/GUI/` that
 `MainFrame.hpp` can reach. The cheap headers are the leaves.
 
-## 0237-0240, 0438-0442 — everything that pops up
+## 0237-0240, 0438-0443 — everything that pops up
 
-Nine patches, one subject: **nothing in this application that appears over
+Ten patches, one subject: **nothing in this application that appears over
 something else was native**, and the parts of it that were not merely
 desktop-shaped were broken outright.
 
@@ -9172,6 +9172,30 @@ half, and the dismisser takes the frontmost popup's level minus a quarter.
 Rounded corners with it, clipped on the window itself for the same reason
 0230's are: a popover is a rounded surface on this platform, and a popup on
 this port was a bare rectangle.
+
+**`DismissAndNotify()` is public on this fork**, and run 194 is what said so:
+it is `protected`, and the two things that reach it everywhere else -
+`wxPopupWindowHandler` and `wxPopupFocusHandler` - are friends of the class
+and are exactly the two that cannot fire here. `Dismiss()` alone would not do:
+it skips `OnDismiss()`, which is what sends `EVT_DISMISS`, which is what
+`ComboBox` closes its own state on.
+
+### 0443 — a multiple choice is a table
+
+`MultiChoiceDialog` is the last of the family: a message, a `CheckList` of
+choices - a scrolled column of wxCheckBoxes with its own filter box - and an
+OK/Cancel pair. It is what "select the process profiles this printer is
+compatible with" puts up.
+
+The same table as 0441, with a checkmark per row instead of one, Cancel and
+Done in the navigation bar and Select All in a bottom toolbar - which is where
+Photos and Files put it, so it is where a hand already looks. Select All takes
+the *filtered* view, exactly as `CheckList::SelectVisible()` does, and the
+search field is the filter box the CheckList already had.
+
+The chosen set is written back into the `CheckList` before `ShowModal()`
+returns, so `GetSelections()` answers exactly as it always did and Tab.cpp -
+the only caller - needs no change at all.
 
 ### 0240 — the tooltips, of which there are 245 and none of them appeared
 

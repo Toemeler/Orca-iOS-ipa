@@ -668,10 +668,10 @@ index 0c11dc2f5..2035036cc 100644
      ~SecondaryCheckDialog();
 diff --git a/src/slic3r/GUI/ios_native_ui.hpp b/src/slic3r/GUI/ios_native_ui.hpp
 new file mode 100644
-index 000000000..ff5cb4761
+index 000000000..2b318ee6f
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_ui.hpp
-@@ -0,0 +1,246 @@
+@@ -0,0 +1,261 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -835,6 +835,21 @@ index 000000000..ff5cb4761
 +                             int                               selected,
 +                             std::function<void(int)>          on_pick,
 +                             std::function<void()>             on_dismiss);
++
++// The same list, with a checkmark per row instead of one, a Select All in the
++// toolbar and a Done that hands back everything ticked. This is what a
++// multiple-choice dialog is on this platform, and it is the same table so a
++// long list is searchable here too.
++//
++// `on_done` is called with the chosen indices - the `index` field of the items,
++// not row numbers - and `on_cancel` when the sheet is left without confirming.
++// Exactly one of the two runs.
++bool orca_ios_multi_picker_present(wxWindow                         *owner,
++                                   const wxString                   &title,
++                                   const std::vector<IOSPickerItem> &items,
++                                   const std::vector<int>           &selected,
++                                   std::function<void(const std::vector<int> &)> on_done,
++                                   std::function<void()>             on_cancel);
 +
 +// Takes the picker down. A null owner means "whichever one is up".
 +void orca_ios_picker_dismiss(wxWindow *owner);

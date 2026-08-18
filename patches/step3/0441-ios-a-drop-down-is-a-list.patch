@@ -156,10 +156,10 @@ index 09041e3dc..f7a1d0f81 100644
  
 diff --git a/src/slic3r/GUI/ios_native_picker.mm b/src/slic3r/GUI/ios_native_picker.mm
 new file mode 100644
-index 000000000..091d8c8cd
+index 000000000..b694d30c2
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_picker.mm
-@@ -0,0 +1,526 @@
+@@ -0,0 +1,747 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -245,12 +245,19 @@ index 000000000..091d8c8cd
 +@property (nonatomic, copy)   void (^onPick)(NSInteger);
 +@property (nonatomic, copy)   void (^onDismiss)(void);
 +@property (nonatomic, assign) BOOL                         picked;
++// Multiple choice: a checkmark per row rather than one, a Select All in the
++// toolbar and a Done that hands back the whole set. Same table either way, so
++// a long list is searchable in both.
++@property (nonatomic, assign) BOOL                         multi;
++@property (nonatomic, retain) NSMutableSet<NSNumber *>    *chosen;
++@property (nonatomic, copy)   void (^onDone)(NSArray<NSNumber *> *);
 +// EXACTLY ONE of onPick/onDismiss runs, ever. A caller is entitled to wait on
 +// this list - SingleChoiceDialog runs a nested modal loop around it - and a
 +// list that went away having called neither would be a hang.
 +@property (nonatomic, assign) BOOL                         notified;
 +- (void)rebuildSections:(NSString *)filter;
 +- (void)notifyPicked:(NSInteger)index;
++- (void)notifyDone;
 +- (void)notifyDismissed;
 +@end
 +
@@ -270,7 +277,9 @@ index 000000000..091d8c8cd
 +    [_sections release];
 +    [_visible release];
 +    [_onPick release];
++    [_onDone release];
 +    [_onDismiss release];
++    [_chosen release];
 +    [super dealloc];
 +}
 +
@@ -377,8 +386,11 @@ index 000000000..091d8c8cd
 +                                               : [UIColor tertiaryLabelColor];
 +    cell.contentConfiguration = content;
 +
-+    cell.accessoryType = row.index == self.selectedIndex ? UITableViewCellAccessoryCheckmark
-+                                                         : UITableViewCellAccessoryNone;
++    const BOOL ticked = self.multi
++                            ? [self.chosen containsObject:[NSNumber numberWithInteger:row.index]]
++                            : row.index == self.selectedIndex;
++    cell.accessoryType = ticked ? UITableViewCellAccessoryCheckmark
++                                : UITableViewCellAccessoryNone;
 +    cell.selectionStyle = row.enabled ? UITableViewCellSelectionStyleDefault
 +                                      : UITableViewCellSelectionStyleNone;
 +    cell.userInteractionEnabled = row.enabled;
@@ -394,6 +406,19 @@ index 000000000..091d8c8cd
 +            objectAtIndex:(NSUInteger) indexPath.row];
 +    if (!row.enabled || self.picked)
 +        return;
++
++    // A multiple choice toggles and stays: the list is only over when Done is
++    // pressed, which is what makes it a multiple choice at all.
++    if (self.multi) {
++        NSNumber *const key = [NSNumber numberWithInteger:row.index];
++        if ([self.chosen containsObject:key])
++            [self.chosen removeObject:key];
++        else
++            [self.chosen addObject:key];
++        [tableView reloadRowsAtIndexPaths:@[ indexPath ]
++                         withRowAnimation:UITableViewRowAnimationNone];
++        return;
++    }
 +
 +    self.picked = YES;
 +    const NSInteger chosen = row.index;
@@ -445,6 +470,27 @@ index 000000000..091d8c8cd
 +        pick(index);
 +}
 +
++// Done, in multiple choice. The set is sorted because the caller writes it
++// straight into a config list, and an order that changed with every tap would
++// make an unchanged selection look like an edit.
++- (void)notifyDone
++{
++    if (self.notified)
++        return;
++    self.notified = YES;
++
++    void (^done)(NSArray<NSNumber *> *) = [[self.onDone copy] autorelease];
++    self.onPick    = nil;
++    self.onDone    = nil;
++    self.onDismiss = nil;
++
++    if (done != nil) {
++        NSArray<NSNumber *> *const sorted =
++            [[self.chosen allObjects] sortedArrayUsingSelector:@selector(compare:)];
++        done(sorted);
++    }
++}
++
 +- (void)notifyDismissed
 +{
 +    if (self.notified)
@@ -453,6 +499,7 @@ index 000000000..091d8c8cd
 +
 +    void (^dismissed)(void) = [[self.onDismiss copy] autorelease];
 +    self.onPick    = nil;
++    self.onDone    = nil;
 +    self.onDismiss = nil;
 +
 +    if (dismissed != nil)
@@ -473,9 +520,56 @@ index 000000000..091d8c8cd
 +- (void)doneTapped:(id)sender
 +{
 +    (void) sender;
++    const BOOL multi = self.multi;
++    [self dismissViewControllerAnimated:YES completion:^{
++        // Done confirms a multiple choice and merely closes a single one -
++        // there the row itself was the answer, and Done is only the way out.
++        if (multi)
++            [self notifyDone];
++        else
++            [self notifyDismissed];
++    }];
++}
++
++- (void)cancelTapped:(id)sender
++{
++    (void) sender;
 +    [self dismissViewControllerAnimated:YES completion:^{
 +        [self notifyDismissed];
 +    }];
++}
++
++// Everything the search is currently showing, which is what Select All means
++// in a filtered list - CheckList::SelectVisible() takes the same view.
++- (void)selectAllTapped:(id)sender
++{
++    (void) sender;
++
++    NSMutableArray<NSNumber *> *const shown = [NSMutableArray array];
++    for (NSArray<OrcaPickerRow *> *const section in self.visible) {
++        for (OrcaPickerRow *const row in section) {
++            if (row.enabled)
++                [shown addObject:[NSNumber numberWithInteger:row.index]];
++        }
++    }
++
++    // Off if everything shown is already on, otherwise on: one button, and it
++    // does whichever of the two is not already true.
++    BOOL all_on = shown.count > 0;
++    for (NSNumber *const key in shown) {
++        if (![self.chosen containsObject:key]) {
++            all_on = NO;
++            break;
++        }
++    }
++
++    for (NSNumber *const key in shown) {
++        if (all_on)
++            [self.chosen removeObject:key];
++        else
++            [self.chosen addObject:key];
++    }
++    [self.tableView reloadData];
 +}
 +
 +@end
@@ -681,6 +775,133 @@ index 000000000..091d8c8cd
 +
 +    BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: " << items.size() << " row(s), "
 +                             << (anchor_view != nil ? "popover" : "sheet");
++    return true;
++}
++
++bool orca_ios_multi_picker_present(wxWindow                         *owner,
++                                   const wxString                   &title,
++                                   const std::vector<IOSPickerItem> &items,
++                                   const std::vector<int>           &selected,
++                                   std::function<void(const std::vector<int> &)> on_done,
++                                   std::function<void()>             on_cancel)
++{
++    if (!wxThread::IsMain() || items.empty())
++        return false;
++
++    UIViewController *const presenter = orca_ios_top_presenter();
++    if (presenter == nil || presenter.view.window == nil) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: no controller to present a multiple "
++                                    "choice from";
++        return false;
++    }
++
++    orca_ios_picker_dismiss(nullptr);
++
++    OrcaPickerController *const picker = [[OrcaPickerController alloc] init];
++    picker.multi  = YES;
++    picker.chosen = [NSMutableSet set];
++    for (const int index : selected)
++        [picker.chosen addObject:[NSNumber numberWithInteger:(NSInteger) index]];
++
++    NSMutableArray<OrcaPickerRow *> *const rows =
++        [NSMutableArray arrayWithCapacity:items.size()];
++    for (size_t i = 0; i < items.size(); ++i) {
++        const IOSPickerItem &item = items[i];
++        OrcaPickerRow *const row  = [[[OrcaPickerRow alloc] init] autorelease];
++        row.text    = wxCFStringRef(item.text).AsNSString();
++        row.group   = item.group.IsEmpty() ? nil : wxCFStringRef(item.group).AsNSString();
++        row.index   = (NSInteger) item.index;
++        row.enabled = item.enabled ? YES : NO;
++        [rows addObject:row];
++    }
++
++    picker.rows          = rows;
++    picker.selectedIndex = -1;      // no single selection to scroll to
++    picker.title         = title.IsEmpty() ? nil : wxCFStringRef(title).AsNSString();
++
++    [picker rebuildSections:nil];
++
++    UINavigationController *const nav =
++        [[[UINavigationController alloc] initWithRootViewController:picker] autorelease];
++
++    std::function<void(const std::vector<int> &)> done_cb   = on_done;
++    std::function<void()>                         cancel_cb = on_cancel;
++
++    picker.onDone = ^(NSArray<NSNumber *> *chosen) {
++        orca_ios_picker_drop(nav);
++        if (done_cb) {
++            std::vector<int> out;
++            out.reserve((size_t) chosen.count);
++            for (NSNumber *const n in chosen)
++                out.push_back((int) [n integerValue]);
++            done_cb(out);
++        }
++    };
++    picker.onDismiss = ^{
++        orca_ios_picker_drop(nav);
++        if (cancel_cb)
++            cancel_cb();
++    };
++
++    picker.navigationItem.leftBarButtonItem =
++        [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
++                                                       target:picker
++                                                       action:@selector(cancelTapped:)] autorelease];
++    picker.navigationItem.rightBarButtonItem =
++        [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
++                                                       target:picker
++                                                       action:@selector(doneTapped:)] autorelease];
++
++    // Select All in a bottom toolbar, which is where Photos and Files put it
++    // and therefore where a hand already expects to find it.
++    UIBarButtonItem *const flex =
++        [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
++                                                       target:nil
++                                                       action:nil] autorelease];
++    UIBarButtonItem *const select_all =
++        [[[UIBarButtonItem alloc]
++             initWithTitle:wxCFStringRef(wxGetTranslation("Select all")).AsNSString()
++                     style:UIBarButtonItemStylePlain
++                    target:picker
++                    action:@selector(selectAllTapped:)] autorelease];
++    picker.toolbarItems = @[ flex, select_all, flex ];
++    nav.toolbarHidden   = NO;
++
++    if (items.size() >= kOrcaPickerSearchFrom) {
++        UISearchController *const search =
++            [[[UISearchController alloc] initWithSearchResultsController:nil] autorelease];
++        search.searchResultsUpdater                 = picker;
++        search.obscuresBackgroundDuringPresentation = NO;
++        search.searchBar.placeholder = wxCFStringRef(wxGetTranslation("Search")).AsNSString();
++        picker.navigationItem.searchController            = search;
++        picker.navigationItem.hidesSearchBarWhenScrolling = NO;
++        picker.definesPresentationContext                 = YES;
++    }
++
++    // A sheet rather than a popover: a multiple choice is a task the user
++    // stays in for a while, and it has no one control it belongs to.
++    nav.modalPresentationStyle          = UIModalPresentationFormSheet;
++    nav.modalInPresentation             = YES;   // Cancel or Done, not a swipe
++    nav.presentationController.delegate = picker;
++    nav.preferredContentSize            = CGSizeMake(420, 560);
++
++    @try {
++        [presenter presentViewController:nav animated:YES completion:nil];
++    }
++    @catch (NSException *e) {
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: multiple choice presentation THREW "
++                                 << [[e name] UTF8String] << ": " << [[e reason] UTF8String];
++        [picker release];
++        return false;
++    }
++
++    gs_picker       = [nav retain];
++    gs_picker_owner = owner;
++    orca_ios_picker_watch(nav, picker, 0);
++    [picker release];
++
++    BOOST_LOG_TRIVIAL(error) << "orca-ios-picker: multiple choice, " << items.size()
++                             << " row(s), " << selected.size() << " ticked";
 +    return true;
 +}
 +

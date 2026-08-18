@@ -1,3 +1,42 @@
+diff --git a/include/wx/popupwin.h b/include/wx/popupwin.h
+index 8b19d76..3d74efa 100644
+--- a/include/wx/popupwin.h
++++ b/include/wx/popupwin.h
+@@ -106,17 +106,29 @@ public:
+     // Override to implement delayed destruction of this window.
+     virtual bool Destroy() override;
+ 
+-protected:
+-    // this is called when the popup is disappeared because of anything
+-    // else but direct call to Dismiss()
+-    virtual void OnDismiss() { }
+-
+     // dismiss and notify the derived class
++    //
++    // PUBLIC ON THIS FORK, and only because the iPhone port has to call it
++    // from outside the hierarchy. Everywhere else the two things that dismiss
++    // a transient popup are wxPopupWindowHandler and wxPopupFocusHandler,
++    // which are friends of this class (below) - and neither of them can fire
++    // on iOS: a popup there is its own UIWindow, so a touch outside it never
++    // reaches the child the first is pushed onto, and there is no focus model
++    // for the second. src/osx/iphone/nonownedwnd.mm puts a transparent window
++    // under the frontmost popup to take that touch, and this is what it calls.
++    //
++    // Nothing about the method changes - it is the same two calls - and it was
++    // never protected to keep callers out so much as to keep the API small.
+     void DismissAndNotify()
+     {
+         Dismiss();
+         OnDismiss();
+     }
++
++protected:
++    // this is called when the popup is disappeared because of anything
++    // else but direct call to Dismiss()
++    virtual void OnDismiss() { }
+ };
+ 
+ #ifdef __WXMSW__
 diff --git a/src/osx/iphone/nonownedwnd.mm b/src/osx/iphone/nonownedwnd.mm
 index 25997a2..3c10f66 100644
 --- a/src/osx/iphone/nonownedwnd.mm

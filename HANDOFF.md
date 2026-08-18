@@ -9406,7 +9406,21 @@ unsigned IPA.
 
 What run 195 does not cover, because they landed after it was dispatched: 0241
 (the busy overlay), 0242 (wxChoice as a pull-down) and the wxComboBox peer in
-the overlay. Those are run 196's job.
+the overlay.
+
+**Run 197 is green, and covers those three.** (196 and 197 were dispatched onto
+the same commit within seconds of each other by two sessions; the workflow
+cancels in favour of the newest, and both were building the identical tree.)
+Worth checking rather than assuming, because a green wx step can mean a
+restored cache: the wx prefix cache key is computed from the patch and overlay
+hashes, all of which changed, so the restore missed and step 5 spent **396
+seconds actually compiling** - `busyinfo.cpp`, `msgdlg.mm` with the overlay,
+`choice.mm` as a pull-down and `extra_peers.mm` with the combo peer. Orca then
+relinked in 114 seconds off a warm ccache, and the IPA was assembled and
+published.
+
+So every patch in this set has now been compiled at least once, and the newest
+installable IPA contains all of it.
 
 **The rule:** a ternary whose arms are a block and `nil` does not compile in
 ObjC++. Sweeping the tree for the pattern afterwards found four more `? … : nil`

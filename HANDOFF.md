@@ -9130,3 +9130,44 @@ goes away on the Device page as well as on Prepare (`orca-ios-notices: host
 installed under …` says the stack got its window); and whether a preset
 drop-down opens as a popover anchored under the control rather than as a sheet
 (`orca-ios-picker: N row(s), popover`).
+
+### Run 190: a block is not a pointer, as far as `nil` is concerned
+
+The first build of these seven patches failed, on one line and one target:
+
+```
+ios_native_notifications.mm:478:38: error: non-pointer operand type
+  'void (^)()' incompatible with nullptr
+  void (^closer)(void) = tell_orca ? banner.onClose : nil;
+```
+
+In ObjC++ `nil` is `nullptr`, and a **block type is not a pointer type** to the
+conditional operator, so the two arms have no common type. The same line with
+an object on the left - `NSString *s = x ? a : nil;` - compiles, which is why
+this reads as arbitrary. It is not: `NSString *` is a pointer and
+`void (^)(void)` is not.
+
+Fixed by not asking the conditional to do it, which is also clearer about the
+lifetime the comment above it is explaining:
+
+```objc
+void (^closer)(void) = nil;
+if (tell_orca)
+    closer = banner.onClose;
+```
+
+`(void (^)(void))nil` on the arm would also compile. The two-statement form was
+chosen because this block is deliberately taken *before* the banner is released,
+and a statement says so where a ternary buries it.
+
+**The rule:** a ternary whose arms are a block and `nil` does not compile in
+ObjC++. Sweeping the tree for the pattern afterwards found four more `? … : nil`
+ternaries in the iOS sources - `ios_native_picker.mm:195`,
+`ios_webview_support.mm:1200`, `:1201`, `:2337` - and all four are object
+pointers and are fine. Blocks are the only case.
+
+Worth noting what this cost, because it is avoidable: run 189 was cancelled by
+run 190 forty seconds later, run 190 then failed, and **no build was dispatched
+after the fix commit** - so main carried a green-looking fix that had never been
+compiled, and the newest installable IPA stayed at run 188 for a day. A fix
+commit is not a build. Dispatch one, or say in the commit that you did not.

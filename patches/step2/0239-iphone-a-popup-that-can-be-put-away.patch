@@ -1,0 +1,250 @@
+diff --git a/src/osx/iphone/nonownedwnd.mm b/src/osx/iphone/nonownedwnd.mm
+index 25997a2..3c10f66 100644
+--- a/src/osx/iphone/nonownedwnd.mm
++++ b/src/osx/iphone/nonownedwnd.mm
+@@ -10,6 +10,10 @@
+ #include "wx/wxprec.h"
+ 
+ #include "wx/osx/private.h"
++// wxPopupTransientWindowBase::DismissAndNotify(), for the outside tap below.
++#include "wx/popupwin.h"
++// wxVector, for the stack of popups that are up.
++#include "wx/vector.h"
+ 
+ #include "wx/nonownedwnd.h"
+ #include "wx/frame.h"
+@@ -127,6 +131,9 @@ static UIWindow* gs_mainWindow = nil;
+ static const CGFloat kwxOSXDialogHeaderHeight = 52;
+ static const CGFloat kwxOSXDialogCornerRadius = 26;
+ static const CGFloat kwxOSXDialogScreenMargin = 22;
++// A popover's corner. Smaller than a dialog's, because a popup is a smaller
++// surface and the same radius on one reads as a lozenge.
++static const CGFloat kwxOSXPopupCornerRadius = 14;
+ 
+ // Called by the close button below.
+ static void wxOSXDialogChromeClose(void* peer)
+@@ -336,6 +343,155 @@ static void wxOSXUpdateDialogBackdrop(UIWindow* owner)
+     [gs_dimWindow setHidden:NO];
+ }
+ 
++// ---------------------------------------------------------------------------
++// A popup that can be put away again
++// ---------------------------------------------------------------------------
++//
++// Guarded, because the iPhone port's chkconf.h forces wxUSE_POPUPWIN to 0 and
++// patch 0202 is what comments that out again. If a configuration ever turns
++// popups off, none of this can be compiled - wxPopupTransientWindowBase is not
++// declared - and the two hooks below are no-ops instead.
++#if wxUSE_POPUPWIN
++//
++// wxPopupTransientWindow is the base of every drop-down, colour picker, AMS
++// mapping grid, camera panel, side menu and tooltip in an application, and the
++// "transient" in its name is a promise: click anywhere else and it goes away.
++// That promise is kept by wxPopupWindowHandler (src/common/popupcmn.cpp),
++// which is pushed onto the popup's own child and dismisses the popup when it
++// sees a wxEVT_LEFT_DOWN whose position is outside it - and by
++// wxPopupFocusHandler, which dismisses on kill-focus.
++//
++// NEITHER OF THEM CAN FIRE ON THIS PORT. A popup here is its own UIWindow, so
++// a touch outside it is delivered to the window underneath and never reaches
++// the popup's child at all; and the iPhone port has no focus model to raise a
++// kill-focus from. So a popup opened on this port stayed open: not "until you
++// choose something" - several of them have nothing to choose - but for ever,
++// on top of the application, with no way back.
++//
++// A transparent window one step below the frontmost popup is what a popover's
++// outside-tap is, and it is one place rather than sixteen. It takes the tap,
++// dismisses the popup that is in front, and the popup's own OnDismiss() runs
++// exactly as it would have on a desktop.
++static wxVector<wxWindow*> gs_transientPopups;
++static UIWindow* gs_popupDismisser = nil;
++
++static void wxOSXDismissFrontmostPopup()
++{
++    if ( gs_transientPopups.empty() )
++        return;
++
++    wxWindow* const win = gs_transientPopups.back();
++    wxPopupTransientWindowBase* const popup =
++        dynamic_cast<wxPopupTransientWindowBase*>(win);
++    if ( popup == nullptr )
++        return;
++
++    // Next turn: dismissing can destroy the window, and this runs inside a
++    // gesture recogniser's action on a view that window owns.
++    dispatch_async(dispatch_get_main_queue(), ^{
++        // Still the frontmost one? Something may have closed it in between.
++        if ( gs_transientPopups.empty() || gs_transientPopups.back() != win )
++            return;
++        popup->DismissAndNotify();
++    });
++}
++
++@interface wxOSXPopupDismisser : UIWindow
++@end
++
++@implementation wxOSXPopupDismisser
++- (void)tapped:(UITapGestureRecognizer*)recognizer
++{
++    (void) recognizer;
++    wxOSXDismissFrontmostPopup();
++}
++@end
++
++// Raised to just under the frontmost popup, or hidden when there is none.
++static void wxOSXUpdatePopupDismisser(UIWindow* owner)
++{
++    if ( gs_transientPopups.empty() )
++    {
++        [gs_popupDismisser setHidden:YES];
++        return;
++    }
++
++    if ( gs_popupDismisser == nil )
++    {
++        gs_popupDismisser =
++            [[wxOSXPopupDismisser alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
++        gs_popupDismisser.backgroundColor = [UIColor clearColor];
++
++        UIViewController* const vc = [[[UIViewController alloc] init] autorelease];
++        vc.view.backgroundColor = [UIColor clearColor];
++        gs_popupDismisser.rootViewController = vc;
++
++        UITapGestureRecognizer* const tap =
++            [[[UITapGestureRecognizer alloc] initWithTarget:gs_popupDismisser
++                                                     action:@selector(tapped:)] autorelease];
++        [vc.view addGestureRecognizer:tap];
++    }
++
++    // A window created without a scene never appears once the application has
++    // one, so it takes the scene of the popup it is standing behind.
++    if ( owner != nil && owner.windowScene != nil )
++        gs_popupDismisser.windowScene = owner.windowScene;
++
++    // Under the popup and over everything else. Read off the popup rather than
++    // assumed, because a popup opened from a dialog sits above that dialog and
++    // a dismisser at a fixed level would be under the dialog instead.
++    const UIWindowLevel front = owner != nil ? owner.windowLevel : UIWindowLevelAlert + 1;
++    gs_popupDismisser.windowLevel = front - 0.25;
++    gs_popupDismisser.frame       = [[UIScreen mainScreen] bounds];
++    [gs_popupDismisser setHidden:NO];
++}
++
++static void wxOSXPopupShown(wxWindow* win, UIWindow* window)
++{
++    if ( dynamic_cast<wxPopupTransientWindowBase*>(win) == nullptr )
++        return;
++
++    for ( size_t i = 0; i < gs_transientPopups.size(); ++i )
++    {
++        if ( gs_transientPopups[i] == win )
++        {
++            gs_transientPopups.erase(gs_transientPopups.begin() + i);
++            break;
++        }
++    }
++    gs_transientPopups.push_back(win);
++    wxOSXUpdatePopupDismisser(window);
++}
++
++static void wxOSXPopupHidden(wxWindow* win)
++{
++    for ( size_t i = 0; i < gs_transientPopups.size(); ++i )
++    {
++        if ( gs_transientPopups[i] == win )
++        {
++            gs_transientPopups.erase(gs_transientPopups.begin() + i);
++            break;
++        }
++    }
++
++    UIWindow* front = nil;
++    if ( !gs_transientPopups.empty() )
++    {
++        wxNonOwnedWindow* const now =
++            dynamic_cast<wxNonOwnedWindow*>(gs_transientPopups.back());
++        if ( now != nullptr )
++            front = now->GetWXWindow();
++    }
++    wxOSXUpdatePopupDismisser(front);
++}
++
++#else // !wxUSE_POPUPWIN
++
++static void wxOSXPopupShown(wxWindow*, UIWindow*) { }
++static void wxOSXPopupHidden(wxWindow*) { }
++
++#endif // wxUSE_POPUPWIN
++
+ // The bar of a window, created on the first show.
+ static wxOSXDialogChrome* wxOSXDialogChromeFor(UIWindow* win, void* peer)
+ {
+@@ -399,6 +555,12 @@ void wxNonOwnedWindowIPhoneImpl::WillBeDestroyed()
+             wxOSXUpdateDialogBackdrop(nil);
+         }
+     }
++
++    // A popup destroyed without being hidden first would leave the dismisser
++    // up over the application, taking every tap and dismissing a window that
++    // no longer exists.
++    if ( wxNonOwnedWindow* const peer = GetWXPeer() )
++        wxOSXPopupHidden(peer);
+ }
+ 
+ void wxNonOwnedWindowIPhoneImpl::Create( wxWindow* parent, const wxPoint& pos, const wxSize& size,
+@@ -519,7 +681,37 @@ bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+             // yet would otherwise be blown up to fill the screen by the clamp
+             // above, and an opaque full-screen popup sits on top of the 3D
+             // viewport and looks exactly like a canvas that stopped rendering.
+-            [m_macWindow setWindowLevel:UIWindowLevelAlert + 1];
++            UIWindowLevel level = UIWindowLevelAlert + 1;
++
++            // A POPUP GOES ABOVE THE WINDOW IT BELONGS TO, and that is not
++            // always the main frame. A colour picker opened from a dialog, an
++            // AMS grid opened from the send sheet, a tooltip over a wizard
++            // page: all of them were put at exactly the level of the dialog
++            // that owns them, and UIKit gives no defined order between two
++            // windows at the same level - so a popup opened from a dialog
++            // appeared over it, or under it, according to nothing.
++            if ( isPopup && now != NULL && now->GetParent() != NULL )
++            {
++                wxNonOwnedWindow* const ownerWin =
++                    dynamic_cast<wxNonOwnedWindow*>(wxGetTopLevelParent(now->GetParent()));
++                UIWindow* const ownerNative =
++                    ownerWin != nullptr ? ownerWin->GetWXWindow() : nil;
++                if ( ownerNative != nil && ownerNative != gs_mainWindow )
++                    level = ownerNative.windowLevel + 0.5;
++            }
++
++            [m_macWindow setWindowLevel:level];
++        }
++
++        if ( isPopup )
++        {
++            // A popover is a rounded surface on this platform, and a popup on
++            // this port was a bare rectangle with square corners. The radius
++            // is on the window and it clips, for the same reason the dialog's
++            // does: the point is that the popup's own background stops there.
++            m_macWindow.layer.cornerRadius = kwxOSXPopupCornerRadius;
++            m_macWindow.layer.cornerCurve  = kCACornerCurveContinuous;
++            m_macWindow.clipsToBounds      = YES;
+         }
+ 
+         if ( decorated )
+@@ -552,6 +744,16 @@ bool wxNonOwnedWindowIPhoneImpl::Show(bool show)
+     if ( decorated )
+         wxOSXUpdateDialogBackdrop(show ? m_macWindow : nil);
+ 
++    // The outside tap that puts a transient popup away. Registered after the
++    // level is settled above, because the dismisser is placed relative to it.
++    if ( now != NULL )
++    {
++        if ( show )
++            wxOSXPopupShown(now, m_macWindow);
++        else
++            wxOSXPopupHidden(now);
++    }
++
+     [m_macWindow setHidden:(show ? NO : YES)];
+ 
+     if ( show )

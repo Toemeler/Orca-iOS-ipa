@@ -8915,9 +8915,9 @@ re-doing it would pay the half hour a second time.
 Read this before adding a member to any header under `src/slic3r/GUI/` that
 `MainFrame.hpp` can reach. The cheap headers are the leaves.
 
-## 0237-0238, 0438-0442 — everything that pops up
+## 0237-0239, 0438-0442 — everything that pops up
 
-Seven patches, one subject: **nothing in this application that appears over
+Eight patches, one subject: **nothing in this application that appears over
 something else was native**, and the parts of it that were not merely
 desktop-shaped were broken outright.
 
@@ -9130,6 +9130,44 @@ goes away on the Device page as well as on Prepare (`orca-ios-notices: host
 installed under …` says the stack got its window); and whether a preset
 drop-down opens as a popover anchored under the control rather than as a sheet
 (`orca-ios-picker: N row(s), popover`).
+
+### 0239 — the popups that could not be put away
+
+`wxPopupTransientWindow` is the base of every drop-down, colour picker, AMS
+mapping grid, camera panel, side menu, machine list, search box and tooltip in
+the application, and the "transient" in its name is a promise: touch anywhere
+else and it goes away. **Neither half of what keeps that promise can fire on
+this port.**
+
+`wxPopupWindowHandler` (src/common/popupcmn.cpp) is pushed onto the popup's own
+child and dismisses the popup when it sees a `wxEVT_LEFT_DOWN` whose position
+is outside it. A popup here is its own `UIWindow`, so a touch outside it is
+delivered to the window underneath and never reaches the popup's child at all.
+`wxPopupFocusHandler` dismisses on kill-focus, and the iPhone port has no focus
+model to raise one from.
+
+So a popup opened on this port stayed open. Not "until you choose something" -
+several of them have nothing to choose - but for ever, over the application,
+with no way back. 0441 took the drop-downs out of this by making them native;
+the other fifteen were still in it.
+
+A transparent window one step below the frontmost popup is what a popover's
+outside-tap is, and it is one place rather than fifteen: it takes the tap and
+calls `DismissAndNotify()` on the popup in front, so the popup's own
+`OnDismiss()` runs exactly as it would on a desktop. Next turn, because
+dismissing can destroy the window the gesture recogniser belongs to.
+
+**And a popup goes above the window it belongs to, which is not always the main
+frame.** Every secondary window was put at `UIWindowLevelAlert + 1` - dialogs
+and popups alike - and UIKit gives no defined order between two windows at the
+same level. A colour picker opened from a dialog, an AMS grid opened from the
+send sheet, a tooltip over a wizard page: each appeared over its dialog, or
+under it, according to nothing. A popup now takes its owner's level plus a
+half, and the dismisser takes the frontmost popup's level minus a quarter.
+
+Rounded corners with it, clipped on the window itself for the same reason
+0230's are: a popover is a rounded surface on this platform, and a popup on
+this port was a bare rectangle.
 
 ### Run 190: a block is not a pointer, as far as `nil` is concerned
 

@@ -14,10 +14,15 @@ diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
  endif ()
  
 diff --git a/src/slic3r/GUI/MsgDialog.cpp b/src/slic3r/GUI/MsgDialog.cpp
-index 4da4b83e0..ca413d30a 100644
+index 4da4b83e0..0a902090d 100644
 --- a/src/slic3r/GUI/MsgDialog.cpp
 +++ b/src/slic3r/GUI/MsgDialog.cpp
-@@ -13,6 +13,8 @@
+@@ -10,9 +10,13 @@
+ #include <wx/clipbrd.h>
+ #include <wx/checkbox.h>
+ #include <wx/html/htmlwin.h>
++// wxGetStockLabel()/wxIsStockID(), for a button whose label was never set.
++#include <wx/stockitem.h>
  
  #include <boost/algorithm/string/replace.hpp>
  
@@ -26,7 +31,7 @@ index 4da4b83e0..ca413d30a 100644
  #include "libslic3r/libslic3r.h"
  #include "libslic3r/Utils.hpp"
  #include "libslic3r/Color.hpp"
-@@ -22,6 +24,9 @@
+@@ -22,6 +26,9 @@
  #include "wxExtensions.hpp"
  #include "slic3r/GUI/MainFrame.hpp"
  #include "GUI_App.hpp"
@@ -36,7 +41,7 @@ index 4da4b83e0..ca413d30a 100644
  #define MSG_DLG_MAX_SIZE wxSize(-1, FromDIP(464))//notice:ban setting the maximum width value
  namespace Slic3r {
  namespace GUI {
-@@ -41,6 +46,14 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
+@@ -41,6 +48,14 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
  	// user was shown is the single most useful line in the file.
  	BOOST_LOG_TRIVIAL(error) << "orca-ios-dialog: [" << title.utf8_string() << "] " << headline.utf8_string();
  
@@ -51,7 +56,7 @@ index 4da4b83e0..ca413d30a 100644
  	boldfont.SetWeight(wxFONTWEIGHT_BOLD);
      SetBackgroundColour(0xFFFFFF);
      SetFont(wxGetApp().normal_font());
-@@ -104,6 +117,16 @@ void MsgDialog::show_dsa_button(wxString const &title)
+@@ -104,6 +119,16 @@ void MsgDialog::show_dsa_button(wxString const &title)
      m_text_dsa->Bind(wxEVT_LEFT_DOWN,   [on_toggle](wxMouseEvent& e) {if(!e.LeftDClick()) on_toggle();});
      m_text_dsa->Bind(wxEVT_LEFT_DCLICK, [on_toggle](wxMouseEvent& e) {on_toggle();});
  
@@ -68,7 +73,7 @@ index 4da4b83e0..ca413d30a 100644
      m_dsa_sizer->Add(m_text_dsa, 0, wxALL | wxALIGN_CENTER, FromDIP(2));
      m_dsa_sizer->AddSpacer(FromDIP(10)); // spacing after checkbox
      m_text_dsa->SetFont(::Label::Body_13);
-@@ -339,6 +362,10 @@ static void add_msg_content(wxWindow   *parent,
+@@ -339,6 +364,10 @@ static void add_msg_content(wxWindow   *parent,
              scrolledWindow->SetMaxSize(wxSize(info_width, info_height));
              scrolledWindow->FitInside();
              content_sizer->Add(scrolledWindow, 1, wxEXPAND | wxRIGHT, 8);
@@ -79,7 +84,7 @@ index 4da4b83e0..ca413d30a 100644
              return;
          }
      }
-@@ -363,8 +390,326 @@ static void add_msg_content(wxWindow   *parent,
+@@ -363,8 +392,336 @@ static void add_msg_content(wxWindow   *parent,
          if (link_callback)
              link_callback(event.GetLinkInfo().GetHref());
      });
@@ -284,6 +289,16 @@ index 4da4b83e0..ca413d30a 100644
 +        row.id      = btn->GetId();
 +        row.widget  = btn;
 +        row.enabled = btn->IsEnabled();
++        // A row with no title is not a row UIKit will take, and a button whose
++        // label was never set - add_button() allows it - would silently vanish
++        // from the alert while still existing in the dialog. wx knows what OK,
++        // Cancel, Yes, No, Apply and Close are called in this language.
++        // wxIsStockID() first: wxGetStockLabel() asserts on an id it does not
++        // know, and Orca hands out custom ones.
++        if (row.label.IsEmpty() && wxIsStockID(row.id))
++            row.label = wxGetStockLabel(row.id, wxSTOCK_NOFLAGS);
++        if (row.label.IsEmpty())
++            row.label = wxString::Format("#%d", row.id);
 +        // apply_style() gives every dialog in this family its buttons from the
 +        // same six ids, so the roles are read off the id rather than guessed
 +        // at from the label - which is translated, and which several callers

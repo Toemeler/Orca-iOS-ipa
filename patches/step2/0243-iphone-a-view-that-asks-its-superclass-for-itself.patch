@@ -1,0 +1,158 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 19ab501..3f23a01 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -486,14 +486,47 @@ void SetupMouseEvent( wxMouseEvent &wxevent , NSSet* touches, UIEvent * nsEvent
+ 
+ @end // wxUIView
+ 
++// The superclass implementation of _cmd - and never the one we are standing in.
++//
++// BUILD 199 DIED ON LAUNCH BECAUSE OF THIS. Every wx method installed here is
++// written the same way: look the inherited implementation up, call it, then do
++// wx's part. The lookup was
++//
++//     [[self superclass] instanceMethodForSelector:_cmd]
++//
++// and -instanceMethodForSelector: resolves *through inheritance*. So the moment
++// the view's class and one of its ancestors both carry the method - which is
++// what a class registered under another registered one gives, and what any
++// runtime-made subclass gives, KVO being the one that installs those behind
++// your back - the lookup answers with this very function. It then calls itself
++// with the same `self`, whose superclass has not changed, and does so until the
++// stack runs out: fifty-two identical frames inside
++// wxOSX_canBecomeFirstResponder, signal 11, before the main window existed.
++//
++// Walking up until the implementation differs is the same answer in every case
++// that already worked - the first step up is the last one - and an answer at
++// all in the case that did not.
++static IMP wxOSXIPhoneSuperImpl(id slf, SEL _cmd, IMP ours)
++{
++    for ( Class c = [slf superclass]; c != nil; c = [c superclass] )
++    {
++        IMP imp = [c instanceMethodForSelector:_cmd];
++        if ( imp != ours )
++            return imp;
++    }
++
++    return nullptr;
++}
++
+ typedef void (*wxOSX_touchEventHandlerPtr)(UIView* self, SEL _cmd, NSSet* touches, UIEvent *event );
+ 
+ void wxOSX_touchEvent(UIView* self, SEL _cmd, NSSet* touches, UIEvent *event )
+ {
+     // Call the superclass handler first as that is e.g. handling mouse events for UISegmentedControls
+-    wxOSX_touchEventHandlerPtr superimpl =
+-        (wxOSX_touchEventHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
+-    superimpl(self, _cmd, touches, event );
++    wxOSX_touchEventHandlerPtr superimpl = (wxOSX_touchEventHandlerPtr)
++        wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_touchEvent);
++    if ( superimpl != nullptr )
++        superimpl(self, _cmd, touches, event );
+ 
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+@@ -512,8 +545,9 @@ BOOL wxOSX_becomeFirstResponder(UIView* self, SEL _cmd)
+         // Not a view wx knows about (yet). Answering NO here used to refuse
+         // the focus on wx's behalf for a view wx has no opinion about - a text
+         // field could not be typed into before its peer was associated.
+-        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
+-        return superimpl(self, _cmd);
++        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++            wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_becomeFirstResponder);
++        return superimpl != nullptr ? superimpl(self, _cmd) : NO;
+     }
+ 
+     return impl->becomeFirstResponder(self, _cmd);
+@@ -524,8 +558,9 @@ BOOL wxOSX_resignFirstResponder(UIView* self, SEL _cmd)
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+     {
+-        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
+-        return superimpl(self, _cmd);
++        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++            wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_resignFirstResponder);
++        return superimpl != nullptr ? superimpl(self, _cmd) : NO;
+     }
+ 
+     return impl->resignFirstResponder(self, _cmd);
+@@ -541,8 +576,9 @@ BOOL wxOSX_resignFirstResponder(UIView* self, SEL _cmd)
+ // whether the wx window accepts the focus.
+ BOOL wxOSX_canBecomeFirstResponder(UIView* self, SEL _cmd)
+ {
+-    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
+-    if ( superimpl(self, _cmd) )
++    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++        wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_canBecomeFirstResponder);
++    if ( superimpl != nullptr && superimpl(self, _cmd) )
+         return YES;
+ 
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+@@ -564,8 +600,10 @@ BOOL wxOSX_canBecomeFirstResponder(UIView* self, SEL _cmd)
+ void wxOSX_didMoveToWindow(UIView* self, SEL _cmd)
+ {
+     typedef void (*wxOSX_VoidHandlerPtr)(UIView* self, SEL _cmd);
+-    wxOSX_VoidHandlerPtr superimpl = (wxOSX_VoidHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
+-    superimpl(self, _cmd);
++    wxOSX_VoidHandlerPtr superimpl = (wxOSX_VoidHandlerPtr)
++        wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_didMoveToWindow);
++    if ( superimpl != nullptr )
++        superimpl(self, _cmd);
+ 
+     if ( self == gs_pendingFocusView && self.window != nil )
+     {
+@@ -1984,11 +2022,12 @@ typedef void (*wxOSX_PressesHandlerPtr)(UIView* self, SEL _cmd, NSSet* presses,
+ 
+ bool wxWidgetIPhoneImpl::becomeFirstResponder(WXWidget slf, void *_cmd)
+ {
+-    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[slf superclass] instanceMethodForSelector:(SEL)_cmd];
++    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++        wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_becomeFirstResponder);
+     // get the current focus before running becomeFirstResponder
+     UIView* otherView = FindFocus();
+     wxWidgetImpl* otherWindow = FindFromWXWidget(otherView);
+-    BOOL r = superimpl(slf, (SEL)_cmd);
++    BOOL r = superimpl != nullptr ? superimpl(slf, (SEL)_cmd) : NO;
+     if ( r )
+     {
+         // Record it before the event goes out: a wxEVT_SET_FOCUS handler that
+@@ -2002,8 +2041,9 @@ bool wxWidgetIPhoneImpl::becomeFirstResponder(WXWidget slf, void *_cmd)
+ 
+ bool wxWidgetIPhoneImpl::resignFirstResponder(WXWidget slf, void *_cmd)
+ {
+-    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr) [[slf superclass] instanceMethodForSelector:(SEL)_cmd];
+-    BOOL r = superimpl(slf, (SEL)_cmd);
++    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++        wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_resignFirstResponder);
++    BOOL r = superimpl != nullptr ? superimpl(slf, (SEL)_cmd) : NO;
+     if ( r )
+         wxOSXIPhoneNoteUnfocusedView(slf);
+     // get the current focus after running resignFirstResponder
+@@ -2053,8 +2093,11 @@ void wxWidgetIPhoneImpl::drawRect(CGRect* rect, WXWidget slf, void *WXUNUSED(_cm
+     {
+         // call super
+         SEL _cmd = @selector(drawRect:);
+-        wxOSX_DrawRectHandlerPtr superimpl = (wxOSX_DrawRectHandlerPtr) [[slf superclass] instanceMethodForSelector:_cmd];
+-        if ( superimpl != wxOSX_drawRect )
++        // The walk skips this function wherever it appears above us, which is
++        // what the equality test below used to guard against by giving up.
++        wxOSX_DrawRectHandlerPtr superimpl = (wxOSX_DrawRectHandlerPtr)
++            wxOSXIPhoneSuperImpl(slf, _cmd, (IMP) wxOSX_drawRect);
++        if ( superimpl != nullptr )
+         {
+             superimpl(slf, _cmd, *rect);
+             if ( context != nullptr )
+@@ -2470,8 +2513,10 @@ void wxWidgetIPhoneImpl::keyEvent( NSSet *presses, UIEvent* event, WXWidget slf,
+ 
+     if ( !handled )
+     {
+-        wxOSX_PressesHandlerPtr superimpl = (wxOSX_PressesHandlerPtr) [[slf superclass] instanceMethodForSelector:(SEL)_cmd];
+-        superimpl(slf, (SEL)_cmd, presses, event);
++        wxOSX_PressesHandlerPtr superimpl = (wxOSX_PressesHandlerPtr)
++            wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_keyEvent);
++        if ( superimpl != nullptr )
++            superimpl(slf, (SEL)_cmd, presses, event);
+     }
+ }
+ 

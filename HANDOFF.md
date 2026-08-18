@@ -9501,6 +9501,53 @@ already-hidden window sends no event to hook. The alert would simply stay up.
 modeless path** - `orca_ios_alert_post()` with `orca_ios_alert_dismiss()` - which
 is exactly why `SecondaryCheckDialog` uses it. Anything else keeps its window.
 
+### 0243 — build 199 died on launch, and the reason was a lookup that answered with itself
+
+**The first launch of anything newer than build 188.** Runs 190 through 199 were
+green builds nobody had started, so this had been waiting since 0236 landed:
+
+```
+--- orca ios crash: signal 11
+build 199 at 1787070529
+11  OrcaSlicer  _Z29wxOSX_canBecomeFirstResponderP6UIViewP13objc_selector + 48
+12  OrcaSlicer  _Z29wxOSX_canBecomeFirstResponderP6UIViewP13objc_selector + 104
+13  OrcaSlicer  _Z29wxOSX_canBecomeFirstResponderP6UIViewP13objc_selector + 104
+   … fifty more, to the end of the report
+```
+
+Fifty-two identical frames is a stack overflow, and the offsets say exactly
+where: `+104` is the call to the inherited implementation, `+48` is the lookup
+that found it. Every wx method installed in `window.mm` is written the same way:
+
+```objc
+wxOSX_FocusHandlerPtr superimpl =
+    (wxOSX_FocusHandlerPtr) [[self superclass] instanceMethodForSelector:_cmd];
+if ( superimpl(self, _cmd) )
+```
+
+`-instanceMethodForSelector:` **resolves through inheritance**. So as soon as the
+view's class and one of its ancestors both carry the method, the lookup answers
+with the very function doing the looking - which then calls itself, with the
+same `self`, whose superclass has not changed, until the stack runs out.
+
+The proof that this is a known hazard is three inches further down the same
+file: `wxOSX_drawRect` already carried `if ( superimpl != wxOSX_drawRect )`,
+which is this bug, guarded at one of the nine places it can happen and
+unguarded at the other eight. 0236 added two more (`canBecomeFirstResponder`
+and `didMoveToWindow`) and one of them is asked before the main window exists.
+
+`wxOSXIPhoneSuperImpl()` replaces the idiom at all nine: walk up until the
+implementation is not ours. Where things already worked the first step up is
+the last one and the answer is identical; where they did not, there is now an
+answer at all. `drawRect`'s old guard gave up and drew nothing rather than
+recursing - it now finds the real one and calls it.
+
+**What this says about the last ten builds.** Green means compiled and linked;
+it never meant launched. Build 188 is the last one anybody had actually run, and
+every check in the list below had been written against builds that could not
+reach the first window. That is worth remembering before reading a run number as
+evidence of anything.
+
 ### The test list for this set
 
 None of 0237-0242 or 0438-0447 has run on a device. Everything below is

@@ -9654,6 +9654,45 @@ every check in the list below had been written against builds that could not
 reach the first window. That is worth remembering before reading a run number as
 evidence of anything.
 
+### 0449 — the timer must not measure text
+
+**Build 202 launches.** The focus loop is gone, and what it uncovered is a bug
+of mine, in 0439:
+
+```
+ImFont::CalcTextSizeA
+ImGui::CalcTextSize
+PopNotification::count_spaces()
+ProgressIndicatorNotification::init()
+PopNotification::update_state()
+NotificationManager::update_notifications()
+NotificationManager::orca_ios_tick()        <- off a wxTimer
+```
+
+`EXC_BAD_ACCESS` at `0x14`. Every notification measures its own text in
+`init()`, and ImGui has a font to measure with only between `NewFrame()` and
+`Render()`. Outside a frame the current font is null and the measurement walks
+off it.
+
+Upstream never meets this because `update_notifications()` is only ever called
+from the render pass. **The timer exists precisely so that banners keep working
+while the canvas is not drawing** - so by construction it is never inside a
+frame, and it must never run anything that measures text. That is the rule, not
+the fix for one call.
+
+And it costs nothing to obey, because the reason the timer was added is handled
+on the other side: the countdown lives on the banner
+(`ios_native_notifications.mm`), and when it runs out the banner calls back
+through `on_close` → `orca_ios_notice_close()` → `PopNotification::close()`,
+which is the part of `update_notifications()` that mattered here. The rest of
+that function is Orca's state machine for drawing these in ImGui, and the canvas
+still runs it, in the render pass, where there is a font.
+
+**Why this took until build 202 to appear.** It needs a notification to exist
+while the timer ticks, and the three builds before it never reached the first
+window. It would have been the first thing a device run found in 0439, and 0439
+was written eleven builds ago.
+
 ### The test list for this set
 
 None of 0237-0242 or 0438-0447 has run on a device. Everything below is

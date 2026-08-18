@@ -1,0 +1,75 @@
+diff --git a/src/slic3r/GUI/NotificationManager.cpp b/src/slic3r/GUI/NotificationManager.cpp
+index 9ad0ff8..15f00a0 100644
+--- a/src/slic3r/GUI/NotificationManager.cpp
++++ b/src/slic3r/GUI/NotificationManager.cpp
+@@ -1883,13 +1883,12 @@ NotificationManager::~NotificationManager()
+ 	orca_ios_notices_clear();
+ }
+ 
+-// One tick: run the state machine, then hand the result over.
++// One tick: read what the notifications say and hand it to the banners.
+ //
+-// update_notifications() is upstream's, and it is called here as well as from
+-// the canvas rather than instead of it: it is time-based and idempotent - a
+-// second call in the same millisecond changes nothing - and calling it from
+-// both places is what makes a notification behave the same way whether or not
+-// a 3D view happens to be on screen.
++// It reads and it does not run. Everything below explains why - the short
++// version is that this is the one place in the notification code that is
++// guaranteed NOT to be inside an ImGui frame, and half of what a notification
++// does needs one.
+ void NotificationManager::orca_ios_tick()
+ {
+ 	if (!m_initialized)
+@@ -1904,18 +1903,42 @@ void NotificationManager::orca_ios_tick()
+ 		return;
+ 	}
+ 
+-	// The frame as well as the plater: this runs off a timer rather than off
+-	// the render loop, so it can fire during teardown, and
+-	// update_notifications() walks up the parent chain to the top level window
+-	// and dereferences what it finds there without checking.
++	// It can fire during teardown, and everything below reaches through the
++	// application to the window the banners live in.
+ 	if (wxGetApp().mainframe == nullptr)
+ 		return;
+-	Plater *const plater = wxGetApp().plater();
+-	if (plater == nullptr)
+-		return;
+-	if (GLCanvas3D *const canvas = plater->get_current_canvas3D())
+-		update_notifications(*canvas);
+ 
++	// AND IT DOES NOT CALL update_notifications(), WHICH IS WHAT BUILD 202
++	// DIED OF:
++	//
++	//   ImFont::CalcTextSizeA
++	//   ImGui::CalcTextSize
++	//   PopNotification::count_spaces()
++	//   ProgressIndicatorNotification::init()
++	//   PopNotification::update_state()
++	//   NotificationManager::update_notifications()
++	//   NotificationManager::orca_ios_tick()        <- off a wxTimer
++	//
++	// EXC_BAD_ACCESS at 0x14. Every notification measures its own text in
++	// init(), and ImGui has a font to measure with only between NewFrame() and
++	// Render(). Outside a frame the current font is null and the measurement
++	// walks off it.
++	//
++	// Upstream never meets this because update_notifications() is only ever
++	// called from the render pass. THIS TIMER EXISTS PRECISELY SO THAT BANNERS
++	// KEEP WORKING WHILE THE CANVAS IS NOT DRAWING, so by construction it is
++	// never inside a frame, and it must therefore never run anything that
++	// measures text. That is not a detail of this one call: it is the rule for
++	// everything this function will ever be tempted to do.
++	//
++	// It costs nothing, because the reason the timer was added in the first
++	// place is handled on the other side. The countdown lives on the banner
++	// itself (ios_native_notifications.mm), and when it runs out the banner
++	// calls back through on_close -> orca_ios_notice_close() ->
++	// PopNotification::close() - which is the part of update_notifications()
++	// that mattered here. The rest of that function is Orca's own state
++	// machine for drawing these in ImGui, and the canvas still runs it, in the
++	// render pass, where there is a font.
+ 	orca_ios_sync_native();
+ }
+ 

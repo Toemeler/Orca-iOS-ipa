@@ -9396,6 +9396,18 @@ session's, on a commit that predated the fix, and this one cancelled it.
 What run 192 does not cover, because both landed after it: 0239 (the popup
 dismisser) and the stock-label fallback in 0438.
 
+**Run 195 is green, and it is the one that matters.** It is the first build of
+the complete set: wx with the message box, the text entry, the choice list, the
+popup dismisser (0239, with `DismissAndNotify()` made public - the fix run 194
+demanded) and the tooltips (0240); and Orca with all six native `.mm` files,
+the multiple-choice table (0443), the stock-label fallback and the
+modeless-alert replacement. Everything compiles, links and assembles the
+unsigned IPA.
+
+What run 195 does not cover, because they landed after it was dispatched: 0241
+(the busy overlay), 0242 (wxChoice as a pull-down) and the wxComboBox peer in
+the overlay. Those are run 196's job.
+
 **The rule:** a ternary whose arms are a block and `nil` does not compile in
 ObjC++. Sweeping the tree for the pattern afterwards found four more `? … : nil`
 ternaries in the iOS sources - `ios_native_picker.mm:195`,

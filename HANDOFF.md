@@ -9212,6 +9212,59 @@ tooltip when a pointer rests on the view. Which is why it is an interaction
 rather than a hand-drawn popup - a popup would appear under a finger too,
 where there is no hover to explain it.
 
+### 0241 — the busy info was a second window, and it could not have been a sheet
+
+`wxBusyInfo` is the last thing in this application that pops up, and the search
+that found it was a negative one: after 0237-0240 and 0438-0443, what is left
+that puts something on screen without being a dialog, a notification, a
+drop-down or a progress bar? Three uses, all of them the same shape - "Reloading
+network plug-in…" in `GUI_App.cpp`, and "Replace from:" and "Reload from:" in
+`Plater.cpp` - and every one of them wraps an operation that blocks the GUI
+thread for as long as it takes.
+
+What it is everywhere else is a `wxFrame` with `wxSIMPLE_BORDER |
+wxFRAME_TOOL_WINDOW | wxSTAY_ON_TOP`, four hundred points wide, with a piece of
+static text centred in it. On a desktop that is a perfectly ordinary little
+window. On this port every top level window is a `UIWindow` of its own, which
+makes it a grey rectangle floating at `UIWindowLevelNormal` - *underneath* every
+dialog on screen, because 0230 put those at `UIWindowLevelAlert + 1` - in a
+style belonging to no platform, and with none of the things a window on this
+system is expected to have.
+
+**It cannot be a presented view controller, and that single fact shapes the
+whole patch.** Everything else in this set - the alerts, the pickers, the
+progress sheet - is presented, and presentation is asynchronous: the controller
+appears when the run loop next turns. A `wxBusyInfo` is constructed on the line
+immediately before the thing that stops the run loop turning. Present it and it
+would appear when the operation *finished*, which is a flash of a card at the
+one moment nobody needs one. The existing generic implementation knows this,
+which is why it ends with `Show(); Refresh(); Update();` - three calls whose
+only purpose is to get the frame painted before control leaves the constructor.
+
+So the overlay is a plain `UIView` added straight to the frontmost window, laid
+out by hand in one pass, and pushed to the render server with
+`[CATransaction flush]` before `Init()` returns. It is on screen when the
+constructor ends, in the same sense the wx frame was. The spinner keeps turning
+throughout for the reason a launch-screen animation does: Core Animation runs it
+in the render server, and does not need the thread that started it.
+
+Two things it gains that the frame never had. It goes into the *topmost* window,
+so a busy operation started from a dialog is covered by it rather than hidden
+behind it - the same window search the alerts use, factored out of
+`msgdlg.mm` for both. And it takes every touch and does nothing with them: the
+application is about to stop answering, and a tap that lands during that would
+otherwise be delivered when it starts again, to a screen that has changed
+underneath the finger. `wxBusyInfo` on a desktop does not do that, and on a
+desktop it does not need to - the pointer is not resting on the thing it is
+about to press.
+
+The generic path is kept and falls through to it when there is no window to put
+the overlay in, which is the same rule everything else in this set follows: a
+busy info in the wrong style is still better than an operation that appears to
+hang. `wxBusyInfoFlags` can carry markup in its title and text; a `UILabel` has
+one font, so both go through `wxMarkupParser::Strip()` first, which is what the
+ports without markup support do with it.
+
 ### Run 190: a block is not a pointer, as far as `nil` is concerned
 
 The first build of these seven patches failed, on one line and one target:

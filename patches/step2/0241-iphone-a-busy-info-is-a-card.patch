@@ -1,0 +1,401 @@
+diff --git a/include/wx/generic/busyinfo.h b/include/wx/generic/busyinfo.h
+index 1aae628..cf59d80 100644
+--- a/include/wx/generic/busyinfo.h
++++ b/include/wx/generic/busyinfo.h
+@@ -49,6 +49,13 @@ private:
+     wxFrame *m_InfoFrame;
+     wxControl *m_text;
+ 
++#ifdef __WXOSX_IPHONE__
++    // The overlay standing in for the frame, or null when there was no window
++    // to put one in and the frame above was built after all. Opaque here: it is
++    // a UIView, and this header is included by files that are not Objective-C.
++    void *m_iosHUD = nullptr;
++#endif // __WXOSX_IPHONE__
++
+     wxDECLARE_NO_COPY_CLASS(wxBusyInfo);
+ };
+ 
+diff --git a/src/generic/busyinfo.cpp b/src/generic/busyinfo.cpp
+index b27e568..3ce8a43 100644
+--- a/src/generic/busyinfo.cpp
++++ b/src/generic/busyinfo.cpp
+@@ -23,6 +23,10 @@
+ 
+ #include "wx/busyinfo.h"
+ 
++#if wxUSE_MARKUP && defined(__WXOSX_IPHONE__)
++    #include "wx/private/markupparser.h"
++#endif
++
+ // wxStaticText currently supports markup only in wxGTK and wxOSX/Cocoa, so use
+ // the generic version for markup support in the other ports.
+ #if wxUSE_MARKUP && !(defined(__WXGTK__) || defined(__WXOSX_COCOA__))
+@@ -33,8 +37,50 @@
+     #define wxStaticTextWithMarkupSupport wxStaticText
+ #endif
+ 
++#ifdef __WXOSX_IPHONE__
++
++// src/osx/iphone/msgdlg.mm. Returns null - having shown nothing - when there
++// is no window to put the overlay in, which is the one case that still needs
++// the frame built below.
++extern void* wxOSXIPhoneBusyInfoShow(const wxString& title, const wxString& text);
++extern void  wxOSXIPhoneBusyInfoUpdate(void* handle, const wxString& text);
++extern void  wxOSXIPhoneBusyInfoHide(void* handle);
++
++// The title and the text may both carry markup, which the overlay has no way
++// of drawing: it is a UILabel, and UILabel has one font. Stripping is what the
++// ports without markup support do with it, and it loses nothing but emphasis.
++static wxString wxBusyInfoIOSPlain(const wxString& s)
++{
++#if wxUSE_MARKUP
++    if ( s.find('<') != wxString::npos || s.find('&') != wxString::npos )
++        return wxMarkupParser::Strip(s);
++#endif // wxUSE_MARKUP
++    return s;
++}
++
++#endif // __WXOSX_IPHONE__
++
+ void wxBusyInfo::Init(const wxBusyInfoFlags& flags)
+ {
++#ifdef __WXOSX_IPHONE__
++    // Every top level window is a UIWindow on this port, so the frame below is
++    // a second one floating at normal level - underneath every dialog, in a
++    // style belonging to no platform. What goes up instead is the card iOS puts
++    // up while it is working, in the frontmost window rather than beside it.
++    m_iosHUD = wxOSXIPhoneBusyInfoShow(
++                   wxBusyInfoIOSPlain(flags.m_title),
++                   wxBusyInfoIOSPlain(flags.m_text.empty() ? flags.m_label
++                                                           : flags.m_text));
++    if ( m_iosHUD != nullptr )
++    {
++        m_InfoFrame = nullptr;
++        m_text      = nullptr;
++        return;
++    }
++    // Nothing was shown. Fall through and build the window: a busy info in the
++    // wrong style is still better than an operation that appears to hang.
++#endif // __WXOSX_IPHONE__
++
+     m_InfoFrame = new wxFrame(flags.m_parent, wxID_ANY, wxString(),
+                               wxDefaultPosition, wxDefaultSize,
+                               wxSIMPLE_BORDER |
+@@ -141,6 +187,14 @@ void wxBusyInfo::Init(const wxBusyInfoFlags& flags)
+ 
+ void wxBusyInfo::UpdateText(const wxString& str)
+ {
++#ifdef __WXOSX_IPHONE__
++    if ( m_iosHUD != nullptr )
++    {
++        wxOSXIPhoneBusyInfoUpdate(m_iosHUD, wxBusyInfoIOSPlain(str));
++        return;
++    }
++#endif // __WXOSX_IPHONE__
++
+ #if wxUSE_MARKUP
+     m_text->SetLabelMarkup(str);
+ #else // !wxUSE_MARKUP
+@@ -150,11 +204,28 @@ void wxBusyInfo::UpdateText(const wxString& str)
+ 
+ void wxBusyInfo::UpdateLabel(const wxString& str)
+ {
++#ifdef __WXOSX_IPHONE__
++    if ( m_iosHUD != nullptr )
++    {
++        wxOSXIPhoneBusyInfoUpdate(m_iosHUD, str);
++        return;
++    }
++#endif // __WXOSX_IPHONE__
++
+     m_text->SetLabelText(str);
+ }
+ 
+ wxBusyInfo::~wxBusyInfo()
+ {
++#ifdef __WXOSX_IPHONE__
++    if ( m_iosHUD != nullptr )
++    {
++        wxOSXIPhoneBusyInfoHide(m_iosHUD);
++        m_iosHUD = nullptr;
++        return;
++    }
++#endif // __WXOSX_IPHONE__
++
+     m_InfoFrame->Show(false);
+     m_InfoFrame->Close();
+ }
+diff --git a/src/osx/iphone/msgdlg.mm b/src/osx/iphone/msgdlg.mm
+index ba2ae23..8ecbcf6 100644
+--- a/src/osx/iphone/msgdlg.mm
++++ b/src/osx/iphone/msgdlg.mm
+@@ -22,6 +22,10 @@
+ #include "wx/osx/private.h"
+ #include "wx/modalhook.h"
+ 
++// For -[CATransaction flush], which is what puts the busy overlay at the end of
++// this file on screen without waiting for a run loop that is not going to turn.
++#import <QuartzCore/QuartzCore.h>
++
+ 
+ wxIMPLEMENT_CLASS(wxMessageDialog, wxDialog);
+ 
+@@ -53,15 +57,15 @@ wxIMPLEMENT_CLASS(wxMessageDialog, wxDialog);
+ // same one wxDialog::ShowModal() runs (src/osx/dialog_osx.cpp), made real on
+ // this port by the iphone wxModalEventLoop::OSXDoRun() implementation.
+ 
+-// The controller a modal presentation has to be made from: the deepest one
+-// that is not already presenting something, in the topmost window.
++// The window anything put up by this file has to go into: the frontmost one
++// that can be seen and touched.
+ //
+ // BY WINDOW LEVEL. A wxDialog is its own UIWindow on this port and sits at
+ // UIWindowLevelAlert + 1, above the application's frame at
+ // UIWindowLevelNormal. An alert presented from the frame would be drawn inside
+ // the frame's window - underneath every dialog on screen - and the loop below
+ // would then be waiting on a button nobody can reach.
+-static UIViewController* wxOSXIPhoneAlertPresenter()
++static UIWindow* wxOSXIPhoneTopWindow()
+ {
+     UIWindow* best = nil;
+ 
+@@ -80,7 +84,14 @@ static UIViewController* wxOSXIPhoneAlertPresenter()
+         }
+     }
+ 
+-    UIViewController* vc = best.rootViewController;
++    return best;
++}
++
++// The controller a modal presentation has to be made from: the deepest one
++// that is not already presenting something, in that window.
++static UIViewController* wxOSXIPhoneAlertPresenter()
++{
++    UIViewController* vc = wxOSXIPhoneTopWindow().rootViewController;
+     while ( vc != nil && vc.presentedViewController != nil &&
+             !vc.presentedViewController.isBeingDismissed )
+         vc = vc.presentedViewController;
+@@ -482,3 +493,222 @@ int wxOSXIPhoneChoiceAlert(const wxString& title,
+     box->cancelCode = -1;   // what the watchdog answers with, if it ever has to
+     return wxOSXIPhoneRunAlert(alert, box, presenter);
+ }
++
++// ---------------------------------------------------------------------------
++// The busy overlay
++// ---------------------------------------------------------------------------
++//
++// wxBusyInfo is a wxFrame on every other port: a small window with a border
++// and a piece of static text in it, put up before a long operation and taken
++// down after. On this one every top level window is a UIWindow of its own, so
++// what that produces is a grey four-hundred-point rectangle floating at normal
++// window level - underneath every dialog on screen, in a style belonging to no
++// platform, and with no way for the system to know it should not be a separate
++// entry in the app switcher. It is replaced here by the thing iOS puts up
++// while it is working: a rounded material card with a spinner in it, over a
++// dimmed backdrop.
++//
++// IT CANNOT BE A PRESENTED VIEW CONTROLLER, and that constraint is what shapes
++// everything below. A wxBusyInfo goes up immediately before the main thread
++// stops answering - that is the entire purpose of it - and a presentation, even
++// an unanimated one, only reaches the screen when the run loop next turns.
++// It never would: the caller's next statement is the long operation. So this
++// is a plain view added straight to the window, laid out by hand in one pass,
++// and pushed to the render server with -[CATransaction flush] before the
++// function returns. The spinner keeps turning for the same reason a spinner in
++// a launch screen does - Core Animation runs it out of process, and does not
++// need the thread that started it.
++
++@interface wxOSXBusyOverlay : UIView
++{
++@public
++    UIVisualEffectView* card;
++    UIActivityIndicatorView* spinner;
++    UILabel* headline;
++    UILabel* message;
++}
++@end
++
++@implementation wxOSXBusyOverlay
++
++- (void)layoutSubviews
++{
++    [super layoutSubviews];
++
++    const CGFloat inset = 22;
++
++    CGFloat width = self.bounds.size.width - 80;
++    if ( width > 360 )
++        width = 360;
++    if ( width < 200 )
++        width = self.bounds.size.width - 32;
++
++    const CGFloat contentWidth = width - 2 * inset;
++    const CGSize  room = CGSizeMake(contentWidth, CGFLOAT_MAX);
++
++    const CGSize spinnerSize = [spinner sizeThatFits:room];
++    CGSize headSize = CGSizeZero;
++    CGSize bodySize = CGSizeZero;
++
++    if ( headline.text.length != 0 )
++        headSize = [headline sizeThatFits:room];
++    if ( message.text.length != 0 )
++        bodySize = [message sizeThatFits:room];
++
++    CGFloat height = inset + spinnerSize.height + inset;
++    if ( headSize.height > 0 )
++        height += headSize.height + 12;
++    if ( bodySize.height > 0 )
++        height += bodySize.height + 8;
++
++    card.frame = CGRectMake(floor((self.bounds.size.width  - width)  / 2),
++                            floor((self.bounds.size.height - height) / 2),
++                            width, height);
++
++    CGFloat y = inset;
++    spinner.frame = CGRectMake(floor((width - spinnerSize.width) / 2), y,
++                               spinnerSize.width, spinnerSize.height);
++    y += spinnerSize.height;
++
++    if ( headSize.height > 0 )
++    {
++        y += 12;
++        headline.frame = CGRectMake(inset, y, contentWidth, headSize.height);
++        y += headSize.height;
++    }
++    if ( bodySize.height > 0 )
++    {
++        y += 8;
++        message.frame = CGRectMake(inset, y, contentWidth, bodySize.height);
++    }
++}
++
++@end
++
++// Puts the overlay up and returns the handle wxBusyInfo holds on to, or null
++// when there is no window to put it in - in which case the caller falls back
++// to the frame it would have built anyway. Never a partial result: an overlay
++// that is returned is on screen.
++//
++// src/generic/busyinfo.cpp.
++void* wxOSXIPhoneBusyInfoShow(const wxString& title, const wxString& text)
++{
++    if ( !wxThread::IsMain() )
++        return nullptr;
++
++    UIWindow* const window = wxOSXIPhoneTopWindow();
++    if ( window == nil )
++        return nullptr;
++
++    wxOSXBusyOverlay* const overlay =
++        [[wxOSXBusyOverlay alloc] initWithFrame:window.bounds];
++    if ( overlay == nil )
++        return nullptr;
++
++    overlay.autoresizingMask =
++        UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
++    overlay.backgroundColor = [UIColor colorWithWhite:0 alpha:0.24];
++    // Every touch, and nothing done with any of them. The application is about
++    // to stop answering: a tap that lands during that would be delivered when
++    // it starts again, to a screen that has meanwhile changed underneath the
++    // finger, which is exactly the class of accident this stands in the way of.
++    overlay.userInteractionEnabled = YES;
++
++    UIVisualEffect* material = nil;
++#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
++    if ( @available(iOS 26.0, *) )
++        material = [[[UIGlassEffect alloc] init] autorelease];
++#endif
++    if ( material == nil )
++        material = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThickMaterial];
++
++    overlay->card = [[UIVisualEffectView alloc] initWithEffect:material];
++    overlay->card.layer.cornerRadius = 26;
++    overlay->card.layer.cornerCurve  = kCACornerCurveContinuous;
++    overlay->card.clipsToBounds      = YES;
++    [overlay addSubview:overlay->card];
++
++    overlay->spinner = [[UIActivityIndicatorView alloc]
++                           initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
++    [overlay->spinner startAnimating];
++    [overlay->card.contentView addSubview:overlay->spinner];
++
++    overlay->headline               = [[UILabel alloc] initWithFrame:CGRectZero];
++    overlay->headline.font          = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
++    overlay->headline.adjustsFontForContentSizeCategory = YES;
++    overlay->headline.textColor     = [UIColor labelColor];
++    overlay->headline.textAlignment = NSTextAlignmentCenter;
++    overlay->headline.numberOfLines = 2;
++    if ( !title.empty() )
++    {
++        wxCFStringRef cfTitle( title );
++        overlay->headline.text = cfTitle.AsNSString();
++    }
++    [overlay->card.contentView addSubview:overlay->headline];
++
++    overlay->message               = [[UILabel alloc] initWithFrame:CGRectZero];
++    overlay->message.font          = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
++    overlay->message.adjustsFontForContentSizeCategory = YES;
++    overlay->message.textColor     = [UIColor secondaryLabelColor];
++    overlay->message.textAlignment = NSTextAlignmentCenter;
++    overlay->message.numberOfLines = 4;
++    overlay->message.lineBreakMode = NSLineBreakByTruncatingMiddle;
++    if ( !text.empty() )
++    {
++        wxCFStringRef cfText( text );
++        overlay->message.text = cfText.AsNSString();
++    }
++    [overlay->card.contentView addSubview:overlay->message];
++
++    [window addSubview:overlay];
++    [window bringSubviewToFront:overlay];
++
++    [overlay setNeedsLayout];
++    [overlay layoutIfNeeded];
++    [CATransaction flush];
++
++    return overlay;
++}
++
++// src/generic/busyinfo.cpp.
++void wxOSXIPhoneBusyInfoUpdate(void* handle, const wxString& text)
++{
++    if ( handle == nullptr || !wxThread::IsMain() )
++        return;
++
++    wxOSXBusyOverlay* const overlay = (wxOSXBusyOverlay*) handle;
++
++    wxCFStringRef cfText( text );
++    overlay->message.text = text.empty() ? @"" : cfText.AsNSString();
++
++    [overlay setNeedsLayout];
++    [overlay layoutIfNeeded];
++    [CATransaction flush];
++}
++
++// src/generic/busyinfo.cpp.
++void wxOSXIPhoneBusyInfoHide(void* handle)
++{
++    if ( handle == nullptr )
++        return;
++
++    wxOSXBusyOverlay* const overlay = (wxOSXBusyOverlay*) handle;
++
++    if ( !wxThread::IsMain() )
++    {
++        // A wxBusyInfo destroyed off the main thread is a bug in the caller,
++        // but a view removed off the main thread is a crash in this one.
++        dispatch_async(dispatch_get_main_queue(), ^{
++            [overlay removeFromSuperview];
++            [overlay release];
++        });
++        return;
++    }
++
++    [overlay removeFromSuperview];
++    [overlay release];
++    // The operation the overlay was covering has finished, and whatever the
++    // caller does next may well block again. Same reasoning as putting it up:
++    // it has to be gone before this returns, not at the next turn of the loop.
++    [CATransaction flush];
++}

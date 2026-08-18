@@ -1,0 +1,126 @@
+diff --git a/src/slic3r/GUI/ParamsPanel.cpp b/src/slic3r/GUI/ParamsPanel.cpp
+index 7d054d8a1..947660455 100644
+--- a/src/slic3r/GUI/ParamsPanel.cpp
++++ b/src/slic3r/GUI/ParamsPanel.cpp
+@@ -16,7 +16,10 @@
+ #include "Widgets/Label.hpp"
+ #include "Widgets/SwitchButton.hpp"
+ #include "Widgets/Button.hpp"
++#include "Widgets/CheckBox.hpp"
+ #include "GUI_Factories.hpp"
++// TipsDialog::ShowModal() below. Compiled out off iOS by its own guard.
++#include "ios_native_ui.hpp"
+ 
+ 
+ namespace Slic3r {
+@@ -166,6 +169,91 @@ Button *TipsDialog::add_button(wxWindowID btn_id, const wxString &label, bool se
+     return btn;
+ }
+ 
++#ifdef __WXOSX_IPHONE__
++int TipsDialog::ShowModal()
++{
++    // The buttons are not kept anywhere - add_button() creates them, binds
++    // them and returns them to a sizer - so they are read back off the child
++    // list, which is in creation order and therefore in the order they were
++    // added: OK, Yes, No, Cancel.
++    std::vector<IOSAlertButton> rows;
++    ::CheckBox                 *tick = nullptr;
++
++    for (wxWindow *const child : GetChildren()) {
++        if (tick == nullptr)
++            tick = dynamic_cast<::CheckBox *>(child);
++
++        Button *const btn = dynamic_cast<Button *>(child);
++        if (btn == nullptr || !btn->IsShown())
++            continue;
++
++        IOSAlertButton row;
++        row.label     = btn->GetLabel();
++        row.id        = btn->GetId();
++        row.widget    = btn;
++        row.enabled   = btn->IsEnabled();
++        row.preferred = row.id == wxID_OK || row.id == wxID_YES;
++        row.cancel    = row.id == wxID_CANCEL || row.id == wxID_NO;
++        rows.push_back(row);
++    }
++
++    // No buttons found means the dialog is not the shape this expects, and a
++    // UIAlertController with no rows cannot be dismissed at all.
++    if (rows.empty())
++        return DPIDialog::ShowModal();
++
++    // "Don't show again" as a row, the way MsgDialog does it: a way of saying
++    // yes rather than a third answer, so it goes after the affirmative and
++    // before the cancel.
++    //
++    // Only when the tick is not already set. create_item_checkbox() binds a
++    // handler that *flips* m_show_again rather than reading the box, so one
++    // event is what a tap is - and if the box starts ticked, the plain
++    // affirmative already carries the behaviour and a second row saying so
++    // would be a row that does nothing.
++    if (tick != nullptr && !tick->GetValue()) {
++        IOSAlertButton *target = nullptr;
++        for (IOSAlertButton &row : rows) {
++            if (row.preferred) {
++                target = &row;
++                break;
++            }
++        }
++        if (target == nullptr)
++            target = &rows.front();
++
++        IOSAlertButton row;
++        row.label  = _L("Don't show again");
++        row.id     = target->id;
++        row.widget = target->widget;
++        row.before = [tick]() {
++            tick->SetValue(true);
++            wxCommandEvent ev(wxEVT_TOGGLEBUTTON, tick->GetId());
++            ev.SetEventObject(tick);
++            ev.SetInt(1);
++            tick->GetEventHandler()->ProcessEvent(ev);
++        };
++
++        size_t at = rows.size();
++        for (size_t i = 0; i < rows.size(); ++i) {
++            if (rows[i].cancel) {
++                at = i;
++                break;
++            }
++        }
++        rows.insert(rows.begin() + at, row);
++    }
++
++    int result = wxID_CANCEL;
++    if (!orca_ios_alert_run(this, GetTitle(),
++                            m_msg != nullptr ? m_msg->GetLabel() : wxString(),
++                            rows, nullptr, &result))
++        return DPIDialog::ShowModal();
++
++    return result;
++}
++#endif // __WXOSX_IPHONE__
++
+ void TipsDialog::on_dpi_changed(const wxRect &suggested_rect)
+ {
+     if (m_confirm) m_confirm->Rescale(); // ORCA
+diff --git a/src/slic3r/GUI/ParamsPanel.hpp b/src/slic3r/GUI/ParamsPanel.hpp
+index 0726db91d..3f1d8ed50 100644
+--- a/src/slic3r/GUI/ParamsPanel.hpp
++++ b/src/slic3r/GUI/ParamsPanel.hpp
+@@ -48,6 +48,14 @@ private:
+ 
+ public:
+     TipsDialog(wxWindow *parent, const wxString &title, const wxString &description, std::string app_key = "", long style = wxOK, std::map<wxStandardID,wxString> option_map={});
++
++#ifdef __WXOSX_IPHONE__
++    // A tip is a sentence, a "don't show again" tick and up to four buttons -
++    // an alert, arrived at separately because this dialog is not a MsgDialog
++    // and so gets none of what 0438 did for that family.
++    int ShowModal() override;
++#endif
++
+     Button *m_confirm{nullptr};
+     Button *m_cancel{nullptr};
+     wxPanel *m_top_line{nullptr};

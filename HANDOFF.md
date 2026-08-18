@@ -9344,6 +9344,30 @@ The collection happens *after* the title/text swap above it, so that a subclass
 whose whole message is its own static text does not have that text promoted
 into the title and then repeated underneath it.
 
+### 0445 — a tip is an alert too
+
+The same one-at-a-time pass that found `MsgNoUpdates` also found `TipsDialog`,
+and this one is not obscure: it is what "Add Modifier" and "Edit Process
+Settings" put up from the object list, and what a file loaded with a
+configuration to sync puts up from the plater. Three call sites, all of them
+things a user does routinely.
+
+It is a sentence, a "don't show again" tick and up to four buttons - the shape
+0438 already turned into an alert - except that `TipsDialog` derives from
+`DPIDialog` and not from `MsgDialog`, so it got none of it.
+
+Two things about it are worth knowing before touching it again. The buttons are
+not kept anywhere: `add_button()` creates one, binds it and hands it to a
+sizer, and `m_confirm`/`m_cancel` are declared but never assigned. So the rows
+are read back off the child list, which is in creation order and therefore in
+the order they were added - OK, Yes, No, Cancel.
+
+And the checkbox handler *flips* `m_show_again` rather than reading the box, so
+one event is exactly what a tap is. That is why the "don't show again" row is
+added only when the box is not already ticked: if it starts ticked, the plain
+affirmative already carries the behaviour, and a second row saying so would be
+a row that does nothing.
+
 ### Where the line is drawn, and why it is there
 
 "Everything that pops up" is now one of four things, and it is worth writing

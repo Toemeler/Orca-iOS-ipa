@@ -1,0 +1,167 @@
+diff --git a/src/slic3r/GUI/ReleaseNote.cpp b/src/slic3r/GUI/ReleaseNote.cpp
+index f30d554..7ef0ec6 100644
+--- a/src/slic3r/GUI/ReleaseNote.cpp
++++ b/src/slic3r/GUI/ReleaseNote.cpp
+@@ -2236,6 +2236,17 @@ void InputIpAddressDialog::on_dpi_changed(const wxRect& suggested_rect)
+      wxGetApp().UpdateDlgDarkUI(this);
+  }
+ 
++#ifdef __WXOSX_IPHONE__
++int SendFailedConfirm::ShowModal()
++{
++    int result = wxID_CANCEL;
++    if (!orca_ios_alert_from_buttons(this, GetTitle(), wxString(), &result))
++        return DPIDialog::ShowModal();
++
++    return result;
++}
++#endif // __WXOSX_IPHONE__
++
+ void SendFailedConfirm::on_dpi_changed(const wxRect &suggested_rect) {}
+ 
+  }} // namespace Slic3r::GUI
+diff --git a/src/slic3r/GUI/ReleaseNote.hpp b/src/slic3r/GUI/ReleaseNote.hpp
+index 2035036..1b3a77d 100644
+--- a/src/slic3r/GUI/ReleaseNote.hpp
++++ b/src/slic3r/GUI/ReleaseNote.hpp
+@@ -378,6 +378,13 @@ public:
+     SendFailedConfirm(wxWindow *parent = nullptr);
+     ~SendFailedConfirm(){};
+ 
++#ifdef __WXOSX_IPHONE__
++    // "Failed to send", Retry and reconnect: a sentence and two buttons, which
++    // is an alert. Built from the dialog's own children because it keeps no
++    // pointer to either the label or the buttons.
++    int ShowModal() override;
++#endif
++
+     //void on_ok(wxMouseEvent &evt);
+     void on_dpi_changed(const wxRect &suggested_rect) override;
+ };
+diff --git a/src/slic3r/GUI/ios_native_ui.hpp b/src/slic3r/GUI/ios_native_ui.hpp
+index 2b318ee..bb856b0 100644
+--- a/src/slic3r/GUI/ios_native_ui.hpp
++++ b/src/slic3r/GUI/ios_native_ui.hpp
+@@ -107,6 +107,28 @@ bool orca_ios_alert_run(wxDialog                          *dlg,
+                         std::vector<IOSAlertField>        *fields,
+                         int                               *result);
+ 
++// The same alert, built out of the dialog's own buttons rather than a list the
++// caller assembles: every one of Orca's Button widgets that is a direct child
++// of `dlg` becomes a row, in the order they were created.
++//
++// For the dialogs here that are a sentence and some buttons but are not
++// MsgDialogs - there are several, because MsgDialog is not the only base a
++// message in this application ever got written on, and each of them would
++// otherwise need the same twenty lines.
++//
++// An empty `message` means "the text is in the dialog", and the static text it
++// holds is read out and joined in child order. These dialogs typically build a
++// Label in the constructor, hand it to a sizer and keep no pointer to it, so
++// the control is the only place the sentence still exists.
++//
++// Returns false, having shown nothing, when the dialog holds no button to make
++// a row out of or the alert cannot be presented. The caller then shows its
++// window, exactly as with orca_ios_alert_run().
++bool orca_ios_alert_from_buttons(wxDialog       *dlg,
++                                 const wxString &title,
++                                 const wxString &message,
++                                 int            *result);
++
+ // The same alert, presented and returned from immediately, for the windows in
+ // this application that are modeless: SecondaryCheckDialog is a wxFrame that
+ // posts an event when a button is pressed and never waits for one. The row's
+diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
+index 1d6d82b..003e5d9 100644
+--- a/src/slic3r/GUI/ios_native_ui.mm
++++ b/src/slic3r/GUI/ios_native_ui.mm
+@@ -51,6 +51,9 @@
+ 
+ #include <wx/dialog.h>
+ #include <wx/evtloop.h>
++// orca_ios_alert_from_buttons() reads the message back off the dialog's own
++// labels; Orca's Label derives from this one.
++#include <wx/stattext.h>
+ #include <wx/thread.h>
+ #include <wx/window.h>
+ #include <wx/osx/core/cfstring.h>
+@@ -541,6 +544,79 @@ void orca_ios_alert_dismiss(wxWindow *owner)
+     }
+ }
+ 
++bool orca_ios_alert_from_buttons(wxDialog *dlg, const wxString &title,
++                                 const wxString &message, int *result)
++{
++    if (dlg == nullptr)
++        return false;
++
++    // Direct children only, and in child order - which is creation order, and
++    // therefore the order the dialog's own sizer put them in.
++    std::vector<IOSAlertButton> rows;
++    for (wxWindow *const child : dlg->GetChildren()) {
++        ::Button *const btn = dynamic_cast<::Button *>(child);
++        if (btn == nullptr || !btn->IsShown())
++            continue;
++
++        IOSAlertButton row;
++        row.label       = btn->GetLabel();
++        row.id          = btn->GetId();
++        row.widget      = btn;
++        row.enabled     = btn->IsEnabled();
++        row.preferred   = row.id == wxID_OK || row.id == wxID_YES || row.id == wxID_APPLY;
++        row.cancel      = row.id == wxID_CANCEL || row.id == wxID_NO || row.id == wxID_CLOSE;
++        row.destructive = row.id == wxID_DELETE || row.id == wxID_REMOVE;
++        rows.push_back(row);
++    }
++
++    if (rows.empty())
++        return false;
++
++    // MOST OF THESE BUTTONS HAVE NO ID. They are built as `new Button(this,
++    // _L("Retry"))` and answer with EndModal(wxYES) from a handler, so the
++    // return code is right and the id is a generated negative number that says
++    // nothing about the role. What is reliable is the order: this family lays
++    // the affirmative out first and the way out after it, so when no id was
++    // recognised the first row is the one to draw bold.
++    bool named = false;
++    for (const IOSAlertButton &row : rows) {
++        if (row.preferred || row.cancel) {
++            named = true;
++            break;
++        }
++    }
++    if (!named)
++        rows.front().preferred = true;
++
++    // An empty message means "the text is in the dialog". It usually is: these
++    // dialogs build a Label in the constructor, hand it to a sizer and keep no
++    // pointer to it, so the only place the sentence exists afterwards is the
++    // control itself. Orca's Label derives from wxStaticText, so one walk finds
++    // both kinds.
++    wxString text = message;
++    if (text.IsEmpty()) {
++        for (wxWindow *const child : dlg->GetChildren()) {
++            const wxStaticText *const label = dynamic_cast<const wxStaticText *>(child);
++            if (label == nullptr)
++                continue;
++            const wxString line = label->GetLabel();
++            if (line.IsEmpty())
++                continue;
++            if (!text.IsEmpty())
++                text += "\n\n";
++            text += line;
++        }
++    }
++
++    int code = wxID_CANCEL;
++    if (!orca_ios_alert_run(dlg, title, text, rows, nullptr, &code))
++        return false;
++
++    if (result != nullptr)
++        *result = code;
++    return true;
++}
++
+ bool orca_ios_alert_post(wxWindow                          *owner,
+                          const wxString                    &title,
+                          const wxString                    &message,

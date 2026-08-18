@@ -9409,6 +9409,40 @@ the path the keyboard has always taken, not a new one.
 Anything that is not one of Orca's buttons - a plain `wxButton` - does not turn
 mouse events into a command, and still gets the command event.
 
+### 0447 — the dialogs that are not MsgDialogs
+
+`MsgDialog` is not the only base a message in this application ever got written
+on, and 0438 only ever covered that family. Going through the forty-odd
+`DPIDialog` subclasses looking for the ones that are a sentence and some
+buttons produced a short list, and it is short for a good reason: most of them
+are forms, and a form is not an alert.
+
+`orca_ios_alert_from_buttons()` is what the short ones share. It builds the
+alert out of the dialog's own children - every one of Orca's `Button` widgets
+that is a direct child becomes a row, in creation order - so a conversion is
+six lines rather than twenty.
+
+Two things it has to work around, both consequences of how these dialogs are
+written. **The buttons usually have no id**: they are `new Button(this,
+_L("Retry"))` and answer with `EndModal(wxYES)` from a handler, so the return
+code is right but the id is a generated negative number that says nothing about
+the role. Order is what is reliable - this family lays the affirmative out
+first - so when no id was recognised the first row is drawn bold. And **the
+text is usually not stored anywhere**: a `Label` is built in the constructor,
+handed to a sizer and forgotten, so an empty `message` argument means "read it
+back off the dialog", which one walk of the static-text children does.
+
+`SendFailedConfirm` is the first through it, and it is not obscure: it is what
+`SendToPrinter.cpp` puts up when a job fails to send, which on this port is the
+core flow.
+
+Two neighbours were looked at and deliberately left as windows.
+`NetworkPluginRestartDialog` has no call site outside its own file. And
+`EditDevNameDialog` - renaming a printer - validates as you type: an invalid
+name sets a label and *keeps the dialog open*, which an alert cannot do without
+re-presenting itself in a loop. It is a text field with a validator, not a
+question, and it should stay a window until somebody wants to write that loop.
+
 ### Where the line is drawn, and why it is there
 
 "Everything that pops up" is now one of four things, and it is worth writing

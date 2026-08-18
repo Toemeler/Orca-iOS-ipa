@@ -9205,9 +9205,13 @@ choice dialogs; `ios_native_ui.mm`, `ios_native_progress.mm` and
 `ProgressDialog`, `DropDown`, `SingleChoiceDialog` and `ReleaseNote` against
 them. 661 of 663 objects, no undefined symbols.
 
-Run 191 is the one dispatched on the fix, and on the four review fixes that
-followed it - the freed alert title, the banner countdown, the picker's
-identity-checked teardown and its retain cycle.
+**Run 192 is green.** The whole set - wx with the new message, text-entry and
+choice dialogs, the four native `.mm` files, and the six Orca sources that use
+them - compiles, links and assembles the unsigned IPA. Run 191 was the other
+session's, on a commit that predated the fix, and this one cancelled it.
+
+What run 192 does not cover, because both landed after it: 0239 (the popup
+dismisser) and the stock-label fallback in 0438.
 
 **The rule:** a ternary whose arms are a block and `nil` does not compile in
 ObjC++. Sweeping the tree for the pattern afterwards found four more `? … : nil`

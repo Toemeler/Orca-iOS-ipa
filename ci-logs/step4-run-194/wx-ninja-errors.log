@@ -1,0 +1,129 @@
+32309-      |                         ^
+32310-53 warnings generated.
+32311-[646/996] Building OBJCXX object libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/nonownedwnd.mm.o
+32312:FAILED: [code=1] libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/nonownedwnd.mm.o 
+32313-/usr/bin/clang++ -DWXBUILDING -D_FILE_OFFSET_BITS=64 -D__WXOSX_IPHONE__ -DwxUSE_BASE=0 -DwxUSE_GUI=1 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/tiff/libtiff -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/png -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/ios-prefix/usr/local/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/build-ios/lib/wx/include/osx_iphone-unicode-static-3.3 -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include -I/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/3rdparty/libwebp/src -x objective-c++ -O3 -DNDEBUG -arch arm64 -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -miphoneos-version-min=26.0 -fPIC -fvisibility-inlines-hidden -DwxDEBUG_LEVEL=0 -Wall -Wundef -Wunused-parameter -Wno-shorten-64-to-32 -Wno-ignored-attributes -MD -MT libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/nonownedwnd.mm.o -MF libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/nonownedwnd.mm.o.d -o libs/core/CMakeFiles/wxcore.dir/__/__/__/__/src/osx/iphone/nonownedwnd.mm.o -c /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm
+32314-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:10:
+32315-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/wxprec.h:11:
+32316-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/defs.h:45:
+32317-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/platform.h:491:13: warning: '__MAC_OS_X_VERSION_MAX_ALLOWED' is not defined, evaluates to 0 [-Wundef]
+32318-  491 | #        if __MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
+32319-      |             ^
+32320-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32321-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32322-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:101:25: warning: 'IsVisible' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32323-  101 |     virtual bool        IsVisible() const ;
+32324-      |                         ^
+32325-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:269:25: note: overridden virtual function is here
+32326-  269 |     virtual bool        IsVisible() const = 0;
+32327-      |                         ^
+32328-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32329-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32330-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:102:25: warning: 'SetVisibility' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32331-  102 |     virtual void        SetVisibility( bool visible );
+32332-      |                         ^
+32333-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:271:25: note: overridden virtual function is here
+32334-  271 |     virtual void        SetVisibility( bool visible ) = 0;
+32335-      |                         ^
+32336-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32337-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32338-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:104:25: warning: 'Raise' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32339-  104 |     virtual void        Raise();
+32340-      |                         ^
+32341-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:280:25: note: overridden virtual function is here
+32342-  280 |     virtual void        Raise() = 0;
+32343-      |                         ^
+32344-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32345-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32346-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:106:25: warning: 'Lower' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32347-  106 |     virtual void        Lower();
+32348-      |                         ^
+32349-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:282:25: note: overridden virtual function is here
+32350-  282 |     virtual void        Lower() = 0;
+32351-      |                         ^
+32352-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32353-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32354-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:108:25: warning: 'ScrollRect' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32355-  108 |     virtual void        ScrollRect( const wxRect *rect, int dx, int dy );
+32356-      |                         ^
+32357-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:284:25: note: overridden virtual function is here
+32358-  284 |     virtual void        ScrollRect( const wxRect *rect, int dx, int dy ) = 0;
+32359-      |                         ^
+32360-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32361-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32362-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:110:25: warning: 'GetWXWidget' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32363-  110 |     virtual WXWidget    GetWXWidget() const { return m_osxView; }
+32364-      |                         ^
+32365-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/core/private.h:286:25: note: overridden virtual function is here
+32366-  286 |     virtual WXWidget    GetWXWidget() const = 0;
+32367-      |                         ^
+32368-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:12:
+32369-In file included from /Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/private.h:7:
+32370-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/osx/iphone/private.h:112:25: warning: 'SetBackgroundColour' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+32371-  112 |     virtual void        SetBackgroundColour( const wxColour& col ) ;
+32372-      |                         ^
+--
+32813-   57 | @property(class, nonatomic, readonly) UIScreen *mainScreen API_DEPRECATED("Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.", ios(2.0, 26.0), tvos(9.0, 26.0), visionos(1.0, 26.0)) API_UNAVAILABLE(watchos);
+32814-      |                                                 ^
+32815-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: 'mainScreen' has been explicitly marked deprecated here
+32816:/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:395:16: error: 'DismissAndNotify' is a protected member of 'wxPopupTransientWindowBase'
+32817-  395 |         popup->DismissAndNotify();
+32818-      |                ^
+32819-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/include/wx/popupwin.h:115:10: note: declared protected here
+32820-  115 |     void DismissAndNotify()
+32821-      |          ^
+32822-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:422:67: warning: 'mainScreen' is deprecated: first deprecated in iOS 26.0 - Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context. [-Wdeprecated-declarations]
+32823-  422 |             [[wxOSXPopupDismisser alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+32824-      |                                                                   ^
+32825-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: property 'mainScreen' is declared deprecated here
+32826-   57 | @property(class, nonatomic, readonly) UIScreen *mainScreen API_DEPRECATED("Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.", ios(2.0, 26.0), tvos(9.0, 26.0), visionos(1.0, 26.0)) API_UNAVAILABLE(watchos);
+32827-      |                                                 ^
+32828-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: 'mainScreen' has been explicitly marked deprecated here
+32829-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:422:42: warning: 'initWithFrame:' is deprecated: first deprecated in iOS 26.0 - Use init(windowScene:) instead. [-Wdeprecated-declarations]
+32830-  422 |             [[wxOSXPopupDismisser alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+32831-      |                                          ^
+32832-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIWindow.h:27:1: note: 'initWithFrame:' has been explicitly marked deprecated here
+32833-   27 | - (instancetype)initWithFrame:(CGRect)frame NS_DESIGNATED_INITIALIZER API_DEPRECATED("Use init(windowScene:) instead.", ios(2.0, 26.0), tvos(9.0, 26.0), visionos(1.0, 26.0)) API_UNAVAILABLE(watchos);
+32834-      | ^
+32835-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:445:48: warning: 'mainScreen' is deprecated: first deprecated in iOS 26.0 - Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context. [-Wdeprecated-declarations]
+32836-  445 |     gs_popupDismisser.frame       = [[UIScreen mainScreen] bounds];
+32837-      |                                                ^
+32838-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: property 'mainScreen' is declared deprecated here
+32839-   57 | @property(class, nonatomic, readonly) UIScreen *mainScreen API_DEPRECATED("Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.", ios(2.0, 26.0), tvos(9.0, 26.0), visionos(1.0, 26.0)) API_UNAVAILABLE(watchos);
+32840-      |                                                 ^
+32841-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: 'mainScreen' has been explicitly marked deprecated here
+32842-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:607:18: warning: 'initWithFrame:' is deprecated: first deprecated in iOS 26.0 - Use init(windowScene:) instead. [-Wdeprecated-declarations]
+32843-  607 |     [m_macWindow initWithFrame:r ];
+32844-      |                  ^
+32845-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIWindow.h:27:1: note: 'initWithFrame:' has been explicitly marked deprecated here
+32846-   27 | - (instancetype)initWithFrame:(CGRect)frame NS_DESIGNATED_INITIALIZER API_DEPRECATED("Use init(windowScene:) instead.", ios(2.0, 26.0), tvos(9.0, 26.0), visionos(1.0, 26.0)) API_UNAVAILABLE(watchos);
+32847-      | ^
+32848-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:566:52: warning: unused parameter 'parent' [-Wunused-parameter]
+32849-  566 | void wxNonOwnedWindowIPhoneImpl::Create( wxWindow* parent, const wxPoint& pos, const wxSize& size,
+32850-      |                                                    ^
+32851-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:567:18: warning: unused parameter 'extraStyle' [-Wunused-parameter]
+32852-  567 | long style, long extraStyle, const wxString& name )
+32853-      |                  ^
+32854-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:567:46: warning: unused parameter 'name' [-Wunused-parameter]
+32855-  567 | long style, long extraStyle, const wxString& name )
+32856-      |                                              ^
+32857-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:662:50: warning: 'mainScreen' is deprecated: first deprecated in iOS 26.0 - Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context. [-Wdeprecated-declarations]
+32858-  662 |                 const CGRect screen = [[UIScreen mainScreen] bounds];
+32859-      |                                                  ^
+32860-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: property 'mainScreen' is declared deprecated here
+32861-   57 | @property(class, nonatomic, readonly) UIScreen *mainScreen API_DEPRECATED("Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.", ios(2.0, 26.0), tvos(9.0, 26.0), visionos(1.0, 26.0)) API_UNAVAILABLE(watchos);
+32862-      |                                                 ^
+32863-/Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIScreen.h:57:49: note: 'mainScreen' has been explicitly marked deprecated here
+32864-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:810:73: warning: unused parameter 'effect' [-Wunused-parameter]
+32865-  810 | bool wxNonOwnedWindowIPhoneImpl::ShowWithEffect(bool show, wxShowEffect effect, unsigned timeout)
+32866-      |                                                                         ^
+32867-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:810:90: warning: unused parameter 'timeout' [-Wunused-parameter]
+32868-  810 | bool wxNonOwnedWindowIPhoneImpl::ShowWithEffect(bool show, wxShowEffect effect, unsigned timeout)
+32869-      |                                                                                          ^
+32870-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:826:70: warning: unused parameter 'col' [-Wunused-parameter]
+32871-  826 | bool wxNonOwnedWindowIPhoneImpl::SetBackgroundColour(const wxColour& col )
+32872-      |                                                                      ^
+32873-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:831:54: warning: unused parameter 'exStyle' [-Wunused-parameter]
+32874-  831 | void wxNonOwnedWindowIPhoneImpl::SetExtraStyle( long exStyle )
+32875-      |                                                      ^
+32876-/Users/runner/work/Orca-iOS-ipa/Orca-iOS-ipa/wx/src/osx/iphone/nonownedwnd.mm:836:71: warning: unused parameter 'style' [-Wunused-parameter]

@@ -920,10 +920,10 @@ index 000000000..ff5cb4761
 +#endif // slic3r_GUI_ios_native_ui_hpp_
 diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
 new file mode 100644
-index 000000000..71f0412c3
+index 000000000..efda8a4a2
 --- /dev/null
 +++ b/src/slic3r/GUI/ios_native_ui.mm
-@@ -0,0 +1,539 @@
+@@ -0,0 +1,544 @@
 +///|/ Copyright (c) 2026 Orca-iOS-ipa contributors
 +///|/
 +///|/ Orca-iOS-ipa is released under the terms of the AGPLv3 or higher
@@ -1429,6 +1429,17 @@ index 000000000..71f0412c3
 +    if (!wxThread::IsMain())
 +        return false;
 +
++    // WHATEVER THIS WINDOW ALREADY HAS UP GOES FIRST.
++    //
++    // SecondaryCheckDialog is reused: update_title_style() followed by
++    // on_show() is how the Device page asks its next question through the same
++    // frame, without hiding it in between. Merely forgetting the old alert
++    // would leave it on screen with the new one presented on top of it - two
++    // questions, one of them stale. Dismissing is asynchronous, and the
++    // presenter walk below skips a controller that is being dismissed, so the
++    // new one lands where the old one was.
++    orca_ios_alert_dismiss(owner);
++
 +    // No dialog and no loop: nothing here waits, and nothing here has a return
 +    // code to set. The row's wxEVT_BUTTON is the whole of the result, which is
 +    // exactly what a modeless window's buttons already do.
@@ -1447,14 +1458,8 @@ index 000000000..71f0412c3
 +
 +    ++gs_orca_alerts_up;
 +    orca_ios_alert_watch(ac, state, 0);
-+    // One at a time per window: a second on_show() for the same frame replaces
-+    // the first, exactly as showing the window twice would.
-+    if (owner != nullptr) {
-+        const auto previous = gs_posted.find(owner);
-+        if (previous != gs_posted.end())
-+            gs_posted.erase(previous);
++    if (owner != nullptr)
 +        gs_posted[owner] = state;
-+    }
 +
 +    BOOST_LOG_TRIVIAL(error) << "orca-ios-alert: (modeless) [" << title.utf8_string() << "] "
 +                             << message.utf8_string();

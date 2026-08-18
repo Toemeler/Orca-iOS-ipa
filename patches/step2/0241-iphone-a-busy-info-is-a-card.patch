@@ -127,7 +127,7 @@ index b27e568..3ce8a43 100644
      m_InfoFrame->Close();
  }
 diff --git a/src/osx/iphone/msgdlg.mm b/src/osx/iphone/msgdlg.mm
-index ba2ae23..8ecbcf6 100644
+index ba2ae23..68649cd 100644
 --- a/src/osx/iphone/msgdlg.mm
 +++ b/src/osx/iphone/msgdlg.mm
 @@ -22,6 +22,10 @@
@@ -176,7 +176,7 @@ index ba2ae23..8ecbcf6 100644
      while ( vc != nil && vc.presentedViewController != nil &&
              !vc.presentedViewController.isBeingDismissed )
          vc = vc.presentedViewController;
-@@ -482,3 +493,222 @@ int wxOSXIPhoneChoiceAlert(const wxString& title,
+@@ -482,3 +493,234 @@ int wxOSXIPhoneChoiceAlert(const wxString& title,
      box->cancelCode = -1;   // what the watchdog answers with, if it ever has to
      return wxOSXIPhoneRunAlert(alert, box, presenter);
  }
@@ -217,6 +217,18 @@ index ba2ae23..8ecbcf6 100644
 +@end
 +
 +@implementation wxOSXBusyOverlay
++
++// Each of the four is created with +alloc and handed to a superview, so the
++// overlay owns one reference to each and has to give it back. Without this the
++// card, the spinner and both labels outlive every busy info this port shows.
++- (void)dealloc
++{
++    [message release];
++    [headline release];
++    [spinner release];
++    [card release];
++    [super dealloc];
++}
 +
 +- (void)layoutSubviews
 +{

@@ -9462,6 +9462,38 @@ not conversions:
 
 That is the whole of it: everything else in that list builds a page.
 
+### The test list for this set
+
+None of 0237-0242 or 0438-0447 has run on a device. Everything below is
+reachable without a printer except the last three rows.
+
+The single most useful line in the log is this one, from
+`MsgDialog::orca_ios_is_plain()`:
+
+```
+orca-ios-alert: [<title>] keeps its window - it holds a <class>
+```
+
+It fires exactly when a dialog fell back, and it names what stopped it. A run
+of the application that produces none of these has had every `MsgDialog` it
+showed presented natively.
+
+| # | what to do | how to tell |
+|---|---|---|
+| 1 | quit with unsaved changes, or delete an object | a system alert, not a 360 pt box. The buttons read as rows, Dynamic Type applies, and the text is selectable-looking rather than painted |
+| 2 | an alert with "don't show again" | there is a **third row** saying so, between the affirmative and the cancel. Choosing it must both act *and* remember - reopen the same situation and check it stays away |
+| 3 | an alert raised from inside a dialog | it appears **over** the dialog. Behind it means the window search in `orca_ios_topmost_window()` picked wrong, and the application will look frozen |
+| 4 | rename a preset, or anything that asks for a name | the alert carries a text field and the keyboard comes up with it |
+| 5 | a drop-down in the sidebar | a list anchored under the control. Past twelve rows it has a search field; the sections are the vendor/material groups |
+| 6 | a drop-down inside a dialog | same, and it is drawn above the dialog rather than behind it |
+| 7 | "Add Modifier" from the object-list menu | the tip is an alert (0445), and its "don't show again" row actually suppresses it next time |
+| 8 | slice something | the progress notification is a banner bottom-right, it counts down and goes on its own, and it does **not** vanish when you leave Prepare - that was the whole point of the second countdown |
+| 9 | let a notification's action button do something ("Export G-code", "Undo") | the action runs. This is the path 0446 fixed for buttons; the banner has always used the callback directly |
+| 10 | a long operation - reload from disk, replace a part | a card with a spinner over a dimmed screen (0241), and it goes away by itself |
+| 11 | a `wxComboBox` - Send to printer's storage picker, AMS filament, extrusion calibration | it is **visible at all**. Before 0242's overlay change it drew nothing whatsoever |
+| 12 | send a job and let it fail | "Failed to send" is an alert with Retry and reconnect (0447) |
+| 13 | any printer error | the picture is still there - that dialog keeps its window on purpose |
+
 ### Where the line is drawn, and why it is there
 
 "Everything that pops up" is now one of four things, and it is worth writing

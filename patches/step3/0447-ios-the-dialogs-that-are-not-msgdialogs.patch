@@ -72,11 +72,11 @@ index 2b318ee..bb856b0 100644
  // this application that are modeless: SecondaryCheckDialog is a wxFrame that
  // posts an event when a button is pressed and never waits for one. The row's
 diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
-index 1d6d82b..003e5d9 100644
+index 24b70d1..47c209e 100644
 --- a/src/slic3r/GUI/ios_native_ui.mm
 +++ b/src/slic3r/GUI/ios_native_ui.mm
-@@ -51,6 +51,9 @@
- 
+@@ -52,6 +52,9 @@
+ #include <wx/button.h>
  #include <wx/dialog.h>
  #include <wx/evtloop.h>
 +// orca_ios_alert_from_buttons() reads the message back off the dialog's own
@@ -85,7 +85,7 @@ index 1d6d82b..003e5d9 100644
  #include <wx/thread.h>
  #include <wx/window.h>
  #include <wx/osx/core/cfstring.h>
-@@ -541,6 +544,79 @@ void orca_ios_alert_dismiss(wxWindow *owner)
+@@ -545,6 +548,79 @@ void orca_ios_alert_dismiss(wxWindow *owner)
      }
  }
  

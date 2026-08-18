@@ -9406,8 +9406,16 @@ sends nothing without it.
 which is what `mouseReleased()` tests before sending the command. So this is
 the path the keyboard has always taken, not a new one.
 
-Anything that is not one of Orca's buttons - a plain `wxButton` - does not turn
-mouse events into a command, and still gets the command event.
+A `wxButton` is the one exception and still gets the command event: its peer on
+this port is a `UIButton` whose action comes from UIKit, so it does not turn wx
+mouse events into anything at all.
+
+The test is written that way round - "is this a `wxButton`?" rather than "is
+this one of Orca's?" - for two reasons. The command event is the special case,
+for the handful of classes wx implements natively, so a simulated tap is the
+right default for a widget nobody anticipated. And it keeps
+`ios_native_ui.mm` off `Widgets/Button.hpp`: that file imports UIKit, and
+nothing else in it reaches into Orca's widget headers.
 
 ### 0447 — the dialogs that are not MsgDialogs
 

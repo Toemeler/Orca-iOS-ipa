@@ -1,5 +1,5 @@
 diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
-index efda8a4..1d6d82b 100644
+index efda8a4..24b70d1 100644
 --- a/src/slic3r/GUI/ios_native_ui.mm
 +++ b/src/slic3r/GUI/ios_native_ui.mm
 @@ -26,9 +26,10 @@
@@ -16,17 +16,15 @@ index efda8a4..1d6d82b 100644
  //
  // That also settles what ShowModal() returns. If the handler ended the dialog
  // itself, its code is what the caller gets; if it did not, the row's id is.
-@@ -62,6 +63,9 @@
- #include <vector>
+@@ -48,6 +49,7 @@
  
- #include "ios_native_ui.hpp"
-+// orca_ios_press() below tells one of Orca's buttons - which turns a mouse
-+// press into a command event itself - from a plain wxButton, which does not.
-+#include "Widgets/Button.hpp"
+ #include "libslic3r/libslic3r.h"
  
- namespace Slic3r {
- namespace GUI {
-@@ -159,6 +163,50 @@ struct OrcaAlertState
++#include <wx/button.h>
+ #include <wx/dialog.h>
+ #include <wx/evtloop.h>
+ #include <wx/thread.h>
+@@ -159,6 +161,56 @@ struct OrcaAlertState
  };
  } // namespace
  
@@ -51,33 +49,39 @@ index efda8a4..1d6d82b 100644
 +// wxMouseEvent, which carries position (0,0) and so lands inside the button's
 +// rect, which is what mouseReleased() checks before sending the command event.
 +//
-+// Anything that is not one of Orca's buttons - a plain wxButton - does not turn
-+// mouse events into a command, so that gets the command event instead.
++// A wxButton is the exception and gets the command event instead: its peer is a
++// UIButton whose action comes from UIKit, so it does not turn wx mouse events
++// into anything at all. Everything else in this application that can be a row -
++// Orca's Button, which is a StaticBox and not a wxButton - takes the press.
++//
++// The test is written that way round on purpose. The command event is the
++// special case, for the two or three classes wx implements natively; a
++// simulated tap is the general one, and is what an unknown widget should get.
 +static void orca_ios_press(wxWindow *widget)
 +{
 +    if (widget == nullptr)
 +        return;
 +
-+    if (dynamic_cast<::Button *>(widget) != nullptr) {
-+        wxMouseEvent down(wxEVT_LEFT_DOWN);
-+        down.SetEventObject(widget);
-+        widget->GetEventHandler()->ProcessEvent(down);
-+
-+        wxMouseEvent up(wxEVT_LEFT_UP);
-+        up.SetEventObject(widget);
-+        widget->GetEventHandler()->ProcessEvent(up);
++    if (dynamic_cast<wxButton *>(widget) != nullptr) {
++        wxCommandEvent evt(wxEVT_BUTTON, widget->GetId());
++        evt.SetEventObject(widget);
++        widget->GetEventHandler()->ProcessEvent(evt);
 +        return;
 +    }
 +
-+    wxCommandEvent evt(wxEVT_BUTTON, widget->GetId());
-+    evt.SetEventObject(widget);
-+    widget->GetEventHandler()->ProcessEvent(evt);
++    wxMouseEvent down(wxEVT_LEFT_DOWN);
++    down.SetEventObject(widget);
++    widget->GetEventHandler()->ProcessEvent(down);
++
++    wxMouseEvent up(wxEVT_LEFT_UP);
++    up.SetEventObject(widget);
++    widget->GetEventHandler()->ProcessEvent(up);
 +}
 +
  // Reads the text fields back and runs the row.
  //
  // ON THE MAIN THREAD AND A TURN AFTER THE TAP. A UIAlertAction handler runs
-@@ -211,9 +259,7 @@ static void orca_ios_alert_deliver(std::shared_ptr<OrcaAlertState> state,
+@@ -211,9 +263,7 @@ static void orca_ios_alert_deliver(std::shared_ptr<OrcaAlertState> state,
          if (state->dlg != nullptr)
              state->dlg->SetReturnCode(kOrcaAlertNoReturn);
  
@@ -88,7 +92,7 @@ index efda8a4..1d6d82b 100644
  
          if (state->dlg != nullptr) {
              if (state->dlg->GetReturnCode() == kOrcaAlertNoReturn)
-@@ -515,8 +561,8 @@ bool orca_ios_alert_post(wxWindow                          *owner,
+@@ -515,8 +565,8 @@ bool orca_ios_alert_post(wxWindow                          *owner,
      orca_ios_alert_dismiss(owner);
  
      // No dialog and no loop: nothing here waits, and nothing here has a return

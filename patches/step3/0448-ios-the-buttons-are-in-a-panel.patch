@@ -1,0 +1,122 @@
+diff --git a/src/slic3r/GUI/CreatePresetsDialog.cpp b/src/slic3r/GUI/CreatePresetsDialog.cpp
+index 1bd80d5..9b3ab17 100644
+--- a/src/slic3r/GUI/CreatePresetsDialog.cpp
++++ b/src/slic3r/GUI/CreatePresetsDialog.cpp
+@@ -1,4 +1,7 @@
+ #include "CreatePresetsDialog.hpp"
++// CreatePresetSuccessfulDialog::ShowModal() below. Compiled out off iOS by its
++// own guard.
++#include "ios_native_ui.hpp"
+ #include <boost/log/trivial.hpp>
+ #include <vector>
+ #include <set>
+@@ -3528,6 +3531,22 @@ CreatePresetSuccessfulDialog::CreatePresetSuccessfulDialog(wxWindow *parent, con
+ 
+ CreatePresetSuccessfulDialog::~CreatePresetSuccessfulDialog() {}
+ 
++#ifdef __WXOSX_IPHONE__
++int CreatePresetSuccessfulDialog::ShowModal()
++{
++    // "Printer Created", "Please go to printer settings to edit your presets",
++    // and one or two buttons whose labels the constructor rewrites. Everything
++    // the alert needs is in the dialog, including the buttons - which are in a
++    // DialogButtons panel rather than in the dialog itself, and which the
++    // collector goes one level down to find.
++    int result = wxID_CANCEL;
++    if (!orca_ios_alert_from_buttons(this, GetTitle(), wxString(), &result))
++        return DPIDialog::ShowModal();
++
++    return result;
++}
++#endif // __WXOSX_IPHONE__
++
+ void CreatePresetSuccessfulDialog::on_dpi_changed(const wxRect &suggested_rect) {
+     Layout();
+ }
+diff --git a/src/slic3r/GUI/CreatePresetsDialog.hpp b/src/slic3r/GUI/CreatePresetsDialog.hpp
+index 678f4d4..383b448 100644
+--- a/src/slic3r/GUI/CreatePresetsDialog.hpp
++++ b/src/slic3r/GUI/CreatePresetsDialog.hpp
+@@ -225,6 +225,13 @@ public:
+     CreatePresetSuccessfulDialog(wxWindow *parent, const SuccessType &create_success_type);
+     ~CreatePresetSuccessfulDialog();
+ 
++#ifdef __WXOSX_IPHONE__
++    // "Printer Created" and where to go next: a message and one or two
++    // buttons, built out of the dialog's own children because it keeps no
++    // pointer to any of them.
++    int ShowModal() override;
++#endif
++
+ protected:
+     void on_dpi_changed(const wxRect &suggested_rect) override;
+ 
+diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
+index 89aa2d5..1068383 100644
+--- a/src/slic3r/GUI/ios_native_ui.mm
++++ b/src/slic3r/GUI/ios_native_ui.mm
+@@ -553,18 +553,33 @@ void orca_ios_alert_dismiss(wxWindow *owner)
+     }
+ }
+ 
+-bool orca_ios_alert_from_buttons(wxDialog *dlg, const wxString &title,
+-                                 const wxString &message, int *result)
++// Collects the rows out of a window's children, in child order - which is
++// creation order, and therefore the order the dialog's own sizer put them in.
++//
++// ONE LEVEL DEEP, BECAUSE OF DialogButtons. Orca's newer dialogs do not put
++// their buttons in the dialog at all: they build a DialogButtons panel - 38 of
++// them across this GUI - which holds the row and, usefully, gives each button
++// a real wxID_ looked up from its label, so a dialog that used it has better
++// roles than one that did not. The panel is a child of the dialog and the
++// buttons are children of the panel, so a walk that stops at direct children
++// finds nothing whatsoever in the modern half of the application.
++//
++// No deeper than that. Below the button row is the dialog's content, and a
++// form's own buttons are not answers to a question.
++static void orca_ios_collect_rows(wxWindow *parent, std::vector<IOSAlertButton> &rows,
++                                  bool descend)
+ {
+-    if (dlg == nullptr)
+-        return false;
++    if (parent == nullptr)
++        return;
+ 
+-    // Direct children only, and in child order - which is creation order, and
+-    // therefore the order the dialog's own sizer put them in.
+-    std::vector<IOSAlertButton> rows;
+-    for (wxWindow *const child : dlg->GetChildren()) {
++    for (wxWindow *const child : parent->GetChildren()) {
+         ::Button *const btn = dynamic_cast<::Button *>(child);
+-        if (btn == nullptr || !btn->IsShown())
++        if (btn == nullptr) {
++            if (descend)
++                orca_ios_collect_rows(child, rows, false);
++            continue;
++        }
++        if (!btn->IsShown())
+             continue;
+ 
+         IOSAlertButton row;
+@@ -574,9 +589,20 @@ bool orca_ios_alert_from_buttons(wxDialog *dlg, const wxString &title,
+         row.enabled     = btn->IsEnabled();
+         row.preferred   = row.id == wxID_OK || row.id == wxID_YES || row.id == wxID_APPLY;
+         row.cancel      = row.id == wxID_CANCEL || row.id == wxID_NO || row.id == wxID_CLOSE;
+-        row.destructive = row.id == wxID_DELETE || row.id == wxID_REMOVE;
++        row.destructive = row.id == wxID_DELETE || row.id == wxID_REMOVE ||
++                          row.id == wxID_ABORT  || row.id == wxID_STOP;
+         rows.push_back(row);
+     }
++}
++
++bool orca_ios_alert_from_buttons(wxDialog *dlg, const wxString &title,
++                                 const wxString &message, int *result)
++{
++    if (dlg == nullptr)
++        return false;
++
++    std::vector<IOSAlertButton> rows;
++    orca_ios_collect_rows(dlg, rows, true);
+ 
+     if (rows.empty())
+         return false;

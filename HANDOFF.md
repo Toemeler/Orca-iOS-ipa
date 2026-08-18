@@ -9462,6 +9462,45 @@ not conversions:
 
 That is the whole of it: everything else in that list builds a page.
 
+### 0448 — the buttons are in a panel, and two things that must stay windows
+
+Ranking every `ShowModal()` in the GUI by how often each dialog class is
+constructed settles what this set was worth: **`MessageDialog` is 303 of them**,
+`InfoDialog` and `WarningDialog` six each, `RichMessageDialog` four, `TipsDialog`
+three. Everything above one or two uses is now an alert. The long tail is
+`PreferencesDialog`, `SavePresetDialog`, `UnsavedChangesDialog`,
+`PhysicalPrinterDialog` - forms, and forms stay windows.
+
+Reading that tail turned up something the helper had wrong. Orca's newer
+dialogs do not put their buttons in the dialog: they build a **`DialogButtons`**
+panel - 38 of them across this GUI - which holds the row and gives each button a
+real `wxID_` looked up from its label, so a dialog that used it has *better*
+role information than one that did not. But the panel is the dialog's child and
+the buttons are the panel's, so `orca_ios_alert_from_buttons()` - which looked
+at direct children only - found nothing at all in the modern half of the
+application. It now goes one level down, and no further: below the button row is
+the dialog's content, and a form's own buttons are not answers to a question.
+
+`CreatePresetSuccessfulDialog` is the one message-shaped dialog in that half
+("Printer Created", and where to go next), so it goes through it.
+
+**`OAuthDialog` cannot, and the reason is a real limit worth knowing.** It is
+"Authorizing…" and a Cancel button, which looks like an alert - but what ends it
+is not the button:
+
+```cpp
+Bind(EVT_OAUTH_COMPLETE_MESSAGE, [this](wxCommandEvent& evt) { EndModal(wxID_NO); });
+```
+
+`orca_ios_alert_run()` is button-driven. Its nested loop exits when a row is
+chosen, and `EndModal()` called from somewhere else cannot end it: the dialog
+was never shown, so it has no `m_eventLoop` to exit, and `Show(false)` on an
+already-hidden window sends no event to hook. The alert would simply stay up.
+
+**So: a dialog that something other than its own buttons can close must use the
+modeless path** - `orca_ios_alert_post()` with `orca_ios_alert_dismiss()` - which
+is exactly why `SecondaryCheckDialog` uses it. Anything else keeps its window.
+
 ### The test list for this set
 
 None of 0237-0242 or 0438-0447 has run on a device. Everything below is

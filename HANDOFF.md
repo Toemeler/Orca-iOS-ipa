@@ -8915,9 +8915,9 @@ re-doing it would pay the half hour a second time.
 Read this before adding a member to any header under `src/slic3r/GUI/` that
 `MainFrame.hpp` can reach. The cheap headers are the leaves.
 
-## 0237-0239, 0438-0442 — everything that pops up
+## 0237-0240, 0438-0442 — everything that pops up
 
-Eight patches, one subject: **nothing in this application that appears over
+Nine patches, one subject: **nothing in this application that appears over
 something else was native**, and the parts of it that were not merely
 desktop-shaped were broken outright.
 
@@ -9168,6 +9168,21 @@ half, and the dismisser takes the frontmost popup's level minus a quarter.
 Rounded corners with it, clipped on the window itself for the same reason
 0230's are: a popover is a rounded surface on this platform, and a popup on
 this port was a bare rectangle.
+
+### 0240 — the tooltips, of which there are 245 and none of them appeared
+
+`wxWidgetImpl::SetToolTip()` is an empty default in `wx/osx/core/private.h`,
+the real one is `src/osx/cocoa/tooltip.mm` which is not in the iPhone source
+set, and `wxToolTip` itself is a stub in this repo's `wx-overlay`: it stores
+the string and does nothing with it. So every `SetToolTip()` in an application
+built against this port is a no-op - **245 of them in OrcaSlicer**, on a port
+whose entire stated interaction model is a hardware keyboard and a pointer.
+
+`UIToolTipInteraction` is the platform's own answer and behaves exactly as a
+desktop tooltip does: nothing at all while the input is a finger, the system's
+tooltip when a pointer rests on the view. Which is why it is an interaction
+rather than a hand-drawn popup - a popup would appear under a finger too,
+where there is no hover to explain it.
 
 ### Run 190: a block is not a pointer, as far as `nil` is concerned
 

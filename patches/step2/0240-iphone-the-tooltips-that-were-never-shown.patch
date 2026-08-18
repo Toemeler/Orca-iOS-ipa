@@ -1,0 +1,87 @@
+diff --git a/include/wx/osx/iphone/private.h b/include/wx/osx/iphone/private.h
+index 3976d53..ea6cfc2 100644
+--- a/include/wx/osx/iphone/private.h
++++ b/include/wx/osx/iphone/private.h
+@@ -121,6 +121,10 @@ public :
+     virtual double      GetContentScaleFactor() const ;
+ 
+     virtual void        SetNeedsDisplay( const wxRect* where = nullptr );
++    // The 245 tooltips this application sets, which did nothing at all on this
++    // port: wxWidgetImpl::SetToolTip() is an empty default and tooltip.mm is
++    // the Cocoa one, not built here. See window.mm for what it is instead.
++    virtual void        SetToolTip( wxToolTip* tooltip ) override;
+     virtual bool        GetNeedsDisplay() const;
+ 
+     virtual bool        CanFocus() const;
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 0be8f55..19ab501 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -22,6 +22,8 @@
+ // wxOSXGetImageFromBundle(), for SetBitmap() below.
+ #include "wx/private/bmpbndl.h"
+ #include "wx/font.h"
++// wxToolTip::GetTip(), for the tooltips this port never showed.
++#include "wx/tooltip.h"
+ // The key router below walks the top level windows and asks wxApp for one when
+ // none of them is key; neither header is guaranteed by the precompiled one.
+ #include "wx/app.h"
+@@ -1251,6 +1253,58 @@ bool wxWidgetIPhoneImpl::GetNeedsDisplay() const
+ //    return [m_osxView needsDisplay];
+ }
+ 
++// ---------------------------------------------------------------------------
++// Tooltips, which this port has never shown
++// ---------------------------------------------------------------------------
++//
++// wxWidgetImpl::SetToolTip() is an empty default (wx/osx/core/private.h) and
++// the real one is src/osx/cocoa/tooltip.mm, which is not in the iPhone source
++// set. wxToolTip itself is a stub in this repo's overlay: it stores the string
++// and does nothing with it. So every SetToolTip() in an application built
++// against this port is a no-op - 245 of them in OrcaSlicer, on a port whose
++// entire interaction model is a hardware keyboard and a pointer.
++//
++// UIToolTipInteraction is the platform's own answer, and it behaves exactly as
++// a desktop tooltip does: nothing at all while the input is a finger, and the
++// system's own tooltip when a pointer rests on the view. That is the right
++// behaviour on both, and it is why this is an interaction rather than a
++// hand-drawn popup - a popup would appear under a finger too, where there is
++// no hover to explain it.
++//
++// Guarded on the SDK as well as at runtime: UIToolTipInteraction is a class,
++// and on an SDK that has never heard of it the name does not resolve at all.
++void wxWidgetIPhoneImpl::SetToolTip( wxToolTip* tooltip )
++{
++#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 150000
++    if ( @available(iOS 15.0, *) )
++    {
++        if ( m_osxView == nil )
++            return;
++
++        // Whatever was there before. The array is copied because removing an
++        // interaction mutates the one the view hands back.
++        NSArray* const existing = [[[m_osxView interactions] copy] autorelease];
++        for ( id<UIInteraction> interaction in existing )
++        {
++            if ( [interaction isKindOfClass:[UIToolTipInteraction class]] )
++                [m_osxView removeInteraction:interaction];
++        }
++
++        // A null tooltip is how wx removes one, and so is an empty string:
++        // several places in this application set "" to clear it.
++        if ( tooltip == nullptr || tooltip->GetTip().empty() )
++            return;
++
++        wxCFStringRef tip( tooltip->GetTip() );
++        UIToolTipInteraction* const interaction =
++            [[[UIToolTipInteraction alloc] initWithDefaultToolTip:tip.AsNSString()] autorelease];
++        [m_osxView addInteraction:interaction];
++    }
++#else
++    wxUnusedVar(tooltip);
++#endif
++}
++
+ bool wxWidgetIPhoneImpl::CanFocus() const
+ {
+     return [m_osxView canBecomeFirstResponder] == YES;

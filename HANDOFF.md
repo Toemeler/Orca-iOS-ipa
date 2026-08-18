@@ -9368,6 +9368,47 @@ added only when the box is not already ticked: if it starts ticked, the plain
 affirmative already carries the behaviour, and a second row saying so would be
 a row that does nothing.
 
+### 0446 — a row presses the button, it does not send an event
+
+This one is a bug in 0438, found by reading `SendFailedConfirm` while looking
+for the next dialog to convert:
+
+```cpp
+auto m_button_retry = new Button(this, _L("Retry"));
+m_button_retry->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent &e) { EndModal(wxYES); });
+```
+
+**`wxEVT_LEFT_DOWN`, not `wxEVT_BUTTON`.** The bridge sent a `wxCommandEvent`
+of type `wxEVT_BUTTON` to the row's widget, and a button bound like that never
+sees one. This GUI binds `wxEVT_LEFT_DOWN` directly **220 times across 69
+files**, 19 of them in `MsgDialog.cpp` and `ReleaseNote.cpp` - the two files
+the alerts come out of.
+
+What makes it nasty is that it does not look broken. The bridge falls back to
+the row's id when the handler does not set a return code, and most of these
+handlers do nothing but `EndModal()` with that same id - so the dialog answers
+correctly and the work sitting *beside* the `EndModal()` silently does not
+happen. `Newer3mfVersionDialog` is the clearest example: its Update button ends
+the dialog and then opens the download page, and only the first half was ever
+going to run.
+
+The fix is to stop imitating the event and imitate the finger. Orca's `Button`
+has `EVT_LEFT_DOWN`/`EVT_LEFT_UP` in its event table and calls
+`sendButtonEvent()` from `mouseReleased()`, so a down/up pair produces the
+command event for everything bound the ordinary way *and* fires the handlers
+bound to the mouse event directly. Exactly one of the two paths runs in either
+case, because a dynamic `wxEVT_LEFT_DOWN` handler that does not `Skip()` stops
+`Button::mouseDown()` from ever setting `pressedDown`, and `mouseReleased()`
+sends nothing without it.
+
+`Button::keyDownUp()` already does precisely this for Space and Return - a bare
+`wxMouseEvent`, whose position is (0,0) and therefore inside the button's rect,
+which is what `mouseReleased()` tests before sending the command. So this is
+the path the keyboard has always taken, not a new one.
+
+Anything that is not one of Orca's buttons - a plain `wxButton` - does not turn
+mouse events into a command, and still gets the command event.
+
 ### Where the line is drawn, and why it is there
 
 "Everything that pops up" is now one of four things, and it is worth writing

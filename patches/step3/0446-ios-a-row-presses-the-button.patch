@@ -1,0 +1,101 @@
+diff --git a/src/slic3r/GUI/ios_native_ui.mm b/src/slic3r/GUI/ios_native_ui.mm
+index efda8a4..1d6d82b 100644
+--- a/src/slic3r/GUI/ios_native_ui.mm
++++ b/src/slic3r/GUI/ios_native_ui.mm
+@@ -26,9 +26,10 @@
+ // bind their own handler to a button and do real work in it: writing a config
+ // key, starting a download, marking a preset, sending a job. So the dialog is
+ // built exactly as it always was, its buttons are read out of it, and choosing
+-// a row sends wxEVT_BUTTON to the actual wx button - after which the dialog's
+-// own handler runs, unchanged and unaware. The window itself is simply never
+-// shown.
++// a row presses the actual wx button - a mouse down and a mouse up, which is
++// what a finger sends and what every binding style in this application answers
++// to - after which the dialog's own handler runs, unchanged and unaware. The
++// window itself is simply never shown.
+ //
+ // That also settles what ShowModal() returns. If the handler ended the dialog
+ // itself, its code is what the caller gets; if it did not, the row's id is.
+@@ -62,6 +63,9 @@
+ #include <vector>
+ 
+ #include "ios_native_ui.hpp"
++// orca_ios_press() below tells one of Orca's buttons - which turns a mouse
++// press into a command event itself - from a plain wxButton, which does not.
++#include "Widgets/Button.hpp"
+ 
+ namespace Slic3r {
+ namespace GUI {
+@@ -159,6 +163,50 @@ struct OrcaAlertState
+ };
+ } // namespace
+ 
++// Presses a button the way a finger does, and not the way an event does.
++//
++// A TAP IS A MOUSE DOWN AND A MOUSE UP, and sending only wxEVT_BUTTON is not
++// the same thing. Orca's Button binds EVT_LEFT_DOWN/EVT_LEFT_UP in its event
++// table and sends wxEVT_BUTTON itself from mouseReleased(), so the pair
++// produces the command event for everything bound the ordinary way - but this
++// GUI binds wxEVT_LEFT_DOWN *directly* 220 times across 69 files, 19 of them in
++// MsgDialog.cpp and ReleaseNote.cpp alone, which are the two files the alerts
++// come out of. A button bound that way never sees a wxEVT_BUTTON at all:
++//
++//   m_button_confirm->Bind(wxEVT_LEFT_DOWN, [this](auto& e) { EndModal(wxCLOSE); });
++//
++// Every one of those was silently skipped. It did not show, because the alert
++// still returned the row's id and most such handlers do nothing but EndModal()
++// with that same id - so the dialog answered correctly while the work beside
++// the EndModal() never ran.
++//
++// Button::keyDownUp() already does exactly this for Space and Return: a bare
++// wxMouseEvent, which carries position (0,0) and so lands inside the button's
++// rect, which is what mouseReleased() checks before sending the command event.
++//
++// Anything that is not one of Orca's buttons - a plain wxButton - does not turn
++// mouse events into a command, so that gets the command event instead.
++static void orca_ios_press(wxWindow *widget)
++{
++    if (widget == nullptr)
++        return;
++
++    if (dynamic_cast<::Button *>(widget) != nullptr) {
++        wxMouseEvent down(wxEVT_LEFT_DOWN);
++        down.SetEventObject(widget);
++        widget->GetEventHandler()->ProcessEvent(down);
++
++        wxMouseEvent up(wxEVT_LEFT_UP);
++        up.SetEventObject(widget);
++        widget->GetEventHandler()->ProcessEvent(up);
++        return;
++    }
++
++    wxCommandEvent evt(wxEVT_BUTTON, widget->GetId());
++    evt.SetEventObject(widget);
++    widget->GetEventHandler()->ProcessEvent(evt);
++}
++
+ // Reads the text fields back and runs the row.
+ //
+ // ON THE MAIN THREAD AND A TURN AFTER THE TAP. A UIAlertAction handler runs
+@@ -211,9 +259,7 @@ static void orca_ios_alert_deliver(std::shared_ptr<OrcaAlertState> state,
+         if (state->dlg != nullptr)
+             state->dlg->SetReturnCode(kOrcaAlertNoReturn);
+ 
+-        wxCommandEvent evt(wxEVT_BUTTON, widget->GetId());
+-        evt.SetEventObject(widget);
+-        widget->GetEventHandler()->ProcessEvent(evt);
++        orca_ios_press(widget);
+ 
+         if (state->dlg != nullptr) {
+             if (state->dlg->GetReturnCode() == kOrcaAlertNoReturn)
+@@ -515,8 +561,8 @@ bool orca_ios_alert_post(wxWindow                          *owner,
+     orca_ios_alert_dismiss(owner);
+ 
+     // No dialog and no loop: nothing here waits, and nothing here has a return
+-    // code to set. The row's wxEVT_BUTTON is the whole of the result, which is
+-    // exactly what a modeless window's buttons already do.
++    // code to set. Pressing the row's button is the whole of the result, which
++    // is exactly what a modeless window's buttons already do.
+     std::shared_ptr<OrcaAlertState> state = std::make_shared<OrcaAlertState>();
+ 
+     UIAlertController *const ac = orca_ios_alert_build(title, message, buttons, nullptr, state);

@@ -9314,6 +9314,44 @@ for the choice - so nothing above the peer can tell the two platforms apart.
 The combo change is in the overlay rather than a patch, because the file it
 lives in is one this project owns.
 
+### Where the line is drawn, and why it is there
+
+"Everything that pops up" is now one of four things, and it is worth writing
+down which, because the answer to "is anything left?" is otherwise a search
+somebody has to repeat.
+
+**Native, and presented by UIKit.** Message boxes and every `MsgDialog`
+subclass that is a message and buttons (0237, 0438); text entry and single
+choice prompts (0238, 0442); multiple choice (0443); drop-downs (0441);
+notifications (0439); progress (0440); busy info (0241); combo boxes and
+choices (0242 and the overlay); tooltips (0240); context menus (0231-0234).
+
+**Native presentation, Orca's content.** The rich `PopupWindow` subclasses -
+AMS mapping and its tips, the filament group popup, the side menu, the settings
+search, the camera popup, the colour picker. They carry pictures, grids and
+per-row controls that no `UITableView` row presents, and after 0239 they are
+real popovers: rounded, above the window that owns them, dismissed by a tap
+outside. That is what this platform asks of a popover; what is *inside* one is
+the application's business.
+
+The same goes for the form dialogs - Preferences, Save preset, Physical
+printer, Unsaved changes, the wizard. Each is its own `UIWindow` with the sheet
+chrome the dialog patches give it: rounded corners, a header with a close
+button, a margin off the screen edges. A dialog full of option groups is not an
+alert and must not be turned into one. What makes it native is the presentation,
+and it has it.
+
+**Deliberately still ImGui: the canvas overlays.** The gizmo panels, the
+undo/redo stack list, the arrange settings, the in-canvas search. These are
+drawn inside the GL canvas, in the coordinate space of the thing they are
+editing, and 0417 is what made touches reach them. They are not windows that
+appear over the application - they are the tool's own surface, and lifting them
+out would be rewriting the 3D tooling rather than porting it.
+
+The notification manager was the one ImGui surface that was *system* UI rather
+than tool UI - a banner belongs to the application, not to the canvas - which
+is exactly why it moved and these did not.
+
 ### Run 190: a block is not a pointer, as far as `nil` is concerned
 
 The first build of these seven patches failed, on one line and one target:

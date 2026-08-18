@@ -1,0 +1,221 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 3f23a01..56881ac 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -518,15 +518,73 @@ static IMP wxOSXIPhoneSuperImpl(id slf, SEL _cmd, IMP ours)
+     return nullptr;
+ }
+ 
++// AND THE WALK WAS NOT ENOUGH. Build 200 shipped it and came back with exactly
++// the same stack: fifty-two frames of wxOSX_canBecomeFirstResponder, only at
++// the offsets the new code put them at. The walk ran, skipped nothing, and
++// handed back this function again - which means that in this binary the
++// implementation pointer we install is not the pointer the runtime hands back,
++// and no test against it can be trusted, however it is written.
++//
++// So the cycle is cut where it cannot be argued with: a count of how deep we
++// already are in this particular method. The inherited implementation is called
++// on the way in and not on the way back through, which bounds the whole thing
++// at two frames whatever the class graph is doing.
++//
++// The cost is one skipped super call in a case that should never arise, and
++// the wx answer below it is unaffected. wxOSXIPhoneReportSuperLoop() names the
++// class the one time it happens, so the next report explains what the pointer
++// test could not see.
++namespace
++{
++struct wxOSXSuperGuard
++{
++    int  &m_slot;
++    bool  m_first;
++
++    explicit wxOSXSuperGuard(int &slot) : m_slot(slot), m_first(slot == 0) { ++m_slot; }
++    ~wxOSXSuperGuard() { --m_slot; }
++
++    bool CanCallSuper() const { return m_first; }
++};
++} // namespace
++
++static void wxOSXIPhoneReportSuperLoop(id slf, SEL _cmd, IMP ours)
++{
++    static bool reported = false;
++    if ( reported )
++        return;
++    reported = true;
++
++    Class cls = object_getClass(slf);
++    Class sup = cls != nil ? class_getSuperclass(cls) : nil;
++
++    char buf[512];
++    snprintf(buf, sizeof(buf),
++             "orca-ios-superloop: %s (super %s) re-entered %s - ours %p, class %p, super %p",
++             cls != nil ? class_getName(cls) : "(nil)",
++             sup != nil ? class_getName(sup) : "(nil)",
++             sel_getName(_cmd),
++             (void *) ours,
++             (void *) (cls != nil ? class_getMethodImplementation(cls, _cmd) : nullptr),
++             (void *) (sup != nil ? class_getMethodImplementation(sup, _cmd) : nullptr));
++
++    wxLogWarning("%s", wxString::FromUTF8(buf));
++}
++
+ typedef void (*wxOSX_touchEventHandlerPtr)(UIView* self, SEL _cmd, NSSet* touches, UIEvent *event );
+ 
+ void wxOSX_touchEvent(UIView* self, SEL _cmd, NSSet* touches, UIEvent *event )
+ {
+     // Call the superclass handler first as that is e.g. handling mouse events for UISegmentedControls
+-    wxOSX_touchEventHandlerPtr superimpl = (wxOSX_touchEventHandlerPtr)
+-        wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_touchEvent);
+-    if ( superimpl != nullptr )
+-        superimpl(self, _cmd, touches, event );
++    static int depth = 0;
++    wxOSXSuperGuard guard(depth);
++    if ( guard.CanCallSuper() )
++    {
++        wxOSX_touchEventHandlerPtr superimpl = (wxOSX_touchEventHandlerPtr)
++            wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_touchEvent);
++        if ( superimpl != nullptr )
++            superimpl(self, _cmd, touches, event );
++    }
+ 
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+@@ -545,6 +603,14 @@ BOOL wxOSX_becomeFirstResponder(UIView* self, SEL _cmd)
+         // Not a view wx knows about (yet). Answering NO here used to refuse
+         // the focus on wx's behalf for a view wx has no opinion about - a text
+         // field could not be typed into before its peer was associated.
++        static int depth = 0;
++        wxOSXSuperGuard guard(depth);
++        if ( !guard.CanCallSuper() )
++        {
++            wxOSXIPhoneReportSuperLoop(self, _cmd, (IMP) wxOSX_becomeFirstResponder);
++            return NO;
++        }
++
+         wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
+             wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_becomeFirstResponder);
+         return superimpl != nullptr ? superimpl(self, _cmd) : NO;
+@@ -558,6 +624,14 @@ BOOL wxOSX_resignFirstResponder(UIView* self, SEL _cmd)
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+     {
++        static int depth = 0;
++        wxOSXSuperGuard guard(depth);
++        if ( !guard.CanCallSuper() )
++        {
++            wxOSXIPhoneReportSuperLoop(self, _cmd, (IMP) wxOSX_resignFirstResponder);
++            return NO;
++        }
++
+         wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
+             wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_resignFirstResponder);
+         return superimpl != nullptr ? superimpl(self, _cmd) : NO;
+@@ -576,10 +650,20 @@ BOOL wxOSX_resignFirstResponder(UIView* self, SEL _cmd)
+ // whether the wx window accepts the focus.
+ BOOL wxOSX_canBecomeFirstResponder(UIView* self, SEL _cmd)
+ {
+-    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
+-        wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_canBecomeFirstResponder);
+-    if ( superimpl != nullptr && superimpl(self, _cmd) )
+-        return YES;
++    static int depth = 0;
++    wxOSXSuperGuard guard(depth);
++
++    if ( guard.CanCallSuper() )
++    {
++        wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++            wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_canBecomeFirstResponder);
++        if ( superimpl != nullptr && superimpl(self, _cmd) )
++            return YES;
++    }
++    else
++    {
++        wxOSXIPhoneReportSuperLoop(self, _cmd, (IMP) wxOSX_canBecomeFirstResponder);
++    }
+ 
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( self );
+     if (impl == nullptr)
+@@ -600,10 +684,15 @@ BOOL wxOSX_canBecomeFirstResponder(UIView* self, SEL _cmd)
+ void wxOSX_didMoveToWindow(UIView* self, SEL _cmd)
+ {
+     typedef void (*wxOSX_VoidHandlerPtr)(UIView* self, SEL _cmd);
+-    wxOSX_VoidHandlerPtr superimpl = (wxOSX_VoidHandlerPtr)
+-        wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_didMoveToWindow);
+-    if ( superimpl != nullptr )
+-        superimpl(self, _cmd);
++    static int depth = 0;
++    wxOSXSuperGuard guard(depth);
++    if ( guard.CanCallSuper() )
++    {
++        wxOSX_VoidHandlerPtr superimpl = (wxOSX_VoidHandlerPtr)
++            wxOSXIPhoneSuperImpl(self, _cmd, (IMP) wxOSX_didMoveToWindow);
++        if ( superimpl != nullptr )
++            superimpl(self, _cmd);
++    }
+ 
+     if ( self == gs_pendingFocusView && self.window != nil )
+     {
+@@ -2022,8 +2111,12 @@ typedef void (*wxOSX_PressesHandlerPtr)(UIView* self, SEL _cmd, NSSet* presses,
+ 
+ bool wxWidgetIPhoneImpl::becomeFirstResponder(WXWidget slf, void *_cmd)
+ {
+-    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
+-        wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_becomeFirstResponder);
++    static int depth = 0;
++    wxOSXSuperGuard guard(depth);
++
++    wxOSX_FocusHandlerPtr superimpl = guard.CanCallSuper()
++        ? (wxOSX_FocusHandlerPtr) wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_becomeFirstResponder)
++        : nullptr;
+     // get the current focus before running becomeFirstResponder
+     UIView* otherView = FindFocus();
+     wxWidgetImpl* otherWindow = FindFromWXWidget(otherView);
+@@ -2041,8 +2134,12 @@ bool wxWidgetIPhoneImpl::becomeFirstResponder(WXWidget slf, void *_cmd)
+ 
+ bool wxWidgetIPhoneImpl::resignFirstResponder(WXWidget slf, void *_cmd)
+ {
+-    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
+-        wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_resignFirstResponder);
++    static int depth = 0;
++    wxOSXSuperGuard guard(depth);
++
++    wxOSX_FocusHandlerPtr superimpl = guard.CanCallSuper()
++        ? (wxOSX_FocusHandlerPtr) wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_resignFirstResponder)
++        : nullptr;
+     BOOL r = superimpl != nullptr ? superimpl(slf, (SEL)_cmd) : NO;
+     if ( r )
+         wxOSXIPhoneNoteUnfocusedView(slf);
+@@ -2095,8 +2192,11 @@ void wxWidgetIPhoneImpl::drawRect(CGRect* rect, WXWidget slf, void *WXUNUSED(_cm
+         SEL _cmd = @selector(drawRect:);
+         // The walk skips this function wherever it appears above us, which is
+         // what the equality test below used to guard against by giving up.
+-        wxOSX_DrawRectHandlerPtr superimpl = (wxOSX_DrawRectHandlerPtr)
+-            wxOSXIPhoneSuperImpl(slf, _cmd, (IMP) wxOSX_drawRect);
++        static int depth = 0;
++        wxOSXSuperGuard guard(depth);
++        wxOSX_DrawRectHandlerPtr superimpl = guard.CanCallSuper()
++            ? (wxOSX_DrawRectHandlerPtr) wxOSXIPhoneSuperImpl(slf, _cmd, (IMP) wxOSX_drawRect)
++            : nullptr;
+         if ( superimpl != nullptr )
+         {
+             superimpl(slf, _cmd, *rect);
+@@ -2513,10 +2613,15 @@ void wxWidgetIPhoneImpl::keyEvent( NSSet *presses, UIEvent* event, WXWidget slf,
+ 
+     if ( !handled )
+     {
+-        wxOSX_PressesHandlerPtr superimpl = (wxOSX_PressesHandlerPtr)
+-            wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_keyEvent);
+-        if ( superimpl != nullptr )
+-            superimpl(slf, (SEL)_cmd, presses, event);
++        static int depth = 0;
++        wxOSXSuperGuard guard(depth);
++        if ( guard.CanCallSuper() )
++        {
++            wxOSX_PressesHandlerPtr superimpl = (wxOSX_PressesHandlerPtr)
++                wxOSXIPhoneSuperImpl(slf, (SEL)_cmd, (IMP) wxOSX_keyEvent);
++            if ( superimpl != nullptr )
++                superimpl(slf, (SEL)_cmd, presses, event);
++        }
+     }
+ }
+ 

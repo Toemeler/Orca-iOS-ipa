@@ -9542,6 +9542,40 @@ the last one and the answer is identical; where they did not, there is now an
 answer at all. `drawRect`'s old guard gave up and drew nothing rather than
 recursing - it now finds the real one and calls it.
 
+### 0244 — the walk was not enough, so the cycle is cut by counting
+
+Build 200 shipped 0243 and came back with **exactly the same stack**: fifty-two
+frames of `wxOSX_canBecomeFirstResponder`, at the offsets the new code put them
+at (`+104` for the lookup, `+164` for the call, against `+48`/`+104` before). So
+the walk ran, skipped nothing, and handed this function back again.
+
+That is worth stating plainly, because it rules out the tidy explanation: in
+this binary **the implementation pointer we install is not the pointer the
+runtime hands back**, so no test written against it can work, however it is
+phrased. `wxOSX_drawRect`'s original `if ( superimpl != wxOSX_drawRect )` was
+the same test and had presumably been failing silently for as long as it has
+been there.
+
+So the cycle is cut where it cannot be argued with: a count of how deep we
+already are in that particular method. The inherited implementation is called on
+the way in and not on the way back through, which bounds the whole thing at two
+frames whatever the class graph is doing. Nine call sites, one counter each.
+
+The cost is a skipped super call in a case that should never arise; the wx
+answer underneath it is unaffected. And `wxOSXIPhoneReportSuperLoop()` logs the
+class, its superclass and all three implementation pointers the one time it
+happens:
+
+```
+orca-ios-superloop: <class> (super <class>) re-entered canBecomeFirstResponder
+  - ours 0x…, class 0x…, super 0x…
+```
+
+**That line is the whole point of this patch beyond the crash.** It says which
+class pair does it and, by printing the pointers side by side, whether they
+differ - which is the question two builds have now failed to answer by
+reasoning. Whoever reads the next log should copy it into this section.
+
 **Run 200 is green and is the build to test.** wx really rebuilt in it - 376
 seconds, so the prefix cache missed as it should when a step2 patch changes -
 and the IPA is published. Whether this was *the* crash is answered by the

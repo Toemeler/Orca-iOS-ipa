@@ -1,0 +1,147 @@
+diff --git a/src/slic3r/GUI/MsgDialog.cpp b/src/slic3r/GUI/MsgDialog.cpp
+index 0a902090d..564df5432 100644
+--- a/src/slic3r/GUI/MsgDialog.cpp
++++ b/src/slic3r/GUI/MsgDialog.cpp
+@@ -426,27 +426,44 @@ void MsgDialog::orca_ios_note_content(wxWindow *window, const wxString &text,
+     }
+ }
+ 
++// Everything MsgDialog itself puts in the dialog, known by name. Split out
++// because two things ask the question: whether the dialog can be an alert at
++// all, and what a subclass added to it that has to be said in one.
++bool MsgDialog::orca_ios_known_child(const wxWindow *child) const
++{
++    if (child == nullptr)
++        return true;
++    if (child == logo || child == m_checkbox_dsa || child == m_ios_dsa_label)
++        return true;
++    if (std::find(m_ios_content.begin(), m_ios_content.end(), child) != m_ios_content.end())
++        return true;
++
++    for (auto &entry : m_buttons) {
++        if (entry.second != nullptr && entry.second->buttondata != nullptr &&
++            entry.second->buttondata->button == child)
++            return true;
++    }
++
++    return false;
++}
++
+ bool MsgDialog::orca_ios_is_plain() const
+ {
+-    // Everything MsgDialog itself puts in the dialog is known by name. Anything
+-    // else is a subclass's, and an alert has nowhere to put it.
+     for (wxWindow *const child : GetChildren()) {
+-        if (child == nullptr)
+-            continue;
+-        if (child == logo || child == m_checkbox_dsa || child == m_ios_dsa_label)
+-            continue;
+-        if (std::find(m_ios_content.begin(), m_ios_content.end(), child) != m_ios_content.end())
++        if (orca_ios_known_child(child))
+             continue;
+ 
+-        bool is_button = false;
+-        for (auto &entry : m_buttons) {
+-            if (entry.second != nullptr && entry.second->buttondata != nullptr &&
+-                entry.second->buttondata->button == child) {
+-                is_button = true;
+-                break;
+-            }
+-        }
+-        if (is_button)
++        // A SENTENCE IS NOT A REASON TO KEEP THE WINDOW. Several subclasses add
++        // nothing but static text: MsgNoUpdates is one wxStaticText reading
++        // "The configuration is up to date.", which was a whole wxDialog on
++        // this platform for want of anywhere else to put a line of prose. It is
++        // a message, and orca_ios_extra_text() below puts it in the alert with
++        // the rest of the message. Orca's own Label derives from wxStaticText,
++        // so its styled labels are caught here too.
++        //
++        // Anything that is not text stays a reason: a control has behaviour an
++        // alert cannot reproduce, and half a dialog is worse than all of it.
++        if (wxDynamicCast(child, wxStaticText) != nullptr)
+             continue;
+ 
+         // wxString and not the wxChar* straight out of GetClassName(): that is
+@@ -461,6 +478,33 @@ bool MsgDialog::orca_ios_is_plain() const
+     return true;
+ }
+ 
++// The text a subclass added directly to the dialog, in the order the children
++// are in - which is the order they were created in, and so the order they read
++// in on the desktop.
++wxString MsgDialog::orca_ios_extra_text() const
++{
++    wxString out;
++
++    for (wxWindow *const child : GetChildren()) {
++        if (orca_ios_known_child(child))
++            continue;
++
++        const wxStaticText *const text = wxDynamicCast(child, wxStaticText);
++        if (text == nullptr)
++            continue;
++
++        const wxString label = text->GetLabel();
++        if (label.IsEmpty())
++            continue;
++
++        if (!out.IsEmpty())
++            out += "\n\n";
++        out += label;
++    }
++
++    return out;
++}
++
+ // The buttons, in the order they were added.
+ //
+ // m_buttons is a hash and hands them back in no order at all, but the key each
+@@ -581,6 +625,16 @@ int MsgDialog::ShowModal()
+         title = GetTitle();
+     }
+ 
++    // After the swap above, so that a subclass whose whole message is its own
++    // static text - MsgNoUpdates - does not have that text promoted into the
++    // title and then repeated underneath it.
++    const wxString extra = orca_ios_extra_text();
++    if (!extra.IsEmpty()) {
++        if (!text.IsEmpty())
++            text += "\n\n";
++        text += extra;
++    }
++
+     std::vector<IOSAlertButton> rows;
+     IOSAlertButton             *affirmative = nullptr;
+ 
+diff --git a/src/slic3r/GUI/MsgDialog.hpp b/src/slic3r/GUI/MsgDialog.hpp
+index f638c3601..9bdd066ed 100644
+--- a/src/slic3r/GUI/MsgDialog.hpp
++++ b/src/slic3r/GUI/MsgDialog.hpp
+@@ -120,13 +120,22 @@ protected:
+     wxString  m_forward_str;
+ 
+ #ifdef __WXOSX_IPHONE__
+-	// True when this dialog holds nothing but what MsgDialog itself put in it:
++	// True when this dialog holds nothing but what MsgDialog itself put in it -
+ 	// the logo, the message, the row of buttons and the "don't show again"
+-	// pair. A subclass that adds a hyperlink, a second checkbox or a control of
+-	// its own makes it false, and the dialog is then shown as a window - losing
+-	// a control to a prettier presentation is not a trade worth making.
++	// pair - plus, since they are still a message, any static text a subclass
++	// added. A subclass that adds a hyperlink, a second checkbox or a control
++	// of its own makes it false, and the dialog is then shown as a window:
++	// losing a control to a prettier presentation is not a trade worth making.
+ 	bool orca_ios_is_plain() const;
+ 
++	// One of MsgDialog's own children, as opposed to something a subclass put
++	// there. Asked by both of the two above and below.
++	bool orca_ios_known_child(const wxWindow *child) const;
++
++	// The static text a subclass added, joined in child order, to be shown as
++	// part of the alert's message.
++	wxString orca_ios_extra_text() const;
++
+ 	// What ShowModal() shows, gathered as the dialog is built rather than read
+ 	// back off the controls afterwards: a wxHtmlWindow cannot hand back the
+ 	// text it was given, and Label wraps the text it holds.

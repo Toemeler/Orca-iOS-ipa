@@ -9314,6 +9314,36 @@ for the choice - so nothing above the peer can tell the two platforms apart.
 The combo change is in the overlay rather than a patch, because the file it
 lives in is one this project owns.
 
+### 0444 — a sentence is not a reason to keep the window
+
+`orca_ios_is_plain()` refuses any child a subclass added, and that rule was
+drawn one notch too tight. Going through the eleven `MsgDialog` subclasses one
+at a time to see which of them actually fall back turned up `MsgNoUpdates`:
+
+```cpp
+auto* text = new wxStaticText(this, wxID_ANY, _(L("The configuration is up to date.")));
+content_sizer->Add(text);
+```
+
+One sentence. That is the entire dialog, and it was shown as a window on this
+platform for want of anywhere to put a line of prose.
+
+So static text no longer disqualifies a dialog: it is collected, in child order
+- which is creation order, and so the order it reads in on the desktop - and
+appended to the alert's message. Orca's `Label` derives from `wxStaticText`, so
+its styled labels come along too. `orca_ios_known_child()` is split out because
+two questions now need the same answer: whether the dialog can be an alert, and
+what a subclass put in it that has to be said inside one.
+
+Anything that is not text still keeps the window, and that is not a hedge:
+`MsgUpdateForced` builds a `wxFlexGridSizer` of vendor names and version
+numbers, which is a table, and a control has behaviour an alert cannot
+reproduce. Half a dialog is worse than all of it.
+
+The collection happens *after* the title/text swap above it, so that a subclass
+whose whole message is its own static text does not have that text promoted
+into the title and then repeated underneath it.
+
 ### Where the line is drawn, and why it is there
 
 "Everything that pops up" is now one of four things, and it is worth writing

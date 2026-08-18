@@ -9576,6 +9576,64 @@ class pair does it and, by printing the pointers side by side, whether they
 differ - which is the question two builds have now failed to answer by
 reasoning. Whoever reads the next log should copy it into this section.
 
+### 0245 — the focus question that asked itself, and two builds spent on the wrong answer
+
+Build 201 crashed too, and its `.ips` had what three plain-text reports did not:
+
+```
+"recursionInfoArray":[{"depth":15319,"keyFrame":{"symbol":"wxOSX_canBecomeFirstResponder",…}}]
+"exception":{"message":"Thread stack size exceeded due to excessive recursion"}
+x15/x16 → OBJC_CLASS_$_wxUITextField        x21 → OBJC_CLASS_$_UITextField
+```
+
+**The class is `wxUITextField` and its superclass is `UITextField`**, which carries
+none of this port's methods. So the superclass lookup - the thing 0243 rewrote
+and 0244 counted - never had anything to do with it. Both builds were spent on
+an explanation the register state disproves in one line.
+
+The real cycle is three one-line functions:
+
+```
+wxOSX_canBecomeFirstResponder   asks   peer->AcceptsFocus()
+wxWindowMac::AcceptsFocus()     asks   GetPeer()->CanFocus()      (window_osx.cpp)
+wxWidgetIPhoneImpl::CanFocus()  asks   [m_osxView canBecomeFirstResponder]
+```
+
+Back to the same view. The two wx hops inline away, which is exactly why a
+crash report shows this function apparently calling *itself*, and why the
+offsets moved plausibly each time the code around them changed.
+
+And the full stack says when: `MainFrame` → `DiffPresetDialog` →
+`PresetComboBox` → `ComboBox` → `DropDown::Create` → `PopupWindow::Create` →
+`wxNonOwnedWindow::Create` → `AddChild` →
+`wxControlContainerBase::UpdateCanFocusChildren()`. Building a dialog asks
+whether it has anything focusable in it, and the question eats its own tail.
+
+0245 opens the loop at both ends. `CanFocus()` asks the implementation this port
+*replaced* rather than the replacement, so it reports what the class itself can
+do - `UITextField` yes, plain `UIView` no. And on the way back through, the
+method answers from `wxWindowBase::AcceptsFocus()` rather than the peer, which
+is what `wxWindowMac::AcceptsFocus()` already does for a peer that handles its
+own keys and cannot ask anything further.
+
+**What this costs, and it should be checked on the device.** With `CanFocus()`
+answering natively, `wxWindowMac::AcceptsFocus()` says no for a custom wx
+control whose peer is a plain `wxUIView` - Orca's `Button`, `TextInput`,
+`ComboBox`. That is upstream's behaviour, and it is what 0236 was trying to
+change when it installed `canBecomeFirstResponder` in the first place. The
+proper way to give those controls the keyboard is
+`wxWidgetIPhoneImpl::HasUserKeyHandling()`, which routes `AcceptsFocus()` to the
+window instead of the peer and closes no loop. That was not done here because a
+build that starts is worth more than a focus nuance, and because it wants
+testing rather than guessing.
+
+**What to keep from 0243 and 0244.** The walk and the counters stay: they are
+harmless, and 0244's `orca-ios-superloop:` line is what would have caught this
+in one build instead of three had it existed at the start. The lesson worth
+keeping is narrower than the patch: **a `.ips` carries register state and a
+recursion summary, and the app''s own crash file does not.** Ask for the
+system one first.
+
 **Run 200 is green and is the build to test.** wx really rebuilt in it - 376
 seconds, so the prefix cache missed as it should when a step2 patch changes -
 and the IPA is published. Whether this was *the* crash is answered by the

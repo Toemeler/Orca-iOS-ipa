@@ -1,0 +1,57 @@
+diff --git a/src/osx/iphone/window.mm b/src/osx/iphone/window.mm
+index 56881ac..8a64afa 100644
+--- a/src/osx/iphone/window.mm
++++ b/src/osx/iphone/window.mm
+@@ -673,6 +673,27 @@ BOOL wxOSX_canBecomeFirstResponder(UIView* self, SEL _cmd)
+     if ( peer == nullptr )
+         return NO;
+ 
++    // THIS IS THE LOOP, AND IT IS TWO LINES LONG.
++    //
++    //   wxOSX_canBecomeFirstResponder  asks  peer->AcceptsFocus()
++    //   wxWindowMac::AcceptsFocus()    asks  GetPeer()->CanFocus()
++    //   wxWidgetIPhoneImpl::CanFocus() asks  [m_osxView canBecomeFirstResponder]
++    //
++    // - the same view, back here. Both wx functions are one-liners and inline,
++    // which is why fifteen thousand frames of it look like this function
++    // calling itself and why two builds were spent on the wrong explanation.
++    // The class in the register state of the third was wxUITextField, whose
++    // superclass is UITextField and carries none of our methods: the
++    // superclass lookup never had anything to do with it.
++    //
++    // CanFocus() is fixed below to answer from the view's own class, which
++    // opens the loop at the other end. This is the belt to that pair of braces:
++    // on the way back through, answer from the window rather than from the peer
++    // - which is exactly what wxWindowMac::AcceptsFocus() does for a peer that
++    // handles its own keys, and cannot ask anybody anything.
++    if ( !guard.CanCallSuper() )
++        return peer->wxWindowBase::AcceptsFocus() && peer->IsEnabled() ? YES : NO;
++
+     return peer->AcceptsFocus() && peer->IsEnabled() ? YES : NO;
+ }
+ 
+@@ -1434,8 +1455,22 @@ void wxWidgetIPhoneImpl::SetToolTip( wxToolTip* tooltip )
+ 
+ bool wxWidgetIPhoneImpl::CanFocus() const
+ {
+-    return [m_osxView canBecomeFirstResponder] == YES;
+-    // ? return [m_osxView isUserInteractionEnabled] == YES;
++    // NOT [m_osxView canBecomeFirstResponder], which is where build 201 spent
++    // fifteen thousand stack frames. This port installs its own
++    // canBecomeFirstResponder on every wx view class, and that one answers by
++    // asking the wx peer - whose wxWindowMac::AcceptsFocus() answers by asking
++    // this function. Three one-line hops and back to the start.
++    //
++    // The question being asked here is what the *view* can do, so ask the
++    // implementation this port replaced rather than the replacement. For a
++    // wxUITextField that is UITextField's, which says yes; for a plain wx view
++    // it is UIView's, which says no - the answers the classes themselves give.
++    static const SEL sel = @selector(canBecomeFirstResponder);
++
++    wxOSX_FocusHandlerPtr superimpl = (wxOSX_FocusHandlerPtr)
++        wxOSXIPhoneSuperImpl(m_osxView, sel, (IMP) wxOSX_canBecomeFirstResponder);
++
++    return superimpl != nullptr && superimpl(m_osxView, sel) == YES;
+ }
+ 
+ bool wxWidgetIPhoneImpl::HasFocus() const

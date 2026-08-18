@@ -9265,6 +9265,55 @@ hang. `wxBusyInfoFlags` can carry markup in its title and text; a `UILabel` has
 one font, so both go through `wxMarkupParser::Strip()` first, which is what the
 ports without markup support do with it.
 
+### The combo box that drew nothing, and the choice that drew a wheel
+
+Looking for what was left after 0241 turned up something worse than a styling
+problem. `wx-overlay/src/osx/iphone/extra_peers.mm` carried this, and had for a
+long time:
+
+> Presenting them as a dropdown is step-5 UI work (UIPickerView); until then
+> Popup/Dismiss inherit the base no-ops.
+
+The peer under that comment is a **bare `UIView`**. It holds the items, which is
+what stops `combobox_osx.cpp` crashing when it dereferences
+`dynamic_cast<wxComboWidgetImpl*>` without a null check, and it draws *nothing*:
+no box, no selected string, no arrow, and no way to open it. Every `wxComboBox`
+in this application is an empty rectangle the size of a control.
+
+That is not a cosmetic defect and it is not theoretical. The reachable ones are
+the storage and group pickers in "Send to printer" (`PrintHostDialogs.cpp`), the
+filament picker in the AMS material settings, the three pickers in the extrusion
+calibration dialog, and both pickers in the SLA import dialog - twenty-four
+references in `src/slic3r/GUI`, and **every one of them is `wxCB_READONLY`**: a
+fixed list of named things, which is the one case this platform has a purpose-
+built control for.
+
+`wxChoice` (`src/osx/iphone/choice.mm`, patched as 0242) had the opposite
+failure. It is a `UIPickerView` - the spinning drum - embedded in the layout.
+It works, in that a choice can be made with it, and it is 216 points tall and
+does not shrink. A `wxChoice` on a dialog is one line high in a row with a
+label; what the sizer got was a control sixteen times the height it asked for,
+with the rest of the page pushed off the bottom.
+
+Both are now the same control: a `UIButton` with `showsMenuAsPrimaryAction` and
+a `UIMenu` built from the items, a tick against the row in force, and the
+chevron pair the system uses to mark a pull-down. It is the height of a button,
+the list opens under the finger that asked for it, and it is what iOS itself
+uses for this job - a wheel has not been the answer for a short list of names
+since `UIButton` learned to show a menu.
+
+Two details worth keeping. The menu is **rebuilt from scratch** on every change,
+because `UIMenu` and `UIAction` are immutable and a combo box here is a dozen
+rows populated once. And the tick is set by hand rather than with
+`changesSelectionAsPrimaryAction`, because wx owns the selection: the menu has
+to follow `SetSelection()` when the application calls it, not the other way
+round. Choosing a row sends the same event the Cocoa peer sends -
+`wxComboBox::OSXHandleClicked()` for the combo, `SendSelectionChangedEvent()`
+for the choice - so nothing above the peer can tell the two platforms apart.
+
+The combo change is in the overlay rather than a patch, because the file it
+lives in is one this project owns.
+
 ### Run 190: a block is not a pointer, as far as `nil` is concerned
 
 The first build of these seven patches failed, on one line and one target:

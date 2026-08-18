@@ -264,16 +264,38 @@ wxWidgetImplType* wxWidgetImpl::CreateSpinButton( wxWindowMac* wxpeer,
 // as a combobox is populated. So the iPhone combo peer derives from
 // wxComboWidgetImpl (same shape as the Cocoa wxNSComboBoxControl) and keeps
 // the items itself, which makes wxComboBox correct as a data container.
-// Presenting them as a dropdown is step-5 UI work (UIPickerView); until then
-// Popup/Dismiss inherit the base no-ops.
+//
+// AND IT IS ALSO THE CONTROL, now. It was a bare UIView for a long time and
+// that had one visible consequence: a wxComboBox drew *nothing at all*. Not a
+// box, not the selected string, not an arrow - an empty rectangle the size of
+// a control, with no way to open it. Every dialog in this application that has
+// one is affected, and several are reachable on a tablet: the storage and
+// group pickers in "Send to printer" (PrintHostDialogs.cpp), the filament
+// picker in the AMS material settings, the three pickers in the extrusion
+// calibration, and both in the SLA import dialog. All of them are
+// wxCB_READONLY - a fixed list of choices, which is exactly what a pull-down
+// button is for.
+//
+// A pull-down UIButton and not a UIPickerView, which is what the port's
+// wxChoice uses and what the comment here used to promise. A UIPickerView is
+// 216 points of spinning wheel *inside the layout*: it would push every dialog
+// that has a combo box off the screen, and iOS has not used a wheel for a
+// simple list since UIMenu learned to be a pull-down. This is the control the
+// system itself uses for the same job, it costs the height of a button, and it
+// anchors its list under the thing that was tapped.
 class wxIPhoneComboBoxPeer : public wxWidgetIPhoneImpl, public wxComboWidgetImpl
 {
 public:
-    wxIPhoneComboBoxPeer( wxWindowMac* wxpeer, UIView* v )
-        : wxWidgetIPhoneImpl( wxpeer, v ) {}
+    wxIPhoneComboBoxPeer( wxWindowMac* wxpeer, UIButton* v )
+        : wxWidgetIPhoneImpl( wxpeer, v ), m_button( v ) {}
 
     int GetSelectedItem() const override { return m_selection; }
-    void SetSelectedItem(int item) override { m_selection = item; }
+
+    void SetSelectedItem(int item) override
+    {
+        m_selection = item;
+        RebuildMenu();
+    }
 
     int GetNumberOfItems() const override
         { return static_cast<int>(m_items.GetCount()); }
@@ -283,6 +305,7 @@ public:
         m_items.Insert( item, pos );
         if ( m_selection >= pos )
             ++m_selection;
+        RebuildMenu();
     }
 
     void RemoveItem(int pos) override
@@ -292,12 +315,14 @@ public:
             m_selection = wxNOT_FOUND;
         else if ( m_selection > pos )
             --m_selection;
+        RebuildMenu();
     }
 
     void Clear() override
     {
         m_items.Clear();
         m_selection = wxNOT_FOUND;
+        RebuildMenu();
     }
 
     wxString GetStringAtIndex(int pos) const override
@@ -309,7 +334,87 @@ public:
     int FindString(const wxString& text) const override
         { return m_items.Index( text ); }
 
+    // wxComboBox::Popup(). -performPrimaryAction is what a tap on the button
+    // does, and the button's primary action is showing its menu.
+    void Popup() override
+    {
+        [m_button performPrimaryAction];
+    }
+
 private:
+    // Rebuilt from scratch on every change rather than edited in place: UIMenu
+    // and UIAction are immutable, and a combo box in this application is a
+    // dozen rows that are populated once.
+    void RebuildMenu()
+    {
+        const size_t count = m_items.GetCount();
+
+        NSMutableArray<UIAction*>* const actions =
+            [NSMutableArray arrayWithCapacity:count];
+
+        for ( size_t i = 0; i < count; ++i )
+        {
+            wxCFStringRef cfTitle( m_items[i] );
+            const int index = static_cast<int>(i);
+
+            UIAction* const action =
+                [UIAction actionWithTitle:cfTitle.AsNSString()
+                                    image:nil
+                               identifier:nil
+                                  handler:^(__kindof UIAction* a) {
+                    (void) a;
+                    Choose( index );
+                }];
+            // The tick iOS puts against the row that is already chosen. Doing
+            // it by hand rather than with changesSelectionAsPrimaryAction
+            // because wx owns the selection: the menu has to follow it when
+            // SetSelection() is called from the application, and not the other
+            // way round.
+            if ( index == m_selection )
+                action.state = UIMenuElementStateOn;
+
+            [actions addObject:action];
+        }
+
+        m_button.menu = [UIMenu menuWithTitle:@"" children:actions];
+        m_button.showsMenuAsPrimaryAction = YES;
+
+        RefreshTitle();
+    }
+
+    // A row was tapped. The selection moves first, so that anything the
+    // handler asks the combo box during the event sees the new value.
+    void Choose(int index)
+    {
+        m_selection = index;
+        RebuildMenu();
+
+        // wxComboBox::OSXHandleClicked() is what sends wxEVT_COMBOBOX with the
+        // index and the string filled in, the same call the Cocoa peer makes.
+        // Sent even when the row chosen is the one that was already ticked:
+        // the user did press something, and a handler that only cares about
+        // changes can compare.
+        wxWindowMac* const peer = GetWXPeer();
+        if ( peer != nullptr )
+            peer->OSXHandleClicked( 0 );
+    }
+
+    void RefreshTitle()
+    {
+        wxString label;
+        if ( m_selection >= 0 && m_selection < static_cast<int>(m_items.GetCount()) )
+            label = m_items[m_selection];
+
+        wxCFStringRef cfLabel( label );
+
+        // -configuration returns a copy, so it has to be given back for any of
+        // this to take effect.
+        UIButtonConfiguration* const cfg = m_button.configuration;
+        cfg.title = cfLabel.AsNSString();
+        m_button.configuration = cfg;
+    }
+
+    UIButton*     m_button = nil;   // not owned; wxWidgetIPhoneImpl holds it
     wxArrayString m_items;
     int           m_selection = wxNOT_FOUND;
 };
@@ -346,6 +451,25 @@ wxWidgetImplType* wxWidgetImpl::CreateComboBox( wxComboBox* wxpeer,
                                     long WXUNUSED(extraStyle))
 {
     CGRect r = wxOSXGetFrameForControl( wxpeer, pos, size );
-    UIView* v = [[UIView alloc] initWithFrame:r];
+
+    // Grey rather than plain: a combo box has to read as a control that can be
+    // opened even before it is touched, which on a form is what the filled
+    // style says. The chevron pair trailing the title is the system's own mark
+    // for a pull-down, and putting the title first keeps it lined up with the
+    // text controls a dialog puts either side of it.
+    UIButtonConfiguration* const cfg = [UIButtonConfiguration grayButtonConfiguration];
+    cfg.image          = [UIImage systemImageNamed:@"chevron.up.chevron.down"];
+    cfg.imagePlacement = NSDirectionalRectEdgeTrailing;
+    cfg.imagePadding   = 6;
+    cfg.titleAlignment = UIButtonConfigurationTitleAlignmentLeading;
+    cfg.contentInsets  = NSDirectionalEdgeInsetsMake( 4, 10, 4, 10 );
+
+    // +buttonWithConfiguration: returns an autoreleased button, hence the
+    // retain: wxWidgetIPhoneImpl owns its view and releases it.
+    UIButton* const v =
+        [[UIButton buttonWithConfiguration:cfg primaryAction:nil] retain];
+    v.frame = r;
+    v.contentHorizontalAlignment = UIControlContentHorizontalAlignmentFill;
+
     return new wxIPhoneComboBoxPeer( wxpeer, v );
 }

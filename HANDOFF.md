@@ -9160,6 +9160,17 @@ if (tell_orca)
 chosen because this block is deliberately taken *before* the banner is released,
 and a statement says so where a ternary buries it.
 
+**What the same run proves, which is most of the point of it.** One error, in
+one file, and everything else compiled: wx with the new message, text-entry and
+choice dialogs; `ios_native_ui.mm`, `ios_native_progress.mm` and
+`ios_native_picker.mm`; and `MsgDialog`, `NotificationManager`,
+`ProgressDialog`, `DropDown`, `SingleChoiceDialog` and `ReleaseNote` against
+them. 661 of 663 objects, no undefined symbols.
+
+Run 191 is the one dispatched on the fix, and on the four review fixes that
+followed it - the freed alert title, the banner countdown, the picker's
+identity-checked teardown and its retain cycle.
+
 **The rule:** a ternary whose arms are a block and `nil` does not compile in
 ObjC++. Sweeping the tree for the pattern afterwards found four more `? … : nil`
 ternaries in the iOS sources - `ios_native_picker.mm:195`,

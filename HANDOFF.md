@@ -9693,6 +9693,43 @@ while the timer ticks, and the three builds before it never reached the first
 window. It would have been the first thing a device run found in 0439, and 0439
 was written eleven builds ago.
 
+### 0450 — say which Objective-C exception it was
+
+Build 203 got past the notification timer and died differently:
+
+```
+--- orca ios crash: terminate: (not a std::exception)
+build 203
+  ios_crash_terminate_handler
+  libc++abi / objc_exception_throw
+  CoreFoundation … _CFXNotificationPost
+  UIKitCore … _UIScenePerformActionsWithLifecycleActionMask
+  FrontBoardServices …
+```
+
+An uncaught **NSException**, raised by a UIKit observer while the scene changed
+state - and the report cannot say which one, because the terminate handler
+catches it as `catch (...)`. An NSException does unwind as a C++ exception on
+this architecture, so it lands there; it simply is not a `std::exception` and
+has no `what()`.
+
+`NSSetUncaughtExceptionHandler` runs before terminate and is handed the object,
+so 0450 installs one, reads `name` and `reason` off it, and writes both into
+`orca-crash.txt` before the stack goes in. The next report of this shape names
+itself:
+
+```
+--- orca ios crash: objc exception: NSInternalInconsistencyException
+reason: <the sentence UIKit actually raised>
+```
+
+**Why this is worth a patch of its own.** Three builds went on a wrong theory
+because the app's crash file carried offsets and nothing else, and the `.ips`
+that settled it in one line has to be fetched from Settings by hand. This is the
+same lesson as that one, applied to the other half of the problem: an
+Objective-C exception without its reason is a stack of addresses, and the reason
+is one string away.
+
 ### The test list for this set
 
 None of 0237-0242 or 0438-0447 has run on a device. Everything below is

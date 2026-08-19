@@ -1,0 +1,107 @@
+diff --git a/src/libslic3r/Utils.hpp b/src/libslic3r/Utils.hpp
+index f1bdd89..0694546 100644
+--- a/src/libslic3r/Utils.hpp
++++ b/src/libslic3r/Utils.hpp
+@@ -193,6 +193,14 @@ bool makedir(const std::string path);
+ std::string debug_out_path(const char *name, ...);
+ // smaller level means less log. level=5 means saving all logs.
+ void set_log_path_and_level(const std::string& file, unsigned int level);
++
++// Records what an uncaught Objective-C exception was, in the same file the
++// crash handler writes. Defined on iOS only and called from
++// ios_webview_support.mm, which is where the NSException can actually be read;
++// see the definition in utils.cpp for why the terminate handler cannot do it on
++// its own. Declared unqualified so that this header needs no platform macro of
++// its own - nothing else on any platform refers to it.
++void ios_crash_note_objc(const char *name, const char *reason);
+ void flush_logs();
+ boost::filesystem::path get_log_file_name();
+ 
+diff --git a/src/libslic3r/utils.cpp b/src/libslic3r/utils.cpp
+index 3433a0b..0774e66 100644
+--- a/src/libslic3r/utils.cpp
++++ b/src/libslic3r/utils.cpp
+@@ -568,6 +568,38 @@ static void ios_install_crash_handler()
+ 
+ 	std::set_terminate(ios_crash_terminate_handler);
+ }
++
++// An Objective-C exception, written down with the one thing that identifies it.
++//
++// std::set_terminate() above catches these - an NSException unwinds as a C++
++// exception on this architecture - but only as `catch (...)`, so what lands in
++// the report is the string "(not a std::exception)" and nothing else. That is
++// what build 203 produced: a stack of UIKit frames, an objc_exception_throw,
++// and no way to tell which exception it was.
++//
++// The name and reason are on the NSException, and reading them needs
++// Objective-C. So the Objective-C side (ios_uncaught_objc_handler, in
++// src/slic3r/GUI/ios_webview_support.mm) installs itself with
++// NSSetUncaughtExceptionHandler and calls this with the two strings before the
++// terminate handler ever runs.
++void ios_crash_note_objc(const char *name, const char *reason)
++{
++	if (g_ios_in_crash != 0)
++		return;
++	// NOT set to 1: this is a note, and the terminate handler that follows it
++	// still has the backtrace to add.
++	ios_crash_write_report("objc exception",
++	                       name != nullptr ? name : "(unnamed)", 0);
++	if (reason != nullptr && reason[0] != '\0') {
++		const int fd = ::open(g_ios_crash_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
++		if (fd >= 0) {
++			ios_crash_write(fd, "reason: ");
++			ios_crash_write(fd, reason);
++			ios_crash_write(fd, "\n");
++			::close(fd);
++		}
++	}
++}
+ #endif // TARGET_OS_IPHONE
+ 
+ void set_log_path_and_level(const std::string& file, unsigned int level)
+diff --git a/src/slic3r/GUI/ios_webview_support.mm b/src/slic3r/GUI/ios_webview_support.mm
+index f57d9cb..da54411 100644
+--- a/src/slic3r/GUI/ios_webview_support.mm
++++ b/src/slic3r/GUI/ios_webview_support.mm
+@@ -2643,11 +2643,40 @@ static OrcaLifecycleObserver *gs_orca_lifecycle = nil;
+ namespace Slic3r {
+ namespace GUI {
+ 
++// What an uncaught Objective-C exception was, written where the rest of a crash
++// is written.
++//
++// The terminate handler in libslic3r/utils.cpp catches these, because an
++// NSException unwinds as a C++ exception here - but only as `catch (...)`, so
++// the report says "(not a std::exception)" and stops. Build 203 crashed inside
++// a UIKit scene transition and that is all it could say about it.
++//
++// NSSetUncaughtExceptionHandler runs first and has the object itself, so the
++// name and the reason go in the file before the stack does.
++static void ios_uncaught_objc_handler(NSException *e)
++{
++    @try {
++        const char *const name   = [[e name] UTF8String];
++        const char *const reason = [[e reason] UTF8String];
++
++        Slic3r::ios_crash_note_objc(name, reason);
++
++        BOOST_LOG_TRIVIAL(error) << "orca-ios-objc-exception: "
++                                 << (name != nullptr ? name : "(unnamed)") << ": "
++                                 << (reason != nullptr ? reason : "(no reason)");
++    }
++    @catch (...) {
++        // Throwing from the handler that reports throwing helps nobody.
++    }
++}
++
+ void orca_ios_install_lifecycle_hooks()
+ {
+     if (gs_orca_lifecycle != nil)
+         return;
+ 
++    NSSetUncaughtExceptionHandler(ios_uncaught_objc_handler);
++
+     @try {
+         gs_orca_lifecycle = [[OrcaLifecycleObserver alloc] init];
+         NSNotificationCenter *const nc = [NSNotificationCenter defaultCenter];

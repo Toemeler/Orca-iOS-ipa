@@ -1,0 +1,53 @@
+diff --git a/src/osx/iphone/nonownedwnd.mm b/src/osx/iphone/nonownedwnd.mm
+index 3c10f66..f8fbedf 100644
+--- a/src/osx/iphone/nonownedwnd.mm
++++ b/src/osx/iphone/nonownedwnd.mm
+@@ -1134,13 +1134,46 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
+     [super dealloc];
+ }
+ 
++// -rotatingFooterView IS NO LONGER A METHOD OF UIViewController, and this line
++// used to call it:
++//
++//     UIView* footerView = [super rotatingFooterView];
++//
++// It was deprecated in iOS 8 and the implementation is gone by iOS 26, so the
++// message goes to a class that does not answer it and UIKit raises
++// NSInvalidArgumentException. Build 203 died on it:
++//
++//   -[NSObject doesNotRecognizeSelector:]
++//   ___forwarding___
++//   -[UIViewController _updateLayoutForStatusBarAndInterfaceOrientation]
++//   __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__
++//   … _UISceneLifecycleMultiplexer …
++//
++// The declaration survives, which is what makes this quiet: the compiler is
++// happy, wx's override is happy, and the whole thing only goes off when UIKit
++// takes its legacy status-bar path - a rotation, or the status bar changing
++// under a running application. That is why it took a minute of use rather than
++// a launch to appear.
++//
++// Kept rather than deleted, because the answer below it is still wanted: when a
++// wxFrame has a toolbar, that toolbar is the rotating footer. Asking the
++// superclass first is now conditional on the superclass having anything to say.
+ - (UIView*) rotatingFooterView
+ {
+-    UIView* footerView = [super rotatingFooterView];
++    UIView* footerView = nil;
++
++    // UIViewController and its ancestors, deliberately not `self` - this class
++    // implements the selector, so asking about self would always say yes.
++    if ( [UIViewController instancesRespondToSelector:@selector(rotatingFooterView)] )
++        footerView = [super rotatingFooterView];
++
+     if ( footerView == nil )
+     {
+         wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( [self view] );
+-        wxFrame* frame = dynamic_cast<wxFrame*> (impl->GetWXPeer());
++        // impl was dereferenced unconditionally here. A controller whose view
++        // has no wx peer yet - or no longer - is not a reason to take the
++        // application down during a rotation.
++        wxFrame* frame = impl != nullptr ? dynamic_cast<wxFrame*> (impl->GetWXPeer()) : nullptr;
+         if ( frame && frame->GetToolBar())
+         {
+             footerView = frame->GetToolBar()->GetHandle();

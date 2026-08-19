@@ -9730,6 +9730,55 @@ same lesson as that one, applied to the other half of the problem: an
 Objective-C exception without its reason is a stack of addresses, and the reason
 is one string away.
 
+### 0246 — a selector UIKit no longer has
+
+Build 203's `.ips`, symbolicated:
+
+```
+-[NSObject(NSObject) doesNotRecognizeSelector:]
+___forwarding___
+-[UIViewController _updateLayoutForStatusBarAndInterfaceOrientation]
+__CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__
+-[NSNotificationCenter postNotificationName:object:userInfo:]
+-[_UISceneLifecycleMultiplexer _evalTransitionToSettings:…]
+```
+
+An **unrecognized selector**, sent from UIKit's legacy status-bar path. There is
+exactly one selector this port adds in that path, in wx's own
+`wxUIContentViewController` - the root controller of every window here:
+
+```objc
+- (UIView*) rotatingFooterView
+{
+    UIView* footerView = [super rotatingFooterView];
+```
+
+`-rotatingFooterView` was deprecated on `UIViewController` in iOS 8 and the
+implementation is gone by iOS 26. **The declaration survives**, which is what
+makes it quiet: the compiler is happy, wx's override is happy, and nothing
+happens until UIKit takes the legacy path - a rotation, or the status bar
+changing under a running application. Which is why it took a minute of use, and
+why it never appeared in a launch-and-crash.
+
+The override is kept, because its answer is still wanted - a `wxFrame`'s toolbar
+*is* the rotating footer - and the call to `super` is now conditional on
+`[UIViewController instancesRespondToSelector:]`. Asked of `UIViewController`
+and not of `self`, because this class implements the selector and self would
+always say yes.
+
+The same function dereferenced `impl` without checking it. A controller whose
+view has no wx peer yet, or no longer, is not a reason to take the application
+down during a rotation; that is checked now too.
+
+**And a note on why the `.ips` was thinner than it should have been.** For an
+uncaught Objective-C exception the system normally records the reason -
+`-[Foo bar]: unrecognized selector sent to instance 0x…` - and a last-exception
+backtrace. This report carried neither, only `asi: abort() called`, because
+`std::set_terminate(ios_crash_terminate_handler)` intercepts first and aborts
+before the default handler can write it down. **Our own diagnostics destroyed
+the best evidence about themselves.** 0450 is what fixes that, and it is worth
+keeping even now that this particular one is solved.
+
 ### The test list for this set
 
 None of 0237-0242 or 0438-0447 has run on a device. Everything below is

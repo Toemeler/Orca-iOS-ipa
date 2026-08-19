@@ -1,8 +1,72 @@
 diff --git a/src/osx/iphone/nonownedwnd.mm b/src/osx/iphone/nonownedwnd.mm
-index 3c10f66..f8fbedf 100644
+index 3c10f66..e919bac 100644
 --- a/src/osx/iphone/nonownedwnd.mm
 +++ b/src/osx/iphone/nonownedwnd.mm
-@@ -1134,13 +1134,46 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
+@@ -1063,11 +1063,17 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
+ 
+ @implementation wxUIContentViewController
+ 
++// EVERY METHOD IN THIS CLASS RUNS WHILE THE WINDOW IS APPEARING, ROTATING OR
++// GOING AWAY, and in all three of those a wx peer can be absent: the window is
++// being built and has none yet, or is being torn down and no longer has one.
++// Upstream reaches through the result of FindFromWXWidget() without looking,
++// three times over, and every one of those is a null dereference on a path the
++// user reaches by turning the iPad over. 0246 checks them.
+ - (BOOL) shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation) interfaceOrientation
+ {
+-    wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( [self view] );
+-    wxNonOwnedWindow* now = dynamic_cast<wxNonOwnedWindow*> (impl->GetWXPeer());
+-
++    // The peer was looked up here and then not used at all - a dereference
++    // whose only possible effect was a crash.
++    //
+     // TODO: determine NO or YES based on min size requirements (whether it fits on the new orientation)
+ 
+     return YES;
+@@ -1091,7 +1097,12 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
+ - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+ {
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( [self view] );
++    if ( impl == nullptr )
++        return;
++
+     wxNonOwnedWindow* now = dynamic_cast<wxNonOwnedWindow*> (impl->GetWXPeer());
++    if ( now == nullptr )
++        return;
+ 
+     now->HandleResized(0);
+ }
+@@ -1099,8 +1110,16 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
+ -(void) viewWillAppear:(BOOL)animated
+ {
+     wxWidgetIPhoneImpl* impl = (wxWidgetIPhoneImpl* ) wxWidgetImpl::FindFromWXWidget( [self view] );
++    if ( impl == nullptr )
++        return;
++
+     wxNonOwnedWindow* now = dynamic_cast<wxNonOwnedWindow*> (impl->GetWXPeer());
++    if ( now == nullptr )
++        return;
++
+     wxNonOwnedWindowIPhoneImpl* nowimpl = dynamic_cast<wxNonOwnedWindowIPhoneImpl*> (now->GetNonOwnedPeer());
++    if ( nowimpl == nullptr )
++        return;
+ 
+     if ( nowimpl->InitialShowEventSent() )
+     {
+@@ -1117,7 +1136,12 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
+     if( impl )
+     {
+         wxNonOwnedWindow* now = dynamic_cast<wxNonOwnedWindow*> (impl->GetWXPeer());
++        if ( now == nullptr )
++            return;
++
+         wxNonOwnedWindowIPhoneImpl* nowimpl = dynamic_cast<wxNonOwnedWindowIPhoneImpl*> (now->GetNonOwnedPeer());
++        if ( nowimpl == nullptr )
++            return;
+ 
+         if ( nowimpl->InitialShowEventSent() )
+         {
+@@ -1134,13 +1158,46 @@ wxWidgetImpl* wxWidgetImpl::CreateContentView( wxNonOwnedWindow* now )
      [super dealloc];
  }
  

@@ -9766,9 +9766,25 @@ The override is kept, because its answer is still wanted - a `wxFrame`'s toolbar
 and not of `self`, because this class implements the selector and self would
 always say yes.
 
-The same function dereferenced `impl` without checking it. A controller whose
-view has no wx peer yet, or no longer, is not a reason to take the application
-down during a rotation; that is checked now too.
+**The other half of the same patch, and the reason it is in the same patch.**
+Every method on this controller runs while a window is appearing, rotating or
+going away, and in all three a wx peer can be absent - the window is being built
+and has none yet, or is being torn down and no longer has one. Upstream reaches
+through `FindFromWXWidget()` without looking, in four places:
+
+| method | what it dereferenced unchecked |
+|---|---|
+| `rotatingFooterView` | `impl` |
+| `didRotateFromInterfaceOrientation:` | `impl`, then `now` - **this is the rotation itself** |
+| `viewWillAppear:` | `impl`, `now`, `nowimpl` |
+| `viewWillDisappear:` | guards `impl`, then not `now` or `nowimpl` |
+
+`shouldAutorotateToInterfaceOrientation:` was the silliest: it looked the peer
+up, dereferenced it, and never used the result. That line is gone.
+
+All of these sit on the path the user reaches by turning the iPad over, which is
+exactly what this patch asks them to go and test. Shipping the removed-selector
+fix without them would have swapped one crash on rotation for another.
 
 **And a note on why the `.ips` was thinner than it should have been.** For an
 uncaught Objective-C exception the system normally records the reason -
